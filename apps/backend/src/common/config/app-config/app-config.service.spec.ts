@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigModule } from '@nestjs/config';
 import { AppConfigService } from './app-config.service';
 
 describe('AppConfigService', () => {
@@ -6,6 +7,7 @@ describe('AppConfigService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [ConfigModule.forRoot()],
       providers: [AppConfigService],
     }).compile();
 
