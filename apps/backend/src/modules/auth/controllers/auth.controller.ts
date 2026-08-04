@@ -10,6 +10,7 @@ import { AuthService } from '../auth.service';
 import { LoginDto } from '../dto/login.dto';
 import { RegisterDto } from '../dto/register.dto';
 import { LogoutDto } from '../dto/logout.dto';
+import { RefreshTokenDto } from '../dto/refresh-token.dto';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 
 @Controller('auth')
@@ -30,6 +31,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   me(@Request() req: { user: unknown }) {
     return req.user;
+  }
+
+  @Post('refresh')
+  refresh(@Body() dto: RefreshTokenDto) {
+    return this.authService.refreshToken(dto);
   }
 
   @Post('logout')

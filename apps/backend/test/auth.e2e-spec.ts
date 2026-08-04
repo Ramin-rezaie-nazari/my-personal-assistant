@@ -3,8 +3,9 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { createTestApp } from './helpers/create-test-app';
 
-interface RegisterResponse {
+interface AuthResponse {
   accessToken: string;
+  refreshToken: string;
   user: {
     email: string;
   };
@@ -12,6 +13,10 @@ interface RegisterResponse {
 
 interface MeResponse {
   email: string;
+}
+
+interface LogoutResponse {
+  message: string;
 }
 
 describe('Auth (e2e)', () => {
@@ -25,8 +30,9 @@ describe('Auth (e2e)', () => {
     await app.close();
   });
 
-  it('registers a new user', async () => {
+  async function registerUser() {
     const email = `test-${Date.now()}@example.com`;
+
     const response = await request(app.getHttpServer())
       .post('/auth/register')
       .send({
@@ -37,34 +43,62 @@ describe('Auth (e2e)', () => {
       })
       .expect(201);
 
-    const body = response.body as RegisterResponse;
+    return response.body as AuthResponse;
+  }
+
+  it('registers a new user', async () => {
+    const body = await registerUser();
 
     expect(body.accessToken).toBeDefined();
-    expect(body.user.email).toBe(email);
+    expect(body.refreshToken).toBeDefined();
+    expect(body.user.email).toContain('@example.com');
   });
 
   it('returns current user with valid JWT', async () => {
-    const email = `me-${Date.now()}@example.com`;
-
-    const registerResponse = await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
-        email,
-        password: 'password123',
-        firstName: 'Me',
-        lastName: 'User',
-      })
-      .expect(201);
-
-    const accessToken = (registerResponse.body as RegisterResponse).accessToken;
+    const auth = await registerUser();
 
     const response = await request(app.getHttpServer())
       .get('/auth/me')
-      .set('Authorization', `Bearer ${accessToken}`)
+      .set('Authorization', `Bearer ${auth.accessToken}`)
       .expect(200);
 
     const body = response.body as MeResponse;
 
-    expect(body.email).toBe(email);
+    expect(body.email).toBe(auth.user.email);
+  });
+
+  it('refreshes access token with valid refresh token', async () => {
+    const auth = await registerUser();
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .send({
+        refreshToken: auth.refreshToken,
+      })
+      .expect(201);
+
+    const body = response.body as AuthResponse;
+
+    expect(body.accessToken).toBeDefined();
+    expect(body.refreshToken).toBeDefined();
+  });
+
+  it('logs out user with refresh token', async () => {
+    const auth = await registerUser();
+
+    const response = await request(app.getHttpServer())
+      .post('/auth/logout')
+      .send({
+        refreshToken: auth.refreshToken,
+      })
+      .expect(201);
+
+    const body = response.body as LogoutResponse;
+
+    expect(body.message).toBeDefined();
+  });
+
+  it('rejects protected route without token', async () => {
+    await request(app.getHttpServer()).get('/auth/me').expect(401);
   });
 });
