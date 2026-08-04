@@ -4,6 +4,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { AppConfigService } from '../../common/config/app-config/app-config.service';
 import { SessionService } from './services/session.service';
 import { createAccessToken, createRefreshToken } from './utils/token.utils';
@@ -57,6 +58,35 @@ export class AuthService {
     }
 
     return await this.createAuthResponse(user);
+  }
+
+  async refreshToken(data: RefreshTokenDto) {
+    const payload = this.jwtService.verify<{ sub: string; type: string }>(
+      data.refreshToken,
+      {
+        secret: this.appConfigService.jwtRefreshSecret,
+      },
+    );
+
+    if (payload.type !== 'refresh') {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const session = await this.sessionService.findByRefreshToken(
+      data.refreshToken,
+    );
+
+    if (!session) {
+      throw new UnauthorizedException('Session not found');
+    }
+
+    const user = await this.usersService.findById(payload.sub);
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return this.createAuthResponse(user);
   }
 
   private async createAuthResponse(user: {
