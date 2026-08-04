@@ -4,6 +4,9 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AppConfigService } from '../../common/config/app-config/app-config.service';
+import { SessionService } from './services/session.service';
+import { createAccessToken, createRefreshToken } from './utils/token.utils';
 import * as argon2 from 'argon2';
 import { UsersService } from '../users/users.service';
 
@@ -11,7 +14,9 @@ import { UsersService } from '../users/users.service';
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
+    private readonly sessionService: SessionService,
     private readonly jwtService: JwtService,
+    private readonly appConfigService: AppConfigService,
   ) {}
 
   async register(data: {
@@ -35,7 +40,7 @@ export class AuthService {
       lastName: data.lastName,
     });
 
-    return this.createAuthResponse(user);
+    return await this.createAuthResponse(user);
   }
 
   async login(email: string, password: string) {
@@ -51,20 +56,40 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.createAuthResponse(user);
+    return await this.createAuthResponse(user);
   }
 
-  private createAuthResponse(user: {
+  private async createAuthResponse(user: {
     id: string;
     email: string;
     firstName: string | null;
     lastName: string | null;
     avatarUrl: string | null;
   }) {
+    const accessToken = createAccessToken(
+      this.jwtService,
+      this.appConfigService,
+      user.id,
+    );
+
+    const refreshToken = createRefreshToken(
+      this.jwtService,
+      this.appConfigService,
+      user.id,
+    );
+
+    const expiresAt = new Date();
+    expiresAt.setTime(expiresAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    await this.sessionService.create({
+      userId: user.id,
+      refreshToken,
+      expiresAt,
+    });
+
     return {
-      accessToken: this.jwtService.sign({
-        sub: user.id,
-      }),
+      accessToken,
+      refreshToken,
       user: {
         id: user.id,
         email: user.email,

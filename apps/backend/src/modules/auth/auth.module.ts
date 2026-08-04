@@ -7,6 +7,7 @@ import { UsersModule } from '../users/users.module';
 import { AuthController } from './controllers/auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { SessionService } from './services/session.service';
 
 @Module({
   imports: [
@@ -17,15 +18,15 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       imports: [ConfigModule],
       inject: [AppConfigService],
       useFactory: (appConfigService: AppConfigService) => ({
-        secret: appConfigService.jwtSecret,
+        secret: appConfigService.jwtAccessSecret,
         signOptions: {
-          expiresIn: appConfigService.jwtExpiresIn,
+          expiresIn: appConfigService.jwtAccessExpiresIn,
         },
       }),
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, SessionService],
   exports: [AuthService],
 })
 export class AuthModule {}

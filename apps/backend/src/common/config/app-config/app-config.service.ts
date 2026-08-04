@@ -20,11 +20,29 @@ export class AppConfigService {
     );
   }
 
-  get jwtSecret(): string {
-    return this.configService.get<string>('JWT_SECRET', 'development-secret');
+  get databaseUrl(): string {
+    return this.configService.get<string>('DATABASE_URL', '');
   }
 
-  get jwtExpiresIn(): string {
-    return this.configService.get<string>('JWT_EXPIRES_IN', '15m');
+  get jwtAccessSecret(): string {
+    return this.configService.get<string>(
+      'JWT_ACCESS_SECRET',
+      'development-access-secret',
+    );
+  }
+
+  get jwtAccessExpiresIn(): string {
+    return this.configService.get<string>('JWT_ACCESS_EXPIRES_IN', '15m');
+  }
+
+  get jwtRefreshSecret(): string {
+    return this.configService.get<string>(
+      'JWT_REFRESH_SECRET',
+      'development-refresh-secret',
+    );
+  }
+
+  get jwtRefreshExpiresIn(): string {
+    return this.configService.get<string>('JWT_REFRESH_EXPIRES_IN', '30d');
   }
 }
