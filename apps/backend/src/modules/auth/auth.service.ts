@@ -35,7 +35,7 @@ export class AuthService {
       lastName: data.lastName,
     });
 
-    return this.generateToken(user.id);
+    return this.createAuthResponse(user);
   }
 
   async login(email: string, password: string) {
@@ -51,14 +51,27 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.generateToken(user.id);
+    return this.createAuthResponse(user);
   }
 
-  private generateToken(userId: string) {
+  private createAuthResponse(user: {
+    id: string;
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+    avatarUrl: string | null;
+  }) {
     return {
       accessToken: this.jwtService.sign({
-        sub: userId,
+        sub: user.id,
       }),
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarUrl: user.avatarUrl,
+      },
     };
   }
 }
