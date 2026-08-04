@@ -19,4 +19,12 @@ export class AppConfigService {
       'My Personal Assistant API',
     );
   }
+
+  get jwtSecret(): string {
+    return this.configService.get<string>('JWT_SECRET', 'development-secret');
+  }
+
+  get jwtExpiresIn(): string {
+    return this.configService.get<string>('JWT_EXPIRES_IN', '15m');
+  }
 }
