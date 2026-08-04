@@ -89,6 +89,14 @@ export class AuthService {
     return this.createAuthResponse(user);
   }
 
+  async logout(refreshToken: string) {
+    await this.sessionService.revokeSession(refreshToken);
+
+    return {
+      message: 'Logged out successfully',
+    };
+  }
+
   private async createAuthResponse(user: {
     id: string;
     email: string;

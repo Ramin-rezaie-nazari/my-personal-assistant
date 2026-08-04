@@ -38,4 +38,12 @@ export class SessionService {
       },
     });
   }
+
+  async revokeSession(refreshToken: string) {
+    return this.prisma.session.deleteMany({
+      where: {
+        refreshToken,
+      },
+    });
+  }
 }
