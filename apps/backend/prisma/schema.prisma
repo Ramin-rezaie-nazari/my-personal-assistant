@@ -30,6 +30,7 @@ model User {
   healthProfile    HealthProfile?
   nutritionProfile NutritionProfile?
   dailyLog         DailyLog?
+  nutritionLogs    NutritionLog[]
 }
 
 model AuthAccount {
@@ -188,6 +189,25 @@ model DailyLog {
 
   calories Int   @default(0)
   protein  Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NutritionLog {
+  id String @id @default(uuid())
+
+  userId String
+
+  mealType String
+  title    String
+
+  calories Int   @default(0)
+  protein  Float @default(0)
+  carbs    Float @default(0)
+  fat      Float @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
