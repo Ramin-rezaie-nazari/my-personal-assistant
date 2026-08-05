@@ -6,8 +6,8 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { UsersService } from '../users.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { UsersService } from '../users.service';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
 
 @Controller('users')
@@ -25,6 +25,6 @@ export class UsersController {
     @Request() req: { user: { id: string } },
     @Body() dto: UpdateProfileDto,
   ) {
-    return this.usersService.update(req.user.id, dto);
+    return this.usersService.updateProfile(req.user.id, dto);
   }
 }

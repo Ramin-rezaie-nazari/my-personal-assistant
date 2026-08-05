@@ -11,6 +11,12 @@ export class UsersService {
     });
   }
 
+  async findById(id: string) {
+    return this.prisma.user.findUnique({
+      where: { id },
+    });
+  }
+
   async getProfile(id: string) {
     const user = await this.prisma.user.findUnique({
       where: { id },
@@ -29,13 +35,7 @@ export class UsersService {
     };
   }
 
-  async findById(id: string) {
-    return this.prisma.user.findUnique({
-      where: { id },
-    });
-  }
-
-  async update(
+  async updateProfile(
     id: string,
     data: {
       firstName?: string;
@@ -43,10 +43,18 @@ export class UsersService {
       avatarUrl?: string;
     },
   ) {
-    return this.prisma.user.update({
+    const user = await this.prisma.user.update({
       where: { id },
       data,
     });
+
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
+    };
   }
 
   async create(data: {
