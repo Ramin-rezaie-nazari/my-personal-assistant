@@ -7,6 +7,7 @@ import { NutritionModule } from './modules/nutrition/nutrition.module';
 import { FoodsModule } from './modules/foods/foods.module';
 import { MealsModule } from './modules/meals/meals.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
+import { WorkoutModule } from './modules/workout/workout.module';
 import { ConfigModule } from './common/config/config.module';
 import { PrismaModule } from './common/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -25,6 +26,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     FoodsModule,
     MealsModule,
     RecipesModule,
+    WorkoutModule,
     ConfigModule,
     PrismaModule,
     AuthModule,
