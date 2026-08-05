@@ -26,6 +26,7 @@ import { BudgetIntelligenceModule } from './modules/budget-intelligence/budget-i
 import { PriceIntelligenceModule } from './modules/price-intelligence/price-intelligence.module';
 import { ShoppingIntelligenceModule } from './modules/shopping-intelligence/shopping-intelligence.module';
 import { DeviceIntelligenceModule } from './modules/device-intelligence/device-intelligence.module';
+import { DecisionEngineModule } from './modules/decision-engine/decision-engine.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 
 @Module({
@@ -55,6 +56,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     PriceIntelligenceModule,
     ShoppingIntelligenceModule,
     DeviceIntelligenceModule,
+    DecisionEngineModule,
     PreferencesModule,
   ],
   controllers: [AppController],
