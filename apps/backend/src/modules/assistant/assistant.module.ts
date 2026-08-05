@@ -1,13 +1,26 @@
 import { Module } from '@nestjs/common';
-
-import { PrismaModule } from '../../common/database/prisma.module';
 import { AssistantController } from './controllers/assistant.controller';
 import { AssistantService } from './services/assistant.service';
+import { MemoryService } from './services/memory.service';
+import { ContextService } from './services/context.service';
+import { ReasoningService } from './services/reasoning.service';
+import { RecommendationService } from './services/recommendation.service';
 
 @Module({
-  imports: [PrismaModule],
   controllers: [AssistantController],
-  providers: [AssistantService],
-  exports: [AssistantService],
+  providers: [
+    AssistantService,
+    MemoryService,
+    ContextService,
+    ReasoningService,
+    RecommendationService,
+  ],
+  exports: [
+    AssistantService,
+    MemoryService,
+    ContextService,
+    ReasoningService,
+    RecommendationService,
+  ],
 })
 export class AssistantModule {}
