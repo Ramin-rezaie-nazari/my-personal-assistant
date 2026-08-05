@@ -6,6 +6,7 @@ import { DailyModule } from './modules/daily/daily.module';
 import { NutritionModule } from './modules/nutrition/nutrition.module';
 import { FoodsModule } from './modules/foods/foods.module';
 import { MealsModule } from './modules/meals/meals.module';
+import { RecipesModule } from './modules/recipes/recipes.module';
 import { ConfigModule } from './common/config/config.module';
 import { PrismaModule } from './common/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -23,6 +24,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     NutritionModule,
     FoodsModule,
     MealsModule,
+    RecipesModule,
     ConfigModule,
     PrismaModule,
     AuthModule,
