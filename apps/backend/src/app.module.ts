@@ -9,6 +9,7 @@ import { MealsModule } from './modules/meals/meals.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
 import { WorkoutModule } from './modules/workout/workout.module';
 import { SupplementsModule } from './modules/supplements/supplements.module';
+import { RemindersModule } from './modules/reminders/reminders.module';
 import { ConfigModule } from './common/config/config.module';
 import { PrismaModule } from './common/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -29,6 +30,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     RecipesModule,
     WorkoutModule,
     SupplementsModule,
+    RemindersModule,
     ConfigModule,
     PrismaModule,
     AuthModule,
