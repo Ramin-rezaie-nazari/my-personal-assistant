@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HealthModule } from './modules/health/health.module';
+import { DailyModule } from './modules/daily/daily.module';
 import { ConfigModule } from './common/config/config.module';
 import { PrismaModule } from './common/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -15,6 +16,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
 @Module({
   imports: [
     HealthModule,
+    DailyModule,
     ConfigModule,
     PrismaModule,
     AuthModule,
