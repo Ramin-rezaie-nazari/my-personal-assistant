@@ -27,6 +27,7 @@ import { PriceIntelligenceModule } from './modules/price-intelligence/price-inte
 import { ShoppingIntelligenceModule } from './modules/shopping-intelligence/shopping-intelligence.module';
 import { DeviceIntelligenceModule } from './modules/device-intelligence/device-intelligence.module';
 import { DecisionEngineModule } from './modules/decision-engine/decision-engine.module';
+import { AdaptiveLearningModule } from './modules/adaptive-learning/adaptive-learning.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 
 @Module({
@@ -57,6 +58,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     ShoppingIntelligenceModule,
     DeviceIntelligenceModule,
     DecisionEngineModule,
+    AdaptiveLearningModule,
     PreferencesModule,
   ],
   controllers: [AppController],
