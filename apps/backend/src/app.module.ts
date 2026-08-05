@@ -11,6 +11,7 @@ import { WorkoutModule } from './modules/workout/workout.module';
 import { SupplementsModule } from './modules/supplements/supplements.module';
 import { RemindersModule } from './modules/reminders/reminders.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HabitsModule } from './modules/habits/habits.module';
 import { ConfigModule } from './common/config/config.module';
 import { PrismaModule } from './common/database/prisma.module';
@@ -34,6 +35,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     SupplementsModule,
     RemindersModule,
     CalendarModule,
+    NotificationsModule,
     HabitsModule,
     ConfigModule,
     PrismaModule,
