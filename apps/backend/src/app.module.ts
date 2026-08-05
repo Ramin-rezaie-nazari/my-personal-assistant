@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { HealthModule } from './modules/health/health.module';
 import { DailyModule } from './modules/daily/daily.module';
 import { NutritionModule } from './modules/nutrition/nutrition.module';
+import { FoodsModule } from './modules/foods/foods.module';
 import { ConfigModule } from './common/config/config.module';
 import { PrismaModule } from './common/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -19,6 +20,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     HealthModule,
     DailyModule,
     NutritionModule,
+    FoodsModule,
     ConfigModule,
     PrismaModule,
     AuthModule,
