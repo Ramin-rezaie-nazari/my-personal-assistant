@@ -11,9 +11,41 @@ export class UsersService {
     });
   }
 
+  async getProfile(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      avatarUrl: user.avatarUrl,
+    };
+  }
+
   async findById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
+    });
+  }
+
+  async update(
+    id: string,
+    data: {
+      firstName?: string;
+      lastName?: string;
+      avatarUrl?: string;
+    },
+  ) {
+    return this.prisma.user.update({
+      where: { id },
+      data,
     });
   }
 
