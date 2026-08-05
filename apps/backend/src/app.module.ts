@@ -8,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ProfileModule } from './modules/profile/profile.module';
+import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 
 @Module({
@@ -19,6 +20,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     UsersModule,
     SettingsModule,
     ProfileModule,
+    OnboardingModule,
     PreferencesModule,
   ],
   controllers: [AppController],

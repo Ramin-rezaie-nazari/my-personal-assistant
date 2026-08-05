@@ -25,6 +25,7 @@ model User {
   settings     UserSettings?
   preferences  UserPreference?
   profile      UserProfile?
+  onboarding   UserOnboarding?
 }
 
 model AuthAccount {
@@ -96,6 +97,23 @@ model UserProfile {
   weightKg Float?
 
   primaryGoal String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserOnboarding {
+  id String @id @default(uuid())
+
+  userId String @unique
+
+  completed Boolean @default(false)
+
+  currentStep String @default("welcome")
+
+  completedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
