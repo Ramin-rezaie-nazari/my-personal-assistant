@@ -9,6 +9,7 @@ import { UsersModule } from './modules/users/users.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
+import { AssistantModule } from './modules/assistant/assistant.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 
 @Module({
@@ -21,6 +22,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     SettingsModule,
     ProfileModule,
     OnboardingModule,
+    AssistantModule,
     PreferencesModule,
   ],
   controllers: [AppController],
