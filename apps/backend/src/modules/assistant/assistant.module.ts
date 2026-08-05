@@ -5,10 +5,16 @@ import { MemoryService } from './services/memory.service';
 import { ContextService } from './services/context.service';
 import { ReasoningService } from './services/reasoning.service';
 import { RecommendationService } from './services/recommendation.service';
+import { PlanningService } from './services/planning.service';
+import { RuleEngineService } from './services/rule-engine.service';
+import { KnowledgeService } from './services/knowledge.service';
 
 @Module({
   controllers: [AssistantController],
   providers: [
+    KnowledgeService,
+    RuleEngineService,
+    PlanningService,
     AssistantService,
     MemoryService,
     ContextService,
