@@ -6,9 +6,17 @@ import { ConfigModule } from './common/config/config.module';
 import { PrismaModule } from './common/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { SettingsModule } from './modules/settings/settings.module';
 
 @Module({
-  imports: [HealthModule, ConfigModule, PrismaModule, AuthModule, UsersModule],
+  imports: [
+    HealthModule,
+    ConfigModule,
+    PrismaModule,
+    AuthModule,
+    UsersModule,
+    SettingsModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
