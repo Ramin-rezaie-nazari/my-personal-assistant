@@ -1,4 +1,6 @@
 import { Module } from '@nestjs/common';
+
+import { BrainIntegrationModule } from '../brain-integration/brain-integration.module';
 import { ContextEngineModule } from '../context-engine/context-engine.module';
 import { PersonalBrainController } from './controllers/personal-brain.controller';
 
@@ -9,6 +11,7 @@ import { IntentionAnalysisService } from './services/intention-analysis.service'
 import { ResponsePlanningService } from './services/response-planning.service';
 
 @Module({
+  imports: [BrainIntegrationModule],
   imports: [ContextEngineModule],
   controllers: [PersonalBrainController],
   providers: [
