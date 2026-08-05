@@ -22,6 +22,7 @@ import { ProfileModule } from './modules/profile/profile.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { AssistantModule } from './modules/assistant/assistant.module';
 import { UserIntelligenceModule } from './modules/user-intelligence/user-intelligence.module';
+import { BudgetIntelligenceModule } from './modules/budget-intelligence/budget-intelligence.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 
 @Module({
@@ -47,6 +48,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     OnboardingModule,
     AssistantModule,
     UserIntelligenceModule,
+    BudgetIntelligenceModule,
     PreferencesModule,
   ],
   controllers: [AppController],
