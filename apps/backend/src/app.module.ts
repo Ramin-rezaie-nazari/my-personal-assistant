@@ -21,6 +21,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { OnboardingModule } from './modules/onboarding/onboarding.module';
 import { AssistantModule } from './modules/assistant/assistant.module';
+import { UserIntelligenceModule } from './modules/user-intelligence/user-intelligence.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 
 @Module({
@@ -45,6 +46,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     ProfileModule,
     OnboardingModule,
     AssistantModule,
+    UserIntelligenceModule,
     PreferencesModule,
   ],
   controllers: [AppController],
