@@ -27,6 +27,8 @@ model User {
   profile          UserProfile?
   onboarding       UserOnboarding?
   assistantProfile AssistantProfile?
+  healthProfile    HealthProfile?
+  nutritionProfile NutritionProfile?
 }
 
 model AuthAccount {
@@ -135,6 +137,41 @@ model AssistantProfile {
   waterGoalMl    Int?
   sleepGoalHours Float?
   exerciseGoal   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model HealthProfile {
+  id String @id @default(uuid())
+
+  userId String @unique
+
+  heightCm       Int?
+  weightKg       Float?
+  age            Int?
+  gender         String?
+  activityLevel  String?
+  targetWeightKg Float?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model NutritionProfile {
+  id String @id @default(uuid())
+
+  userId String @unique
+
+  dailyCaloriesGoal Int?
+  proteinGoalGrams  Int?
+  waterGoalMl       Int?
+
+  dietType String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
