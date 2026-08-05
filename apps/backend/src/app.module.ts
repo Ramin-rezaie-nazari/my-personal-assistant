@@ -7,6 +7,7 @@ import { PrismaModule } from './common/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { SettingsModule } from './modules/settings/settings.module';
+import { PreferencesModule } from './modules/preferences/preferences.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { SettingsModule } from './modules/settings/settings.module';
     AuthModule,
     UsersModule,
     SettingsModule,
+    PreferencesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
