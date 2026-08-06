@@ -20,12 +20,23 @@ export class BrainOrchestratorService {
 
     const decision = await this.brainDecisionPipelineService.run();
 
+    if (!decision.allowed) {
+      return {
+        state,
+        decision,
+        input,
+        context,
+        message: 'Brain needs more information',
+        requiredInformation: decision.blockers,
+      };
+    }
+
     return {
       state,
       decision,
-      message: 'Brain request processed',
       input,
       context,
+      message: 'Brain request processed',
     };
   }
 }
