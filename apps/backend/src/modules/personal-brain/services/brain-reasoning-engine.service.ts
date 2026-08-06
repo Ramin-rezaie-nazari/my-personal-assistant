@@ -1,20 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
-type BrainReasoningSignals = {
-  hasContext: boolean;
-  hasMemories: boolean;
-  hasGoals: boolean;
-};
+import {
+  BrainReasoningResult,
+  BrainReasoningSignals,
+} from '../types/brain-reasoning.types';
 
 type BrainReasoningInput = {
   input: string;
   signals: BrainReasoningSignals;
-};
-
-type BrainReasoningResult = {
-  confidence: number;
-  uncertainties: string[];
-  reasoningSummary: string;
 };
 
 @Injectable()
