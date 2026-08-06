@@ -2,11 +2,10 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MemoryScoringService {
-  async scoreMemory() {
-    await Promise.resolve();
-
+  score(input: Record<string, unknown>): Record<string, unknown> {
     return {
-      score: 0,
+      importance: 0,
+      input,
     };
   }
 }

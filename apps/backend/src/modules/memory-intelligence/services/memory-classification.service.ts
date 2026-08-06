@@ -2,11 +2,10 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MemoryClassificationService {
-  async classifyMemory() {
-    await Promise.resolve();
-
+  classify(input: Record<string, unknown>): Record<string, unknown> {
     return {
-      type: 'classified',
+      type: 'general',
+      input,
     };
   }
 }

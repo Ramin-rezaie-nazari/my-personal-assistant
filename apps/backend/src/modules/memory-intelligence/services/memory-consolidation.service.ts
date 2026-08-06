@@ -2,11 +2,10 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class MemoryConsolidationService {
-  async consolidateMemory() {
-    await Promise.resolve();
-
+  consolidate(data: Record<string, unknown>): Record<string, unknown> {
     return {
-      message: 'Memory consolidated',
+      consolidated: true,
+      data,
     };
   }
 }
