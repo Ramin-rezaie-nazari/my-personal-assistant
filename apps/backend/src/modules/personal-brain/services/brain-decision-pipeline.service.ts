@@ -9,6 +9,7 @@ type BrainDecisionPipelineResult = {
   confidence: number;
   blockers: string[];
   message: string;
+  reasoningSummary: string;
 };
 
 @Injectable()
@@ -24,6 +25,7 @@ export class BrainDecisionPipelineService {
       allowed: decision.canDecide,
       confidence: context.reasoning.confidence,
       blockers: [...decision.blockers, ...context.reasoning.uncertainties],
+      reasoningSummary: context.reasoning.reasoningSummary,
       message: decision.canDecide
         ? 'brain is ready for decision'
         : 'brain needs more information',
