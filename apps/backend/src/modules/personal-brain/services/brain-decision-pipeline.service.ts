@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { BrainDecisionService } from './brain-decision.service';
+import { BrainReasoningContext } from '../types/brain-reasoning-context.types';
 
 type BrainDecisionPipelineResult = {
   allowed: boolean;
@@ -9,23 +10,22 @@ type BrainDecisionPipelineResult = {
   message: string;
 };
 
-type BrainReasoningSignals = {
-  hasContext: boolean;
-  hasMemories: boolean;
-  hasGoals: boolean;
-};
-
 @Injectable()
 export class BrainDecisionPipelineService {
   constructor(private readonly brainDecisionService: BrainDecisionService) {}
 
-  run(signals: BrainReasoningSignals): BrainDecisionPipelineResult {
-    const decision = this.brainDecisionService.evaluateDecision(signals);
+  run(reasoningContext: BrainReasoningContext): BrainDecisionPipelineResult {
+    const decision = this.brainDecisionService.evaluateDecision(
+      reasoningContext.signals,
+    );
 
     return {
       allowed: decision.canDecide,
-      confidence: decision.confidence,
-      blockers: decision.blockers,
+      confidence: reasoningContext.reasoning.confidence,
+      blockers: [
+        ...decision.blockers,
+        ...reasoningContext.reasoning.uncertainties,
+      ],
       message: decision.canDecide
         ? 'brain is ready for decision'
         : 'brain needs more information',
