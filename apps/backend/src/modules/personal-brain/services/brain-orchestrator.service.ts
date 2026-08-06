@@ -2,13 +2,11 @@ import { Injectable } from '@nestjs/common';
 
 import { BrainDecisionPipelineService } from './brain-decision-pipeline.service';
 import { BrainReasoningContextService } from './brain-reasoning-context.service';
-import { BrainReasoningEngineService } from './brain-reasoning-engine.service';
 
 @Injectable()
 export class BrainOrchestratorService {
   constructor(
     private readonly brainReasoningContextService: BrainReasoningContextService,
-    private readonly brainReasoningEngineService: BrainReasoningEngineService,
     private readonly brainDecisionPipelineService: BrainDecisionPipelineService,
   ) {}
 
@@ -16,21 +14,14 @@ export class BrainOrchestratorService {
     const reasoningContext =
       await this.brainReasoningContextService.build(input);
 
-    const reasoning = this.brainReasoningEngineService.analyze({
-      input,
-      signals: reasoningContext.signals,
-    });
-
-    const decision = this.brainDecisionPipelineService.run(
-      reasoningContext.signals,
-    );
+    const decision = this.brainDecisionPipelineService.run(reasoningContext);
 
     if (!decision.allowed) {
       return {
         reasoningContext,
-        reasoning,
         decision,
         input,
+        reasoning: reasoningContext.reasoning,
         message: 'Brain needs more information',
         requiredInformation: decision.blockers,
       };
@@ -38,9 +29,9 @@ export class BrainOrchestratorService {
 
     return {
       reasoningContext,
-      reasoning,
       decision,
       input,
+      reasoning: reasoningContext.reasoning,
       message: 'Brain request processed',
     };
   }
