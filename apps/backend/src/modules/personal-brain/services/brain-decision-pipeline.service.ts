@@ -19,11 +19,7 @@ type BrainReasoningSignals = {
 export class BrainDecisionPipelineService {
   constructor(private readonly brainDecisionService: BrainDecisionService) {}
 
-  async run(
-    signals: BrainReasoningSignals,
-  ): Promise<BrainDecisionPipelineResult> {
-    await Promise.resolve();
-
+  run(signals: BrainReasoningSignals): BrainDecisionPipelineResult {
     const decision = this.brainDecisionService.evaluateDecision(signals);
 
     return {

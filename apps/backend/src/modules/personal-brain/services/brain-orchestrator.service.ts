@@ -21,7 +21,7 @@ export class BrainOrchestratorService {
       signals: reasoningContext.signals,
     });
 
-    const decision = await this.brainDecisionPipelineService.run(
+    const decision = this.brainDecisionPipelineService.run(
       reasoningContext.signals,
     );
 
