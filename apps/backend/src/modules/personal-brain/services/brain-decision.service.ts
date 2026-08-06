@@ -1,26 +1,22 @@
 import { Injectable } from '@nestjs/common';
 
-import { DecisionReadinessService } from './decision-readiness.service';
+import { BrainReasoningContext } from '../types/brain-reasoning-context.types';
 
-type BrainReasoningSignals = {
-  hasContext: boolean;
-  hasMemories: boolean;
-  hasGoals: boolean;
+type BrainDecisionResult = {
+  canDecide: boolean;
+  confidence: number;
+  blockers: string[];
 };
 
 @Injectable()
 export class BrainDecisionService {
-  constructor(
-    private readonly decisionReadinessService: DecisionReadinessService,
-  ) {}
-
-  evaluateDecision(signals: BrainReasoningSignals) {
-    const readiness = this.decisionReadinessService.evaluate(signals);
+  evaluateDecision(context: BrainReasoningContext): BrainDecisionResult {
+    const blockers = [...context.reasoning.uncertainties];
 
     return {
-      canDecide: readiness.ready,
-      confidence: readiness.score,
-      blockers: readiness.reasons,
+      canDecide: blockers.length === 0,
+      confidence: context.reasoning.confidence,
+      blockers,
     };
   }
 }
