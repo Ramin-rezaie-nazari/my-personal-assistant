@@ -10,6 +10,7 @@ import { BrainDecisionPipelineService } from './services/brain-decision-pipeline
 import { BrainMemoryContextService } from './services/brain-memory-context.service';
 import { BrainOrchestratorService } from './services/brain-orchestrator.service';
 import { BrainReasoningContextService } from './services/brain-reasoning-context.service';
+import { BrainReasoningEngineService } from './services/brain-reasoning-engine.service';
 import { BrainStateService } from './services/brain-state.service';
 import { RelevantMemoryContextService } from './services/relevant-memory-context.service';
 
@@ -31,6 +32,7 @@ import { UserUnderstandingService } from './services/user-understanding.service'
     BrainMemoryContextService,
     RelevantMemoryContextService,
     BrainReasoningContextService,
+    BrainReasoningEngineService,
     BrainOrchestratorService,
     MemoryManagerService,
     UserUnderstandingService,
@@ -42,6 +44,7 @@ import { UserUnderstandingService } from './services/user-understanding.service'
     BrainDecisionPipelineService,
     BrainMemoryContextService,
     BrainReasoningContextService,
+    BrainReasoningEngineService,
     BrainOrchestratorService,
   ],
 })
