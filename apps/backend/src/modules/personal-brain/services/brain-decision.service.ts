@@ -2,10 +2,10 @@ import { Injectable } from '@nestjs/common';
 
 import { DecisionReadinessService } from './decision-readiness.service';
 
-type BrainState = {
-  context: unknown;
-  memories: unknown[];
-  goals: unknown[];
+type BrainReasoningSignals = {
+  hasContext: boolean;
+  hasMemories: boolean;
+  hasGoals: boolean;
 };
 
 @Injectable()
@@ -14,8 +14,8 @@ export class BrainDecisionService {
     private readonly decisionReadinessService: DecisionReadinessService,
   ) {}
 
-  evaluateDecision(state: BrainState) {
-    const readiness = this.decisionReadinessService.evaluate(state);
+  evaluateDecision(signals: BrainReasoningSignals) {
+    const readiness = this.decisionReadinessService.evaluate(signals);
 
     return {
       canDecide: readiness.ready,
