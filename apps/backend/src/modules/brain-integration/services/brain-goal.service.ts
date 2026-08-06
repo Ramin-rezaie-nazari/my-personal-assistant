@@ -2,11 +2,9 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class BrainGoalService {
-  async getActiveGoals() {
+  async getGoals() {
     await Promise.resolve();
 
-    return {
-      goalsReady: true,
-    };
+    return [];
   }
 }

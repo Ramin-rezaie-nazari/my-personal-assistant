@@ -2,11 +2,12 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class BrainContextService {
-  async collectContext() {
+  async getContext() {
     await Promise.resolve();
 
     return {
-      contextReady: true,
+      timestamp: new Date().toISOString(),
+      source: 'brain-context',
     };
   }
 }

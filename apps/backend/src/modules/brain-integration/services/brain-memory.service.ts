@@ -2,11 +2,9 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class BrainMemoryService {
-  async retrieveRelevantMemory() {
+  async getMemories() {
     await Promise.resolve();
 
-    return {
-      memoryReady: true,
-    };
+    return [];
   }
 }
