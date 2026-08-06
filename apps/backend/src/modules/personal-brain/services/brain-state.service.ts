@@ -1,25 +1,29 @@
 import { Injectable } from '@nestjs/common';
 
 import { BrainContextService } from '../../brain-integration/services/brain-context.service';
-import { BrainMemoryService } from '../../brain-integration/services/brain-memory.service';
 import { BrainGoalService } from '../../brain-integration/services/brain-goal.service';
+
+import { BrainMemoryContextService } from './brain-memory-context.service';
 
 @Injectable()
 export class BrainStateService {
   constructor(
     private readonly brainContextService: BrainContextService,
-    private readonly brainMemoryService: BrainMemoryService,
+    private readonly brainMemoryContextService: BrainMemoryContextService,
     private readonly brainGoalService: BrainGoalService,
   ) {}
 
-  async buildState() {
+  async buildState(query = '') {
     const context = await this.brainContextService.getContext();
-    const memories = await this.brainMemoryService.getMemories();
+
+    const memoryContext =
+      await this.brainMemoryContextService.buildMemoryContext(query);
+
     const goals = await this.brainGoalService.getGoals();
 
     return {
       context,
-      memories,
+      memories: memoryContext.memories,
       goals,
     };
   }
