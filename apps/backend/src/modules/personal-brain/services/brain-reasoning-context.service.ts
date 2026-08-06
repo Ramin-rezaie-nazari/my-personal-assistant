@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 
 import { BrainStateService } from './brain-state.service';
 
+import { BrainReasoningSignals } from '../types/brain-reasoning.types';
+
 type BrainReasoningContext = {
   input: string;
   state: {
@@ -9,11 +11,7 @@ type BrainReasoningContext = {
     memories: unknown[];
     goals: unknown[];
   };
-  signals: {
-    hasContext: boolean;
-    hasMemories: boolean;
-    hasGoals: boolean;
-  };
+  signals: BrainReasoningSignals;
 };
 
 @Injectable()
