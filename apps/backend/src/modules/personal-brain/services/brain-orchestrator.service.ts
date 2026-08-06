@@ -15,7 +15,7 @@ export class BrainOrchestratorService {
       await this.brainReasoningContextService.build(input);
 
     const decision = await this.brainDecisionPipelineService.run(
-      reasoningContext.state,
+      reasoningContext.signals,
     );
 
     if (!decision.allowed) {
