@@ -9,7 +9,11 @@ type BrainReasoningContext = {
     memories: unknown[];
     goals: unknown[];
   };
-  confidence: number;
+  signals: {
+    hasContext: boolean;
+    hasMemories: boolean;
+    hasGoals: boolean;
+  };
 };
 
 @Injectable()
@@ -19,17 +23,14 @@ export class BrainReasoningContextService {
   async build(input: string): Promise<BrainReasoningContext> {
     const state = await this.brainStateService.buildState(input);
 
-    const hasContext = Boolean(state.context);
-    const hasMemories = state.memories.length > 0;
-    const hasGoals = state.goals.length > 0;
-
-    const confidence =
-      [hasContext, hasMemories, hasGoals].filter(Boolean).length / 3;
-
     return {
       input,
       state,
-      confidence,
+      signals: {
+        hasContext: Boolean(state.context),
+        hasMemories: state.memories.length > 0,
+        hasGoals: state.goals.length > 0,
+      },
     };
   }
 }
