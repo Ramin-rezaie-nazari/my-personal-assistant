@@ -18,20 +18,18 @@ export class BrainOrchestratorService {
 
     if (!decision.allowed) {
       return {
-        reasoningContext,
-        decision,
         input,
         reasoning: reasoningContext.reasoning,
+        decision,
         message: 'Brain needs more information',
         requiredInformation: decision.blockers,
       };
     }
 
     return {
-      reasoningContext,
-      decision,
       input,
       reasoning: reasoningContext.reasoning,
+      decision,
       message: 'Brain request processed',
     };
   }
