@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import { BrainDecisionService } from './brain-decision.service';
 import { BrainReasoningContext } from '../types/brain-reasoning-context.types';
+
+import { BrainDecisionService } from './brain-decision.service';
 
 type BrainDecisionPipelineResult = {
   allowed: boolean;
