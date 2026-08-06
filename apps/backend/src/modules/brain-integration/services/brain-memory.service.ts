@@ -1,10 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
+import { MemoryIntelligenceService } from '../../memory-intelligence/services/memory-intelligence.service';
+
 @Injectable()
 export class BrainMemoryService {
-  async getMemories() {
-    await Promise.resolve();
+  constructor(
+    private readonly memoryIntelligenceService: MemoryIntelligenceService,
+  ) {}
 
-    return [];
+  async getMemories() {
+    return this.memoryIntelligenceService.getMemories();
   }
 }
