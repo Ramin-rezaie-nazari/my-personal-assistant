@@ -1,11 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { MemoryRepository } from '../repositories/memory.repository';
 import { Memory } from '../models/memory.model';
+import {
+  MEMORY_REPOSITORY,
+  MemoryRepository,
+} from '../repositories/memory.repository';
 
 @Injectable()
 export class MemoryIntelligenceService {
-  constructor(private readonly memoryRepository: MemoryRepository) {}
+  constructor(
+    @Inject(MEMORY_REPOSITORY)
+    private readonly memoryRepository: MemoryRepository,
+  ) {}
 
   async remember(memory: Memory): Promise<void> {
     await this.memoryRepository.save(memory);
