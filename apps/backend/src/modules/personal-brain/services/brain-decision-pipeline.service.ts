@@ -14,18 +14,15 @@ type BrainDecisionPipelineResult = {
 export class BrainDecisionPipelineService {
   constructor(private readonly brainDecisionService: BrainDecisionService) {}
 
-  run(reasoningContext: BrainReasoningContext): BrainDecisionPipelineResult {
+  run(context: BrainReasoningContext): BrainDecisionPipelineResult {
     const decision = this.brainDecisionService.evaluateDecision(
-      reasoningContext.signals,
+      context.signals,
     );
 
     return {
       allowed: decision.canDecide,
-      confidence: reasoningContext.reasoning.confidence,
-      blockers: [
-        ...decision.blockers,
-        ...reasoningContext.reasoning.uncertainties,
-      ],
+      confidence: context.reasoning.confidence,
+      blockers: [...decision.blockers, ...context.reasoning.uncertainties],
       message: decision.canDecide
         ? 'brain is ready for decision'
         : 'brain needs more information',
