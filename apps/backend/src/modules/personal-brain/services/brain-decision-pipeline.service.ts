@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { BrainStateService } from './brain-state.service';
 import { BrainDecisionService } from './brain-decision.service';
 
 type BrainDecisionPipelineResult = {
@@ -11,10 +12,15 @@ type BrainDecisionPipelineResult = {
 
 @Injectable()
 export class BrainDecisionPipelineService {
-  constructor(private readonly brainDecisionService: BrainDecisionService) {}
+  constructor(
+    private readonly brainStateService: BrainStateService,
+    private readonly brainDecisionService: BrainDecisionService,
+  ) {}
 
   async run(): Promise<BrainDecisionPipelineResult> {
-    const decision = await this.brainDecisionService.evaluateDecision();
+    const state = await this.brainStateService.buildState();
+
+    const decision = this.brainDecisionService.evaluateDecision(state);
 
     return {
       allowed: decision.canDecide,

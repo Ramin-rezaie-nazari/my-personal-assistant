@@ -1,33 +1,31 @@
 import { Injectable } from '@nestjs/common';
 
-import { BrainStateAnalyzerService } from './brain-state-analyzer.service';
-
 type DecisionReadiness = {
   ready: boolean;
   score: number;
   reasons: string[];
 };
 
+type BrainState = {
+  context: unknown;
+  memories: unknown[];
+  goals: unknown[];
+};
+
 @Injectable()
 export class DecisionReadinessService {
-  constructor(
-    private readonly brainStateAnalyzerService: BrainStateAnalyzerService,
-  ) {}
-
-  async evaluate(): Promise<DecisionReadiness> {
-    const analysis = await this.brainStateAnalyzerService.analyze();
-
+  evaluate(state: BrainState): DecisionReadiness {
     const reasons: string[] = [];
 
-    if (!analysis.readiness.hasContext) {
+    if (!state.context) {
       reasons.push('missing-context');
     }
 
-    if (!analysis.readiness.hasMemories) {
+    if (!Array.isArray(state.memories) || state.memories.length === 0) {
       reasons.push('missing-memory');
     }
 
-    if (!analysis.readiness.hasGoals) {
+    if (!Array.isArray(state.goals) || state.goals.length === 0) {
       reasons.push('missing-goals');
     }
 
