@@ -6,26 +6,26 @@ type DecisionReadiness = {
   reasons: string[];
 };
 
-type BrainState = {
-  context: unknown;
-  memories: unknown[];
-  goals: unknown[];
+type BrainReasoningSignals = {
+  hasContext: boolean;
+  hasMemories: boolean;
+  hasGoals: boolean;
 };
 
 @Injectable()
 export class DecisionReadinessService {
-  evaluate(state: BrainState): DecisionReadiness {
+  evaluate(signals: BrainReasoningSignals): DecisionReadiness {
     const reasons: string[] = [];
 
-    if (!state.context) {
+    if (!signals.hasContext) {
       reasons.push('missing-context');
     }
 
-    if (!Array.isArray(state.memories) || state.memories.length === 0) {
+    if (!signals.hasMemories) {
       reasons.push('missing-memory');
     }
 
-    if (!Array.isArray(state.goals) || state.goals.length === 0) {
+    if (!signals.hasGoals) {
       reasons.push('missing-goals');
     }
 
