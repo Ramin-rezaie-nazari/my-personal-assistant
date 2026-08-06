@@ -9,20 +9,22 @@ type BrainDecisionPipelineResult = {
   message: string;
 };
 
-type BrainDecisionState = {
-  context: unknown;
-  memories: unknown[];
-  goals: unknown[];
+type BrainReasoningSignals = {
+  hasContext: boolean;
+  hasMemories: boolean;
+  hasGoals: boolean;
 };
 
 @Injectable()
 export class BrainDecisionPipelineService {
   constructor(private readonly brainDecisionService: BrainDecisionService) {}
 
-  async run(state: BrainDecisionState): Promise<BrainDecisionPipelineResult> {
+  async run(
+    signals: BrainReasoningSignals,
+  ): Promise<BrainDecisionPipelineResult> {
     await Promise.resolve();
 
-    const decision = this.brainDecisionService.evaluateDecision(state);
+    const decision = this.brainDecisionService.evaluateDecision(signals);
 
     return {
       allowed: decision.canDecide,
