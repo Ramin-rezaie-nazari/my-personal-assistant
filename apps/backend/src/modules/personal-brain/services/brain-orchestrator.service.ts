@@ -18,9 +18,18 @@ export class BrainOrchestratorService {
     const decision = this.brainDecisionPipelineService.run(reasoningContext);
 
     return {
-      input,
-      reasoningContext,
-      decision,
+      message:
+        decision.recommendation ?? 'I need more information to help you better',
+
+      intent: decision.intent ?? 'general',
+
+      confidence: decision.confidence,
+
+      nextAction: decision.nextAction,
+
+      metadata: {
+        blockers: decision.blockers,
+      },
     };
   }
 }
