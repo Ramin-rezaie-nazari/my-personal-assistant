@@ -23,13 +23,13 @@ export class BrainReasoningContextService {
 
     const reasoning = this.brainReasoningEngineService.analyze({
       input,
-      userContext: state.userContext!,
+      userContext: state.userContext,
       signals,
     });
 
     return {
       input,
-      userContext: state.userContext!,
+      userContext: state.userContext,
       state,
       signals,
       reasoning,
