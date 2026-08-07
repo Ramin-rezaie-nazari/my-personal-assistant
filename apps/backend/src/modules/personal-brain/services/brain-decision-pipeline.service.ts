@@ -1,14 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import {
-  BrainDecisionResult,
-  BrainDecisionService,
-} from './brain-decision.service';
-import { BrainDecisionResult, BrainReasoningContext } from '../types';
-
-type BrainDecisionPipelineResult = BrainDecisionResult & {
-  message: string;
-};
+import { BrainDecisionService } from './brain-decision.service';
+import { BrainDecisionPipelineResult, BrainReasoningContext } from '../types';
 
 @Injectable()
 export class BrainDecisionPipelineService {
