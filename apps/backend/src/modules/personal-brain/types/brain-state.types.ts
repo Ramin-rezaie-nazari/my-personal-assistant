@@ -1,4 +1,5 @@
 import { BrainGoal } from '../../brain-integration/types';
+import { BrainMemory } from './brain-memory.types';
 import { BrainUserContext } from './brain-user-context.types';
 
 export type BrainState = {
@@ -6,7 +7,7 @@ export type BrainState = {
 
   context: unknown;
 
-  memories: unknown[];
+  memories: BrainMemory[];
 
   goals: BrainGoal[];
 };

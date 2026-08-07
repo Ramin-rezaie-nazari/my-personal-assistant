@@ -2,12 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { RelevantMemoryContextService } from './relevant-memory-context.service';
 
-interface BrainMemoryContext {
-  memories: Array<{
-    content: string;
-    score: number;
-  }>;
-}
+import { BrainMemoryContext } from '../types';
 
 @Injectable()
 export class BrainMemoryContextService {
