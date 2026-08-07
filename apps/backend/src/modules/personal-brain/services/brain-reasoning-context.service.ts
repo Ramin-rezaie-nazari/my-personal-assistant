@@ -28,6 +28,7 @@ export class BrainReasoningContextService {
 
     return {
       input,
+      userContext: state.userContext!,
       state,
       signals,
       reasoning,
