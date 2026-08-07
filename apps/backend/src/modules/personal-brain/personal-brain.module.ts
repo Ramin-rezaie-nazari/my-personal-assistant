@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConversationEngineModule } from '../conversation-engine/conversation-engine.module';
 
 import { BrainIntegrationModule } from '../brain-integration/brain-integration.module';
 import { ContextEngineModule } from '../context-engine/context-engine.module';
@@ -21,6 +22,7 @@ import { UserUnderstandingService } from './services/user-understanding.service'
 
 @Module({
   imports: [
+    ConversationEngineModule,
     BrainIntegrationModule,
     ContextEngineModule,
     MemoryIntelligenceModule,
