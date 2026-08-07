@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { BrainDecisionPipelineService } from './brain-decision-pipeline.service';
 import { BrainReasoningContextService } from './brain-reasoning-context.service';
+import { BrainResponse } from '../types/brain-response.types';
 
 @Injectable()
 export class BrainOrchestratorService {
@@ -10,7 +11,7 @@ export class BrainOrchestratorService {
     private readonly brainDecisionPipelineService: BrainDecisionPipelineService,
   ) {}
 
-  async processRequest(input: string) {
+  async processRequest(input: string): Promise<BrainResponse> {
     const reasoningContext =
       await this.brainReasoningContextService.build(input);
 
