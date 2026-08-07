@@ -28,6 +28,7 @@ export class BrainStateService {
     const userContext = this.userContextService.build({
       context,
       goals,
+      memories: memoryContext.memories,
     });
 
     return {

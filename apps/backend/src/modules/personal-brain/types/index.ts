@@ -26,3 +26,5 @@ export type {
   ResponseTone,
   ResponseLanguage,
 } from './response-plan.types';
+
+export type { BrainUserContextRaw } from './brain-user-context-raw.types';

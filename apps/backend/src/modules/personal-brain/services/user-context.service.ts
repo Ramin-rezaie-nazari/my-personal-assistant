@@ -4,13 +4,20 @@ import { BrainUserContext } from '../types';
 
 @Injectable()
 export class UserContextService {
-  build(input: { context: unknown; goals: unknown[] }): BrainUserContext {
+  build(input: {
+    context: unknown;
+    goals: BrainUserContext['goals'];
+    memories: unknown[];
+  }): BrainUserContext {
     return {
       profile: {},
       lifeAreas: [],
       preferences: {},
       constraints: [],
-      rawContext: input.context,
+      rawContext: {
+        context: input.context,
+        memories: input.memories,
+      },
       goals: input.goals,
     };
   }
