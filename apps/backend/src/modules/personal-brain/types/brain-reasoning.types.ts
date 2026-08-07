@@ -10,7 +10,10 @@ export type BrainReasoningResult = {
   reasoningSummary: string;
 };
 
+import { BrainUserContext } from './brain-user-context.types';
+
 export type BrainReasoningInput = {
   input: string;
+  userContext: BrainUserContext;
   signals: BrainReasoningSignals;
 };
