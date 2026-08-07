@@ -3,6 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { MemoryIntelligenceService } from '../../memory-intelligence/services/memory-intelligence.service';
 import { MemoryLifecycleService } from '../../memory-intelligence/services/memory-lifecycle.service';
 
+import { BrainMemory } from '../types';
+
 @Injectable()
 export class BrainMemoryService {
   constructor(
@@ -10,7 +12,7 @@ export class BrainMemoryService {
     private readonly memoryLifecycleService: MemoryLifecycleService,
   ) {}
 
-  async getMemories() {
+  async getMemories(): Promise<BrainMemory[]> {
     const memories = await this.memoryIntelligenceService.getMemories();
 
     return memories.map((memory) =>
