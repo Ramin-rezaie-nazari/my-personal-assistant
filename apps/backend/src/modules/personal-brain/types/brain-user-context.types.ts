@@ -1,3 +1,5 @@
+import { BrainGoal } from '../../brain-integration/types';
+
 export type BrainUserContext = {
   userId?: string;
 
@@ -15,5 +17,5 @@ export type BrainUserContext = {
 
   rawContext?: unknown;
 
-  goals: unknown[];
+  goals: BrainGoal[];
 };
