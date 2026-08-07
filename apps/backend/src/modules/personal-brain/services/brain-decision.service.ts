@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { BrainReasoningContext } from '../types/brain-reasoning-context.types';
 
-type BrainDecisionResult = {
+export type BrainDecisionResult = {
   canDecide: boolean;
   confidence: number;
   blockers: string[];
