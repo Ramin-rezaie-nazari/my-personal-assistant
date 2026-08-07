@@ -1,20 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-type DecisionReadiness = {
-  ready: boolean;
-  score: number;
-  reasons: string[];
-};
-
-type BrainReasoningSignals = {
-  hasContext: boolean;
-  hasMemories: boolean;
-  hasGoals: boolean;
-};
+import { DecisionReadiness, DecisionReadinessSignals } from '../types';
 
 @Injectable()
 export class DecisionReadinessService {
-  evaluate(signals: BrainReasoningSignals): DecisionReadiness {
+  evaluate(signals: DecisionReadinessSignals): DecisionReadiness {
     const reasons: string[] = [];
 
     if (!signals.hasContext) {

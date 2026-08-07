@@ -1,14 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import {
-  BrainReasoningResult,
-  BrainReasoningSignals,
-} from '../types/brain-reasoning.types';
-
-type BrainReasoningInput = {
-  input: string;
-  signals: BrainReasoningSignals;
-};
+import { BrainReasoningInput, BrainReasoningResult } from '../types';
 
 @Injectable()
 export class BrainReasoningEngineService {
