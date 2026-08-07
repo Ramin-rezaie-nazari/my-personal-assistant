@@ -1,12 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { BrainReasoningContext } from '../types/brain-reasoning-context.types';
-
-export type BrainDecisionResult = {
-  canDecide: boolean;
-  confidence: number;
-  blockers: string[];
-};
+import { BrainDecisionResult, BrainReasoningContext } from '../types';
 
 @Injectable()
 export class BrainDecisionService {

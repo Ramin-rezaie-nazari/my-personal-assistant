@@ -1,6 +1,5 @@
 export type BrainDecisionResult = {
-  allowed: boolean;
+  canDecide: boolean;
   confidence: number;
   blockers: string[];
-  message: string;
 };

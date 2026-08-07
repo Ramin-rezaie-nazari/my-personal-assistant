@@ -1,4 +1,4 @@
-import { BrainDecisionResult } from '../services/brain-decision.service';
+import { BrainDecisionResult } from './brain-decision.types';
 import { BrainReasoningContext } from './brain-reasoning-context.types';
 
 export type BrainResponse = {

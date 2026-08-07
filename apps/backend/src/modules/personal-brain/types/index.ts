@@ -1,3 +1,7 @@
-export * from './brain-reasoning.types';
-export * from './brain-reasoning-context.types';
-export * from './brain-response.types';
+export type { BrainDecisionResult } from './brain-decision.types';
+export type {
+  BrainReasoningResult,
+  BrainReasoningSignals,
+} from './brain-reasoning.types';
+export type { BrainReasoningContext } from './brain-reasoning-context.types';
+export type { BrainResponse } from './brain-response.types';
