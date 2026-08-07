@@ -21,11 +21,14 @@ export class BrainReasoningEngineService {
 
     const confidence = 1 - uncertainties.length / 3;
 
+    const hasUserGoals = reasoningContext.userContext.goals.length > 0;
+
     return {
       confidence,
       uncertainties,
-      reasoningSummary:
-        uncertainties.length === 0
+      reasoningSummary: hasUserGoals
+        ? 'Brain understands user has active goals'
+        : uncertainties.length === 0
           ? 'Brain has enough reasoning signals'
           : 'Brain requires additional information',
     };
