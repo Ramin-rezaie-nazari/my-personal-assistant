@@ -4,12 +4,7 @@ import { MemoryClassificationService } from './memory-classification.service';
 import { MemoryScoringService } from './memory-scoring.service';
 import { MemoryConsolidationService } from './memory-consolidation.service';
 
-type MemoryLifecycleResult = {
-  input: Record<string, unknown>;
-  classification: Record<string, unknown>;
-  score: Record<string, unknown>;
-  consolidated: Record<string, unknown>;
-};
+import { MemoryLifecycleResult } from '../types/memory-lifecycle.types';
 
 @Injectable()
 export class MemoryLifecycleService {
