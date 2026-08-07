@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { BrainStateService } from './brain-state.service';
 import { BrainReasoningEngineService } from './brain-reasoning-engine.service';
 
-import { BrainReasoningContext } from '../types/brain-reasoning-context.types';
+import { BrainReasoningContext } from '../types';
 
 @Injectable()
 export class BrainReasoningContextService {

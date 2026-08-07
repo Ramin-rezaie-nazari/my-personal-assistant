@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { BrainDecisionPipelineService } from './brain-decision-pipeline.service';
 import { BrainReasoningContextService } from './brain-reasoning-context.service';
-import { BrainResponse } from '../types/brain-response.types';
+import { BrainResponse } from '../types';
 
 @Injectable()
 export class BrainOrchestratorService {
