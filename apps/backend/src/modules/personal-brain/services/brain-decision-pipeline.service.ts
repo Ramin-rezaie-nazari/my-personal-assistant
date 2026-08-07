@@ -4,7 +4,7 @@ import {
   BrainDecisionResult,
   BrainDecisionService,
 } from './brain-decision.service';
-import { BrainReasoningContext } from '../types/brain-reasoning-context.types';
+import { BrainReasoningContext } from '../types';
 
 type BrainDecisionPipelineResult = BrainDecisionResult & {
   message: string;
