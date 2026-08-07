@@ -20,3 +20,9 @@ export type { BrainUserContext } from './brain-user-context.types';
 export type { BrainState } from './brain-state.types';
 
 export type { BrainMemory, BrainMemoryContext } from './brain-memory.types';
+
+export type {
+  ResponsePlan,
+  ResponseTone,
+  ResponseLanguage,
+} from './response-plan.types';
