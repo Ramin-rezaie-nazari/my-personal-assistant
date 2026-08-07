@@ -1,10 +1,11 @@
-import { BrainDecisionResult } from './brain-decision.types';
-import { BrainReasoningContext } from './brain-reasoning-context.types';
-
 export type BrainResponse = {
-  input: string;
-  reasoningContext: BrainReasoningContext;
-  decision: BrainDecisionResult & {
-    message: string;
-  };
+  message: string;
+
+  intent: string;
+
+  confidence: number;
+
+  nextAction?: string;
+
+  metadata?: Record<string, unknown>;
 };
