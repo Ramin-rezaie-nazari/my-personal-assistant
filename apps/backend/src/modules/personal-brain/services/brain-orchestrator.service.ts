@@ -20,7 +20,7 @@ export class BrainOrchestratorService {
 
     const decision = this.brainDecisionPipelineService.run(reasoningContext);
 
-    const responsePlan = this.responsePlanningService.createPlan();
+    const responsePlan = this.responsePlanningService.createPlan(decision);
 
     return {
       message:
