@@ -28,3 +28,5 @@ export type {
 } from './response-plan.types';
 
 export type { BrainUserContextRaw } from './brain-user-context-raw.types';
+
+export type { ResponsePlanningInput } from './response-planning-input.types';

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { ConversationStyleService } from '../../conversation-engine/services/conversation-style.service';
 
-import { BrainDecisionResult, ResponsePlan } from '../types';
+import { ResponsePlan, ResponsePlanningInput } from '../types';
 
 @Injectable()
 export class ResponsePlanningService {
@@ -10,28 +10,26 @@ export class ResponsePlanningService {
     private readonly conversationStyleService: ConversationStyleService,
   ) {}
 
-  createPlan(decision: BrainDecisionResult): ResponsePlan {
+  createPlan(input: ResponsePlanningInput): ResponsePlan {
     const style = this.conversationStyleService.getDefaultStyle();
+
+    const message = input.decision.canDecide
+      ? (input.decision.recommendation ??
+        'I can provide goal-specific guidance')
+      : (input.decision.nextAction ??
+        'I need more information to help you better');
 
     return {
       tone: style.tone,
-
       language: style.language,
-
-      message:
-        decision.recommendation ?? 'I need more information to help you better',
-
-      intent: decision.intent ?? 'general',
-
-      confidence: decision.confidence,
-
-      nextAction: decision.nextAction,
-
-      decision,
-
+      message,
       metadata: {
         formality: style.formality,
         source: 'personal-brain',
+        canDecide: input.decision.canDecide,
+        confidence: input.decision.confidence,
+        blockers: input.decision.blockers,
+        intent: input.decision.intent ?? 'general',
       },
     };
   }
