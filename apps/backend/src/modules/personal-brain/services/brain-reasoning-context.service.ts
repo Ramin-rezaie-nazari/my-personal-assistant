@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { BrainStateService } from './brain-state.service';
 import { BrainReasoningEngineService } from './brain-reasoning-engine.service';
 
-import { BrainReasoningContext } from '../types';
+import { BrainReasoningContext, BrainReasoningSignals } from '../types';
 
 @Injectable()
 export class BrainReasoningContextService {
@@ -15,10 +15,13 @@ export class BrainReasoningContextService {
   async build(input: string): Promise<BrainReasoningContext> {
     const state = await this.brainStateService.buildState(input);
 
-    const signals = {
+    const signals: BrainReasoningSignals = {
       hasContext: Boolean(state.context),
       hasMemories: state.memories.length > 0,
       hasGoals: state.goals.length > 0,
+      memoryCount: state.memories.length,
+      goalCount: state.goals.length,
+      contextSource: state.context.source,
     };
 
     const reasoning = this.brainReasoningEngineService.analyze({
