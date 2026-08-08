@@ -1,29 +1,32 @@
 import { Injectable } from '@nestjs/common';
 
-import { MemoryRepository } from '../repositories/memory.repository';
-
-interface MemoryItem {
-  id: string;
-  key: string;
-  content: string;
-}
+import { Memory } from '../models/memory.model';
+import type { MemoryRepository } from '../repositories/memory.repository';
 
 @Injectable()
 export class MemoryRetrievalService {
   constructor(private readonly memoryRepository: MemoryRepository) {}
 
-  async search(query: string): Promise<MemoryItem[]> {
-    const memories: MemoryItem[] = await this.memoryRepository.getAll();
+  async search(query: string): Promise<Memory[]> {
+    const memories = await this.memoryRepository.getAll();
+    const normalizedQuery = query.toLowerCase();
 
-    return memories.filter((memory) =>
-      memory.content.toLowerCase().includes(query.toLowerCase()),
-    );
+    return memories.filter((memory) => {
+      const searchableValue =
+        typeof memory.value === 'string'
+          ? memory.value
+          : (JSON.stringify(memory.value) ?? '');
+
+      return (
+        memory.key.toLowerCase().includes(normalizedQuery) ||
+        searchableValue.toLowerCase().includes(normalizedQuery)
+      );
+    });
   }
 
-  async retrieveByKey(key: string): Promise<MemoryItem | undefined> {
-    const memory: MemoryItem | undefined =
-      await this.memoryRepository.findByKey(key);
+  async retrieveByKey(key: string): Promise<Memory | undefined> {
+    const memory = await this.memoryRepository.findByKey(key);
 
-    return memory;
+    return memory ?? undefined;
   }
 }

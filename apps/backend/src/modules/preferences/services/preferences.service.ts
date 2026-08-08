@@ -31,7 +31,19 @@ export class PreferencesService {
       update: data,
       create: {
         userId,
-        ...data,
+        onboardingCompleted:
+          typeof data.onboardingCompleted === 'boolean'
+            ? data.onboardingCompleted
+            : undefined,
+        notificationsEnabled:
+          typeof data.notificationsEnabled === 'boolean'
+            ? data.notificationsEnabled
+            : undefined,
+        reminderEnabled:
+          typeof data.reminderEnabled === 'boolean'
+            ? data.reminderEnabled
+            : undefined,
+        theme: typeof data.theme === 'string' ? data.theme : undefined,
       },
     });
   }

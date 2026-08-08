@@ -12,7 +12,8 @@ export function createAccessToken(
     },
     {
       secret: appConfigService.jwtAccessSecret,
-      expiresIn: appConfigService.jwtAccessExpiresIn,
+      expiresIn:
+        appConfigService.jwtAccessExpiresIn as `${number}${'s' | 'm' | 'h' | 'd' | 'w' | 'y'}`,
     },
   );
 }
@@ -29,7 +30,8 @@ export function createRefreshToken(
     },
     {
       secret: appConfigService.jwtRefreshSecret,
-      expiresIn: appConfigService.jwtRefreshExpiresIn,
+      expiresIn:
+        appConfigService.jwtRefreshExpiresIn as `${number}${'s' | 'm' | 'h' | 'd' | 'w' | 'y'}`,
     },
   );
 }

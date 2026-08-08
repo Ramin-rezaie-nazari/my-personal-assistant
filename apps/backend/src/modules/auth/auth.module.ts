@@ -20,7 +20,8 @@ import { SessionService } from './services/session.service';
       useFactory: (appConfigService: AppConfigService) => ({
         secret: appConfigService.jwtAccessSecret,
         signOptions: {
-          expiresIn: appConfigService.jwtAccessExpiresIn,
+          expiresIn:
+            appConfigService.jwtAccessExpiresIn as `${number}${'s' | 'm' | 'h' | 'd' | 'w' | 'y'}`,
         },
       }),
     }),

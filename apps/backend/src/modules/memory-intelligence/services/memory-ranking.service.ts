@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-interface MemoryScoreInput {
-  content: string;
-  importance?: number;
-}
+import { Memory } from '../models/memory.model';
 
 interface RankedMemory {
   content: string;
@@ -12,20 +9,32 @@ interface RankedMemory {
 
 @Injectable()
 export class MemoryRankingService {
-  rank(memories: MemoryScoreInput[]): RankedMemory[] {
+  rank(memories: Memory[]): RankedMemory[] {
     return memories
-      .map((memory) => ({
-        content: memory.content,
-        score: this.calculateScore(memory),
-      }))
+      .map((memory) => {
+        const content = this.toSearchableContent(memory);
+
+        return {
+          content,
+          score: this.calculateScore(memory, content),
+        };
+      })
       .sort((a, b) => b.score - a.score);
   }
 
-  private calculateScore(memory: MemoryScoreInput): number {
-    const baseImportance = memory.importance ?? 0.5;
+  private calculateScore(memory: Memory, content: string): number {
+    const baseImportance = memory.importance;
 
-    const lengthBonus = Math.min(memory.content.length / 100, 1) * 0.2;
+    const lengthBonus = Math.min(content.length / 100, 1) * 0.2;
 
     return Number((baseImportance + lengthBonus).toFixed(2));
+  }
+
+  private toSearchableContent(memory: Memory): string {
+    if (typeof memory.value === 'string') {
+      return memory.value;
+    }
+
+    return JSON.stringify(memory.value) ?? '';
   }
 }

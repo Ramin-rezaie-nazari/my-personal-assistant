@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
+import { Memory } from '../models/memory.model';
+
 @Injectable()
 export class MemoryScoringService {
-  score(input: Record<string, unknown>): Record<string, unknown> {
+  score(input: Memory): Record<string, unknown> {
     return {
-      importance: 0,
+      importance: input.importance,
       input,
     };
   }

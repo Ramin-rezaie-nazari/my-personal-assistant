@@ -23,13 +23,15 @@ export class ResponsePlanningService {
       tone: style.tone,
       language: style.language,
       message,
+      intent: input.decision.intent ?? 'general',
+      confidence: input.decision.confidence,
+      nextAction: input.decision.nextAction,
+      decision: input.decision,
       metadata: {
         formality: style.formality,
         source: 'personal-brain',
         canDecide: input.decision.canDecide,
-        confidence: input.decision.confidence,
         blockers: input.decision.blockers,
-        intent: input.decision.intent ?? 'general',
       },
     };
   }

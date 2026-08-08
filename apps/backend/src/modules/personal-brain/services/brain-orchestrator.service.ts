@@ -27,9 +27,10 @@ export class BrainOrchestratorService {
 
     return {
       message: responsePlan.message,
-      intent: decision.intent ?? 'general',
-      confidence: decision.confidence,
-      nextAction: decision.nextAction,
+      intent: responsePlan.intent,
+      confidence: responsePlan.confidence,
+      nextAction: responsePlan.nextAction,
+      responsePlan,
       metadata: {
         ...responsePlan.metadata,
       },

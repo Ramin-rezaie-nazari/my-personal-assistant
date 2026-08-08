@@ -1,5 +1,7 @@
+import { Memory } from '../models/memory.model';
+
 export type MemoryLifecycleResult = {
-  input: Record<string, unknown>;
+  input: Memory;
   classification: Record<string, unknown>;
   score: Record<string, unknown>;
   consolidated: Record<string, unknown>;

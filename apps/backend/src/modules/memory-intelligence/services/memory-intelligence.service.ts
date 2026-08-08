@@ -1,10 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 
 import { Memory } from '../models/memory.model';
-import {
-  MEMORY_REPOSITORY,
-  MemoryRepository,
-} from '../repositories/memory.repository';
+import { MEMORY_REPOSITORY } from '../repositories/memory.repository';
+import type { MemoryRepository } from '../repositories/memory.repository';
 
 @Injectable()
 export class MemoryIntelligenceService {

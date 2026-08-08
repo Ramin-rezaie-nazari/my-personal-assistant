@@ -1,13 +1,16 @@
 import { Injectable } from '@nestjs/common';
 
+import { BrainMemory } from '../types/brain-memory.types';
 import { BrainUserContext } from '../types';
+
+import { BrainContext } from '../../brain-integration/types';
 
 @Injectable()
 export class UserContextService {
   build(input: {
-    context: unknown;
+    context: BrainContext;
     goals: BrainUserContext['goals'];
-    memories: unknown[];
+    memories: BrainMemory[];
   }): BrainUserContext {
     return {
       profile: {},

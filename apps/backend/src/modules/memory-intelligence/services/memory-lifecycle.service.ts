@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 import { MemoryClassificationService } from './memory-classification.service';
-import { MemoryScoringService } from './memory-scoring.service';
 import { MemoryConsolidationService } from './memory-consolidation.service';
+import { MemoryScoringService } from './memory-scoring.service';
 
+import { Memory } from '../models/memory.model';
 import { MemoryLifecycleResult } from '../types/memory-lifecycle.types';
 
 @Injectable()
@@ -14,7 +15,7 @@ export class MemoryLifecycleService {
     private readonly consolidationService: MemoryConsolidationService,
   ) {}
 
-  processMemory(input: Record<string, unknown>): MemoryLifecycleResult {
+  processMemory(input: Memory): MemoryLifecycleResult {
     const classification = this.classificationService.classify(input);
 
     const score = this.scoringService.score(input);
