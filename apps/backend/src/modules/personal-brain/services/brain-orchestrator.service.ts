@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { BrainDecisionPipelineService } from './brain-decision-pipeline.service';
 import { BrainReasoningContextService } from './brain-reasoning-context.service';
 import { ResponsePlanningService } from './response-planning.service';
+
 import { BrainResponse } from '../types';
 
 @Injectable()
@@ -19,6 +20,8 @@ export class BrainOrchestratorService {
 
     const decision = this.brainDecisionPipelineService.run(reasoningContext);
 
+    const responsePlan = this.responsePlanningService.createPlan();
+
     return {
       message:
         decision.recommendation ?? 'I need more information to help you better',
@@ -28,6 +31,8 @@ export class BrainOrchestratorService {
       confidence: decision.confidence,
 
       nextAction: decision.nextAction,
+
+      responsePlan,
 
       metadata: {
         blockers: decision.blockers,

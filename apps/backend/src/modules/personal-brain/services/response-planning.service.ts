@@ -1,24 +1,29 @@
 import { Injectable } from '@nestjs/common';
 
-import { ConversationStyleService } from '../../conversation-engine/services/conversation-style.service';
+import { BrainDecisionResult, ResponsePlan } from '../types';
 
-import { ResponsePlan } from '../types';
+import { ConversationStyleService } from '../../conversation-engine/services/conversation-style.service';
 
 @Injectable()
 export class ResponsePlanningService {
   constructor(
     private readonly conversationStyleService: ConversationStyleService,
   ) {}
-  createPlan(): ResponsePlan {
+
+  createPlan(decision: BrainDecisionResult): ResponsePlan {
     const style = this.conversationStyleService.getDefaultStyle();
 
     return {
       tone: style.tone,
       language: style.language,
-      message: 'Response plan created',
+      message:
+        decision.recommendation ?? 'I need more information to help you better',
+      intent: decision.intent ?? 'general',
+      nextAction: decision.nextAction,
       metadata: {
         formality: style.formality,
         source: 'personal-brain',
+        blockers: decision.blockers,
       },
     };
   }

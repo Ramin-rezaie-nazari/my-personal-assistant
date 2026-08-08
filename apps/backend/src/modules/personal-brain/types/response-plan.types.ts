@@ -9,5 +9,9 @@ export type ResponsePlan = {
 
   message: string;
 
+  intent: string;
+
+  nextAction?: string;
+
   metadata?: Record<string, unknown>;
 };
