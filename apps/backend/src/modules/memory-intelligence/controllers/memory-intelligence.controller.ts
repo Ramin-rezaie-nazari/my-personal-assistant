@@ -9,8 +9,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { MemoryIntelligenceService } from '../services/memory-intelligence.service';
+import { randomUUID } from 'node:crypto';
 import { MemoryType } from '../models/memory.model';
+import { MemoryIntelligenceService } from '../services/memory-intelligence.service';
 
 interface AuthenticatedRequest {
   user: {
@@ -39,7 +40,7 @@ export class MemoryIntelligenceController {
   ) {
     const now = new Date();
     const memory = {
-      id: crypto.randomUUID(),
+      id: randomUUID(),
       userId: req.user.id,
       type: body.type,
       key: body.key,
