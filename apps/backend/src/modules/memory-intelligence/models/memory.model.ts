@@ -12,6 +12,7 @@ export enum MemoryType {
 
 export interface Memory {
   id: string;
+  userId?: string;
   type: MemoryType;
   key: string;
   value: unknown;
