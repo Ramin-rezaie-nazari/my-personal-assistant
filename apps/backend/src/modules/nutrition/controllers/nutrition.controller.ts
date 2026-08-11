@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -16,8 +17,11 @@ export class NutritionController {
   constructor(private readonly nutritionService: NutritionService) {}
 
   @Get()
-  get(@Request() req: { user: { id: string } }) {
-    return this.nutritionService.getLogs(req.user.id);
+  get(
+    @Request() req: { user: { id: string } },
+    @Query('dateKey') dateKey?: string,
+  ) {
+    return this.nutritionService.getLogs(req.user.id, dateKey);
   }
 
   @Post()
