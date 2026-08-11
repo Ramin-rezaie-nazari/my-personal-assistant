@@ -65,8 +65,20 @@ export async function setAccessToken(token: string) {
   await AsyncStorage.setItem(ACCESS_TOKEN_KEY, token);
 }
 
+export async function getStoredAccessToken() {
+  return AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
 export async function getStoredRefreshToken() {
   return AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+export async function hasAuthSession() {
+  const [accessToken, refreshToken] = await AsyncStorage.multiGet([
+    ACCESS_TOKEN_KEY,
+    REFRESH_TOKEN_KEY,
+  ]);
+  return Boolean(accessToken[1] || refreshToken[1]);
 }
 
 export async function clearAuthSession() {
@@ -104,7 +116,7 @@ async function refreshAccessToken() {
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  let token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+  let token = await getStoredAccessToken();
   let response = await rawRequest<T>(path, init, token ?? undefined);
 
   if (response.status === 401 && token) {
