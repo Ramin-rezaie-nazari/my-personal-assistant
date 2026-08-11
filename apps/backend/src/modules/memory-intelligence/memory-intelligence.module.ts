@@ -35,7 +35,7 @@ import {
     PrismaMemoryRepository,
     {
       provide: MEMORY_REPOSITORY,
-      useExisting: InMemoryMemoryRepository,
+      useExisting: PrismaMemoryRepository,
     },
     {
       provide: PERSISTENT_MEMORY_REPOSITORY,
