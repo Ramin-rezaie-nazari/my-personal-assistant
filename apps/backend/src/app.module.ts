@@ -30,6 +30,7 @@ import { DecisionEngineModule } from './modules/decision-engine/decision-engine.
 import { AdaptiveLearningModule } from './modules/adaptive-learning/adaptive-learning.module';
 import { ContextEngineModule } from './modules/context-engine/context-engine.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
+import { PersonalBrainModule } from './modules/personal-brain/personal-brain.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
     AdaptiveLearningModule,
     ContextEngineModule,
     PreferencesModule,
+    PersonalBrainModule,
   ],
   controllers: [AppController],
   providers: [AppService],
