@@ -38,4 +38,4 @@ jobs:
         run: pnpm build
 
       - name: Run backend tests
-        run: pnpm test -- --runInBand
+        run: pnpm exec jest --runInBand
