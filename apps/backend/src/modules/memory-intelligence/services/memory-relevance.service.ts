@@ -18,6 +18,6 @@ export class MemoryRelevanceService {
   async findRelevantMemories(query: string): Promise<RankedMemoryResult[]> {
     const memories = await this.memoryRetrievalService.search(query);
 
-    return this.memoryRankingService.rank(memories);
+    return this.memoryRankingService.rank(memories, query);
   }
 }
