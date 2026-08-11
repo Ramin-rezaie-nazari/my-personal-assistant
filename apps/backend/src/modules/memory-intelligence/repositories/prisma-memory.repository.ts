@@ -50,12 +50,10 @@ export class PrismaMemoryRepository implements MemoryRepository {
   }
 
   async findById(id: string, userId?: string): Promise<Memory | null> {
+    const ownerId = this.requireUserId(userId);
+
     const fact = await this.prisma.userFact.findFirst({
-      where: {
-        id,
-        source: 'brain-memory',
-        ...(userId ? { userId } : {}),
-      },
+      where: { id, userId: ownerId, source: 'brain-memory' },
     });
 
     return fact ? this.toMemory(fact) : null;
@@ -88,13 +86,11 @@ export class PrismaMemoryRepository implements MemoryRepository {
   }
 
   async delete(id: string, userId?: string): Promise<void> {
-    const where = {
-      id,
-      source: 'brain-memory',
-      ...(userId ? { userId } : {}),
-    };
+    const ownerId = this.requireUserId(userId);
 
-    await this.prisma.userFact.deleteMany({ where });
+    await this.prisma.userFact.deleteMany({
+      where: { id, userId: ownerId, source: 'brain-memory' },
+    });
   }
 
   private requireUserId(userId?: string): string {
