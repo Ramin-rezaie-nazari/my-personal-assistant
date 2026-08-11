@@ -1,13 +1,21 @@
 import { Injectable } from '@nestjs/common';
 
+import { BrainOrchestratorService } from '../../personal-brain/services/brain-orchestrator.service';
+
 @Injectable()
 export class AssistantService {
-  async getStatus() {
-    await Promise.resolve();
+  constructor(
+    private readonly brainOrchestratorService: BrainOrchestratorService,
+  ) {}
 
+  async getStatus() {
     return {
       name: 'My Personal Assistant',
       status: 'brain foundation active',
     };
+  }
+
+  async process(input: string) {
+    return this.brainOrchestratorService.processRequest(input);
   }
 }
