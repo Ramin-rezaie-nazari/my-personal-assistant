@@ -31,6 +31,7 @@ import { AdaptiveLearningModule } from './modules/adaptive-learning/adaptive-lea
 import { ContextEngineModule } from './modules/context-engine/context-engine.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 import { PersonalBrainModule } from './modules/personal-brain/personal-brain.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { PersonalBrainModule } from './modules/personal-brain/personal-brain.mod
     ContextEngineModule,
     PreferencesModule,
     PersonalBrainModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
