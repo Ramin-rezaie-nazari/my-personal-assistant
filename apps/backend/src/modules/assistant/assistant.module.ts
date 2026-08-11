@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+
+import { PersonalBrainModule } from '../personal-brain/personal-brain.module';
+
 import { AssistantController } from './controllers/assistant.controller';
 import { AssistantService } from './services/assistant.service';
 import { MemoryService } from './services/memory.service';
@@ -10,6 +13,7 @@ import { RuleEngineService } from './services/rule-engine.service';
 import { KnowledgeService } from './services/knowledge.service';
 
 @Module({
+  imports: [PersonalBrainModule],
   controllers: [AssistantController],
   providers: [
     KnowledgeService,
