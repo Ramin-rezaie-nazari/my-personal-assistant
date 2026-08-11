@@ -12,7 +12,11 @@ import { MemoryRetrievalService } from './services/memory-retrieval.service';
 import { MemoryScoringService } from './services/memory-scoring.service';
 
 import { InMemoryMemoryRepository } from './repositories/in-memory-memory.repository';
-import { MEMORY_REPOSITORY } from './repositories/memory.repository';
+import { PrismaMemoryRepository } from './repositories/prisma-memory.repository';
+import {
+  MEMORY_REPOSITORY,
+  PERSISTENT_MEMORY_REPOSITORY,
+} from './repositories/memory.repository';
 
 @Module({
   controllers: [MemoryIntelligenceController],
@@ -25,9 +29,15 @@ import { MEMORY_REPOSITORY } from './repositories/memory.repository';
     MemoryRetrievalService,
     MemoryRankingService,
     MemoryRelevanceService,
+    InMemoryMemoryRepository,
+    PrismaMemoryRepository,
     {
       provide: MEMORY_REPOSITORY,
-      useClass: InMemoryMemoryRepository,
+      useExisting: InMemoryMemoryRepository,
+    },
+    {
+      provide: PERSISTENT_MEMORY_REPOSITORY,
+      useExisting: PrismaMemoryRepository,
     },
   ],
   exports: [
@@ -39,6 +49,7 @@ import { MEMORY_REPOSITORY } from './repositories/memory.repository';
     MemoryRetrievalService,
     MemoryRankingService,
     MemoryRelevanceService,
+    PERSISTENT_MEMORY_REPOSITORY,
   ],
 })
 export class MemoryIntelligenceModule {}
