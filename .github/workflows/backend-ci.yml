@@ -39,6 +39,11 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: .
 
+      - name: Generate Prisma client
+        run: pnpm exec prisma generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/personal_assistant?schema=public
+
       - name: Build backend
         run: pnpm build
 
