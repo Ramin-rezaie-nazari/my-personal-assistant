@@ -15,19 +15,19 @@ export class MemoryIntelligenceService {
     await this.memoryRepository.save(memory);
   }
 
-  async recall(id: string): Promise<Memory | null> {
-    return this.memoryRepository.findById(id);
+  async recall(id: string, userId?: string): Promise<Memory | null> {
+    return this.memoryRepository.findById(id, userId);
   }
 
-  async recallByKey(key: string): Promise<Memory | null> {
-    return this.memoryRepository.findByKey(key);
+  async recallByKey(key: string, userId?: string): Promise<Memory | null> {
+    return this.memoryRepository.findByKey(key, userId);
   }
 
-  async getMemories(): Promise<Memory[]> {
-    return this.memoryRepository.getAll();
+  async getMemories(userId?: string): Promise<Memory[]> {
+    return this.memoryRepository.getAll(userId);
   }
 
-  async forget(id: string): Promise<void> {
-    await this.memoryRepository.delete(id);
+  async forget(id: string, userId?: string): Promise<void> {
+    await this.memoryRepository.delete(id, userId);
   }
 }
