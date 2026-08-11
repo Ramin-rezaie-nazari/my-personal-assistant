@@ -5,27 +5,44 @@ import { PrismaService } from '../../../common/database/prisma.service';
 export class FoodsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async findAll() {
+  async findAll(userId: string, query?: string) {
     return this.prisma.foodItem.findMany({
-      orderBy: {
-        name: 'asc',
+      where: {
+        AND: [
+          { OR: [{ userId: null }, { userId }] },
+          query
+            ? {
+                OR: [
+                  { name: { contains: query, mode: 'insensitive' } },
+                  { category: { contains: query, mode: 'insensitive' } },
+                ],
+              }
+            : {},
+        ],
       },
+      orderBy: { name: 'asc' },
     });
   }
 
-  async create(data: {
-    name: string;
-    category: string;
-    calories?: number;
-    protein?: number;
-    carbs?: number;
-    fat?: number;
-    imageUrl?: string;
-    imageSource?: string;
-    verified?: boolean;
-  }) {
+  async create(
+    userId: string,
+    data: {
+      name: string;
+      category: string;
+      calories?: number;
+      protein?: number;
+      carbs?: number;
+      fat?: number;
+      imageUrl?: string;
+      imageSource?: string;
+    },
+  ) {
     return this.prisma.foodItem.create({
-      data,
+      data: {
+        userId,
+        ...data,
+        verified: false,
+      },
     });
   }
 }
