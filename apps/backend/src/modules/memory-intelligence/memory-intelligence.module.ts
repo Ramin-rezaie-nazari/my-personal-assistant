@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { AuthModule } from '../auth/auth.module';
 import { MemoryIntelligenceController } from './controllers/memory-intelligence.controller';
 
 import { MemoryClassificationService } from './services/memory-classification.service';
@@ -19,6 +20,7 @@ import {
 } from './repositories/memory.repository';
 
 @Module({
+  imports: [AuthModule],
   controllers: [MemoryIntelligenceController],
   providers: [
     MemoryIntelligenceService,
