@@ -10,7 +10,6 @@ import { MemoryRepository } from './memory.repository';
  * UserFact already provides durable, user-owned storage in the current schema.
  * Memory values are serialized as JSON so the higher-level Memory contract can
  * remain richer than the underlying MVP table without coupling the Brain to Prisma.
- * A dedicated Memory table can be introduced later without changing the repository contract.
  */
 @Injectable()
 export class PrismaMemoryRepository implements MemoryRepository {
@@ -26,7 +25,7 @@ export class PrismaMemoryRepository implements MemoryRepository {
         category: memory.type,
         key: memory.key,
         value: JSON.stringify(memory.value),
-        importance: memory.importance,
+        importance: this.toPersistenceImportance(memory.importance),
         source: 'brain-memory',
         createdAt: memory.createdAt,
         updatedAt: memory.updatedAt,
@@ -43,7 +42,7 @@ export class PrismaMemoryRepository implements MemoryRepository {
         category: memory.type,
         key: memory.key,
         value: JSON.stringify(memory.value),
-        importance: memory.importance,
+        importance: this.toPersistenceImportance(memory.importance),
         updatedAt: memory.updatedAt,
       },
     });
@@ -63,11 +62,7 @@ export class PrismaMemoryRepository implements MemoryRepository {
     const ownerId = this.requireUserId(userId);
 
     const fact = await this.prisma.userFact.findFirst({
-      where: {
-        key,
-        userId: ownerId,
-        source: 'brain-memory',
-      },
+      where: { key, userId: ownerId, source: 'brain-memory' },
       orderBy: { updatedAt: 'desc' },
     });
 
@@ -103,6 +98,10 @@ export class PrismaMemoryRepository implements MemoryRepository {
     return userId;
   }
 
+  private toPersistenceImportance(importance: number): number {
+    return Math.max(0, Math.min(100, Math.round(importance * 100)));
+  }
+
   private toMemory(fact: {
     id: string;
     userId: string;
@@ -119,7 +118,7 @@ export class PrismaMemoryRepository implements MemoryRepository {
       type: this.toMemoryType(fact.category),
       key: fact.key,
       value: this.parseValue(fact.value),
-      importance: fact.importance,
+      importance: fact.importance / 100,
       createdAt: fact.createdAt,
       updatedAt: fact.updatedAt,
     };
