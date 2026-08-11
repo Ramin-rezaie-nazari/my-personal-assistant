@@ -1,11 +1,17 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
 import { Memory } from '../models/memory.model';
-import type { MemoryRepository } from '../repositories/memory.repository';
+import {
+  MEMORY_REPOSITORY,
+  type MemoryRepository,
+} from '../repositories/memory.repository';
 
 @Injectable()
 export class MemoryRetrievalService {
-  constructor(private readonly memoryRepository: MemoryRepository) {}
+  constructor(
+    @Inject(MEMORY_REPOSITORY)
+    private readonly memoryRepository: MemoryRepository,
+  ) {}
 
   async search(query: string): Promise<Memory[]> {
     const memories = await this.memoryRepository.getAll();
