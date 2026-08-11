@@ -1,0 +1,14 @@
+{
+  "expo": {
+    "name": "My Personal Assistant",
+    "slug": "my-personal-assistant",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "scheme": "mypersonalassistant",
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}
