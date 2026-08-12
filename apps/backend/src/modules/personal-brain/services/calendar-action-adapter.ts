@@ -30,18 +30,11 @@ export class CalendarActionAdapter implements DecisionActionAdapter {
     const input = String(context.input ?? '').trim();
     const time = this.extractTime(input);
     if (!time) throw new Error('Please provide a valid calendar time in HH:MM format');
-    return this.calendar.updateEvent(userId, eventId, { startsAt: timeToIso(time) });
+    return this.calendar.updateEventTime(userId, eventId, time);
   }
 
   private extractTime(input: string): string | null {
     const match = input.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
     return match ? `${match[1].padStart(2, '0')}:${match[2]}` : null;
   }
-}
-
-function timeToIso(time: string): string {
-  const [hours, minutes] = time.split(':').map(Number);
-  const date = new Date();
-  date.setHours(hours, minutes, 0, 0);
-  return date.toISOString();
 }
