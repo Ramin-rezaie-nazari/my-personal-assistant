@@ -11,6 +11,7 @@ import { PersonalBrainController } from './controllers/personal-brain.controller
 import { BrainDecisionPipelineService } from './services/brain-decision-pipeline.service';
 import { BrainDailyStatusService } from './services/brain-daily-status.service';
 import { BrainMemoryContextService } from './services/brain-memory-context.service';
+import { BrainNutritionTargetsService } from './services/brain-nutrition-targets.service';
 import { BrainOrchestratorService } from './services/brain-orchestrator.service';
 import { BrainReasoningContextService } from './services/brain-reasoning-context.service';
 import { BrainReasoningEngineService } from './services/brain-reasoning-engine.service';
@@ -37,6 +38,7 @@ import { UserUnderstandingService } from './services/user-understanding.service'
     BrainDecisionPipelineService,
     BrainDailyStatusService,
     BrainWeeklyStatusService,
+    BrainNutritionTargetsService,
     BrainMemoryContextService,
     RelevantMemoryContextService,
     BrainReasoningContextService,
