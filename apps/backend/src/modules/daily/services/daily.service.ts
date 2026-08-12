@@ -13,6 +13,24 @@ export class DailyService {
     });
   }
 
+  async getRecentDailyLogs(userId: string, days = 7) {
+    const safeDays = Math.min(Math.max(Math.floor(days), 1), 31);
+    const end = new Date(`${this.normalizeDateKey()}T00:00:00.000Z`);
+    const start = new Date(end);
+    start.setUTCDate(start.getUTCDate() - (safeDays - 1));
+
+    return this.prisma.dailyLog.findMany({
+      where: {
+        userId,
+        dateKey: {
+          gte: start.toISOString().slice(0, 10),
+          lte: end.toISOString().slice(0, 10),
+        },
+      },
+      orderBy: { dateKey: 'asc' },
+    });
+  }
+
   async updateDailyLog(
     userId: string,
     data: {
