@@ -45,6 +45,32 @@ describe('DailyService', () => {
     });
   });
 
+  it('adds water atomically to a requested day', async () => {
+    prisma.dailyLog.upsert.mockResolvedValue({ waterMl: 1250 });
+
+    await service.addWater('user-1', 250, '2026-08-11');
+
+    expect(prisma.dailyLog.upsert).toHaveBeenCalledWith({
+      where: {
+        userId_dateKey: {
+          userId: 'user-1',
+          dateKey: '2026-08-11',
+        },
+      },
+      update: { waterMl: { increment: 250 } },
+      create: { userId: 'user-1', dateKey: '2026-08-11', waterMl: 250 },
+    });
+  });
+
+  it('rejects invalid water quick-log amounts', async () => {
+    await expect(service.addWater('user-1', 0, '2026-08-11')).rejects.toThrow(
+      'amountMl must be between 1 and 5000',
+    );
+    await expect(service.addWater('user-1', 6000, '2026-08-11')).rejects.toThrow(
+      'amountMl must be between 1 and 5000',
+    );
+  });
+
   it('rejects malformed date keys', async () => {
     await expect(service.getDailyLog('user-1', '11-08-2026')).rejects.toThrow(
       'dateKey must use YYYY-MM-DD format',
