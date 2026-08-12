@@ -13,9 +13,9 @@ export type ContextualCommand = {
 export class ContextualCommandService {
   constructor(private readonly context: ConversationContextService) {}
 
-  resolve(userId: string, text: string): ContextualCommand {
+  async resolve(userId: string, text: string): Promise<ContextualCommand> {
     const normalized = text.trim().toLowerCase();
-    const previous = this.context.get(userId).lastAction;
+    const previous = (await this.context.get(userId)).lastAction;
     const referencesPrevious = /\b(that|it|this|same|previous|earlier)\b|همون|این|قبلی|اون|دوباره/.test(normalized);
     const operation: ContextualCommand['operation'] =
       /\b(change|edit|move|update|make it|instead)\b|تغییر|ویرایش|جابجا|بذار/.test(normalized)
