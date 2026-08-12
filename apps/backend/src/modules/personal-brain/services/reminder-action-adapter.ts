@@ -20,9 +20,10 @@ export class ReminderActionAdapter implements DecisionActionAdapter {
     const userId = String(context.userId ?? '');
     if (!userId) throw new Error('Missing userId');
     const input = String(context.input ?? '').trim();
+    const contextualState = (context.contextualState as Record<string, unknown> | undefined) ?? {};
+    const reminderId = String(contextualState.targetResourceId ?? contextualState.targetExecutionId ?? '');
 
     if (candidate.action === 'cancel_reminder') {
-      const reminderId = String((context.contextualState as Record<string, unknown> | undefined)?.targetExecutionId ?? '');
       if (!reminderId) throw new Error('Missing reminder target');
       return this.reminders.deleteReminder(userId, reminderId);
     }
@@ -31,7 +32,6 @@ export class ReminderActionAdapter implements DecisionActionAdapter {
     if (!time) throw new Error('Please provide a valid reminder time in HH:MM format');
 
     if (candidate.action === 'update_reminder') {
-      const reminderId = String((context.contextualState as Record<string, unknown> | undefined)?.targetExecutionId ?? '');
       if (!reminderId) throw new Error('Missing reminder target');
       return this.reminders.updateReminder(userId, reminderId, { time });
     }
