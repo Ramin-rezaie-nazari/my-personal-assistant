@@ -4,7 +4,7 @@ describe('DailyCommandCenterService', () => {
   const prisma = {
     userProfile: { findUnique: jest.fn() },
     dailyLog: { findUnique: jest.fn() },
-    reminder: { findFirst: jest.fn(), count: jest.fn() },
+    reminder: { findFirst: jest.fn(), count: jest.fn(), findMany: jest.fn() },
     habit: { findMany: jest.fn() },
     supplement: { findMany: jest.fn() },
     workout: { findMany: jest.fn() },
@@ -19,6 +19,10 @@ describe('DailyCommandCenterService', () => {
     prisma.dailyLog.findUnique.mockResolvedValue({ calories: 1200, protein: 80, waterMl: 800 });
     prisma.reminder.findFirst.mockResolvedValue({ id: 'r1', title: 'Drink water', type: 'health', scheduledAt: new Date('2026-08-12T12:30:00Z') });
     prisma.reminder.count.mockResolvedValue(2);
+    prisma.reminder.findMany.mockResolvedValue([
+      { id: 'c1', title: 'Gym session', type: 'calendar', scheduledAt: new Date('2026-08-12T18:00:00Z'), completed: false },
+      { id: 'c2', title: 'Dinner', type: 'calendar', scheduledAt: new Date('2026-08-12T20:00:00Z'), completed: false },
+    ]);
     prisma.habit.findMany.mockResolvedValue([
       { id: 'h1', logs: [{ id: 'l1' }] },
       { id: 'h2', logs: [] },
@@ -41,7 +45,10 @@ describe('DailyCommandCenterService', () => {
     expect(result.reminders.pending).toBe(2);
     expect(result.notifications).toEqual({ unread: 2 });
     expect(result.workouts.countToday).toBe(1);
+    expect(result.calendar.today).toHaveLength(2);
+    expect(result.calendar.next.title).toBe('Gym session');
     expect(result.priorities[0]).toContain('2 unread assistant notifications');
+    expect(result.priorities).toContain('You have 2 scheduled events today');
     expect(result.priorities).toContain('Catch up on water');
   });
 
@@ -50,6 +57,7 @@ describe('DailyCommandCenterService', () => {
     prisma.dailyLog.findUnique.mockResolvedValue(null);
     prisma.reminder.findFirst.mockResolvedValue(null);
     prisma.reminder.count.mockResolvedValue(0);
+    prisma.reminder.findMany.mockResolvedValue([]);
     prisma.habit.findMany.mockResolvedValue([]);
     prisma.supplement.findMany.mockResolvedValue([]);
     prisma.workout.findMany.mockResolvedValue([]);
@@ -65,5 +73,6 @@ describe('DailyCommandCenterService', () => {
     expect(result.habits).toEqual({ total: 0, completed: 0 });
     expect(result.supplements).toEqual({ total: 0, taken: 0 });
     expect(result.notifications).toEqual({ unread: 0 });
+    expect(result.calendar).toEqual({ today: [], next: null });
   });
 });
