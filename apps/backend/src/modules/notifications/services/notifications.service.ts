@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { CreateNotificationDto } from '../dto/create-notification.dto';
 
@@ -14,6 +15,8 @@ export class NotificationsService {
         body: dto.body?.trim() || null,
         type: dto.type.trim() || 'general',
         scheduledAt: dto.scheduledAt ? new Date(dto.scheduledAt) : null,
+        dedupeKey: `manual:${randomUUID()}`,
+        priority: dto.priority ?? 2,
       },
     });
   }
@@ -24,7 +27,7 @@ export class NotificationsService {
         userId,
         ...(includeRead ? {} : { readAt: null }),
       },
-      orderBy: [{ readAt: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ priority: 'asc' }, { readAt: 'asc' }, { createdAt: 'desc' }],
       take: 50,
     });
   }
