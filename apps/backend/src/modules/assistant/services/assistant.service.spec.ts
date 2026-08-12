@@ -35,6 +35,6 @@ describe('AssistantService', () => {
     });
 
     expect(processRequest).toHaveBeenCalledTimes(1);
-    expect(processRequest).toHaveBeenCalledWith('hello');
+    expect(processRequest).toHaveBeenCalledWith('hello', undefined);
   });
 });
