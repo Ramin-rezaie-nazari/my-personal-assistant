@@ -14,6 +14,7 @@ export type HabitSummary = { dateKey:string;activeHabits:number;completedCount:n
 export type Supplement = { id:string;name:string;dosage:string|null;frequency:string;scheduledTime:string;active:boolean;logs?:Array<{dateKey:string}> };
 export type SupplementStatus = { dateKey:string;total:number;taken:number;remaining:number;completionPercent:number;supplements:Supplement[] };
 export type Notification = { id:string;title:string;body:string|null;type:string;scheduledAt:string|null;readAt:string|null;createdAt:string;priority:number };
+export type DailyCalendarEvent = { id:string;title:string;type:string;scheduledAt:string;completed:boolean };
 export type DailyCommandCenterResponse = {
   dateKey:string;
   greeting:string;
@@ -23,6 +24,7 @@ export type DailyCommandCenterResponse = {
   habits:{total:number;completed:number};
   supplements:{total:number;taken:number};
   reminders:{pending:number;next:{id:string;title:string;type:string;scheduledAt:string}|null};
+  calendar:{today:DailyCalendarEvent[];next:DailyCalendarEvent|null};
   notifications:{unread:number};
   workouts:{countToday:number;latest:{name:string;type:string;durationMinutes:number}|null};
 };
