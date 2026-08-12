@@ -24,11 +24,12 @@ import { RelevantMemoryContextService } from './services/relevant-memory-context
 import { ResponsePlanningService } from './services/response-planning.service';
 import { UserContextService } from './services/user-context.service';
 import { UserUnderstandingService } from './services/user-understanding.service';
+import { SmartPlanningService } from './services/smart-planning.service';
 
 @Module({
   imports: [ConversationEngineModule, DailyModule, WorkoutModule, BrainIntegrationModule, ContextEngineModule, MemoryIntelligenceModule, UserIntelligenceModule],
   controllers: [PersonalBrainController],
-  providers: [BrainStateService, BrainDecisionPipelineService, BrainDailyStatusService, BrainWeeklyStatusService, BrainNutritionTargetsService, BrainWorkoutStatusService, BrainLifeContextService, BrainMemoryContextService, RelevantMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, MemoryManagerService, UserUnderstandingService, UserContextService, IntentionAnalysisService, ResponsePlanningService],
-  exports: [BrainStateService, BrainDecisionPipelineService, BrainMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, BrainLifeContextService],
+  providers: [BrainStateService, BrainDecisionPipelineService, BrainDailyStatusService, BrainWeeklyStatusService, BrainNutritionTargetsService, BrainWorkoutStatusService, BrainLifeContextService, BrainMemoryContextService, RelevantMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, MemoryManagerService, UserUnderstandingService, UserContextService, IntentionAnalysisService, ResponsePlanningService, SmartPlanningService],
+  exports: [BrainStateService, BrainDecisionPipelineService, BrainMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, BrainLifeContextService, SmartPlanningService],
 })
 export class PersonalBrainModule {}
