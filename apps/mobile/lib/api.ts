@@ -100,6 +100,14 @@ export type PersonalInsightsResponse = {
   insights: PersonalInsight[];
 };
 
+export type Reminder = {
+  id: string;
+  title: string;
+  type: string;
+  scheduledAt: string;
+  completed: boolean;
+};
+
 export async function setAuthSession(auth: AuthResponse) {
   await AsyncStorage.multiSet([
     [ACCESS_TOKEN_KEY, auth.accessToken],
@@ -236,4 +244,28 @@ export function createWorkout(data: {
     method: 'POST',
     body: JSON.stringify(data),
   });
+}
+
+export function getReminders(includeCompleted = false) {
+  const query = includeCompleted ? '?includeCompleted=true' : '';
+  return request<Reminder[]>(`/reminders${query}`);
+}
+
+export function createReminder(data: { title: string; type: string; time: string }) {
+  return request<Reminder>('/reminders', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function completeReminder(reminderId: string) {
+  return request<{ completed: true }>(`/reminders/${reminderId}/complete`, { method: 'POST' });
+}
+
+export function deleteReminder(reminderId: string) {
+  return request<{ deleted: true }>(`/reminders/${reminderId}`, { method: 'DELETE' });
+}
+
+export function getNextReminder() {
+  return request<Reminder | null>('/reminders/next');
 }
