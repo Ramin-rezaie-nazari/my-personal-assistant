@@ -162,44 +162,26 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export function register(data: {
-  email: string;
-  password: string;
-  firstName?: string;
-  lastName?: string;
-}) {
-  return request<AuthResponse>('/auth/register', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  }).then(async (auth) => {
+export function register(data: { email: string; password: string; firstName?: string; lastName?: string }) {
+  return request<AuthResponse>('/auth/register', { method: 'POST', body: JSON.stringify(data) }).then(async (auth) => {
     await setAuthSession(auth);
     return auth;
   });
 }
 
 export function login(email: string, password: string) {
-  return request<AuthResponse>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify({ email, password }),
-  }).then(async (auth) => {
+  return request<AuthResponse>('/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }).then(async (auth) => {
     await setAuthSession(auth);
     return auth;
   });
 }
 
-export function getMe() {
-  return request<AuthUser>('/auth/me');
-}
+export function getMe() { return request<AuthUser>('/auth/me'); }
 
 export async function logout() {
   const refreshToken = await getStoredRefreshToken();
   try {
-    if (refreshToken) {
-      await rawRequest('/auth/logout', {
-        method: 'POST',
-        body: JSON.stringify({ refreshToken }),
-      });
-    }
+    if (refreshToken) await rawRequest('/auth/logout', { method: 'POST', body: JSON.stringify({ refreshToken }) });
   } finally {
     await clearAuthSession();
   }
@@ -213,4 +195,24 @@ export function getTodayDashboard(dateKey?: string) {
 export function getDashboardOverview(dateKey?: string) {
   const query = dateKey ? `?dateKey=${encodeURIComponent(dateKey)}` : '';
   return request<DashboardOverviewResponse>(`/dashboard/overview${query}`);
+}
+
+export function addWater(amountMl: number, dateKey?: string) {
+  const query = dateKey ? `?dateKey=${encodeURIComponent(dateKey)}` : '';
+  return request<{ waterMl: number }>(`/daily/water${query}`, {
+    method: 'POST',
+    body: JSON.stringify({ amountMl }),
+  });
+}
+
+export function createWorkout(data: {
+  name: string;
+  type: string;
+  durationMinutes: number;
+  caloriesBurned: number;
+}) {
+  return request('/workout', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
 }
