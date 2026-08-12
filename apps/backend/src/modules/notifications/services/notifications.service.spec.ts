@@ -22,6 +22,7 @@ describe('NotificationsService', () => {
       body: 'You are behind on hydration.',
       type: 'hydration',
       scheduledAt: new Date('2026-08-12T10:00:00.000Z'),
+      priority: 1,
     });
 
     expect(prisma.notification.create).toHaveBeenCalledWith({
@@ -31,6 +32,8 @@ describe('NotificationsService', () => {
         body: 'You are behind on hydration.',
         type: 'hydration',
         scheduledAt: new Date('2026-08-12T10:00:00.000Z'),
+        dedupeKey: expect.stringMatching(/^manual:/),
+        priority: 1,
       },
     });
   });
@@ -44,7 +47,7 @@ describe('NotificationsService', () => {
 
     expect(prisma.notification.findMany).toHaveBeenCalledWith({
       where: { userId: 'u1', readAt: null },
-      orderBy: [{ readAt: 'asc' }, { createdAt: 'desc' }],
+      orderBy: [{ priority: 'asc' }, { readAt: 'asc' }, { createdAt: 'desc' }],
       take: 50,
     });
   });
