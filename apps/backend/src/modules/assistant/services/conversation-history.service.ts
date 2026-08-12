@@ -11,6 +11,8 @@ export type PersistedConversationTurn = {
   intent?: string;
   action?: string;
   executionId?: string;
+  resourceType?: string;
+  resourceId?: string;
 };
 
 @Injectable()
@@ -26,8 +28,8 @@ export class ConversationHistoryService {
     const id = randomUUID();
     const createdAt = new Date();
     await this.prisma.$executeRaw`
-      INSERT INTO "ConversationTurn" ("id","userId","role","text","intent","action","executionId","createdAt")
-      VALUES (${id},${input.userId},${input.role},${text},${input.intent ?? null},${input.action ?? null},${input.executionId ?? null},${createdAt})
+      INSERT INTO "ConversationTurn" ("id","userId","role","text","intent","action","executionId","resourceType","resourceId","createdAt")
+      VALUES (${id},${input.userId},${input.role},${text},${input.intent ?? null},${input.action ?? null},${input.executionId ?? null},${input.resourceType ?? null},${input.resourceId ?? null},${createdAt})
     `;
 
     return { ...input, id, text, createdAt: createdAt.getTime() };
@@ -35,8 +37,19 @@ export class ConversationHistoryService {
 
   async getRecent(userId: string, limit = 24): Promise<PersistedConversationTurn[]> {
     const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
-    const rows = await this.prisma.$queryRaw<Array<{ id: string; userId: string; role: 'user' | 'assistant'; text: string; intent: string | null; action: string | null; executionId: string | null; createdAt: Date }>>`
-      SELECT "id","userId","role","text","intent","action","executionId","createdAt"
+    const rows = await this.prisma.$queryRaw<Array<{
+      id: string;
+      userId: string;
+      role: 'user' | 'assistant';
+      text: string;
+      intent: string | null;
+      action: string | null;
+      executionId: string | null;
+      resourceType: string | null;
+      resourceId: string | null;
+      createdAt: Date;
+    }>>`
+      SELECT "id","userId","role","text","intent","action","executionId","resourceType","resourceId","createdAt"
       FROM "ConversationTurn"
       WHERE "userId"=${userId}
       ORDER BY "createdAt" DESC
@@ -51,15 +64,28 @@ export class ConversationHistoryService {
       intent: row.intent ?? undefined,
       action: row.action ?? undefined,
       executionId: row.executionId ?? undefined,
+      resourceType: row.resourceType ?? undefined,
+      resourceId: row.resourceId ?? undefined,
       createdAt: row.createdAt.getTime(),
     }));
   }
 
   async getLatestAction(userId: string): Promise<PersistedConversationTurn | undefined> {
-    const rows = await this.prisma.$queryRaw<Array<{ id: string; userId: string; role: 'user' | 'assistant'; text: string; intent: string | null; action: string | null; executionId: string | null; createdAt: Date }>>`
-      SELECT "id","userId","role","text","intent","action","executionId","createdAt"
+    const rows = await this.prisma.$queryRaw<Array<{
+      id: string;
+      userId: string;
+      role: 'user' | 'assistant';
+      text: string;
+      intent: string | null;
+      action: string | null;
+      executionId: string | null;
+      resourceType: string | null;
+      resourceId: string | null;
+      createdAt: Date;
+    }>>`
+      SELECT "id","userId","role","text","intent","action","executionId","resourceType","resourceId","createdAt"
       FROM "ConversationTurn"
-      WHERE "userId"=${userId} AND ("action" IS NOT NULL OR "executionId" IS NOT NULL)
+      WHERE "userId"=${userId} AND ("action" IS NOT NULL OR "executionId" IS NOT NULL OR "resourceId" IS NOT NULL)
       ORDER BY "createdAt" DESC
       LIMIT 1
     `;
@@ -73,6 +99,8 @@ export class ConversationHistoryService {
       intent: row.intent ?? undefined,
       action: row.action ?? undefined,
       executionId: row.executionId ?? undefined,
+      resourceType: row.resourceType ?? undefined,
+      resourceId: row.resourceId ?? undefined,
       createdAt: row.createdAt.getTime(),
     };
   }
