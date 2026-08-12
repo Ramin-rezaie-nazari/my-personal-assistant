@@ -10,6 +10,7 @@ describe('DailyCommandCenterService', () => {
     workout: { findMany: jest.fn() },
     nutritionProfile: { findUnique: jest.fn() },
   };
+  const notificationsService = { getUnreadCount: jest.fn() };
 
   beforeEach(() => jest.clearAllMocks());
 
@@ -28,8 +29,9 @@ describe('DailyCommandCenterService', () => {
     ]);
     prisma.workout.findMany.mockResolvedValue([{ name: 'Walk', type: 'cardio', durationMinutes: 30 }]);
     prisma.nutritionProfile.findUnique.mockResolvedValue({ dailyCaloriesGoal: 2000, proteinGoalGrams: 140, waterGoalMl: 2400 });
+    notificationsService.getUnreadCount.mockResolvedValue(2);
 
-    const service = new DailyCommandCenterService(prisma as never);
+    const service = new DailyCommandCenterService(prisma as never, notificationsService as never);
     const result = await service.getToday('u1');
 
     expect(prisma.dailyLog.findUnique).toHaveBeenCalled();
@@ -37,7 +39,9 @@ describe('DailyCommandCenterService', () => {
     expect(result.habits).toEqual({ total: 2, completed: 1 });
     expect(result.supplements).toEqual({ total: 2, taken: 1 });
     expect(result.reminders.pending).toBe(2);
+    expect(result.notifications).toEqual({ unread: 2 });
     expect(result.workouts.countToday).toBe(1);
+    expect(result.priorities[0]).toContain('2 unread assistant notifications');
     expect(result.priorities).toContain('Catch up on water');
   });
 
@@ -50,8 +54,9 @@ describe('DailyCommandCenterService', () => {
     prisma.supplement.findMany.mockResolvedValue([]);
     prisma.workout.findMany.mockResolvedValue([]);
     prisma.nutritionProfile.findUnique.mockResolvedValue(null);
+    notificationsService.getUnreadCount.mockResolvedValue(0);
 
-    const service = new DailyCommandCenterService(prisma as never);
+    const service = new DailyCommandCenterService(prisma as never, notificationsService as never);
     const result = await service.getToday('new-user');
 
     expect(result.greeting).toBe('Let’s make today a good one.');
@@ -59,5 +64,6 @@ describe('DailyCommandCenterService', () => {
     expect(result.priorities[0]).toBe('Start your daily log');
     expect(result.habits).toEqual({ total: 0, completed: 0 });
     expect(result.supplements).toEqual({ total: 0, taken: 0 });
+    expect(result.notifications).toEqual({ unread: 0 });
   });
 });
