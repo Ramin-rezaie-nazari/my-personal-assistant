@@ -32,6 +32,7 @@ import { ContextEngineModule } from './modules/context-engine/context-engine.mod
 import { PreferencesModule } from './modules/preferences/preferences.module';
 import { PersonalBrainModule } from './modules/personal-brain/personal-brain.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { DailyCommandCenterModule } from './modules/daily-command-center/daily-command-center.module';
 
 @Module({
   imports: [
@@ -66,6 +67,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     PreferencesModule,
     PersonalBrainModule,
     DashboardModule,
+    DailyCommandCenterModule,
   ],
   controllers: [AppController],
   providers: [AppService],
