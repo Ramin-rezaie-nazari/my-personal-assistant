@@ -32,11 +32,13 @@ import { ScheduleInsightsService } from './services/schedule-insights.service';
 import { NextBestActionService } from './services/next-best-action.service';
 import { ScheduleConflictService } from './services/schedule-conflict.service';
 import { ProactiveNotificationPolicyService } from './services/proactive-notification-policy.service';
+import { DailyCapacityService } from './services/daily-capacity.service';
+import { ScheduleExplanationService } from './services/schedule-explanation.service';
 
 @Module({
   imports: [ConversationEngineModule, DailyModule, WorkoutModule, BrainIntegrationModule, ContextEngineModule, MemoryIntelligenceModule, UserIntelligenceModule],
   controllers: [PersonalBrainController],
-  providers: [BrainStateService, BrainDecisionPipelineService, BrainDailyStatusService, BrainWeeklyStatusService, BrainNutritionTargetsService, BrainWorkoutStatusService, BrainLifeContextService, BrainMemoryContextService, RelevantMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, MemoryManagerService, UserUnderstandingService, UserContextService, IntentionAnalysisService, ResponsePlanningService, SmartPlanningService, SchedulePolicyService, FullDaySchedulerService, DynamicReplanningService, ScheduleInsightsService, NextBestActionService, ScheduleConflictService, ProactiveNotificationPolicyService],
-  exports: [BrainStateService, BrainDecisionPipelineService, BrainMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, BrainLifeContextService, SmartPlanningService, SchedulePolicyService, FullDaySchedulerService, DynamicReplanningService, ScheduleInsightsService, NextBestActionService, ScheduleConflictService, ProactiveNotificationPolicyService],
+  providers: [BrainStateService, BrainDecisionPipelineService, BrainDailyStatusService, BrainWeeklyStatusService, BrainNutritionTargetsService, BrainWorkoutStatusService, BrainLifeContextService, BrainMemoryContextService, RelevantMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, MemoryManagerService, UserUnderstandingService, UserContextService, IntentionAnalysisService, ResponsePlanningService, SmartPlanningService, SchedulePolicyService, FullDaySchedulerService, DynamicReplanningService, ScheduleInsightsService, NextBestActionService, ScheduleConflictService, ProactiveNotificationPolicyService, DailyCapacityService, ScheduleExplanationService],
+  exports: [BrainStateService, BrainDecisionPipelineService, BrainMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, BrainLifeContextService, SmartPlanningService, SchedulePolicyService, FullDaySchedulerService, DynamicReplanningService, ScheduleInsightsService, NextBestActionService, ScheduleConflictService, ProactiveNotificationPolicyService, DailyCapacityService, ScheduleExplanationService],
 })
 export class PersonalBrainModule {}
