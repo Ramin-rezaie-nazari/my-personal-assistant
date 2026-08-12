@@ -5,6 +5,8 @@ import { CreateBrainRequestDto } from '../dto/create-brain-request.dto';
 import { BrainOrchestratorService } from '../services/brain-orchestrator.service';
 import { DynamicReplanningService } from '../services/dynamic-replanning.service';
 import { FullDaySchedulerService } from '../services/full-day-scheduler.service';
+import { NextBestActionService } from '../services/next-best-action.service';
+import { ScheduleInsightsService } from '../services/schedule-insights.service';
 import { SmartPlanningService } from '../services/smart-planning.service';
 
 interface AuthenticatedRequest extends Request { user: { id: string } }
@@ -16,6 +18,8 @@ export class PersonalBrainController {
     private readonly smartPlanningService: SmartPlanningService,
     private readonly fullDaySchedulerService: FullDaySchedulerService,
     private readonly dynamicReplanningService: DynamicReplanningService,
+    private readonly scheduleInsightsService: ScheduleInsightsService,
+    private readonly nextBestActionService: NextBestActionService,
   ) {}
 
   @Get()
@@ -32,6 +36,14 @@ export class PersonalBrainController {
   @Get('schedule/replan')
   @UseGuards(JwtAuthGuard)
   async replan(@Req() req: AuthenticatedRequest) { return this.dynamicReplanningService.replanRemainingDay(req.user.id); }
+
+  @Get('schedule/insights')
+  @UseGuards(JwtAuthGuard)
+  async getScheduleInsights(@Req() req: AuthenticatedRequest) { return this.scheduleInsightsService.getInsights(req.user.id); }
+
+  @Get('next-action')
+  @UseGuards(JwtAuthGuard)
+  async getNextAction(@Req() req: AuthenticatedRequest) { return this.nextBestActionService.get(req.user.id); }
 
   @Post()
   @UseGuards(JwtAuthGuard)
