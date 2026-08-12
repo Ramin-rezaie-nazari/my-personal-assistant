@@ -43,6 +43,7 @@ export class BrainWeeklyStatusService {
       endDateKey: end,
       days,
       loggedDays,
+      consistencyPercent: Math.round((loggedDays / 7) * 100),
       totalCalories,
       totalProtein,
       totalWaterMl,
