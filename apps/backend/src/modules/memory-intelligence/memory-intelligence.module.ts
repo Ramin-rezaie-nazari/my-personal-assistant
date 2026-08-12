@@ -14,6 +14,7 @@ import { MemoryRankingService } from './services/memory-ranking.service';
 import { MemoryRelevanceService } from './services/memory-relevance.service';
 import { MemoryRetrievalService } from './services/memory-retrieval.service';
 import { MemoryScoringService } from './services/memory-scoring.service';
+import { MemorySurfaceService } from './services/memory-surface.service';
 
 import { InMemoryMemoryRepository } from './repositories/in-memory-memory.repository';
 import { PrismaMemoryRepository } from './repositories/prisma-memory.repository';
@@ -37,6 +38,7 @@ import {
     MemoryRetrievalService,
     MemoryRankingService,
     MemoryRelevanceService,
+    MemorySurfaceService,
     InMemoryMemoryRepository,
     PrismaMemoryRepository,
     {
@@ -60,6 +62,7 @@ import {
     MemoryRetrievalService,
     MemoryRankingService,
     MemoryRelevanceService,
+    MemorySurfaceService,
     PERSISTENT_MEMORY_REPOSITORY,
   ],
 })
