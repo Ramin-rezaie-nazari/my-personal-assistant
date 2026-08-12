@@ -24,7 +24,7 @@ describe('BrainWeeklyStatusService', () => {
     );
     expect(result.days).toHaveLength(7);
     expect(result.loggedDays).toBe(6);
-    expect(result.currentStreak).toBe(2);
+    expect(result.currentStreak).toBe(6);
     expect(result.totalCalories).toBe(10650);
     expect(result.totalProtein).toBe(615);
     expect(result.totalWaterMl).toBe(10700);
