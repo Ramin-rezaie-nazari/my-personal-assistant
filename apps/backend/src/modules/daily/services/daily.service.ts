@@ -13,6 +13,23 @@ export class DailyService {
     });
   }
 
+  async getDailyLogs(userId: string, startDateKey: string, endDateKey: string) {
+    const start = this.normalizeDateKey(startDateKey);
+    const end = this.normalizeDateKey(endDateKey);
+
+    if (start > end) {
+      throw new BadRequestException('startDateKey must be before endDateKey');
+    }
+
+    return this.prisma.dailyLog.findMany({
+      where: {
+        userId,
+        dateKey: { gte: start, lte: end },
+      },
+      orderBy: { dateKey: 'asc' },
+    });
+  }
+
   async updateDailyLog(
     userId: string,
     data: {

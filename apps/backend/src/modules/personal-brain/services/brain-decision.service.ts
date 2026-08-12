@@ -17,6 +17,10 @@ export class BrainDecisionService {
       /\b(how am i doing today|how(?:'s| is) my day going|today(?:'s)? progress|my progress today|how am i today)\b/.test(
         normalizedInput,
       );
+    const asksAboutWeek =
+      /\b(how did i do this week|how am i doing this week|weekly progress|this week(?:'s)? progress|how was my week|how did my week go)\b/.test(
+        normalizedInput,
+      );
 
     if (asksAboutGoal && primaryGoal) {
       return {
@@ -26,6 +30,42 @@ export class BrainDecisionService {
         intent: 'goal',
         recommendation: `Your current primary goal is: ${primaryGoal.title}`,
         nextAction: 'Use primary goal as personal context',
+      };
+    }
+
+    if (asksAboutWeek) {
+      const weeklyStatus = context.state.weeklyStatus;
+      const weeklyBlockers = blockers.filter((blocker) => blocker !== 'missing-goals');
+
+      if (!weeklyStatus) {
+        return {
+          canDecide: false,
+          confidence: context.reasoning.confidence,
+          blockers: [...weeklyBlockers, 'missing-weekly-status'],
+          intent: 'weekly-status',
+          recommendation: 'I do not have your weekly progress data yet.',
+          nextAction: 'Load weekly progress',
+        };
+      }
+
+      if (weeklyStatus.loggedDays === 0) {
+        return {
+          canDecide: weeklyBlockers.length === 0,
+          confidence: context.reasoning.confidence,
+          blockers: weeklyBlockers,
+          intent: 'weekly-status',
+          recommendation: 'You have not logged any days this week yet. Start tracking today and I will build your weekly progress view.',
+          nextAction: 'Log today activity',
+        };
+      }
+
+      return {
+        canDecide: weeklyBlockers.length === 0,
+        confidence: context.reasoning.confidence,
+        blockers: weeklyBlockers,
+        intent: 'weekly-status',
+        recommendation: `This week: ${weeklyStatus.loggedDays}/7 days logged (${weeklyStatus.consistencyPercent}% consistency), ${weeklyStatus.totalCalories} kcal, ${weeklyStatus.totalProtein} g protein, ${weeklyStatus.totalWaterMl} ml water. Current streak: ${weeklyStatus.currentStreak} days.`,
+        nextAction: 'Review weekly progress and continue logging',
       };
     }
 
