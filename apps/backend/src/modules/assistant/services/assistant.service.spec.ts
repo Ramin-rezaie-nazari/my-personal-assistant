@@ -13,7 +13,7 @@ describe('AssistantService', () => {
     });
   });
 
-  it('delegates assistant requests to the brain orchestrator', async () => {
+  it('delegates assistant requests to the brain orchestrator with the user id', async () => {
     const processRequest = jest.fn().mockResolvedValue({
       message: 'ok',
       intent: 'general',
@@ -27,7 +27,7 @@ describe('AssistantService', () => {
 
     const service = new AssistantService(orchestrator);
 
-    await expect(service.process('hello')).resolves.toEqual({
+    await expect(service.process('hello', 'user-123')).resolves.toEqual({
       message: 'ok',
       intent: 'general',
       confidence: 1,
@@ -35,6 +35,6 @@ describe('AssistantService', () => {
     });
 
     expect(processRequest).toHaveBeenCalledTimes(1);
-    expect(processRequest).toHaveBeenCalledWith('hello', undefined);
+    expect(processRequest).toHaveBeenCalledWith('hello', 'user-123');
   });
 });
