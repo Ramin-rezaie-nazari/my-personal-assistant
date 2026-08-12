@@ -143,9 +143,9 @@ describe('DashboardService', () => {
         consistencyPercent: 86,
         totalCalories: 11300,
         totalProtein: 815,
-        totalWaterMl: 13800,
+        totalWaterMl: 12800,
         averageCalories: 1883,
-        currentStreak: 2,
+        currentStreak: 6,
       },
       workouts: {
         count: 2,
