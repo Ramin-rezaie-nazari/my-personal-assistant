@@ -22,8 +22,8 @@ export class AssistantService {
   }
 
   async process(input: string, userId: string) {
-    const contextualCommand = this.contextualCommandService.resolve(userId, input);
-    this.conversationContextService.append({ userId, role: 'user', text: input });
+    await this.conversationContextService.append({ userId, role: 'user', text: input });
+    const contextualCommand = await this.contextualCommandService.resolve(userId, input);
 
     const response = await this.brainOrchestratorService.processRequest(input, userId);
     let execution;
@@ -46,19 +46,23 @@ export class AssistantService {
           referencesPrevious: contextualCommand.referencesPrevious,
           operation: contextualCommand.operation,
           targetAction: contextualCommand.targetAction,
+          targetExecutionId: contextualCommand.targetExecutionId,
         },
       },
     };
 
-    this.conversationContextService.append({
+    const receipt = execution?.receipt;
+    const executionId = receipt && typeof receipt === 'object' && receipt !== null && 'decisionId' in receipt
+      ? String((receipt as { decisionId?: unknown }).decisionId ?? '') || undefined
+      : undefined;
+
+    await this.conversationContextService.append({
       userId,
       role: 'assistant',
       text: finalResponse.message,
       intent: finalResponse.intent,
       action: execution?.action ?? finalResponse.nextAction,
-      executionId: execution?.receipt && typeof execution.receipt === 'object' && execution.receipt !== null && 'decisionId' in execution.receipt
-        ? String((execution.receipt as { decisionId?: unknown }).decisionId ?? '') || undefined
-        : undefined,
+      executionId,
     });
 
     return finalResponse;
