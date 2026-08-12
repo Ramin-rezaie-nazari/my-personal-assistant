@@ -18,6 +18,7 @@ export type DecisionExecutionReceipt = {
   result?: unknown;
   durationMs: number;
   attempts: number;
+  recordedAt: number;
   policy: { timeoutMs: number; maxAttempts: number; retryDelayMs: number; dryRun: boolean };
 };
 
@@ -33,7 +34,7 @@ export class DecisionExecutionCoordinatorService {
 
   async execute(userId: string, candidate: DecisionCandidate, context: Record<string, unknown> = {}): Promise<DecisionExecutionReceipt> {
     const startedAt = Date.now();
-    const base = { userId, decisionId: candidate.id, action: candidate.action, domain: candidate.domain };
+    const base = { userId, decisionId: candidate.id, action: candidate.action, domain: candidate.domain, recordedAt: startedAt };
     const resolved = this.policy.resolve(candidate, context);
     const gate = this.gate.open(userId, candidate);
     if (!gate.allowed) return this.record({ ...base, status: 'blocked', reason: gate.reason, durationMs: Date.now() - startedAt, attempts: 0, policy: resolved });
