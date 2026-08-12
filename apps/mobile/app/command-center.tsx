@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { getDailyCommandCenter, DailyCommandCenterResponse } from '../lib/api';
+import { getDailyCommandCenter, DailyCommandCenterResponse, hasAuthSession } from '../lib/api';
 import { AppLocale, getStoredLocale } from '../lib/i18n';
 
 const copy = {
@@ -21,7 +21,16 @@ export default function CommandCenterScreen() {
     catch (err) { setError(err instanceof Error ? err.message : 'Unable to load your command center.'); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
-  useEffect(() => { let mounted = true; void Promise.all([getStoredLocale(), load()]).then(([stored]) => { if (mounted && stored) setLocale(stored); }); return () => { mounted = false; }; }, [load]);
+  useEffect(() => {
+    let mounted = true;
+    void Promise.all([getStoredLocale(), hasAuthSession()]).then(async ([stored, authenticated]) => {
+      if (!mounted) return;
+      if (stored) setLocale(stored);
+      if (!authenticated) { router.replace('/'); return; }
+      await load();
+    });
+    return () => { mounted = false; };
+  }, [load]);
   const ui = copy[locale]; const rtl = locale === 'fa';
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
   return (
