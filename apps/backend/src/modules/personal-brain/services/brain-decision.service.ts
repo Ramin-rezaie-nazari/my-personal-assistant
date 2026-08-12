@@ -64,7 +64,7 @@ export class BrainDecisionService {
         confidence: context.reasoning.confidence,
         blockers: weeklyBlockers,
         intent: 'weekly-status',
-        recommendation: `This week: ${weeklyStatus.loggedDays}/7 days logged, ${weeklyStatus.totalCalories} kcal, ${weeklyStatus.totalProtein} g protein, ${weeklyStatus.totalWaterMl} ml water. Current streak: ${weeklyStatus.currentStreak} days.`,
+        recommendation: `This week: ${weeklyStatus.loggedDays}/7 days logged (${weeklyStatus.consistencyPercent}% consistency), ${weeklyStatus.totalCalories} kcal, ${weeklyStatus.totalProtein} g protein, ${weeklyStatus.totalWaterMl} ml water. Current streak: ${weeklyStatus.currentStreak} days.`,
         nextAction: 'Review weekly progress and continue logging',
       };
     }
