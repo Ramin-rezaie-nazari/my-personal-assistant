@@ -15,6 +15,7 @@ import { BrainOrchestratorService } from './services/brain-orchestrator.service'
 import { BrainReasoningContextService } from './services/brain-reasoning-context.service';
 import { BrainReasoningEngineService } from './services/brain-reasoning-engine.service';
 import { BrainStateService } from './services/brain-state.service';
+import { BrainWeeklyStatusService } from './services/brain-weekly-status.service';
 import { IntentionAnalysisService } from './services/intention-analysis.service';
 import { MemoryManagerService } from './services/memory-manager.service';
 import { RelevantMemoryContextService } from './services/relevant-memory-context.service';
@@ -35,6 +36,7 @@ import { UserUnderstandingService } from './services/user-understanding.service'
     BrainStateService,
     BrainDecisionPipelineService,
     BrainDailyStatusService,
+    BrainWeeklyStatusService,
     BrainMemoryContextService,
     RelevantMemoryContextService,
     BrainReasoningContextService,
