@@ -14,4 +14,12 @@ export class DashboardController {
   ) {
     return this.dashboardService.getToday(req.user.id, dateKey);
   }
+
+  @Get('overview')
+  overview(
+    @Request() req: { user: { id: string } },
+    @Query('dateKey') dateKey?: string,
+  ) {
+    return this.dashboardService.getOverview(req.user.id, dateKey);
+  }
 }
