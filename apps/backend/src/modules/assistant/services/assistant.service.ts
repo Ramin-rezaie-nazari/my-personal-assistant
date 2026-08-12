@@ -33,6 +33,8 @@ export class AssistantService {
           referencesPrevious: contextualCommand.referencesPrevious,
           previousAction: contextualCommand.targetAction,
           previousExecutionId: contextualCommand.targetExecutionId,
+          targetResourceType: contextualCommand.targetResourceType,
+          targetResourceId: contextualCommand.targetResourceId,
           operation: contextualCommand.operation,
         })
       : undefined;
@@ -48,14 +50,18 @@ export class AssistantService {
           operation: contextualCommand.operation,
           targetAction: contextualCommand.targetAction,
           targetExecutionId: contextualCommand.targetExecutionId,
+          targetResourceType: contextualCommand.targetResourceType,
+          targetResourceId: contextualCommand.targetResourceId,
         },
       },
     };
 
     const receipt = execution?.receipt;
-    const executionId = receipt && typeof receipt === 'object' && receipt !== null && 'result' in receipt
-      ? this.extractExecutionEntityId((receipt as { result?: unknown }).result) ?? this.extractDecisionId(receipt)
-      : this.extractDecisionId(receipt);
+    const resourceId = receipt && typeof receipt === 'object' && receipt !== null && 'result' in receipt
+      ? this.extractExecutionEntityId((receipt as { result?: unknown }).result)
+      : undefined;
+    const executionId = this.extractDecisionId(receipt);
+    const resourceType = this.resourceTypeFor(execution?.action ?? finalResponse.nextAction, finalResponse.intent);
 
     await this.conversationContextService.append({
       userId,
@@ -64,13 +70,26 @@ export class AssistantService {
       intent: finalResponse.intent,
       action: execution?.action ?? finalResponse.nextAction,
       executionId,
+      resourceType,
+      resourceId,
     });
 
     return finalResponse;
   }
 
-  private resolveContextualExecution(response: BrainResponse, command: { referencesPrevious: boolean; operation: string; targetAction?: string; targetExecutionId?: string }, input: string): BrainResponse {
-    if (!command.referencesPrevious || !command.targetExecutionId) return response;
+  private resolveContextualExecution(
+    response: BrainResponse,
+    command: {
+      referencesPrevious: boolean;
+      operation: string;
+      targetAction?: string;
+      targetExecutionId?: string;
+      targetResourceType?: string;
+      targetResourceId?: string;
+    },
+    input: string,
+  ): BrainResponse {
+    if (!command.referencesPrevious || !(command.targetResourceId || command.targetExecutionId)) return response;
     const previousAction = (command.targetAction ?? '').toLowerCase();
     const hasTime = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
     if (command.operation === 'update' && previousAction.includes('reminder') && hasTime) {
@@ -92,5 +111,17 @@ export class AssistantService {
     if (!receipt || typeof receipt !== 'object') return undefined;
     const value = (receipt as { decisionId?: unknown }).decisionId;
     return typeof value === 'string' && value ? value : undefined;
+  }
+
+  private resourceTypeFor(action?: string, intent?: string): string | undefined {
+    const value = `${action ?? ''} ${intent ?? ''}`.toLowerCase();
+    if (value.includes('reminder')) return 'reminder';
+    if (value.includes('calendar') || value.includes('schedule')) return 'calendar';
+    if (value.includes('workout') || value.includes('exercise') || value.includes('training')) return 'workout';
+    if (value.includes('habit')) return 'habit';
+    if (value.includes('supplement') || value.includes('vitamin')) return 'supplement';
+    if (value.includes('notification')) return 'notification';
+    if (value.includes('meal') || value.includes('food') || value.includes('nutrition')) return 'nutrition';
+    return undefined;
   }
 }
