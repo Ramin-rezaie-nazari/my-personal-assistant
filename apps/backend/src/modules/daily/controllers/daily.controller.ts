@@ -3,12 +3,14 @@ import {
   Controller,
   Get,
   Patch,
+  Post,
   Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { DailyService } from '../services/daily.service';
+import { AddWaterDto } from '../dto/add-water.dto';
 import { UpdateDailyDto } from '../dto/update-daily.dto';
 
 @Controller('daily')
@@ -30,5 +32,14 @@ export class DailyController {
     @Body() dto: UpdateDailyDto,
   ) {
     return this.dailyService.updateDailyLog(req.user.id, dto);
+  }
+
+  @Post('water')
+  addWater(
+    @Request() req: { user: { id: string } },
+    @Body() dto: AddWaterDto,
+    @Query('dateKey') dateKey?: string,
+  ) {
+    return this.dailyService.addWater(req.user.id, dto.amountMl, dateKey);
   }
 }
