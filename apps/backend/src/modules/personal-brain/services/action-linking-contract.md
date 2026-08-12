@@ -1,0 +1,1 @@
+Supported linked resource adapters: reminder, calendar, workout, habit, supplement. Each adapter receives userId and contextual target resource identifiers and must preserve ownership checks in the underlying domain service.
