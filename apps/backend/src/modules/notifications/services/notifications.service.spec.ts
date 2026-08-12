@@ -6,6 +6,7 @@ const makePrisma = () => ({
     create: jest.fn(),
     findMany: jest.fn(),
     findFirst: jest.fn(),
+    count: jest.fn(),
     updateMany: jest.fn(),
   },
 });
@@ -45,6 +46,17 @@ describe('NotificationsService', () => {
       where: { userId: 'u1', readAt: null },
       orderBy: [{ readAt: 'asc' }, { createdAt: 'desc' }],
       take: 50,
+    });
+  });
+
+  it('returns an exact unread count for the authenticated owner', async () => {
+    const prisma = makePrisma();
+    prisma.notification.count.mockResolvedValue(3);
+    const service = new NotificationsService(prisma as never);
+
+    await expect(service.getUnreadCount('u1')).resolves.toBe(3);
+    expect(prisma.notification.count).toHaveBeenCalledWith({
+      where: { userId: 'u1', readAt: null },
     });
   });
 
