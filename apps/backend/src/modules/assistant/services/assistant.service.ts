@@ -96,7 +96,15 @@ export class AssistantService {
   ): BrainResponse {
     if (!command.referencesPrevious || !(command.targetResourceId || command.targetExecutionId)) return response;
     const previousAction = (command.targetAction ?? '').toLowerCase();
+    const previousResource = (command.targetResourceType ?? '').toLowerCase();
     const hasTime = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
+
+    if (command.operation === 'update' && previousResource === 'calendar' && hasTime) {
+      return { ...response, intent: 'calendar', nextAction: 'update_calendar_event' };
+    }
+    if (command.operation === 'cancel' && previousResource === 'calendar') {
+      return { ...response, intent: 'calendar', nextAction: 'cancel_calendar_event' };
+    }
     if (command.operation === 'update' && previousAction.includes('reminder') && hasTime) {
       return { ...response, intent: 'reminder', nextAction: 'update_reminder' };
     }
