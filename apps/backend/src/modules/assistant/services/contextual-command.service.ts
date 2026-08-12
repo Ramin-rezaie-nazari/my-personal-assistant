@@ -7,6 +7,8 @@ export type ContextualCommand = {
   operation: 'create' | 'update' | 'cancel' | 'unknown';
   targetAction?: string;
   targetExecutionId?: string;
+  targetResourceType?: string;
+  targetResourceId?: string;
 };
 
 @Injectable()
@@ -32,6 +34,8 @@ export class ContextualCommandService {
       operation,
       targetAction: referencesPrevious ? previous?.action : undefined,
       targetExecutionId: referencesPrevious ? previous?.executionId : undefined,
+      targetResourceType: referencesPrevious ? previous?.resourceType : undefined,
+      targetResourceId: referencesPrevious ? previous?.resourceId : undefined,
     };
   }
 }
