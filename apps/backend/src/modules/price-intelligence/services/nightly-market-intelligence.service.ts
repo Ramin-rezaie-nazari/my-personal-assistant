@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { PriceSourceService } from './price-source.service';
 import { PriceHistoryStoreService } from './price-history-store.service';
 
-export type NightlyMarketConfig = { hour: number; minute: number; timezone: string; enabled: boolean; maxRetries: number; retryDelayMs: number; catchUpAfterMissedRun: boolean };
+export type NightlyMarketConfig = { hour: number; minute: number; timezone?: string; enabled: boolean; maxRetries: number; retryDelayMs: number; catchUpAfterMissedRun: boolean };
 export type NightlyRunResult = { runId: string; status: 'completed' | 'partial' | 'failed' | 'skipped'; attempts: number; collected: number; failedSources: string[]; scheduledFor: Date; startedAt: Date; completedAt: Date };
 
 @Injectable()
 export class NightlyMarketIntelligenceService {
-  private readonly defaults: NightlyMarketConfig = { hour: 3, minute: 30, timezone: 'Asia/Tehran', enabled: true, maxRetries: 3, retryDelayMs: 30_000, catchUpAfterMissedRun: true };
+  private readonly defaults: NightlyMarketConfig = { hour: 3, minute: 30, timezone: undefined, enabled: true, maxRetries: 3, retryDelayMs: 30_000, catchUpAfterMissedRun: true };
 
   constructor(private readonly sources: PriceSourceService, private readonly history: PriceHistoryStoreService) {}
 
