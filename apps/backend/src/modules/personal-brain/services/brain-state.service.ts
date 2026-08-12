@@ -23,7 +23,7 @@ export class BrainStateService {
     const memoryContext =
       await this.brainMemoryContextService.buildMemoryContext(query, userId);
 
-    const goals = await this.brainGoalService.getGoals();
+    const goals = await this.brainGoalService.getGoals(userId);
 
     const userContext = this.userContextService.build({
       context,
