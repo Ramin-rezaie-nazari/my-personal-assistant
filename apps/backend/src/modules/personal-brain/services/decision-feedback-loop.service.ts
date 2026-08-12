@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DecisionCandidate } from './unified-decision-engine.service';
 import { PersonalizationEngineService } from './personalization-engine.service';
 
-export type DecisionFeedback = { candidate: DecisionCandidate; outcome: 'accepted' | 'completed' | 'dismissed' | 'failed' | 'skipped'; reward?: number };
+export type DecisionFeedback = { userId?: string; candidate: DecisionCandidate; outcome: 'accepted' | 'completed' | 'dismissed' | 'failed' | 'skipped'; reward?: number };
 
 @Injectable()
 export class DecisionFeedbackLoopService {
@@ -10,14 +10,15 @@ export class DecisionFeedbackLoopService {
 
   record(feedback: DecisionFeedback) {
     const reward = feedback.reward ?? this.defaultReward(feedback.outcome);
-    this.personalization.recordSignal({
-      domain: feedback.candidate.domain,
+    const userId = feedback.userId ?? 'system';
+    const signal = this.personalization.upsertSignal(userId, feedback.candidate.domain, {
       key: `decision.${feedback.candidate.action}`,
       value: feedback.outcome,
       score: reward,
       confidence: 0.6,
+      source: 'decision-feedback',
     });
-    return { ...feedback, reward };
+    return { ...feedback, reward, signal };
   }
 
   private defaultReward(outcome: DecisionFeedback['outcome']) {
