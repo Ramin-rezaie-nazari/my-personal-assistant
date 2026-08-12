@@ -29,3 +29,7 @@ export class TaskEventDto {
   reason?: string;
   metadata?: Record<string, unknown>;
 }
+
+export class TaskDependencyDto {
+  dependsOnTaskId!: string;
+}
