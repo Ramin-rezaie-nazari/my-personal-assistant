@@ -11,5 +11,5 @@ export type BrainState = {
   memories: BrainMemory[];
   goals: BrainGoal[];
   dailyStatus: BrainDailyStatus;
-  weeklyStatus: BrainWeeklyStatus;
+  weeklyStatus?: BrainWeeklyStatus;
 };
