@@ -25,11 +25,12 @@ import { ResponsePlanningService } from './services/response-planning.service';
 import { UserContextService } from './services/user-context.service';
 import { UserUnderstandingService } from './services/user-understanding.service';
 import { SmartPlanningService } from './services/smart-planning.service';
+import { FullDaySchedulerService } from './services/full-day-scheduler.service';
 
 @Module({
   imports: [ConversationEngineModule, DailyModule, WorkoutModule, BrainIntegrationModule, ContextEngineModule, MemoryIntelligenceModule, UserIntelligenceModule],
   controllers: [PersonalBrainController],
-  providers: [BrainStateService, BrainDecisionPipelineService, BrainDailyStatusService, BrainWeeklyStatusService, BrainNutritionTargetsService, BrainWorkoutStatusService, BrainLifeContextService, BrainMemoryContextService, RelevantMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, MemoryManagerService, UserUnderstandingService, UserContextService, IntentionAnalysisService, ResponsePlanningService, SmartPlanningService],
-  exports: [BrainStateService, BrainDecisionPipelineService, BrainMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, BrainLifeContextService, SmartPlanningService],
+  providers: [BrainStateService, BrainDecisionPipelineService, BrainDailyStatusService, BrainWeeklyStatusService, BrainNutritionTargetsService, BrainWorkoutStatusService, BrainLifeContextService, BrainMemoryContextService, RelevantMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, MemoryManagerService, UserUnderstandingService, UserContextService, IntentionAnalysisService, ResponsePlanningService, SmartPlanningService, FullDaySchedulerService],
+  exports: [BrainStateService, BrainDecisionPipelineService, BrainMemoryContextService, BrainReasoningContextService, BrainReasoningEngineService, BrainOrchestratorService, BrainLifeContextService, SmartPlanningService, FullDaySchedulerService],
 })
 export class PersonalBrainModule {}
