@@ -13,6 +13,7 @@ import { RemindersModule } from './modules/reminders/reminders.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HabitsModule } from './modules/habits/habits.module';
+import { GoalsModule } from './modules/goals/goals.module';
 import { ConfigModule } from './common/config/config.module';
 import { PrismaModule } from './common/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -36,38 +37,12 @@ import { DailyCommandCenterModule } from './modules/daily-command-center/daily-c
 
 @Module({
   imports: [
-    HealthModule,
-    DailyModule,
-    NutritionModule,
-    FoodsModule,
-    MealsModule,
-    RecipesModule,
-    WorkoutModule,
-    SupplementsModule,
-    RemindersModule,
-    CalendarModule,
-    NotificationsModule,
-    HabitsModule,
-    ConfigModule,
-    PrismaModule,
-    AuthModule,
-    UsersModule,
-    SettingsModule,
-    ProfileModule,
-    OnboardingModule,
-    AssistantModule,
-    UserIntelligenceModule,
-    BudgetIntelligenceModule,
-    PriceIntelligenceModule,
-    ShoppingIntelligenceModule,
-    DeviceIntelligenceModule,
-    DecisionEngineModule,
-    AdaptiveLearningModule,
-    ContextEngineModule,
-    PreferencesModule,
-    PersonalBrainModule,
-    DashboardModule,
-    DailyCommandCenterModule,
+    HealthModule, DailyModule, NutritionModule, FoodsModule, MealsModule, RecipesModule, WorkoutModule,
+    SupplementsModule, RemindersModule, CalendarModule, NotificationsModule, HabitsModule, GoalsModule,
+    ConfigModule, PrismaModule, AuthModule, UsersModule, SettingsModule, ProfileModule, OnboardingModule,
+    AssistantModule, UserIntelligenceModule, BudgetIntelligenceModule, PriceIntelligenceModule,
+    ShoppingIntelligenceModule, DeviceIntelligenceModule, DecisionEngineModule, AdaptiveLearningModule,
+    ContextEngineModule, PreferencesModule, PersonalBrainModule, DashboardModule, DailyCommandCenterModule,
   ],
   controllers: [AppController],
   providers: [AppService],
