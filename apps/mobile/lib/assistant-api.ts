@@ -2,6 +2,13 @@ import { getStoredAccessToken } from './api';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 
+export type AssistantExecution = {
+  executed: boolean;
+  action: string;
+  message: string;
+  intent: string;
+};
+
 export type AssistantResponse = {
   message: string;
   intent?: string;
@@ -9,6 +16,7 @@ export type AssistantResponse = {
   nextAction?: string | null;
   responsePlan?: unknown;
   metadata?: Record<string, unknown>;
+  execution?: AssistantExecution;
 };
 
 export async function sendAssistantMessage(message: string): Promise<AssistantResponse> {
