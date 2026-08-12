@@ -22,6 +22,7 @@ export type { BrainDailyStatus } from './brain-daily-status.types';
 export type { BrainWeeklyDay, BrainWeeklyStatus } from './brain-weekly-status.types';
 export type { BrainNutritionTargets } from './brain-nutrition-targets.types';
 export type { BrainWorkoutStatus } from './brain-workout-status.types';
+export type { BrainLifeContext, BrainHabitSnapshot } from './brain-life-context.types';
 
 export type { BrainMemory, BrainMemoryContext } from './brain-memory.types';
 
