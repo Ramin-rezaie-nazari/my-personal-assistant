@@ -5,6 +5,9 @@ import { MemoryIntelligenceController } from './controllers/memory-intelligence.
 
 import { MemoryClassificationService } from './services/memory-classification.service';
 import { MemoryConsolidationService } from './services/memory-consolidation.service';
+import { MemoryConsolidationIntelligenceService } from './services/memory-consolidation-intelligence.service';
+import { MemoryForgettingService } from './services/memory-forgetting.service';
+import { MemoryGovernanceService } from './services/memory-governance.service';
 import { MemoryIntelligenceService } from './services/memory-intelligence.service';
 import { MemoryLifecycleService } from './services/memory-lifecycle.service';
 import { MemoryRankingService } from './services/memory-ranking.service';
@@ -27,6 +30,9 @@ import {
     MemoryClassificationService,
     MemoryScoringService,
     MemoryConsolidationService,
+    MemoryConsolidationIntelligenceService,
+    MemoryForgettingService,
+    MemoryGovernanceService,
     MemoryLifecycleService,
     MemoryRetrievalService,
     MemoryRankingService,
@@ -47,6 +53,9 @@ import {
     MemoryClassificationService,
     MemoryScoringService,
     MemoryConsolidationService,
+    MemoryConsolidationIntelligenceService,
+    MemoryForgettingService,
+    MemoryGovernanceService,
     MemoryLifecycleService,
     MemoryRetrievalService,
     MemoryRankingService,
