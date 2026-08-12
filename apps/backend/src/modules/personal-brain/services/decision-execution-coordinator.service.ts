@@ -3,8 +3,9 @@ import { DecisionCandidate } from './unified-decision-engine.service';
 import { DecisionActionAdapterService } from './decision-action-adapter.service';
 import { DecisionExecutionGateService } from './decision-execution-gate.service';
 import { DecisionFeedbackLoopService } from './decision-feedback-loop.service';
+import { DecisionExecutionPolicyService } from './decision-execution-policy.service';
 
-export type DecisionExecutionStatus = 'completed' | 'blocked' | 'unsupported' | 'failed';
+export type DecisionExecutionStatus = 'completed' | 'blocked' | 'unsupported' | 'failed' | 'dry_run';
 
 export type DecisionExecutionReceipt = {
   userId: string;
@@ -15,6 +16,8 @@ export type DecisionExecutionReceipt = {
   reason: string;
   result?: unknown;
   durationMs: number;
+  attempts: number;
+  policy: { timeoutMs: number; maxAttempts: number; retryDelayMs: number; dryRun: boolean };
 };
 
 @Injectable()
@@ -23,33 +26,33 @@ export class DecisionExecutionCoordinatorService {
     private readonly gate: DecisionExecutionGateService,
     private readonly adapters: DecisionActionAdapterService,
     private readonly feedback: DecisionFeedbackLoopService,
+    private readonly policy: DecisionExecutionPolicyService,
   ) {}
 
   async execute(userId: string, candidate: DecisionCandidate, context: Record<string, unknown> = {}): Promise<DecisionExecutionReceipt> {
     const startedAt = Date.now();
     const base = { userId, decisionId: candidate.id, action: candidate.action, domain: candidate.domain };
+    const resolved = this.policy.resolve(candidate, context);
     const gate = this.gate.open(userId, candidate);
-
-    if (!gate.allowed) {
-      return { ...base, status: 'blocked', reason: gate.reason, durationMs: Date.now() - startedAt };
-    }
+    if (!gate.allowed) return { ...base, status: 'blocked', reason: gate.reason, durationMs: Date.now() - startedAt, attempts: 0, policy: resolved };
 
     try {
-      const execution = await this.adapters.execute(candidate, context);
-      if (!execution.handled) {
+      const execution = await this.policy.run(candidate, resolved, () => this.adapters.execute(candidate, context));
+      if (resolved.dryRun) return { ...base, status: 'dry_run', reason: 'dry_run', durationMs: Date.now() - startedAt, attempts: 0, policy: resolved };
+      const actionResult = execution.result as { handled: boolean; result?: unknown };
+      if (!actionResult?.handled) {
         this.gate.fail(userId, candidate, 'unsupported_action');
         this.feedback.record({ userId, candidate, outcome: 'skipped' });
-        return { ...base, status: 'unsupported', reason: 'unsupported_action', durationMs: Date.now() - startedAt };
+        return { ...base, status: 'unsupported', reason: 'unsupported_action', durationMs: Date.now() - startedAt, attempts: execution.attempts.length, policy: resolved };
       }
-
-      this.gate.complete(userId, candidate, execution.result);
+      this.gate.complete(userId, candidate, actionResult.result);
       this.feedback.record({ userId, candidate, outcome: 'completed' });
-      return { ...base, status: 'completed', reason: 'action_executed', result: execution.result, durationMs: Date.now() - startedAt };
+      return { ...base, status: 'completed', reason: 'action_executed', result: actionResult.result, durationMs: Date.now() - startedAt, attempts: execution.attempts.length, policy: resolved };
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.gate.fail(userId, candidate, message);
       this.feedback.record({ userId, candidate, outcome: 'failed' });
-      return { ...base, status: 'failed', reason: message || 'action_failed', durationMs: Date.now() - startedAt };
+      return { ...base, status: 'failed', reason: message || 'action_failed', durationMs: Date.now() - startedAt, attempts: resolved.maxAttempts, policy: resolved };
     }
   }
 }
