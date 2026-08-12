@@ -4,7 +4,7 @@ import { BrainReasoningContextService } from './brain-reasoning-context.service'
 import { ResponsePlanningService } from './response-planning.service';
 
 describe('BrainOrchestratorService', () => {
-  it('builds reasoning context, evaluates a decision, and returns the planned response', async () => {
+  it('builds reasoning context with the authenticated user, evaluates a decision, and returns the planned response', async () => {
     const reasoningContext = {
       input: 'help me plan my day',
       signals: {
@@ -61,10 +61,12 @@ describe('BrainOrchestratorService', () => {
       responsePlanningService,
     );
 
-    const result = await service.processRequest('help me plan my day');
+    const userId = 'user-123';
+    const result = await service.processRequest('help me plan my day', userId);
 
     expect(reasoningContextService.build).toHaveBeenCalledWith(
       'help me plan my day',
+      userId,
     );
     expect(decisionPipelineService.run).toHaveBeenCalledWith(reasoningContext);
     expect(responsePlanningService.createPlan).toHaveBeenCalledWith({
