@@ -6,7 +6,16 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "mypersonalassistant",
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#ffffff"
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     }
