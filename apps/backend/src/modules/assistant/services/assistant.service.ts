@@ -21,7 +21,7 @@ export class AssistantService {
     const response = await this.brainOrchestratorService.processRequest(input, userId);
     if (!response.nextAction) return response;
 
-    const execution = await this.naturalActionExecutionService.execute(input, userId);
+    const execution = await this.naturalActionExecutionService.execute(input, userId, response);
     return {
       ...response,
       message: execution.executed ? execution.message : response.message,
