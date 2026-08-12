@@ -14,20 +14,9 @@ export type HabitSummary = { dateKey:string;activeHabits:number;completedCount:n
 export type Supplement = { id:string;name:string;dosage:string|null;frequency:string;scheduledTime:string;active:boolean;logs?:Array<{dateKey:string}> };
 export type SupplementStatus = { dateKey:string;total:number;taken:number;remaining:number;completionPercent:number;supplements:Supplement[] };
 export type Notification = { id:string;title:string;body:string|null;type:string;scheduledAt:string|null;readAt:string|null;createdAt:string;priority:number };
+export type BrainContextResponse = { dateKey:string;primaryGoal:string|null;today:{calories:number;calorieGoal:number|null;protein:number;proteinGoal:number|null;waterMl:number;waterGoalMl:number|null};habits:{active:number;completed:number;streaks:number[]};supplements:{active:number;taken:number;remaining:number};reminders:{pending:number;next:Reminder|null};calendar:{todayCount:number;next:CalendarEvent|null};workouts:{todayCount:number;latest:{id:string;name:string;type:string;durationMinutes:number;caloriesBurned:number;performedAt:string}|null};notifications:{unread:number};priorities:string[];timestamp:string;source:string};
 export type DailyCalendarEvent = { id:string;title:string;type:string;scheduledAt:string;completed:boolean };
-export type DailyCommandCenterResponse = {
-  dateKey:string;
-  greeting:string;
-  primaryGoal:string|null;
-  priorities:string[];
-  nutrition:{calories:number;calorieGoal:number|null;protein:number;proteinGoal:number|null;waterMl:number;waterGoalMl:number|null};
-  habits:{total:number;completed:number};
-  supplements:{total:number;taken:number};
-  reminders:{pending:number;next:{id:string;title:string;type:string;scheduledAt:string}|null};
-  calendar:{today:DailyCalendarEvent[];next:DailyCalendarEvent|null};
-  notifications:{unread:number};
-  workouts:{countToday:number;latest:{name:string;type:string;durationMinutes:number}|null};
-};
+export type DailyCommandCenterResponse = { dateKey:string;greeting:string;primaryGoal:string|null;priorities:string[];nutrition:{calories:number;calorieGoal:number|null;protein:number;proteinGoal:number|null;waterMl:number;waterGoalMl:number|null};habits:{total:number;completed:number};supplements:{total:number;taken:number};reminders:{pending:number;next:{id:string;title:string;type:string;scheduledAt:string}|null};calendar:{today:DailyCalendarEvent[];next:DailyCalendarEvent|null};notifications:{unread:number};workouts:{countToday:number;latest:{name:string;type:string;durationMinutes:number}|null};};
 export async function setAuthSession(auth:AuthResponse){await AsyncStorage.multiSet([[ACCESS_TOKEN_KEY,auth.accessToken],[REFRESH_TOKEN_KEY,auth.refreshToken]])}
 export async function setAccessToken(token:string){await AsyncStorage.setItem(ACCESS_TOKEN_KEY,token)}
 export async function getStoredAccessToken(){return AsyncStorage.getItem(ACCESS_TOKEN_KEY)}
@@ -45,6 +34,7 @@ export async function logout(){const refreshToken=await getStoredRefreshToken();
 export function getTodayDashboard(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<DashboardResponse>(`/dashboard/today${q}`)}
 export async function getDashboardOverview(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';const data=await request<DashboardOverviewResponse>(`/dashboard/overview${q}`);data.today.nutrition.waterRemainingMl ??= data.today.nutrition.waterRemaining;return data}
 export function getPersonalInsights(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<PersonalInsightsResponse>(`/adaptive-learning/insights${q}`)}
+export function getBrainContext(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<BrainContextResponse>(`/brain-integration/context${q}`)}
 export function getDailyCommandCenter(){return request<DailyCommandCenterResponse>('/daily-command-center')}
 export function addWater(amountMl:number,dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<{waterMl:number}>(`/daily/water${q}`,{method:'POST',body:JSON.stringify({amountMl})})}
 export function createWorkout(data:{name:string;type:string;durationMinutes:number;caloriesBurned:number}){return request('/workout',{method:'POST',body:JSON.stringify(data)})}
