@@ -13,8 +13,8 @@ export class MemoryRetrievalService {
     private readonly memoryRepository: MemoryRepository,
   ) {}
 
-  async search(query: string): Promise<Memory[]> {
-    const memories = await this.memoryRepository.getAll();
+  async search(query: string, userId: string): Promise<Memory[]> {
+    const memories = await this.memoryRepository.getAll(userId);
     const normalizedQuery = query.toLowerCase();
 
     return memories.filter((memory) => {
@@ -30,8 +30,8 @@ export class MemoryRetrievalService {
     });
   }
 
-  async retrieveByKey(key: string): Promise<Memory | undefined> {
-    const memory = await this.memoryRepository.findByKey(key);
+  async retrieveByKey(key: string, userId: string): Promise<Memory | undefined> {
+    const memory = await this.memoryRepository.findByKey(key, userId);
 
     return memory ?? undefined;
   }
