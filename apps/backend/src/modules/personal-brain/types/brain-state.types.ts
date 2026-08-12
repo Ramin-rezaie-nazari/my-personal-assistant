@@ -6,6 +6,7 @@ import { BrainDailyStatus } from './brain-daily-status.types';
 import { BrainWeeklyStatus } from './brain-weekly-status.types';
 import { BrainNutritionTargets } from './brain-nutrition-targets.types';
 import { BrainWorkoutStatus } from './brain-workout-status.types';
+import { BrainLifeContext } from './brain-life-context.types';
 
 export type BrainState = {
   userContext: BrainUserContext;
@@ -16,4 +17,5 @@ export type BrainState = {
   weeklyStatus?: BrainWeeklyStatus;
   nutritionTargets?: BrainNutritionTargets;
   workoutStatus?: BrainWorkoutStatus;
+  lifeContext?: BrainLifeContext;
 };
