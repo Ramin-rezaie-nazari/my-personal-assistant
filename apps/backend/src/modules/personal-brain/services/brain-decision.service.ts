@@ -21,6 +21,10 @@ export class BrainDecisionService {
       /\b(how did i do this week|how am i doing this week|weekly progress|this week(?:'s)? progress|how was my week|how did my week go)\b/.test(
         normalizedInput,
       );
+    const asksAboutTargets =
+      /\b(am i on track|am i on target|how am i doing with my (?:nutrition|calories|protein|water)|how much (?:calories|protein|water) do i have left|what do i have left today)\b/.test(
+        normalizedInput,
+      );
 
     if (asksAboutGoal && primaryGoal) {
       return {
@@ -30,6 +34,48 @@ export class BrainDecisionService {
         intent: 'goal',
         recommendation: `Your current primary goal is: ${primaryGoal.title}`,
         nextAction: 'Use primary goal as personal context',
+      };
+    }
+
+    if (asksAboutTargets) {
+      const targets = context.state.nutritionTargets;
+      const dailyStatus = context.state.dailyStatus;
+      const targetBlockers = blockers.filter((blocker) => blocker !== 'missing-goals');
+
+      if (!targets?.hasTargets) {
+        return {
+          canDecide: targetBlockers.length === 0,
+          confidence: context.reasoning.confidence,
+          blockers: targetBlockers,
+          intent: 'nutrition-targets',
+          recommendation: 'I do not have your nutrition targets yet. Set your daily calorie, protein, or water goals and I can track your progress against them.',
+          nextAction: 'Set nutrition targets',
+        };
+      }
+
+      const parts: string[] = [];
+      const remaining: string[] = [];
+
+      if (targets.dailyCaloriesGoal !== undefined) {
+        parts.push(`${dailyStatus.calories}/${targets.dailyCaloriesGoal} kcal`);
+        remaining.push(`${Math.max(targets.dailyCaloriesGoal - dailyStatus.calories, 0)} kcal`);
+      }
+      if (targets.proteinGoalGrams !== undefined) {
+        parts.push(`${dailyStatus.protein}/${targets.proteinGoalGrams} g protein`);
+        remaining.push(`${Math.max(targets.proteinGoalGrams - dailyStatus.protein, 0)} g protein`);
+      }
+      if (targets.waterGoalMl !== undefined) {
+        parts.push(`${dailyStatus.waterMl}/${targets.waterGoalMl} ml water`);
+        remaining.push(`${Math.max(targets.waterGoalMl - dailyStatus.waterMl, 0)} ml water`);
+      }
+
+      return {
+        canDecide: targetBlockers.length === 0,
+        confidence: context.reasoning.confidence,
+        blockers: targetBlockers,
+        intent: 'nutrition-targets',
+        recommendation: `Today: ${parts.join(', ')}. Remaining: ${remaining.join(', ')}.`,
+        nextAction: 'Continue logging against today targets',
       };
     }
 
