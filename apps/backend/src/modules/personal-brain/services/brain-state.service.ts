@@ -5,6 +5,7 @@ import { BrainGoalService } from '../../brain-integration/services/brain-goal.se
 
 import { BrainDailyStatusService } from './brain-daily-status.service';
 import { BrainMemoryContextService } from './brain-memory-context.service';
+import { BrainNutritionTargetsService } from './brain-nutrition-targets.service';
 import { BrainWeeklyStatusService } from './brain-weekly-status.service';
 import { UserContextService } from './user-context.service';
 
@@ -18,18 +19,26 @@ export class BrainStateService {
     private readonly brainGoalService: BrainGoalService,
     private readonly brainDailyStatusService: BrainDailyStatusService,
     private readonly brainWeeklyStatusService: BrainWeeklyStatusService,
+    private readonly brainNutritionTargetsService: BrainNutritionTargetsService,
     private readonly userContextService: UserContextService,
   ) {}
 
   async buildState(query = '', userId: string): Promise<BrainState> {
-    const [context, memoryContext, goals, dailyStatus, weeklyStatus] =
-      await Promise.all([
-        this.brainContextService.getContext(),
-        this.brainMemoryContextService.buildMemoryContext(query, userId),
-        this.brainGoalService.getGoals(userId),
-        this.brainDailyStatusService.getToday(userId),
-        this.brainWeeklyStatusService.getThisWeek(userId),
-      ]);
+    const [
+      context,
+      memoryContext,
+      goals,
+      dailyStatus,
+      weeklyStatus,
+      nutritionTargets,
+    ] = await Promise.all([
+      this.brainContextService.getContext(),
+      this.brainMemoryContextService.buildMemoryContext(query, userId),
+      this.brainGoalService.getGoals(userId),
+      this.brainDailyStatusService.getToday(userId),
+      this.brainWeeklyStatusService.getThisWeek(userId),
+      this.brainNutritionTargetsService.getTargets(userId),
+    ]);
 
     const userContext = this.userContextService.build({
       context,
@@ -44,6 +53,7 @@ export class BrainStateService {
       goals,
       dailyStatus,
       weeklyStatus,
+      nutritionTargets,
     };
   }
 }
