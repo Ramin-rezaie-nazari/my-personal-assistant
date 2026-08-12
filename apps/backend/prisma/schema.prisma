@@ -327,10 +327,13 @@ model Notification {
   type String @default("general")
   scheduledAt DateTime?
   readAt DateTime?
+  dedupeKey String
+  priority Int @default(2)
   createdAt DateTime @default(now())
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, readAt, createdAt])
   @@index([userId, scheduledAt])
+  @@unique([userId, dedupeKey])
 }
 model UserFact {
   id String @id @default(uuid())
