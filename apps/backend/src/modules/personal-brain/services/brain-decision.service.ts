@@ -6,10 +6,24 @@ import { BrainDecisionResult, BrainReasoningContext } from '../types';
 export class BrainDecisionService {
   evaluateDecision(context: BrainReasoningContext): BrainDecisionResult {
     const blockers = [...context.reasoning.uncertainties];
-
     const primaryGoal = context.userContext.goals[0];
-
     const hasGoal = Boolean(primaryGoal);
+    const normalizedInput = context.input.trim().toLowerCase();
+    const asksAboutGoal =
+      /\b(what(?:'s| is) my (?:primary )?goal|tell me my goal|my goal\??)\b/.test(
+        normalizedInput,
+      );
+
+    if (asksAboutGoal && primaryGoal) {
+      return {
+        canDecide: blockers.length === 0,
+        confidence: context.reasoning.confidence,
+        blockers,
+        intent: 'goal',
+        recommendation: `Your current primary goal is: ${primaryGoal.title}`,
+        nextAction: 'Use primary goal as personal context',
+      };
+    }
 
     return {
       canDecide: blockers.length === 0 && hasGoal,
