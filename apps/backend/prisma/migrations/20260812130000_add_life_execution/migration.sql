@@ -1,0 +1,12 @@
+CREATE TABLE "LifeTask" ("id" TEXT NOT NULL,"userId" TEXT NOT NULL,"goalId" TEXT,"title" TEXT NOT NULL,"description" TEXT,"status" TEXT NOT NULL DEFAULT 'pending',"priority" INTEGER NOT NULL DEFAULT 2,"estimatedMinutes" INTEGER NOT NULL DEFAULT 15,"energyLevel" TEXT NOT NULL DEFAULT 'medium',"dueAt" TIMESTAMP(3),"scheduledAt" TIMESTAMP(3),"completedAt" TIMESTAMP(3),"source" TEXT NOT NULL DEFAULT 'user',"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,"updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "LifeTask_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "LifeTaskDependency" ("id" TEXT NOT NULL,"taskId" TEXT NOT NULL,"dependsOnTaskId" TEXT NOT NULL,CONSTRAINT "LifeTaskDependency_pkey" PRIMARY KEY ("id"));
+CREATE TABLE "LifeTaskEvent" ("id" TEXT NOT NULL,"taskId" TEXT NOT NULL,"eventType" TEXT NOT NULL,"reason" TEXT,"metadata" JSONB,"createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,CONSTRAINT "LifeTaskEvent_pkey" PRIMARY KEY ("id"));
+CREATE INDEX "LifeTask_userId_status_priority_idx" ON "LifeTask"("userId","status","priority");
+CREATE INDEX "LifeTask_userId_dueAt_idx" ON "LifeTask"("userId","dueAt");
+CREATE UNIQUE INDEX "LifeTaskDependency_taskId_dependsOnTaskId_key" ON "LifeTaskDependency"("taskId","dependsOnTaskId");
+CREATE INDEX "LifeTaskEvent_taskId_createdAt_idx" ON "LifeTaskEvent"("taskId","createdAt");
+ALTER TABLE "LifeTask" ADD CONSTRAINT "LifeTask_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "LifeTask" ADD CONSTRAINT "LifeTask_goalId_fkey" FOREIGN KEY ("goalId") REFERENCES "Goal"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "LifeTaskDependency" ADD CONSTRAINT "LifeTaskDependency_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "LifeTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "LifeTaskDependency" ADD CONSTRAINT "LifeTaskDependency_dependsOnTaskId_fkey" FOREIGN KEY ("dependsOnTaskId") REFERENCES "LifeTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "LifeTaskEvent" ADD CONSTRAINT "LifeTaskEvent_taskId_fkey" FOREIGN KEY ("taskId") REFERENCES "LifeTask"("id") ON DELETE CASCADE ON UPDATE CASCADE;
