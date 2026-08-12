@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -25,6 +26,16 @@ export class AssistantController {
   @Get()
   getStatus() {
     return this.assistantService.getStatus();
+  }
+
+  @Get('history')
+  @UseGuards(JwtAuthGuard)
+  async getHistory(
+    @Req() req: AuthenticatedRequest,
+    @Query('limit') limit?: string,
+  ) {
+    const parsed = limit ? Number(limit) : 24;
+    return this.assistantService.getHistory(req.user.id, Number.isFinite(parsed) ? parsed : 24);
   }
 
   @Post()
