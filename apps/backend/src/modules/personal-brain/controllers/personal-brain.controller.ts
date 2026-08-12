@@ -7,6 +7,8 @@ import { DynamicReplanningService } from '../services/dynamic-replanning.service
 import { FullDaySchedulerService } from '../services/full-day-scheduler.service';
 import { NextBestActionService } from '../services/next-best-action.service';
 import { ScheduleInsightsService } from '../services/schedule-insights.service';
+import { ScheduleHealthService } from '../services/schedule-health.service';
+import { ReplanPolicyService } from '../services/replan-policy.service';
 import { SmartPlanningService } from '../services/smart-planning.service';
 
 interface AuthenticatedRequest extends Request { user: { id: string } }
@@ -20,6 +22,8 @@ export class PersonalBrainController {
     private readonly dynamicReplanningService: DynamicReplanningService,
     private readonly scheduleInsightsService: ScheduleInsightsService,
     private readonly nextBestActionService: NextBestActionService,
+    private readonly scheduleHealthService: ScheduleHealthService,
+    private readonly replanPolicyService: ReplanPolicyService,
   ) {}
 
   @Get()
@@ -40,6 +44,14 @@ export class PersonalBrainController {
   @Get('schedule/insights')
   @UseGuards(JwtAuthGuard)
   async getScheduleInsights(@Req() req: AuthenticatedRequest) { return this.scheduleInsightsService.getInsights(req.user.id); }
+
+  @Get('schedule/health')
+  @UseGuards(JwtAuthGuard)
+  async getScheduleHealth(@Req() req: AuthenticatedRequest) { return this.scheduleHealthService.evaluate(req.user.id); }
+
+  @Get('schedule/replan-decision')
+  @UseGuards(JwtAuthGuard)
+  async getReplanDecision(@Req() req: AuthenticatedRequest) { return this.replanPolicyService.decide(req.user.id); }
 
   @Get('next-action')
   @UseGuards(JwtAuthGuard)
