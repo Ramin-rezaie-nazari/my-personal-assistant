@@ -24,6 +24,7 @@ const createContext = (): BrainReasoningContext => ({
       endDateKey: '2026-08-12',
       days: [],
       loggedDays: 6,
+      consistencyPercent: 86,
       totalCalories: 10650,
       totalProtein: 615,
       totalWaterMl: 10700,
@@ -58,7 +59,7 @@ describe('BrainDecisionService weekly intent', () => {
         canDecide: true,
         intent: 'weekly-status',
         recommendation:
-          'This week: 6/7 days logged, 10650 kcal, 615 g protein, 10700 ml water. Current streak: 2 days.',
+          'This week: 6/7 days logged (86% consistency), 10650 kcal, 615 g protein, 10700 ml water. Current streak: 2 days.',
         nextAction: 'Review weekly progress and continue logging',
       }),
     );
