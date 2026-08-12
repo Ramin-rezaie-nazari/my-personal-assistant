@@ -2,7 +2,7 @@ import { BrainWeeklyStatusService } from './brain-weekly-status.service';
 import { DailyService } from '../../daily/services/daily.service';
 
 describe('BrainWeeklyStatusService', () => {
-  it('builds a seven-day summary and current logging streak', async () => {
+  it('builds a seven-day summary, consistency score, and current logging streak', async () => {
     const dailyService = {
       getDailyLogs: jest.fn().mockResolvedValue([
         { dateKey: '2026-08-07', waterMl: 1500, calories: 1800, protein: 90 },
@@ -24,13 +24,14 @@ describe('BrainWeeklyStatusService', () => {
     );
     expect(result.days).toHaveLength(7);
     expect(result.loggedDays).toBe(6);
+    expect(result.consistencyPercent).toBe(86);
     expect(result.currentStreak).toBe(6);
     expect(result.totalCalories).toBe(10650);
     expect(result.totalProtein).toBe(615);
     expect(result.totalWaterMl).toBe(10700);
   });
 
-  it('returns zero averages when no days are logged', async () => {
+  it('returns zero averages and consistency when no days are logged', async () => {
     const dailyService = {
       getDailyLogs: jest.fn().mockResolvedValue([]),
     } as unknown as DailyService;
@@ -39,6 +40,7 @@ describe('BrainWeeklyStatusService', () => {
     const result = await service.getThisWeek('user-2');
 
     expect(result.loggedDays).toBe(0);
+    expect(result.consistencyPercent).toBe(0);
     expect(result.averageCalories).toBe(0);
     expect(result.averageProtein).toBe(0);
     expect(result.averageWaterMl).toBe(0);
