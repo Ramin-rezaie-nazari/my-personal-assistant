@@ -39,6 +39,11 @@ export class NotificationsController {
     return this.notificationsService.getNotifications(req.user.id, includeRead === 'true');
   }
 
+  @Post('read-all')
+  markAllRead(@Request() req: { user: { id: string } }) {
+    return this.notificationsService.markAllRead(req.user.id);
+  }
+
   @Post(':id/read')
   markRead(@Request() req: { user: { id: string } }, @Param('id') notificationId: string) {
     return this.notificationsService.markRead(req.user.id, notificationId);
