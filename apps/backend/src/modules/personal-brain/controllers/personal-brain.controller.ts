@@ -9,6 +9,7 @@ import { NextBestActionService } from '../services/next-best-action.service';
 import { ScheduleInsightsService } from '../services/schedule-insights.service';
 import { ScheduleHealthService } from '../services/schedule-health.service';
 import { ReplanPolicyService } from '../services/replan-policy.service';
+import { ScheduleRecoveryService } from '../services/schedule-recovery.service';
 import { SmartPlanningService } from '../services/smart-planning.service';
 
 interface AuthenticatedRequest extends Request { user: { id: string } }
@@ -24,6 +25,7 @@ export class PersonalBrainController {
     private readonly nextBestActionService: NextBestActionService,
     private readonly scheduleHealthService: ScheduleHealthService,
     private readonly replanPolicyService: ReplanPolicyService,
+    private readonly scheduleRecoveryService: ScheduleRecoveryService,
   ) {}
 
   @Get()
@@ -52,6 +54,10 @@ export class PersonalBrainController {
   @Get('schedule/replan-decision')
   @UseGuards(JwtAuthGuard)
   async getReplanDecision(@Req() req: AuthenticatedRequest) { return this.replanPolicyService.decide(req.user.id); }
+
+  @Get('schedule/recovery')
+  @UseGuards(JwtAuthGuard)
+  async getScheduleRecovery(@Req() req: AuthenticatedRequest) { return this.scheduleRecoveryService.analyze(req.user.id); }
 
   @Get('next-action')
   @UseGuards(JwtAuthGuard)
