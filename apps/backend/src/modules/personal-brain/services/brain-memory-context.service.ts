@@ -10,8 +10,14 @@ export class BrainMemoryContextService {
     private readonly relevantMemoryContextService: RelevantMemoryContextService,
   ) {}
 
-  async buildMemoryContext(query: string): Promise<BrainMemoryContext> {
-    const context = await this.relevantMemoryContextService.buildContext(query);
+  async buildMemoryContext(
+    query: string,
+    userId: string,
+  ): Promise<BrainMemoryContext> {
+    const context = await this.relevantMemoryContextService.buildContext(
+      query,
+      userId,
+    );
 
     return {
       memories: context.memories,
