@@ -35,6 +35,7 @@ model User {
   meals            Meal[]
   recipes          Recipe[]
   workouts         Workout[]
+  reminders        Reminder[]
   userFacts        UserFact[]
   userBehaviors    UserBehavior[]
   userInsights     UserInsight[]
@@ -361,6 +362,24 @@ model Workout {
   updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Reminder {
+  id String @id @default(uuid())
+
+  userId String
+
+  title String
+  type String @default("general")
+  scheduledAt DateTime
+  completed Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, scheduledAt])
 }
 
 model UserFact {
