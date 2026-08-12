@@ -84,6 +84,22 @@ export type DashboardOverviewResponse = {
   };
 };
 
+export type PersonalInsight = {
+  key: string;
+  title: string;
+  description: string;
+  score: number;
+  category: 'nutrition' | 'hydration' | 'fitness' | 'consistency';
+};
+
+export type PersonalInsightsResponse = {
+  generatedAt: string;
+  dateKey: string;
+  profileGoal: string | null;
+  summary: string;
+  insights: PersonalInsight[];
+};
+
 export async function setAuthSession(auth: AuthResponse) {
   await AsyncStorage.multiSet([
     [ACCESS_TOKEN_KEY, auth.accessToken],
@@ -195,6 +211,11 @@ export function getTodayDashboard(dateKey?: string) {
 export function getDashboardOverview(dateKey?: string) {
   const query = dateKey ? `?dateKey=${encodeURIComponent(dateKey)}` : '';
   return request<DashboardOverviewResponse>(`/dashboard/overview${query}`);
+}
+
+export function getPersonalInsights(dateKey?: string) {
+  const query = dateKey ? `?dateKey=${encodeURIComponent(dateKey)}` : '';
+  return request<PersonalInsightsResponse>(`/adaptive-learning/insights${query}`);
 }
 
 export function addWater(amountMl: number, dateKey?: string) {

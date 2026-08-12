@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
 import {
   AuthUser,
   DashboardOverviewResponse,
@@ -156,6 +157,13 @@ export default function HomeScreen() {
 
         <View style={styles.hero}><Text style={styles.heroEyebrow}>TODAY</Text><Text style={styles.heroTitle}>{today?.nutrition.caloriesRemaining.toLocaleString() ?? 0} kcal</Text><Text style={styles.heroMuted}>remaining within your daily target</Text>{primaryGoal ? <Text style={styles.goalText}>🎯 {primaryGoal}</Text> : <Text style={styles.goalText}>🎯 Set a primary goal to make your assistant more personal</Text>}</View>
 
+        <Link href="/insights" asChild>
+          <Pressable style={({ pressed }) => [styles.insightLink, pressed && styles.pressed]}>
+            <Text style={styles.insightEmoji}>🧠</Text>
+            <View style={styles.insightCopy}><Text style={styles.insightTitle}>See what your assistant noticed</Text><Text style={styles.insightSubtitle}>Patterns from your last 7 days →</Text></View>
+          </Pressable>
+        </Link>
+
         <View style={styles.card}>
           <Text style={styles.cardLabel}>Quick actions</Text>
           <Text style={styles.muted}>Log the small things now; your dashboard and Brain update immediately.</Text>
@@ -206,6 +214,7 @@ const styles = StyleSheet.create({
   primaryButton: { minHeight: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111827', marginTop: 4 }, primaryButtonText: { color: '#FFFFFF', fontWeight: '800', fontSize: 15 }, pressed: { opacity: 0.75 }, switchButton: { alignItems: 'center', paddingVertical: 8 }, switchText: { color: '#374151', fontWeight: '600', fontSize: 13 },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }, headerCopy: { flex: 1, paddingRight: 12 }, logoutButton: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, backgroundColor: '#E5E7EB' }, logoutText: { color: '#374151', fontWeight: '700', fontSize: 12 }, eyebrow: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: '#6B7280' }, title: { fontSize: 30, fontWeight: '800', color: '#111827', marginTop: 4 }, subtitle: { color: '#6B7280', marginTop: 2, fontSize: 12 },
   hero: { backgroundColor: '#111827', borderRadius: 26, padding: 22, marginVertical: 4 }, heroEyebrow: { color: '#9CA3AF', fontSize: 11, fontWeight: '800', letterSpacing: 1.4 }, heroTitle: { color: '#FFFFFF', fontSize: 38, fontWeight: '800', marginTop: 7 }, heroMuted: { color: '#D1D5DB', marginTop: 2 }, goalText: { color: '#FFFFFF', fontWeight: '600', marginTop: 18, lineHeight: 20 },
+  insightLink: { backgroundColor: '#111827', borderRadius: 20, padding: 16, flexDirection: 'row', alignItems: 'center' }, insightEmoji: { fontSize: 25, marginRight: 12 }, insightCopy: { flex: 1 }, insightTitle: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 }, insightSubtitle: { color: '#D1D5DB', fontSize: 11, marginTop: 4 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 }, statCard: { width: '48%', backgroundColor: '#FFFFFF', borderRadius: 18, padding: 16 }, statLabel: { color: '#6B7280', fontSize: 11, fontWeight: '700' }, statValue: { color: '#111827', fontSize: 23, fontWeight: '800', marginTop: 6 }, statHelper: { color: '#6B7280', fontSize: 11, marginTop: 4 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18 }, cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, cardLabel: { color: '#6B7280', fontSize: 13, fontWeight: '700' }, cardPercent: { color: '#111827', fontSize: 12, fontWeight: '800' }, cardValue: { color: '#111827', fontSize: 27, fontWeight: '800', marginTop: 4 }, unit: { fontSize: 13, color: '#6B7280' },
   track: { height: 8, borderRadius: 8, backgroundColor: '#E5E7EB', overflow: 'hidden', marginTop: 12 }, fill: { height: '100%', borderRadius: 8, backgroundColor: '#111827' }, muted: { color: '#6B7280', fontSize: 12, marginTop: 7, lineHeight: 18 },
