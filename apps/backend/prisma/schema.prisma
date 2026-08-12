@@ -132,7 +132,7 @@ model HealthProfile {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 model NutritionProfile {
-  id String @id @unique
+  id String @id @default(uuid())
   userId String @unique
   dailyCaloriesGoal Int?
   proteinGoalGrams Int?
