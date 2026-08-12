@@ -6,8 +6,8 @@ import { BrainStateService } from './brain-state.service';
 export class BrainStateAnalyzerService {
   constructor(private readonly brainStateService: BrainStateService) {}
 
-  async analyze() {
-    const state = await this.brainStateService.buildState();
+  async analyze(userId: string) {
+    const state = await this.brainStateService.buildState('', userId);
 
     return {
       state,
