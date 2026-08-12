@@ -1,3 +1,5 @@
+import { MemoryLayer, MemoryRetention, MemorySource, MemoryVisibility } from './memory-governance.model';
+
 export enum MemoryType {
   PROFILE = 'profile',
   PREFERENCE = 'preference',
@@ -19,4 +21,13 @@ export interface Memory {
   importance: number;
   createdAt: Date;
   updatedAt: Date;
+  layer?: MemoryLayer;
+  source?: MemorySource;
+  visibility?: MemoryVisibility;
+  confidence?: number;
+  retention?: MemoryRetention;
+  relatedMemoryIds?: string[];
+  topicKeys?: string[];
+  lastConfirmedAt?: Date;
+  expiresAt?: Date;
 }
