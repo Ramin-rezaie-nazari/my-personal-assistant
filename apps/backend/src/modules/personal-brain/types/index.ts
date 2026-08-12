@@ -18,6 +18,7 @@ export type {
 } from './decision-readiness.types';
 export type { BrainUserContext } from './brain-user-context.types';
 export type { BrainState } from './brain-state.types';
+export type { BrainDailyStatus } from './brain-daily-status.types';
 
 export type { BrainMemory, BrainMemoryContext } from './brain-memory.types';
 
