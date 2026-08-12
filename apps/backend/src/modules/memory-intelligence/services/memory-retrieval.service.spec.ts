@@ -1,5 +1,6 @@
-import { MemoryRetrievalService } from './memory-retrieval.service';
+import { MemoryType } from '../models/memory.model';
 import { MemoryRepository } from '../repositories/memory.repository';
+import { MemoryRetrievalService } from './memory-retrieval.service';
 
 const createRepositoryMock = (): jest.Mocked<MemoryRepository> => ({
   save: jest.fn(),
@@ -17,7 +18,7 @@ describe('MemoryRetrievalService', () => {
       {
         id: 'memory-1',
         userId: 'user-123',
-        type: 'knowledge' as never,
+        type: MemoryType.KNOWLEDGE,
         key: 'favorite-food',
         value: 'pasta',
         importance: 0.8,
