@@ -2,6 +2,7 @@ export type BrainContext = {
   timestamp: string;
   dateKey: string;
   primaryGoal: string | null;
+  hasActivity: boolean;
   today: {
     calories: number;
     calorieGoal: number | null;
