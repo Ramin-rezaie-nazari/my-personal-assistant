@@ -6,6 +6,16 @@ export type BrainHabitSnapshot = {
   streak: number;
 };
 
+export type BrainGoalSnapshot = {
+  id: string;
+  title: string;
+  category: string;
+  priority: number;
+  progressPercent: number;
+  targetDate: string | null;
+  daysRemaining: number | null;
+};
+
 export type BrainLifeContext = {
   habits: {
     active: number;
@@ -34,5 +44,12 @@ export type BrainLifeContext = {
       dosage: string | null;
       scheduledTime: string;
     } | null;
+  };
+  goals: {
+    active: number;
+    dueSoon: number;
+    averageProgress: number;
+    next: BrainGoalSnapshot | null;
+    items: BrainGoalSnapshot[];
   };
 };
