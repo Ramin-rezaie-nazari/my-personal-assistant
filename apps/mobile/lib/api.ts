@@ -66,3 +66,4 @@ export function generateSmartNotifications(dateKey?:string){const q=dateKey?`?da
 export function getNotifications(includeRead=false){return request<Notification[]>(`/notifications${includeRead?'?includeRead=true':''}`)}
 export function createNotification(data:{title:string;body?:string;type:string;scheduledAt?:string;priority?:number}){return request<Notification>('/notifications',{method:'POST',body:JSON.stringify(data)})}
 export function markNotificationRead(id:string){return request<{id:string;read:true}>(`/notifications/${id}/read`,{method:'POST'})}
+export function markAllNotificationsRead(){return request<{updated:number}>('/notifications/read-all',{method:'POST'})}

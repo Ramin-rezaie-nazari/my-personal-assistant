@@ -79,6 +79,19 @@ describe('NotificationsService', () => {
     });
   });
 
+  it('marks all unread notifications for only the authenticated owner', async () => {
+    const prisma = makePrisma();
+    prisma.notification.updateMany.mockResolvedValue({ count: 4 });
+    const service = new NotificationsService(prisma as never);
+
+    await expect(service.markAllRead('u1')).resolves.toEqual({ updated: 4 });
+
+    expect(prisma.notification.updateMany).toHaveBeenCalledWith({
+      where: { userId: 'u1', readAt: null },
+      data: { readAt: expect.any(Date) },
+    });
+  });
+
   it('does not leak another user notification ids', async () => {
     const prisma = makePrisma();
     prisma.notification.updateMany.mockResolvedValue({ count: 0 });
