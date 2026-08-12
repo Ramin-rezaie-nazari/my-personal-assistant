@@ -5,6 +5,7 @@ import { ShoppingListService } from './services/shopping-list.service';
 import { PurchaseAnalysisService } from './services/purchase-analysis.service';
 import { SmartPurchaseDecisionService } from './services/smart-purchase-decision.service';
 import { SmartPurchaseBasketService } from './services/smart-purchase-basket.service';
+import { PurchasePlanService } from './services/purchase-plan.service';
 
 @Module({
   controllers: [ShoppingIntelligenceController],
@@ -14,6 +15,7 @@ import { SmartPurchaseBasketService } from './services/smart-purchase-basket.ser
     PurchaseAnalysisService,
     SmartPurchaseDecisionService,
     SmartPurchaseBasketService,
+    PurchasePlanService,
   ],
   exports: [
     ShoppingIntelligenceService,
@@ -21,6 +23,7 @@ import { SmartPurchaseBasketService } from './services/smart-purchase-basket.ser
     PurchaseAnalysisService,
     SmartPurchaseDecisionService,
     SmartPurchaseBasketService,
+    PurchasePlanService,
   ],
 })
 export class ShoppingIntelligenceModule {}
