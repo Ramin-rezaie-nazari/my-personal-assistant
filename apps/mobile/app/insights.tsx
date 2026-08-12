@@ -44,9 +44,14 @@ export default function InsightsScreen() {
         contentContainerStyle={styles.content}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}
       >
-        <Link href="/" asChild>
-          <Pressable style={styles.back}><Text style={styles.backText}>← Home</Text></Pressable>
-        </Link>
+        <View style={styles.navRow}>
+          <Link href="/" asChild>
+            <Pressable style={styles.back}><Text style={styles.backText}>← Home</Text></Pressable>
+          </Link>
+          <Link href="/reminders" asChild>
+            <Pressable style={styles.reminderLink}><Text style={styles.reminderLinkText}>⏰ Reminders</Text></Pressable>
+          </Link>
+        </View>
         <Text style={styles.eyebrow}>PERSONAL BRAIN</Text>
         <Text style={styles.title}>What I noticed</Text>
         <Text style={styles.subtitle}>{data?.summary ?? 'I am learning from your recent activity.'}</Text>
@@ -89,8 +94,11 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F7F8FA' },
   content: { padding: 20, gap: 14, paddingBottom: 34 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#F7F8FA' },
-  back: { alignSelf: 'flex-start', paddingVertical: 8 },
+  navRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  back: { paddingVertical: 8 },
   backText: { color: '#374151', fontWeight: '800' },
+  reminderLink: { paddingHorizontal: 12, paddingVertical: 9, backgroundColor: '#E5E7EB', borderRadius: 12 },
+  reminderLinkText: { color: '#374151', fontWeight: '800', fontSize: 12 },
   eyebrow: { color: '#6B7280', fontSize: 11, fontWeight: '800', letterSpacing: 1.5, marginTop: 8 },
   title: { color: '#111827', fontSize: 31, fontWeight: '900', marginTop: 4 },
   subtitle: { color: '#6B7280', fontSize: 14, lineHeight: 20 },
