@@ -1,0 +1,1 @@
+Workout, habit, and supplement adapters are implemented and registered in PersonalBrainModule as part of the action-linking layer.
