@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 
+import { PrismaModule } from '../../common/database/prisma.module';
 import { PersonalBrainModule } from '../personal-brain/personal-brain.module';
 
 import { AssistantController } from './controllers/assistant.controller';
@@ -12,11 +13,12 @@ import { PlanningService } from './services/planning.service';
 import { RuleEngineService } from './services/rule-engine.service';
 import { KnowledgeService } from './services/knowledge.service';
 import { NaturalActionExecutionService } from './services/natural-action-execution.service';
+import { ConversationHistoryService } from './services/conversation-history.service';
 import { ConversationContextService } from './services/conversation-context.service';
 import { ContextualCommandService } from './services/contextual-command.service';
 
 @Module({
-  imports: [PersonalBrainModule],
+  imports: [PrismaModule, PersonalBrainModule],
   controllers: [AssistantController],
   providers: [
     KnowledgeService,
@@ -28,6 +30,7 @@ import { ContextualCommandService } from './services/contextual-command.service'
     ReasoningService,
     RecommendationService,
     NaturalActionExecutionService,
+    ConversationHistoryService,
     ConversationContextService,
     ContextualCommandService,
   ],
@@ -38,6 +41,7 @@ import { ContextualCommandService } from './services/contextual-command.service'
     ReasoningService,
     RecommendationService,
     NaturalActionExecutionService,
+    ConversationHistoryService,
     ConversationContextService,
     ContextualCommandService,
   ],
