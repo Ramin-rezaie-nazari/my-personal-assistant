@@ -8,6 +8,7 @@ import { SmartPurchaseBasketService } from './services/smart-purchase-basket.ser
 import { PurchasePlanService } from './services/purchase-plan.service';
 import { HouseholdInventoryIntelligenceService } from './services/household-inventory-intelligence.service';
 import { HouseholdPurchasePlannerService } from './services/household-purchase-planner.service';
+import { HouseholdConsumptionLearningService } from './services/household-consumption-learning.service';
 
 @Module({
   controllers: [ShoppingIntelligenceController],
@@ -20,6 +21,7 @@ import { HouseholdPurchasePlannerService } from './services/household-purchase-p
     PurchasePlanService,
     HouseholdInventoryIntelligenceService,
     HouseholdPurchasePlannerService,
+    HouseholdConsumptionLearningService,
   ],
   exports: [
     ShoppingIntelligenceService,
@@ -30,6 +32,7 @@ import { HouseholdPurchasePlannerService } from './services/household-purchase-p
     PurchasePlanService,
     HouseholdInventoryIntelligenceService,
     HouseholdPurchasePlannerService,
+    HouseholdConsumptionLearningService,
   ],
 })
 export class ShoppingIntelligenceModule {}
