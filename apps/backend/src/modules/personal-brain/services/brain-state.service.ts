@@ -4,6 +4,7 @@ import { BrainContextService } from '../../brain-integration/services/brain-cont
 import { BrainGoalService } from '../../brain-integration/services/brain-goal.service';
 
 import { BrainDailyStatusService } from './brain-daily-status.service';
+import { BrainLifeContextService } from './brain-life-context.service';
 import { BrainMemoryContextService } from './brain-memory-context.service';
 import { BrainNutritionTargetsService } from './brain-nutrition-targets.service';
 import { BrainWeeklyStatusService } from './brain-weekly-status.service';
@@ -22,6 +23,7 @@ export class BrainStateService {
     private readonly brainWeeklyStatusService: BrainWeeklyStatusService,
     private readonly brainNutritionTargetsService: BrainNutritionTargetsService,
     private readonly brainWorkoutStatusService: BrainWorkoutStatusService,
+    private readonly brainLifeContextService: BrainLifeContextService,
     private readonly userContextService: UserContextService,
   ) {}
 
@@ -34,6 +36,7 @@ export class BrainStateService {
       weeklyStatus,
       nutritionTargets,
       workoutStatus,
+      lifeContext,
     ] = await Promise.all([
       this.brainContextService.getContext(),
       this.brainMemoryContextService.buildMemoryContext(query, userId),
@@ -42,6 +45,7 @@ export class BrainStateService {
       this.brainWeeklyStatusService.getThisWeek(userId),
       this.brainNutritionTargetsService.getTargets(userId),
       this.brainWorkoutStatusService.getThisWeek(userId),
+      this.brainLifeContextService.getToday(userId),
     ]);
 
     const userContext = this.userContextService.build({
@@ -59,6 +63,7 @@ export class BrainStateService {
       weeklyStatus,
       nutritionTargets,
       workoutStatus,
+      lifeContext,
     };
   }
 }
