@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DecisionExecutionReceipt } from './decision-execution-coordinator.service';
+import type { DecisionExecutionReceipt } from './decision-execution-coordinator.service';
 
 export type ExecutionHistoryQuery = { userId?: string; status?: DecisionExecutionReceipt['status']; action?: string; limit?: number };
 
