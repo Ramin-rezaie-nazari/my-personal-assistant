@@ -3,4 +3,5 @@ export class CreateNotificationDto {
   body?: string;
   type!: string;
   scheduledAt?: Date;
+  priority?: number;
 }
