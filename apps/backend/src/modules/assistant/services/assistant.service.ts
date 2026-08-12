@@ -22,6 +22,11 @@ export class AssistantService {
     };
   }
 
+  async getHistory(userId: string, limit = 24) {
+    const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
+    return (await this.conversationContextService.get(userId)).turns.slice(-safeLimit);
+  }
+
   async process(input: string, userId: string) {
     await this.conversationContextService.append({ userId, role: 'user', text: input });
     const contextualCommand = await this.contextualCommandService.resolve(userId, input);
