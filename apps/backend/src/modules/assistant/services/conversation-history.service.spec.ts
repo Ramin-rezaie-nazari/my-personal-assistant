@@ -19,26 +19,27 @@ describe('ConversationHistoryService', () => {
     expect(prisma.$executeRaw).toHaveBeenCalled();
   });
 
-  it('returns only the authenticated user recent history in chronological order', async () => {
+  it('returns only the authenticated user recent history in chronological order with resource links', async () => {
     const older = new Date('2026-08-12T10:00:00Z');
     const newer = new Date('2026-08-12T10:01:00Z');
     prisma.$queryRaw.mockResolvedValue([
-      { id: '2', userId: 'u1', role: 'assistant', text: 'Done', intent: 'reminder', action: 'create_reminder', executionId: 'e1', createdAt: newer },
-      { id: '1', userId: 'u1', role: 'user', text: 'Remind me', intent: null, action: null, executionId: null, createdAt: older },
+      { id: '2', userId: 'u1', role: 'assistant', text: 'Done', intent: 'reminder', action: 'create_reminder', executionId: 'e1', resourceType: 'reminder', resourceId: 'r1', createdAt: newer },
+      { id: '1', userId: 'u1', role: 'user', text: 'Remind me', intent: null, action: null, executionId: null, resourceType: null, resourceId: null, createdAt: older },
     ]);
     const service = new ConversationHistoryService(prisma);
 
     const result = await service.getRecent('u1', 24);
 
     expect(result.map((item) => item.id)).toEqual(['1', '2']);
+    expect(result[1]).toMatchObject({ resourceType: 'reminder', resourceId: 'r1' });
     expect(prisma.$queryRaw).toHaveBeenCalled();
   });
 
-  it('finds the latest action for contextual linking', async () => {
-    prisma.$queryRaw.mockResolvedValue([{ id: '2', userId: 'u1', role: 'assistant', text: 'Done', intent: 'reminder', action: 'create_reminder', executionId: 'e1', createdAt: new Date() }]);
+  it('finds the latest action and its linked resource', async () => {
+    prisma.$queryRaw.mockResolvedValue([{ id: '2', userId: 'u1', role: 'assistant', text: 'Done', intent: 'reminder', action: 'create_reminder', executionId: 'e1', resourceType: 'reminder', resourceId: 'r1', createdAt: new Date() }]);
     const service = new ConversationHistoryService(prisma);
 
-    await expect(service.getLatestAction('u1')).resolves.toMatchObject({ action: 'create_reminder', executionId: 'e1' });
+    await expect(service.getLatestAction('u1')).resolves.toMatchObject({ action: 'create_reminder', executionId: 'e1', resourceType: 'reminder', resourceId: 'r1' });
   });
 
   it('supports scoped deletion for privacy controls', async () => {
