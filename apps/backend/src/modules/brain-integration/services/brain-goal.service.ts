@@ -1,12 +1,33 @@
 import { Injectable } from '@nestjs/common';
 
+import { PrismaService } from '../../../common/database/prisma.service';
+
 import { BrainGoal } from '../types';
 
 @Injectable()
 export class BrainGoalService {
-  async getGoals(): Promise<BrainGoal[]> {
-    await Promise.resolve();
+  constructor(private readonly prisma: PrismaService) {}
 
-    return [];
+  async getGoals(userId: string): Promise<BrainGoal[]> {
+    const profile = await this.prisma.userProfile.findUnique({
+      where: { userId },
+      select: { primaryGoal: true },
+    });
+
+    if (!profile?.primaryGoal?.trim()) {
+      return [];
+    }
+
+    return [
+      {
+        category: 'general',
+        title: profile.primaryGoal.trim(),
+        priority: 1,
+        metadata: {
+          source: 'user-profile',
+          sourceField: 'primaryGoal',
+        },
+      },
+    ];
   }
 }
