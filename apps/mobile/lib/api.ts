@@ -12,6 +12,7 @@ export type Habit = { id:string;name:string;frequency:string;targetPerWeek:numbe
 export type HabitSummary = { dateKey:string;activeHabits:number;completedCount:number;completionPercent:number;habits:Array<{id:string;name:string;targetPerWeek:number;completedThisWeek:number;streak:number}> };
 export type Supplement = { id:string;name:string;dosage:string|null;frequency:string;scheduledTime:string;active:boolean;logs?:Array<{dateKey:string}> };
 export type SupplementStatus = { dateKey:string;total:number;taken:number;remaining:number;completionPercent:number;supplements:Supplement[] };
+export type Notification = { id:string;title:string;body:string|null;type:string;scheduledAt:string|null;readAt:string|null;createdAt:string };
 export type DailyCommandCenterResponse = {
   dateKey:string;
   greeting:string;
@@ -21,6 +22,7 @@ export type DailyCommandCenterResponse = {
   habits:{total:number;completed:number};
   supplements:{total:number;taken:number};
   reminders:{pending:number;next:{id:string;title:string;type:string;scheduledAt:string}|null};
+  notifications:{unread:number};
   workouts:{countToday:number;latest:{name:string;type:string;durationMinutes:number}|null};
 };
 export async function setAuthSession(auth:AuthResponse){await AsyncStorage.multiSet([[ACCESS_TOKEN_KEY,auth.accessToken],[REFRESH_TOKEN_KEY,auth.refreshToken]])}
@@ -60,3 +62,6 @@ export function createSupplement(data:{name:string;dosage?:string;frequency?:str
 export function takeSupplement(id:string,dateKey?:string){return request(`/supplements/${id}/take${dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:''}`,{method:'POST'})}
 export function updateSupplement(id:string,data:{name?:string;dosage?:string;frequency?:string;scheduledTime?:string;active?:boolean}){return request<Supplement>(`/supplements/${id}`,{method:'PATCH',body:JSON.stringify(data)})}
 export function deleteSupplement(id:string){return request<{deleted:true}>(`/supplements/${id}`,{method:'DELETE'})}
+export function getNotifications(includeRead=false){return request<Notification[]>(`/notifications${includeRead?'?includeRead=true':''}`)}
+export function createNotification(data:{title:string;body?:string;type:string;scheduledAt?:string}){return request<Notification>('/notifications',{method:'POST',body:JSON.stringify(data)})}
+export function markNotificationRead(id:string){return request<{id:string;read:true}>(`/notifications/${id}/read`,{method:'POST'})}
