@@ -1,15 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { ConversationHistoryService, PersistedConversationTurn } from './conversation-history.service';
 
-export type ConversationTurn = {
-  id: string;
-  userId: string;
-  role: 'user' | 'assistant';
-  text: string;
-  createdAt: number;
-  intent?: string;
-  action?: string;
-  executionId?: string;
-};
+export type ConversationTurn = PersistedConversationTurn;
 
 export type ConversationContext = {
   turns: ConversationTurn[];
@@ -23,21 +15,21 @@ export class ConversationContextService {
   private readonly sessions = new Map<string, ConversationTurn[]>();
   private readonly maxTurns = 24;
 
-  append(turn: Omit<ConversationTurn, 'id' | 'createdAt'>): ConversationTurn {
-    const next: ConversationTurn = {
-      ...turn,
-      id: `${turn.userId}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
-      createdAt: Date.now(),
-    };
+  constructor(private readonly history: ConversationHistoryService) {}
+
+  async append(turn: Omit<ConversationTurn, 'id' | 'createdAt'>): Promise<ConversationTurn> {
+    const next = await this.history.append(turn);
     const turns = [...(this.sessions.get(turn.userId) ?? []), next].slice(-this.maxTurns);
     this.sessions.set(turn.userId, turns);
     return next;
   }
 
-  get(userId: string): ConversationContext {
-    const turns = [...(this.sessions.get(userId) ?? [])];
+  async get(userId: string): Promise<ConversationContext> {
+    const cached = this.sessions.get(userId);
+    const turns = cached?.length ? [...cached] : await this.history.getRecent(userId, this.maxTurns);
+    this.sessions.set(userId, turns.slice(-this.maxTurns));
     const reversed = [...turns].reverse();
-    const lastActionTurn = reversed.find((turn) => Boolean(turn.action));
+    const lastActionTurn = reversed.find((turn) => Boolean(turn.action || turn.executionId));
     return {
       turns,
       lastUserMessage: reversed.find((turn) => turn.role === 'user'),
@@ -48,7 +40,8 @@ export class ConversationContextService {
     };
   }
 
-  clear(userId: string) {
+  async clear(userId: string) {
     this.sessions.delete(userId);
+    return this.history.deleteAll(userId);
   }
 }
