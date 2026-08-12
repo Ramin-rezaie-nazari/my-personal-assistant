@@ -3,7 +3,7 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 const ACCESS_TOKEN_KEY = 'mpa.accessToken'; const REFRESH_TOKEN_KEY = 'mpa.refreshToken';
 export type AuthUser = { id:string; email:string; firstName:string|null; lastName:string|null; avatarUrl:string|null };
 export type AuthResponse = { accessToken:string; refreshToken:string; user:AuthUser };
-export type DashboardResponse = { dateKey:string; profile:{gender:string|null; birthDate:string|null; heightCm:number|null; weightKg:number|null; primaryGoal:string|null}|null; nutrition:{calories:number;calorieGoal:number;caloriesRemaining:number;caloriesProgress:number;protein:number;proteinGoal:number;proteinRemaining:number;proteinProgress:number;waterMl:number;waterGoalMl:number;waterRemaining:number;waterProgress:number}; meals:Array<{id:string;name:string;type:string;eatenAt:string;calories:number;protein:number;carbs:number;fat:number}>; mealCount:number };
+export type DashboardResponse = { dateKey:string; profile:{gender:string|null; birthDate:string|null; heightCm:number|null; weightKg:number|null; primaryGoal:string|null}|null; nutrition:{calories:number;calorieGoal:number;caloriesRemaining:number;caloriesProgress:number;protein:number;proteinGoal:number;proteinRemaining:number;proteinProgress:number;waterMl:number;waterGoalMl:number;waterRemainingMl:number;waterProgress:number}; meals:Array<{id:string;name:string;type:string;eatenAt:string;calories:number;protein:number;carbs:number;fat:number}>; mealCount:number };
 export type DashboardOverviewResponse = { dateKey:string; range:{startKey:string;endKey:string}; today:DashboardResponse; weekly:{loggedDays:number;consistencyPercent:number;totalCalories:number;totalProtein:number;totalWaterMl:number;averageCalories:number;averageProtein:number;currentStreak:number}; workouts:{count:number;activeDays:number;totalMinutes:number;totalCaloriesBurned:number;latest:{id:string;name:string;type:string;durationMinutes:number;caloriesBurned:number;performedAt:string}|null} };
 export type PersonalInsight = { key:string; title:string; description:string; score:number; category:'nutrition'|'hydration'|'fitness'|'consistency' };
 export type PersonalInsightsResponse = { generatedAt:string;dateKey:string;profileGoal:string|null;summary:string;insights:PersonalInsight[] };
@@ -12,6 +12,7 @@ export type Habit = { id:string;name:string;frequency:string;targetPerWeek:numbe
 export type HabitSummary = { dateKey:string;activeHabits:number;completedCount:number;completionPercent:number;habits:Array<{id:string;name:string;targetPerWeek:number;completedThisWeek:number;streak:number}> };
 export type Supplement = { id:string;name:string;dosage:string|null;frequency:string;scheduledTime:string;active:boolean;logs?:Array<{dateKey:string}> };
 export type SupplementStatus = { dateKey:string;total:number;taken:number;remaining:number;completionPercent:number;supplements:Supplement[] };
+export type Notification = { id:string;title:string;body:string|null;type:string;scheduledAt:string|null;readAt:string|null;createdAt:string };
 export type DailyCommandCenterResponse = {
   dateKey:string;
   greeting:string;
@@ -21,9 +22,9 @@ export type DailyCommandCenterResponse = {
   habits:{total:number;completed:number};
   supplements:{total:number;taken:number};
   reminders:{pending:number;next:{id:string;title:string;type:string;scheduledAt:string}|null};
+  notifications:{unread:number};
   workouts:{countToday:number;latest:{name:string;type:string;durationMinutes:number}|null};
 };
-export type Notification = { id:string;title:string;body:string|null;type:string;scheduledAt:string|null;readAt:string|null;createdAt:string };
 export async function setAuthSession(auth:AuthResponse){await AsyncStorage.multiSet([[ACCESS_TOKEN_KEY,auth.accessToken],[REFRESH_TOKEN_KEY,auth.refreshToken]])}
 export async function setAccessToken(token:string){await AsyncStorage.setItem(ACCESS_TOKEN_KEY,token)}
 export async function getStoredAccessToken(){return AsyncStorage.getItem(ACCESS_TOKEN_KEY)}
