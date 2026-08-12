@@ -12,6 +12,7 @@ import { ReplanPolicyService } from '../services/replan-policy.service';
 import { ScheduleRecoveryService } from '../services/schedule-recovery.service';
 import { SmartPlanningService } from '../services/smart-planning.service';
 import { ProactiveCoachService } from '../services/proactive-coach.service';
+import { CoachMessageService, SupportedLanguage } from '../services/coach-message.service';
 
 interface AuthenticatedRequest extends Request { user: { id: string } }
 
@@ -28,48 +29,20 @@ export class PersonalBrainController {
     private readonly replanPolicyService: ReplanPolicyService,
     private readonly scheduleRecoveryService: ScheduleRecoveryService,
     private readonly proactiveCoachService: ProactiveCoachService,
+    private readonly coachMessageService: CoachMessageService,
   ) {}
 
   @Get()
   getStatus() { return { module: 'personal-brain', status: 'ready' }; }
-
-  @Get('plan')
-  @UseGuards(JwtAuthGuard)
-  async getPlan(@Req() req: AuthenticatedRequest) { return this.smartPlanningService.getPlan(req.user.id); }
-
-  @Get('schedule/today')
-  @UseGuards(JwtAuthGuard)
-  async getTodaySchedule(@Req() req: AuthenticatedRequest) { return this.fullDaySchedulerService.buildDay(req.user.id); }
-
-  @Get('schedule/replan')
-  @UseGuards(JwtAuthGuard)
-  async replan(@Req() req: AuthenticatedRequest) { return this.dynamicReplanningService.replanRemainingDay(req.user.id); }
-
-  @Get('schedule/insights')
-  @UseGuards(JwtAuthGuard)
-  async getScheduleInsights(@Req() req: AuthenticatedRequest) { return this.scheduleInsightsService.getInsights(req.user.id); }
-
-  @Get('schedule/health')
-  @UseGuards(JwtAuthGuard)
-  async getScheduleHealth(@Req() req: AuthenticatedRequest) { return this.scheduleHealthService.evaluate(req.user.id); }
-
-  @Get('schedule/replan-decision')
-  @UseGuards(JwtAuthGuard)
-  async getReplanDecision(@Req() req: AuthenticatedRequest) { return this.replanPolicyService.decide(req.user.id); }
-
-  @Get('schedule/recovery')
-  @UseGuards(JwtAuthGuard)
-  async getScheduleRecovery(@Req() req: AuthenticatedRequest) { return this.scheduleRecoveryService.analyze(req.user.id); }
-
-  @Get('next-action')
-  @UseGuards(JwtAuthGuard)
-  async getNextAction(@Req() req: AuthenticatedRequest) { return this.nextBestActionService.get(req.user.id); }
-
-  @Get('coach/next')
-  @UseGuards(JwtAuthGuard)
-  async getCoachNext(@Req() req: AuthenticatedRequest) { return this.proactiveCoachService.getNextCoach(req.user.id); }
-
-  @Post()
-  @UseGuards(JwtAuthGuard)
-  async process(@Body() dto: CreateBrainRequestDto, @Req() req: AuthenticatedRequest) { return this.brainOrchestratorService.processRequest(dto.message, req.user.id); }
+  @Get('plan') @UseGuards(JwtAuthGuard) async getPlan(@Req() req: AuthenticatedRequest) { return this.smartPlanningService.getPlan(req.user.id); }
+  @Get('schedule/today') @UseGuards(JwtAuthGuard) async getTodaySchedule(@Req() req: AuthenticatedRequest) { return this.fullDaySchedulerService.buildDay(req.user.id); }
+  @Get('schedule/replan') @UseGuards(JwtAuthGuard) async replan(@Req() req: AuthenticatedRequest) { return this.dynamicReplanningService.replanRemainingDay(req.user.id); }
+  @Get('schedule/insights') @UseGuards(JwtAuthGuard) async getScheduleInsights(@Req() req: AuthenticatedRequest) { return this.scheduleInsightsService.getInsights(req.user.id); }
+  @Get('schedule/health') @UseGuards(JwtAuthGuard) async getScheduleHealth(@Req() req: AuthenticatedRequest) { return this.scheduleHealthService.evaluate(req.user.id); }
+  @Get('schedule/replan-decision') @UseGuards(JwtAuthGuard) async getReplanDecision(@Req() req: AuthenticatedRequest) { return this.replanPolicyService.decide(req.user.id); }
+  @Get('schedule/recovery') @UseGuards(JwtAuthGuard) async getScheduleRecovery(@Req() req: AuthenticatedRequest) { return this.scheduleRecoveryService.analyze(req.user.id); }
+  @Get('next-action') @UseGuards(JwtAuthGuard) async getNextAction(@Req() req: AuthenticatedRequest) { return this.nextBestActionService.get(req.user.id); }
+  @Get('coach/next') @UseGuards(JwtAuthGuard) async getCoachNext(@Req() req: AuthenticatedRequest) { return this.proactiveCoachService.getNextCoach(req.user.id); }
+  @Get('coach/message') @UseGuards(JwtAuthGuard) async getCoachMessage(@Req() req: AuthenticatedRequest) { const language = (req.query.language === 'fa' ? 'fa' : 'en') as SupportedLanguage; return this.coachMessageService.getMessage(req.user.id, language); }
+  @Post() @UseGuards(JwtAuthGuard) async process(@Body() dto: CreateBrainRequestDto, @Req() req: AuthenticatedRequest) { return this.brainOrchestratorService.processRequest(dto.message, req.user.id); }
 }
