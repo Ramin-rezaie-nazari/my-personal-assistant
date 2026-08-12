@@ -8,6 +8,7 @@ export type DashboardOverviewResponse = { dateKey:string; range:{startKey:string
 export type PersonalInsight = { key:string; title:string; description:string; score:number; category:'nutrition'|'hydration'|'fitness'|'consistency' };
 export type PersonalInsightsResponse = { generatedAt:string;dateKey:string;profileGoal:string|null;summary:string;insights:PersonalInsight[] };
 export type Reminder = { id:string;title:string;type:string;scheduledAt:string;completed:boolean };
+export type CalendarEvent = { id:string;title:string;type:string;startsAt:string;endsAt:string|null;completed:boolean };
 export type Habit = { id:string;name:string;frequency:string;targetPerWeek:number;active:boolean;stats:{streak:number;recentCompletions:number;targetPerWeek:number} };
 export type HabitSummary = { dateKey:string;activeHabits:number;completedCount:number;completionPercent:number;habits:Array<{id:string;name:string;targetPerWeek:number;completedThisWeek:number;streak:number}> };
 export type Supplement = { id:string;name:string;dosage:string|null;frequency:string;scheduledTime:string;active:boolean;logs?:Array<{dateKey:string}> };
@@ -50,6 +51,9 @@ export function createReminder(data:{title:string;type:string;time:string}){retu
 export function completeReminder(id:string){return request<{completed:true}>(`/reminders/${id}/complete`,{method:'POST'})}
 export function deleteReminder(id:string){return request<{deleted:true}>(`/reminders/${id}`,{method:'DELETE'})}
 export function getNextReminder(){return request<Reminder|null>('/reminders/next')}
+export function getCalendarEvents(from?:string,to?:string){const q=new URLSearchParams();if(from)q.set('from',from);if(to)q.set('to',to);return request<CalendarEvent[]>(`/calendar${q.toString()?`?${q.toString()}`:''}`)}
+export function createCalendarEvent(data:{title:string;type:string;startsAt:string;endsAt?:string}){return request<CalendarEvent>('/calendar',{method:'POST',body:JSON.stringify(data)})}
+export function completeCalendarEvent(id:string){return request<{completed:true}>(`/calendar/${id}/complete`,{method:'POST'})}
 export function getHabits(){return request<Habit[]>('/habits')}
 export function createHabit(data:{name:string;frequency:'daily'|'weekly';targetPerWeek?:number}){return request<Habit>('/habits',{method:'POST',body:JSON.stringify(data)})}
 export function completeHabit(id:string,dateKey?:string){return request(`/habits/${id}/complete${dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:''}`,{method:'POST'})}
