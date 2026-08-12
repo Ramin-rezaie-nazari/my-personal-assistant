@@ -12,8 +12,11 @@ export class BrainReasoningContextService {
     private readonly brainReasoningEngineService: BrainReasoningEngineService,
   ) {}
 
-  async build(input: string): Promise<BrainReasoningContext> {
-    const state = await this.brainStateService.buildState(input);
+  async build(
+    input: string,
+    userId: string,
+  ): Promise<BrainReasoningContext> {
+    const state = await this.brainStateService.buildState(input, userId);
 
     const signals: BrainReasoningSignals = {
       hasContext: Boolean(state.context),
