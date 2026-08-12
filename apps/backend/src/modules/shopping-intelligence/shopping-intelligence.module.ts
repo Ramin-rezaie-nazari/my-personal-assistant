@@ -9,6 +9,7 @@ import { PurchasePlanService } from './services/purchase-plan.service';
 import { HouseholdInventoryIntelligenceService } from './services/household-inventory-intelligence.service';
 import { HouseholdPurchasePlannerService } from './services/household-purchase-planner.service';
 import { HouseholdConsumptionLearningService } from './services/household-consumption-learning.service';
+import { HouseholdReorderForecastService } from './services/household-reorder-forecast.service';
 
 @Module({
   controllers: [ShoppingIntelligenceController],
@@ -22,6 +23,7 @@ import { HouseholdConsumptionLearningService } from './services/household-consum
     HouseholdInventoryIntelligenceService,
     HouseholdPurchasePlannerService,
     HouseholdConsumptionLearningService,
+    HouseholdReorderForecastService,
   ],
   exports: [
     ShoppingIntelligenceService,
@@ -33,6 +35,7 @@ import { HouseholdConsumptionLearningService } from './services/household-consum
     HouseholdInventoryIntelligenceService,
     HouseholdPurchasePlannerService,
     HouseholdConsumptionLearningService,
+    HouseholdReorderForecastService,
   ],
 })
 export class ShoppingIntelligenceModule {}
