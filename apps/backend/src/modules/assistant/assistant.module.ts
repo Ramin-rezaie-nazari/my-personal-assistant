@@ -12,6 +12,8 @@ import { PlanningService } from './services/planning.service';
 import { RuleEngineService } from './services/rule-engine.service';
 import { KnowledgeService } from './services/knowledge.service';
 import { NaturalActionExecutionService } from './services/natural-action-execution.service';
+import { ConversationContextService } from './services/conversation-context.service';
+import { ContextualCommandService } from './services/contextual-command.service';
 
 @Module({
   imports: [PersonalBrainModule],
@@ -26,6 +28,8 @@ import { NaturalActionExecutionService } from './services/natural-action-executi
     ReasoningService,
     RecommendationService,
     NaturalActionExecutionService,
+    ConversationContextService,
+    ContextualCommandService,
   ],
   exports: [
     AssistantService,
@@ -34,6 +38,8 @@ import { NaturalActionExecutionService } from './services/natural-action-executi
     ReasoningService,
     RecommendationService,
     NaturalActionExecutionService,
+    ConversationContextService,
+    ContextualCommandService,
   ],
 })
 export class AssistantModule {}
