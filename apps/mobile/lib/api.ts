@@ -54,6 +54,36 @@ export type DashboardResponse = {
   mealCount: number;
 };
 
+export type DashboardOverviewResponse = {
+  dateKey: string;
+  range: { startKey: string; endKey: string };
+  today: DashboardResponse;
+  weekly: {
+    loggedDays: number;
+    consistencyPercent: number;
+    totalCalories: number;
+    totalProtein: number;
+    totalWaterMl: number;
+    averageCalories: number;
+    averageProtein: number;
+    currentStreak: number;
+  };
+  workouts: {
+    count: number;
+    activeDays: number;
+    totalMinutes: number;
+    totalCaloriesBurned: number;
+    latest: {
+      id: string;
+      name: string;
+      type: string;
+      durationMinutes: number;
+      caloriesBurned: number;
+      performedAt: string;
+    } | null;
+  };
+};
+
 export async function setAuthSession(auth: AuthResponse) {
   await AsyncStorage.multiSet([
     [ACCESS_TOKEN_KEY, auth.accessToken],
@@ -178,4 +208,9 @@ export async function logout() {
 export function getTodayDashboard(dateKey?: string) {
   const query = dateKey ? `?dateKey=${encodeURIComponent(dateKey)}` : '';
   return request<DashboardResponse>(`/dashboard/today${query}`);
+}
+
+export function getDashboardOverview(dateKey?: string) {
+  const query = dateKey ? `?dateKey=${encodeURIComponent(dateKey)}` : '';
+  return request<DashboardOverviewResponse>(`/dashboard/overview${query}`);
 }
