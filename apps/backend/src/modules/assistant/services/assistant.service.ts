@@ -4,6 +4,7 @@ import { BrainOrchestratorService } from '../../personal-brain/services/brain-or
 import { NaturalActionExecutionService } from './natural-action-execution.service';
 import { ContextualCommandService } from './contextual-command.service';
 import { ConversationContextService } from './conversation-context.service';
+import { BrainResponse } from '../../personal-brain/types';
 
 @Injectable()
 export class AssistantService {
@@ -26,22 +27,22 @@ export class AssistantService {
     const contextualCommand = await this.contextualCommandService.resolve(userId, input);
 
     const response = await this.brainOrchestratorService.processRequest(input, userId);
-    let execution;
-    if (response.nextAction) {
-      execution = await this.naturalActionExecutionService.execute(input, userId, response, {
-        referencesPrevious: contextualCommand.referencesPrevious,
-        previousAction: contextualCommand.targetAction,
-        previousExecutionId: contextualCommand.targetExecutionId,
-        operation: contextualCommand.operation,
-      });
-    }
+    const executionResponse = this.resolveContextualExecution(response, contextualCommand, input);
+    const execution = executionResponse.nextAction
+      ? await this.naturalActionExecutionService.execute(input, userId, executionResponse, {
+          referencesPrevious: contextualCommand.referencesPrevious,
+          previousAction: contextualCommand.targetAction,
+          previousExecutionId: contextualCommand.targetExecutionId,
+          operation: contextualCommand.operation,
+        })
+      : undefined;
 
     const finalResponse = {
-      ...response,
-      message: execution?.executed ? execution.message : response.message,
+      ...executionResponse,
+      message: execution?.executed ? execution.message : executionResponse.message,
       ...(execution ? { execution } : {}),
       metadata: {
-        ...(response.metadata ?? {}),
+        ...(executionResponse.metadata ?? {}),
         contextualCommand: {
           referencesPrevious: contextualCommand.referencesPrevious,
           operation: contextualCommand.operation,
@@ -52,9 +53,9 @@ export class AssistantService {
     };
 
     const receipt = execution?.receipt;
-    const executionId = receipt && typeof receipt === 'object' && receipt !== null && 'decisionId' in receipt
-      ? String((receipt as { decisionId?: unknown }).decisionId ?? '') || undefined
-      : undefined;
+    const executionId = receipt && typeof receipt === 'object' && receipt !== null && 'result' in receipt
+      ? this.extractExecutionEntityId((receipt as { result?: unknown }).result) ?? this.extractDecisionId(receipt)
+      : this.extractDecisionId(receipt);
 
     await this.conversationContextService.append({
       userId,
@@ -66,5 +67,30 @@ export class AssistantService {
     });
 
     return finalResponse;
+  }
+
+  private resolveContextualExecution(response: BrainResponse, command: { referencesPrevious: boolean; operation: string; targetAction?: string; targetExecutionId?: string }, input: string): BrainResponse {
+    if (!command.referencesPrevious || !command.targetExecutionId) return response;
+    const previousAction = (command.targetAction ?? '').toLowerCase();
+    const hasTime = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
+    if (command.operation === 'update' && previousAction.includes('reminder') && hasTime) {
+      return { ...response, intent: 'reminder', nextAction: 'update_reminder' };
+    }
+    if (command.operation === 'cancel' && previousAction.includes('reminder')) {
+      return { ...response, intent: 'reminder', nextAction: 'cancel_reminder' };
+    }
+    return response;
+  }
+
+  private extractExecutionEntityId(result: unknown): string | undefined {
+    if (!result || typeof result !== 'object') return undefined;
+    const value = (result as { id?: unknown }).id;
+    return typeof value === 'string' && value ? value : undefined;
+  }
+
+  private extractDecisionId(receipt: unknown): string | undefined {
+    if (!receipt || typeof receipt !== 'object') return undefined;
+    const value = (receipt as { decisionId?: unknown }).decisionId;
+    return typeof value === 'string' && value ? value : undefined;
   }
 }
