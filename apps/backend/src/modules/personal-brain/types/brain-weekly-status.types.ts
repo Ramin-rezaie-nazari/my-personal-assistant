@@ -11,6 +11,7 @@ export type BrainWeeklyStatus = {
   endDateKey: string;
   days: BrainWeeklyDay[];
   loggedDays: number;
+  consistencyPercent: number;
   totalCalories: number;
   totalProtein: number;
   totalWaterMl: number;
