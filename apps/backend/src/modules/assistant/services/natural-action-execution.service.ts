@@ -36,6 +36,7 @@ export class NaturalActionExecutionService {
     };
 
     const receipt = await this.coordinator.execute(userId, candidate, {
+      userId,
       source: 'natural-language',
       input,
       contextualState,
