@@ -39,6 +39,22 @@ const createContext = (
       calories: 1450,
       protein: 95,
     },
+    workoutStatus: {
+      fromDateKey: '2026-08-06',
+      toDateKey: '2026-08-12',
+      workoutCount: 3,
+      activeDays: 2,
+      totalMinutes: 100,
+      totalCaloriesBurned: 640,
+      averageMinutesPerWorkout: 33,
+      consistencyPercent: 29,
+      currentStreak: 2,
+      lastWorkout: {
+        name: 'Morning Run',
+        type: 'cardio',
+        performedAt: '2026-08-12T08:00:00.000Z',
+      },
+    },
   },
   signals: {
     hasContext: true,
@@ -115,6 +131,23 @@ describe('BrainDecisionService', () => {
         intent: 'daily-status',
         recommendation: expect.stringContaining('do not have a daily log'),
         nextAction: 'Log today activity',
+      }),
+    );
+  });
+
+  it('answers weekly workout progress with consistency and recent activity', () => {
+    const service = new BrainDecisionService();
+
+    const result = service.evaluateDecision(
+      createContext('How am I doing with exercise?'),
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        canDecide: true,
+        intent: 'workout-status',
+        recommendation: expect.stringContaining('3 workouts across 2 active days'),
+        nextAction: 'Keep training and continue logging workouts',
       }),
     );
   });

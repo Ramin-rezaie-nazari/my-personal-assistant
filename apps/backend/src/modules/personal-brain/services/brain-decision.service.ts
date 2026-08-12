@@ -25,6 +25,10 @@ export class BrainDecisionService {
       /\b(am i on track|am i on target|how am i doing with my (?:nutrition|calories|protein|water)|how much (?:calories|protein|water) do i have left|what do i have left today)\b/.test(
         normalizedInput,
       );
+    const asksAboutWorkout =
+      /\b(workout|workouts|exercise|exercised|fitness|training|gym|how often did i work out|how much did i exercise|how is my fitness progress|how am i doing with exercise)\b/.test(
+        normalizedInput,
+      );
 
     if (asksAboutGoal && primaryGoal) {
       return {
@@ -76,6 +80,46 @@ export class BrainDecisionService {
         intent: 'nutrition-targets',
         recommendation: `Today: ${parts.join(', ')}. Remaining: ${remaining.join(', ')}.`,
         nextAction: 'Continue logging against today targets',
+      };
+    }
+
+    if (asksAboutWorkout) {
+      const workoutStatus = context.state.workoutStatus;
+      const workoutBlockers = blockers.filter((blocker) => blocker !== 'missing-goals');
+
+      if (!workoutStatus) {
+        return {
+          canDecide: false,
+          confidence: context.reasoning.confidence,
+          blockers: [...workoutBlockers, 'missing-workout-status'],
+          intent: 'workout-status',
+          recommendation: 'I do not have your workout progress data yet.',
+          nextAction: 'Load workout progress',
+        };
+      }
+
+      if (workoutStatus.workoutCount === 0) {
+        return {
+          canDecide: workoutBlockers.length === 0,
+          confidence: context.reasoning.confidence,
+          blockers: workoutBlockers,
+          intent: 'workout-status',
+          recommendation: 'You have not logged a workout in the last seven days. Start logging your exercise and I will track consistency, minutes, and calories burned.',
+          nextAction: 'Log a workout',
+        };
+      }
+
+      const lastWorkout = workoutStatus.lastWorkout
+        ? ` Last workout: ${workoutStatus.lastWorkout.name} (${workoutStatus.lastWorkout.type}).`
+        : '';
+
+      return {
+        canDecide: workoutBlockers.length === 0,
+        confidence: context.reasoning.confidence,
+        blockers: workoutBlockers,
+        intent: 'workout-status',
+        recommendation: `This week: ${workoutStatus.workoutCount} workouts across ${workoutStatus.activeDays} active days, ${workoutStatus.totalMinutes} minutes, ${workoutStatus.totalCaloriesBurned} kcal burned, ${workoutStatus.consistencyPercent}% consistency, current streak ${workoutStatus.currentStreak} days.${lastWorkout}`,
+        nextAction: 'Keep training and continue logging workouts',
       };
     }
 
