@@ -11,6 +11,7 @@ import { ScheduleHealthService } from '../services/schedule-health.service';
 import { ReplanPolicyService } from '../services/replan-policy.service';
 import { ScheduleRecoveryService } from '../services/schedule-recovery.service';
 import { SmartPlanningService } from '../services/smart-planning.service';
+import { ProactiveCoachService } from '../services/proactive-coach.service';
 
 interface AuthenticatedRequest extends Request { user: { id: string } }
 
@@ -26,6 +27,7 @@ export class PersonalBrainController {
     private readonly scheduleHealthService: ScheduleHealthService,
     private readonly replanPolicyService: ReplanPolicyService,
     private readonly scheduleRecoveryService: ScheduleRecoveryService,
+    private readonly proactiveCoachService: ProactiveCoachService,
   ) {}
 
   @Get()
@@ -62,6 +64,10 @@ export class PersonalBrainController {
   @Get('next-action')
   @UseGuards(JwtAuthGuard)
   async getNextAction(@Req() req: AuthenticatedRequest) { return this.nextBestActionService.get(req.user.id); }
+
+  @Get('coach/next')
+  @UseGuards(JwtAuthGuard)
+  async getCoachNext(@Req() req: AuthenticatedRequest) { return this.proactiveCoachService.getNextCoach(req.user.id); }
 
   @Post()
   @UseGuards(JwtAuthGuard)
