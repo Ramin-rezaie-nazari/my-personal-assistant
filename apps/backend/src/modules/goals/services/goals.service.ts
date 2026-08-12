@@ -27,14 +27,15 @@ export class GoalsService {
   }
 
   async findAll(userId: string, status?: string) {
-    const rows = await this.prisma.$queryRaw<GoalRow[]>`SELECT * FROM "Goal" WHERE "userId" = ${userId} ${status ? this.prisma.$queryRaw`AND "status" = ${status}` : this.prisma.$queryRaw``} ORDER BY CASE WHEN "status" = 'active' THEN 0 ELSE 1 END, "priority" ASC, "targetDate" ASC NULLS LAST, "createdAt" DESC`;
-    return rows;
+    if (status && !['active', 'completed', 'paused'].includes(status)) throw new BadRequestException('Invalid goal status');
+    if (status) return this.prisma.$queryRaw<GoalRow[]>`SELECT * FROM "Goal" WHERE "userId"=${userId} AND "status"=${status} ORDER BY "priority" ASC, "targetDate" ASC NULLS LAST, "createdAt" DESC`;
+    return this.prisma.$queryRaw<GoalRow[]>`SELECT * FROM "Goal" WHERE "userId"=${userId} ORDER BY CASE WHEN "status"='active' THEN 0 ELSE 1 END, "priority" ASC, "targetDate" ASC NULLS LAST, "createdAt" DESC`;
   }
 
   async findOne(userId: string, id: string) {
-    const rows = await this.prisma.$queryRaw<GoalRow[]>`SELECT * FROM "Goal" WHERE "id" = ${id} AND "userId" = ${userId} LIMIT 1`;
+    const rows = await this.prisma.$queryRaw<GoalRow[]>`SELECT * FROM "Goal" WHERE "id"=${id} AND "userId"=${userId} LIMIT 1`;
     if (!rows[0]) throw new NotFoundException('Goal not found');
-    const checkins = await this.prisma.$queryRaw`SELECT "id","dateKey","progressPercent","note","createdAt" FROM "GoalCheckin" WHERE "goalId" = ${id} ORDER BY "dateKey" DESC LIMIT 14`;
+    const checkins = await this.prisma.$queryRaw`SELECT "id","dateKey","progressPercent","note","createdAt" FROM "GoalCheckin" WHERE "goalId"=${id} ORDER BY "dateKey" DESC LIMIT 14`;
     return { ...rows[0], checkins };
   }
 
