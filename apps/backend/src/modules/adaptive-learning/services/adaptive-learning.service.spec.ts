@@ -17,7 +17,7 @@ describe('AdaptiveLearningService', () => {
     prisma.userProfile.findUnique.mockResolvedValue({ primaryGoal: 'fat loss' });
     prisma.nutritionProfile.findUnique.mockResolvedValue({
       dailyCaloriesGoal: 2200,
-      proteinGoalGrams: 160,
+      proteinGoalGrams: 180,
       waterGoalMl: 2500,
     });
     prisma.dailyLog.findMany.mockResolvedValue([
