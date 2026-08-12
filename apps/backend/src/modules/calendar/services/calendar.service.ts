@@ -63,6 +63,21 @@ export class CalendarService {
     return this.toEvent(updated);
   }
 
+  async updateEventTime(userId: string, eventId: string, time: string) {
+    if (!/^\d{2}:\d{2}$/.test(time)) throw new BadRequestException('time must use HH:MM format');
+    const [hours, minutes] = time.split(':').map(Number);
+    if (hours > 23 || minutes > 59) throw new BadRequestException('time must be a valid time');
+    const existing = await this.prisma.reminder.findFirst({ where: { id: eventId, userId } });
+    if (!existing) throw new NotFoundException('Calendar event not found');
+
+    const scheduledAt = new Date(existing.scheduledAt);
+    scheduledAt.setHours(hours, minutes, 0, 0);
+    await this.prisma.reminder.updateMany({ where: { id: eventId, userId }, data: { scheduledAt } });
+    const updated = await this.prisma.reminder.findFirst({ where: { id: eventId, userId } });
+    if (!updated) throw new NotFoundException('Calendar event not found');
+    return this.toEvent(updated);
+  }
+
   async completeEvent(userId: string, eventId: string) {
     const result = await this.prisma.reminder.updateMany({ where: { id: eventId, userId }, data: { completed: true } });
     if (result.count === 0) throw new NotFoundException('Calendar event not found');
