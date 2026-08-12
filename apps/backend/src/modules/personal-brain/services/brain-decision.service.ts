@@ -37,6 +37,17 @@ export class BrainDecisionService {
       const weeklyStatus = context.state.weeklyStatus;
       const weeklyBlockers = blockers.filter((blocker) => blocker !== 'missing-goals');
 
+      if (!weeklyStatus) {
+        return {
+          canDecide: false,
+          confidence: context.reasoning.confidence,
+          blockers: [...weeklyBlockers, 'missing-weekly-status'],
+          intent: 'weekly-status',
+          recommendation: 'I do not have your weekly progress data yet.',
+          nextAction: 'Load weekly progress',
+        };
+      }
+
       if (weeklyStatus.loggedDays === 0) {
         return {
           canDecide: weeklyBlockers.length === 0,
