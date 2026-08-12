@@ -39,10 +39,16 @@ export class BrainContextService {
     if (nextReminder) priorities.push(`Next reminder: ${nextReminder.title}`);
     if (!workouts.length) priorities.push('Add a little movement today');
 
+    const hasActivity = Boolean(
+      daily?.calories || daily?.protein || daily?.waterMl || habitsCompleted || supplementsTaken ||
+      calendarToday.length || workouts.length || unreadNotifications || nextReminder,
+    );
+
     return {
       timestamp: new Date().toISOString(),
       dateKey,
       primaryGoal: profile?.primaryGoal ?? null,
+      hasActivity,
       today: {
         calories: daily?.calories ?? 0,
         calorieGoal: nutritionProfile?.dailyCaloriesGoal ?? null,
