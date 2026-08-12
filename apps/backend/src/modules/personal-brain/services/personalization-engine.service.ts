@@ -14,9 +14,10 @@ export class PersonalizationEngineService {
     const previous = profile.signals[key];
     const previousConfidence = previous?.confidence ?? 0;
     const incomingConfidence = Math.max(0, Math.min(1, signal.confidence ?? 0.5));
+    const incomingScore = Math.max(-1, Math.min(1, signal.score));
     const weight = incomingConfidence / Math.max(0.001, previousConfidence + incomingConfidence);
-    const blendedScore = previous ? previous.score * (1 - weight) + signal.score * weight : signal.score;
-    profile.signals[key] = { ...signal, key, score: Math.max(0, Math.min(1, blendedScore)), confidence: Math.max(previousConfidence, incomingConfidence), source: signal.source ?? 'behavior' };
+    const blendedScore = previous ? previous.score * (1 - weight) + incomingScore * weight : incomingScore;
+    profile.signals[key] = { ...signal, key, score: Math.max(-1, Math.min(1, blendedScore)), confidence: Math.max(previousConfidence, incomingConfidence), source: signal.source ?? 'behavior' };
     profile.updatedAt = new Date();
     this.profiles.set(userId, profile);
     return profile.signals[key];
