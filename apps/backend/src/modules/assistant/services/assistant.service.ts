@@ -15,7 +15,7 @@ export class AssistantService {
     };
   }
 
-  async process(input: string) {
-    return this.brainOrchestratorService.processRequest(input);
+  async process(input: string, userId: string) {
+    return this.brainOrchestratorService.processRequest(input, userId);
   }
 }

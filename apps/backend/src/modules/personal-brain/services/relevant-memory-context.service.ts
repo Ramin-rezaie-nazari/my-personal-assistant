@@ -16,9 +16,14 @@ export class RelevantMemoryContextService {
     private readonly memoryRelevanceService: MemoryRelevanceService,
   ) {}
 
-  async buildContext(query: string): Promise<RelevantMemoryContext> {
-    const memories =
-      await this.memoryRelevanceService.findRelevantMemories(query);
+  async buildContext(
+    query: string,
+    userId: string,
+  ): Promise<RelevantMemoryContext> {
+    const memories = await this.memoryRelevanceService.findRelevantMemories(
+      query,
+      userId,
+    );
 
     return {
       query,

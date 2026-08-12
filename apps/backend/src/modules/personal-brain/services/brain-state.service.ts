@@ -17,11 +17,11 @@ export class BrainStateService {
     private readonly userContextService: UserContextService,
   ) {}
 
-  async buildState(query = ''): Promise<BrainState> {
+  async buildState(query = '', userId: string): Promise<BrainState> {
     const context = await this.brainContextService.getContext();
 
     const memoryContext =
-      await this.brainMemoryContextService.buildMemoryContext(query);
+      await this.brainMemoryContextService.buildMemoryContext(query, userId);
 
     const goals = await this.brainGoalService.getGoals();
 

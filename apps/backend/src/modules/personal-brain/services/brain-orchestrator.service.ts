@@ -14,9 +14,9 @@ export class BrainOrchestratorService {
     private readonly responsePlanningService: ResponsePlanningService,
   ) {}
 
-  async processRequest(input: string): Promise<BrainResponse> {
+  async processRequest(input: string, userId: string): Promise<BrainResponse> {
     const reasoningContext =
-      await this.brainReasoningContextService.build(input);
+      await this.brainReasoningContextService.build(input, userId);
 
     const decision = this.brainDecisionPipelineService.run(reasoningContext);
 
