@@ -49,6 +49,20 @@ export class DailyService {
     });
   }
 
+  async addWater(userId: string, amountMl: number, dateKey?: string) {
+    if (!Number.isFinite(amountMl) || amountMl <= 0 || amountMl > 5000) {
+      throw new BadRequestException('amountMl must be between 1 and 5000');
+    }
+
+    const key = this.normalizeDateKey(dateKey);
+
+    return this.prisma.dailyLog.upsert({
+      where: { userId_dateKey: { userId, dateKey: key } },
+      update: { waterMl: { increment: Math.round(amountMl) } },
+      create: { userId, dateKey: key, waterMl: Math.round(amountMl) },
+    });
+  }
+
   private normalizeDateKey(dateKey?: string): string {
     const value = dateKey ?? new Date().toISOString().slice(0, 10);
 
