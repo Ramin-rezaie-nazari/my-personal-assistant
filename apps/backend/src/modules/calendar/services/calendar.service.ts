@@ -43,6 +43,26 @@ export class CalendarService {
     return reminders.map((item) => this.toEvent(item));
   }
 
+  async updateEvent(userId: string, eventId: string, data: { title?: string; type?: string; startsAt?: string }) {
+    const patch: { title?: string; type?: string; scheduledAt?: Date } = {};
+    if (data.title !== undefined) {
+      const title = data.title.trim();
+      if (!title) throw new BadRequestException('title cannot be empty');
+      patch.title = title;
+    }
+    if (data.type !== undefined) patch.type = data.type.trim() || 'general';
+    if (data.startsAt !== undefined) {
+      const startsAt = new Date(data.startsAt);
+      if (Number.isNaN(startsAt.getTime())) throw new BadRequestException('startsAt must be a valid ISO date');
+      patch.scheduledAt = startsAt;
+    }
+    const result = await this.prisma.reminder.updateMany({ where: { id: eventId, userId }, data: patch });
+    if (result.count === 0) throw new NotFoundException('Calendar event not found');
+    const updated = await this.prisma.reminder.findFirst({ where: { id: eventId, userId } });
+    if (!updated) throw new NotFoundException('Calendar event not found');
+    return this.toEvent(updated);
+  }
+
   async completeEvent(userId: string, eventId: string) {
     const result = await this.prisma.reminder.updateMany({ where: { id: eventId, userId }, data: { completed: true } });
     if (result.count === 0) throw new NotFoundException('Calendar event not found');
