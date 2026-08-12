@@ -16,7 +16,12 @@ export type NaturalActionExecution = {
 export class NaturalActionExecutionService {
   constructor(private readonly coordinator: DecisionExecutionCoordinatorService) {}
 
-  async execute(input: string, userId: string, response: BrainResponse): Promise<NaturalActionExecution> {
+  async execute(
+    input: string,
+    userId: string,
+    response: BrainResponse,
+    contextualState: Record<string, unknown> = {},
+  ): Promise<NaturalActionExecution> {
     if (!response.nextAction) {
       return { executed: false, action: 'none', message: 'No executable action was selected.', intent: response.intent };
     }
@@ -30,7 +35,11 @@ export class NaturalActionExecutionService {
       source: 'natural-language',
     };
 
-    const receipt = await this.coordinator.execute(userId, candidate, { source: 'natural-language', input });
+    const receipt = await this.coordinator.execute(userId, candidate, {
+      source: 'natural-language',
+      input,
+      contextualState,
+    });
     if (receipt.status === 'completed') {
       return { executed: true, action: candidate.action, message: 'Done. I completed that action.', intent: response.intent, receipt };
     }
