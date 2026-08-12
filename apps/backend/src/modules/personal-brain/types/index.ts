@@ -19,6 +19,7 @@ export type {
 export type { BrainUserContext } from './brain-user-context.types';
 export type { BrainState } from './brain-state.types';
 export type { BrainDailyStatus } from './brain-daily-status.types';
+export type { BrainWeeklyDay, BrainWeeklyStatus } from './brain-weekly-status.types';
 
 export type { BrainMemory, BrainMemoryContext } from './brain-memory.types';
 
