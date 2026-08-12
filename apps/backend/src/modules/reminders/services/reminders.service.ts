@@ -38,6 +38,21 @@ export class RemindersService {
     return { completed: true };
   }
 
+  async updateReminder(userId: string, reminderId: string, patch: { title?: string; time?: string }) {
+    const title = patch.title?.trim();
+    if (patch.title !== undefined && !title) throw new BadRequestException('title cannot be empty');
+    const scheduledAt = patch.time ? this.parseTime(patch.time) : undefined;
+    const result = await this.prisma.reminder.updateMany({
+      where: { id: reminderId, userId },
+      data: {
+        ...(title !== undefined ? { title } : {}),
+        ...(scheduledAt ? { scheduledAt } : {}),
+      },
+    });
+    if (result.count === 0) throw new NotFoundException('Reminder not found');
+    return this.prisma.reminder.findFirstOrThrow({ where: { id: reminderId, userId } }).then((item) => this.toSummary(item));
+  }
+
   async deleteReminder(userId: string, reminderId: string) {
     const result = await this.prisma.reminder.deleteMany({ where: { id: reminderId, userId } });
     if (result.count === 0) throw new NotFoundException('Reminder not found');
