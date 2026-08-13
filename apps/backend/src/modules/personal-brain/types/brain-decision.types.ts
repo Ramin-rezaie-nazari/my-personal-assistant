@@ -1,3 +1,5 @@
+import type { DecisionExplanation } from '../services/decision-explanation.service';
+
 export type BrainDecisionResult = {
   canDecide: boolean;
   confidence: number;
@@ -12,4 +14,5 @@ export type BrainDecisionResult = {
 
 export type BrainDecisionPipelineResult = BrainDecisionResult & {
   message: string;
+  explanation?: DecisionExplanation;
 };
