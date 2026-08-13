@@ -4,6 +4,6 @@ import { Memory } from '../models/memory.model';
 export class MemorySurfaceService {
   filterForUser(memories: Memory[], limit = 20): Memory[] { return memories.filter((memory) => memory.visibility === 'user_visible' && (memory.confidence ?? 0) >= 0.75 && memory.importance >= 0.6).sort((a,b)=>b.importance*(b.confidence??0)-a.importance*(a.confidence??0)).slice(0, Math.max(1, Math.min(limit,100))); }
   filterForBrain(memories: Memory[], now = new Date(), limit = 100): Memory[] {
-    return memories.filter((memory)=>!memory.expiresAt||memory.expiresAt>now).filter((memory)=>(memory.confidence??0)>=0.35||memory.source==='explicit_user').sort((a,b)=>Number(a.visibility==='internal')-Number(b.visibility==='internal') || (b.importance*(b.confidence??0)-a.importance*(a.confidence??0))).reverse().slice(0, Math.max(1, Math.min(limit,500)));
+    return memories.filter((memory)=>!memory.expiresAt||memory.expiresAt>now).filter((memory)=>(memory.confidence??0)>=0.35||memory.source==='explicit_user').sort((a,b)=>Number(b.visibility==='internal')-Number(a.visibility==='internal') || (b.importance*(b.confidence??0)-a.importance*(a.confidence??0))).slice(0, Math.max(1, Math.min(limit,500)));
   }
 }
