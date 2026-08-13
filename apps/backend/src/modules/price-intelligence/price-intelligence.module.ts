@@ -11,6 +11,7 @@ import { MarketBudgetImpactService } from './services/market-budget-impact.servi
 import { NightlyMarketIntelligenceService } from './services/nightly-market-intelligence.service';
 import { PriceCollectionSchedulerService } from './services/price-collection-scheduler.service';
 import { MarketIntelligenceOrchestratorService } from './services/market-intelligence-orchestrator.service';
+import { ProductMatchingService } from './services/product-matching.service';
 
 @Module({
   controllers: [PriceIntelligenceController],
@@ -26,6 +27,7 @@ import { MarketIntelligenceOrchestratorService } from './services/market-intelli
     NightlyMarketIntelligenceService,
     PriceCollectionSchedulerService,
     MarketIntelligenceOrchestratorService,
+    ProductMatchingService,
   ],
   exports: [
     PriceIntelligenceService,
@@ -39,6 +41,7 @@ import { MarketIntelligenceOrchestratorService } from './services/market-intelli
     NightlyMarketIntelligenceService,
     PriceCollectionSchedulerService,
     MarketIntelligenceOrchestratorService,
+    ProductMatchingService,
   ],
 })
 export class PriceIntelligenceModule {}
