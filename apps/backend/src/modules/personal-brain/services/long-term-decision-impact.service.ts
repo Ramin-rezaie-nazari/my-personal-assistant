@@ -35,9 +35,9 @@ export class LongTermDecisionImpactService {
       downside,
       strongestGoal: strongest,
       rationale: score > 0
-        ? `supports long-term goal: ${strongest.goalTitle}`
+        ? `supports long-term goal: ${strongest.title}`
         : score < 0
-          ? `creates long-term trade-off against: ${strongest.goalTitle}`
+          ? `creates long-term trade-off against: ${strongest.title}`
           : 'neutral long-term impact',
       impacts,
     };
