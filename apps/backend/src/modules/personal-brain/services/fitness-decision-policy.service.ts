@@ -31,7 +31,8 @@ export class FitnessDecisionPolicyService {
     if (equipment.has('none') && equipment.size === 1) { candidates.find(c => c.discipline === 'calisthenics')!.score += 0.20; candidates.find(c => c.discipline === 'gym')!.score -= 0.12; }
     if (equipment.has('dumbbells') || equipment.has('barbell') || equipment.has('cable_machine')) candidates.find(c => c.discipline === 'gym')!.score += 0.20;
     if (hasConstraint('low_impact')) { candidates.find(c => c.discipline === 'yoga')!.score += 0.15; candidates.find(c => c.discipline === 'calisthenics')!.score -= 0.04; }
-    const memory = fitness.decisionMemory ?? context.state.lifeContext?.decisionMemory;
+    type FitnessWithLegacyMemory = typeof fitness & { decisionMemory?: NonNullable<typeof context.state.lifeContext>['decisionMemory'] };
+    const memory = (fitness as FitnessWithLegacyMemory).decisionMemory ?? context.state.lifeContext?.decisionMemory;
     const decisionCount = memory?.decisions ?? 0;
     if (decisionCount >= 5 && memory?.changeSignal === 'stable' && memory.selectedFrequency?.length) { const prior = memory.selectedFrequency[0]; const priorCandidate = candidates.find(c => c.discipline === prior.id); if (priorCandidate && prior.count >= 3) { priorCandidate.score += 0.04; priorCandidate.reasons.push(`prior-choice-pattern:${prior.count}`); } }
     candidates.sort((a, b) => b.score - a.score);
