@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { getYogaCue, getYogaSession, startYogaCoach, tickYogaCoach, YogaCoachState, YogaSession } from '../lib/api';
+import { CameraBridgeState, UnconfiguredYogaCameraBridge } from '../lib/yoga-camera-bridge';
+
+const cameraBridge = new UnconfiguredYogaCameraBridge();
 
 export default function YogaScreen() {
   const [session, setSession] = useState<YogaSession | null>(null);
@@ -9,6 +12,7 @@ export default function YogaScreen() {
   const [cue, setCue] = useState('آماده‌ای؟ آرام شروع می‌کنیم.');
   const [loading, setLoading] = useState(true);
   const [trainingMode, setTrainingMode] = useState(false);
+  const [cameraState, setCameraState] = useState<CameraBridgeState | null>(null);
   const [permission, requestPermission] = useCameraPermissions();
 
   useEffect(() => {
@@ -18,6 +22,7 @@ export default function YogaScreen() {
       setState(await startYogaCoach(next));
       setLoading(false);
     })();
+    return () => { void cameraBridge.stop(); };
   }, []);
 
   useEffect(() => {
@@ -45,12 +50,14 @@ export default function YogaScreen() {
   const handleTrainingMode = async () => {
     if (trainingMode) {
       setTrainingMode(false);
+      setCameraState(await cameraBridge.stop());
       return;
     }
     if (!permission?.granted) {
       const result = await requestPermission();
       if (!result.granted) return;
     }
+    setCameraState(await cameraBridge.start());
     setTrainingMode(true);
   };
 
@@ -80,7 +87,7 @@ export default function YogaScreen() {
             <View style={styles.alignmentFrame} />
             <View style={styles.overlayTopRow}>
               <View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text></View>
-              <View style={styles.privacyPill}><Text style={styles.privacyText}>فقط روی دستگاه</Text></View>
+              <View style={styles.privacyPill}><Text style={styles.privacyText}>{cameraState?.provider === 'on_device' ? 'تحلیل روی دستگاه' : 'بدون ضبط و آپلود'}</Text></View>
             </View>
             <View style={styles.overlayBottom}>
               <Text style={styles.overlayPose}>{currentPose?.poseId.replaceAll('_', ' ') ?? 'ready'}</Text>
