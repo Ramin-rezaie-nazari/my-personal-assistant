@@ -14,13 +14,13 @@ export class ProductMatchingService {
     const refTitle = this.normalizeTitle(reference.title); const candidateTitle = this.normalizeTitle(candidate.title);
     if (refTitle === candidateTitle) { score += 0.2; matchedBy.push('exact_title'); } else if (refTitle && candidateTitle && (refTitle.includes(candidateTitle) || candidateTitle.includes(refTitle))) { score += 0.1; matchedBy.push('title_overlap'); }
     if (reference.brand && candidate.brand && this.normalizeTitle(reference.brand) === this.normalizeTitle(candidate.brand)) { score += 0.08; matchedBy.push('brand'); }
+    let quantityMismatch = false;
     if (reference.quantityValue != null && candidate.quantityValue != null && reference.quantityUnit && candidate.quantityUnit) {
-      const sameUnit = this.normalizeTitle(reference.quantityUnit) === this.normalizeTitle(candidate.quantityUnit); const closeValue = Math.abs(reference.quantityValue - candidate.quantityValue) / Math.max(reference.quantityValue, 1) <= 0.01;
+      const sameUnit = this.normalizeTitle(reference.quantityUnit) === this.normalizeTitle(candidate.quantityUnit); const closeValue = Math.abs(reference.quantityValue - candidate.quantityValue) / Math.max(reference.quantityValue, 1) <= 0.01; quantityMismatch = sameUnit && !closeValue;
       if (sameUnit && closeValue) { score += 0.12; matchedBy.push('quantity'); }
     }
-    const confidence = Math.min(1, Number(score.toFixed(4)));
-    const titleOnlyNearMatch = matchedBy.length === 1 && matchedBy[0] === 'title_overlap';
-    const ambiguous = titleOnlyNearMatch || (confidence >= 0.55 && confidence < 0.78);
+    const confidence = Math.min(1, Number(score.toFixed(4))); const hasStrongId = ['gtin', 'ean', 'barcode', 'sku'].some((key) => refIds[key] && candidateIds[key] && refIds[key] === candidateIds[key]);
+    const ambiguous = (!hasStrongId && quantityMismatch) || (!hasStrongId && matchedBy.includes('title_overlap')) || (!hasStrongId && matchedBy.includes('exact_title') && !matchedBy.includes('quantity') && matchedBy.includes('brand')) || (confidence >= 0.55 && confidence < 0.78);
     return { canonical: { productKey: candidate.productKey, title: candidate.title, brand: candidate.brand ?? null, quantityValue: candidate.quantityValue ?? null, quantityUnit: candidate.quantityUnit ?? null }, score: confidence, confidence, matchedBy, ambiguous };
   }
 }
