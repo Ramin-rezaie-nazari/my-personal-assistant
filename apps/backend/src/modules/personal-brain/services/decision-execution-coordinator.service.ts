@@ -5,8 +5,9 @@ import { DecisionExecutionGateService } from './decision-execution-gate.service'
 import { DecisionFeedbackLoopService } from './decision-feedback-loop.service';
 import { DecisionExecutionPolicyService } from './decision-execution-policy.service';
 import { DecisionExecutionHistoryService } from './decision-execution-history.service';
+import { ActionConfirmationIntelligenceService } from './action-confirmation-intelligence.service';
 
-export type DecisionExecutionStatus = 'completed' | 'blocked' | 'unsupported' | 'failed' | 'dry_run';
+export type DecisionExecutionStatus = 'completed' | 'blocked' | 'unsupported' | 'failed' | 'dry_run' | 'pending_confirmation';
 
 export type DecisionExecutionReceipt = {
   userId: string;
@@ -16,6 +17,7 @@ export type DecisionExecutionReceipt = {
   status: DecisionExecutionStatus;
   reason: string;
   result?: unknown;
+  confirmationToken?: string;
   durationMs: number;
   attempts: number;
   recordedAt: number;
@@ -30,12 +32,26 @@ export class DecisionExecutionCoordinatorService {
     private readonly feedback: DecisionFeedbackLoopService,
     private readonly policy: DecisionExecutionPolicyService,
     private readonly history: DecisionExecutionHistoryService,
+    private readonly confirmation: ActionConfirmationIntelligenceService,
   ) {}
 
   async execute(userId: string, candidate: DecisionCandidate, context: Record<string, unknown> = {}): Promise<DecisionExecutionReceipt> {
     const startedAt = Date.now();
     const base = { userId, decisionId: candidate.id, action: candidate.action, domain: candidate.domain, recordedAt: startedAt };
     const resolved = this.policy.resolve(candidate, context);
+    const confirmation = this.confirmation.assess(userId, candidate, context);
+    if (confirmation.required) {
+      return this.record({
+        ...base,
+        status: 'pending_confirmation',
+        reason: confirmation.reason,
+        confirmationToken: confirmation.token,
+        durationMs: Date.now() - startedAt,
+        attempts: 0,
+        policy: resolved,
+      });
+    }
+
     const gate = this.gate.open(userId, candidate);
     if (!gate.allowed) return this.record({ ...base, status: 'blocked', reason: gate.reason, durationMs: Date.now() - startedAt, attempts: 0, policy: resolved });
 
@@ -57,6 +73,10 @@ export class DecisionExecutionCoordinatorService {
       this.feedback.record({ userId, candidate, outcome: 'failed' });
       return this.record({ ...base, status: 'failed', reason: message || 'action_failed', durationMs: Date.now() - startedAt, attempts: resolved.maxAttempts, policy: resolved });
     }
+  }
+
+  confirm(userId: string, token: string) {
+    return this.confirmation.confirm(userId, token);
   }
 
   private record(receipt: DecisionExecutionReceipt): DecisionExecutionReceipt {
