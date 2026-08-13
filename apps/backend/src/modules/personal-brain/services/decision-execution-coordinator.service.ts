@@ -7,7 +7,7 @@ import { DecisionExecutionPolicyService } from './decision-execution-policy.serv
 import { DecisionExecutionHistoryService } from './decision-execution-history.service';
 import { ActionConfirmationIntelligenceService } from './action-confirmation-intelligence.service';
 
-export type DecisionExecutionStatus = 'completed' | 'blocked' | 'unsupported' | 'failed' | 'dry_run' | 'pending_confirmation';
+export type DecisionExecutionStatus = 'completed' | 'blocked' | 'unsupported' | 'failed' | 'dry_run' | 'pending_confirmation' | 'confirmation_invalid';
 
 export type DecisionExecutionReceipt = {
   userId: string;
@@ -51,7 +51,44 @@ export class DecisionExecutionCoordinatorService {
         policy: resolved,
       });
     }
+    return this.executeApproved(userId, candidate, context, resolved, startedAt, base);
+  }
 
+  async confirmAndExecute(userId: string, token: string): Promise<DecisionExecutionReceipt> {
+    const pending = this.confirmation.consume(userId, token);
+    if (!pending) {
+      return {
+        userId,
+        decisionId: 'unknown',
+        action: 'unknown',
+        domain: 'conversation',
+        status: 'confirmation_invalid',
+        reason: 'invalid_or_expired_confirmation',
+        durationMs: 0,
+        attempts: 0,
+        recordedAt: Date.now(),
+        policy: { timeoutMs: 30_000, maxAttempts: 1, retryDelayMs: 0, dryRun: false },
+      };
+    }
+    const startedAt = Date.now();
+    const resolved = this.policy.resolve(pending.candidate, pending.context);
+    return this.executeApproved(userId, pending.candidate, pending.context, resolved, startedAt, {
+      userId,
+      decisionId: pending.candidate.id,
+      action: pending.candidate.action,
+      domain: pending.candidate.domain,
+      recordedAt: startedAt,
+    });
+  }
+
+  private async executeApproved(
+    userId: string,
+    candidate: DecisionCandidate,
+    context: Record<string, unknown>,
+    resolved: ReturnType<DecisionExecutionPolicyService['resolve']>,
+    startedAt: number,
+    base: Pick<DecisionExecutionReceipt, 'userId' | 'decisionId' | 'action' | 'domain' | 'recordedAt'>,
+  ): Promise<DecisionExecutionReceipt> {
     const gate = this.gate.open(userId, candidate);
     if (!gate.allowed) return this.record({ ...base, status: 'blocked', reason: gate.reason, durationMs: Date.now() - startedAt, attempts: 0, policy: resolved });
 
@@ -73,10 +110,6 @@ export class DecisionExecutionCoordinatorService {
       this.feedback.record({ userId, candidate, outcome: 'failed' });
       return this.record({ ...base, status: 'failed', reason: message || 'action_failed', durationMs: Date.now() - startedAt, attempts: resolved.maxAttempts, policy: resolved });
     }
-  }
-
-  confirm(userId: string, token: string) {
-    return this.confirmation.confirm(userId, token);
   }
 
   private record(receipt: DecisionExecutionReceipt): DecisionExecutionReceipt {
