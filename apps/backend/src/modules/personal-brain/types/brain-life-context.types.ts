@@ -39,6 +39,14 @@ export type BrainFitnessPerformanceMemory = {
   }>;
 };
 
+export type BrainDecisionExplanationMemory = {
+  windowDays: number;
+  decisions: number;
+  repeatedReasons: Array<{ reason: string; count: number }>;
+  selectedFrequency: Array<{ id: string; count: number }>;
+  changeSignal: 'stable' | 'changing' | 'insufficient-data';
+};
+
 export type BrainFitnessContext = {
   disciplines: string[];
   primaryGoal: {
@@ -94,4 +102,5 @@ export type BrainLifeContext = {
     items: BrainGoalSnapshot[];
   };
   fitness: BrainFitnessContext;
+  decisionMemory?: BrainDecisionExplanationMemory;
 };
