@@ -3,6 +3,8 @@ const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 const ACCESS_TOKEN_KEY = 'mpa.accessToken'; const REFRESH_TOKEN_KEY = 'mpa.refreshToken';
 export type AuthUser = { id:string; email:string; firstName:string|null; lastName:string|null; avatarUrl:string|null };
 export type AuthResponse = { accessToken:string; refreshToken:string; user:AuthUser };
+export type FoodItem = { id:string;name:string;category:string;calories:number;protein:number;carbs:number;fat:number;imageUrl?:string|null;verified:boolean };
+export type Meal = { id:string;name:string;type:string;eatenAt:string;calories:number;protein:number;carbs:number;fat:number;items:Array<{id:string;foodId:string;quantity:number;calories:number;protein:number;carbs:number;fat:number;food:FoodItem}> };
 export type NutritionSummary = {
   dateKey:string;
   meals:{count:number;calories:number;protein:number;carbs:number;fat:number};
@@ -26,6 +28,8 @@ async function rawRequest(path:string,init:RequestInit={},token?:string){const h
 async function refreshAccessToken(){const refreshToken=await getStoredRefreshToken();if(!refreshToken)return null;const response=await rawRequest('/auth/refresh',{method:'POST',body:JSON.stringify({refreshToken})});if(!response.ok){await clearAuthSession();return null}const auth=await response.json() as AuthResponse;await setAuthSession(auth);return auth.accessToken}
 async function request<T>(path:string,init:RequestInit={}):Promise<T>{let token=await getStoredAccessToken();let response=await rawRequest(path,init,token??undefined);if(response.status===401&&token){token=await refreshAccessToken();if(token)response=await rawRequest(path,init,token)}if(!response.ok)throw new Error((await response.text())||`Request failed with ${response.status}`);return response.json() as Promise<T>}
 export function login(email:string,password:string){return request<AuthResponse>('/auth/login',{method:'POST',body:JSON.stringify({email,password})}).then(async a=>{await setAuthSession(a);return a})}
+export function getFoods(q?:string){const suffix=q?`?q=${encodeURIComponent(q)}`:'';return request<FoodItem[]>(`/foods${suffix}`)}
+export function createMeal(data:{name:string;type:string;eatenAt:string;dateKey?:string;items:Array<{foodId:string;quantity:number}>}){return request<Meal>('/meals',{method:'POST',body:JSON.stringify(data)})}
 export function getNutritionSummary(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<NutritionSummary>(`/nutrition/summary${q}`)}
 export function getYogaSession(durationMin:number,level?:YogaSession['level'],focus?:string){return request<YogaSession>('/yoga/session',{method:'POST',body:JSON.stringify({durationMin,level,focus})})}
 export function startYogaCoach(session:YogaSession){return request<YogaCoachState>('/yoga/coach/start',{method:'POST',body:JSON.stringify({session})})}
