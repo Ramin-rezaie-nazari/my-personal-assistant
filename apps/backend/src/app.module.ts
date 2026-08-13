@@ -35,6 +35,7 @@ import { PreferencesModule } from './modules/preferences/preferences.module';
 import { PersonalBrainModule } from './modules/personal-brain/personal-brain.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DailyCommandCenterModule } from './modules/daily-command-center/daily-command-center.module';
+import { YogaModule } from './modules/yoga/yoga.module';
 
 @Module({
   imports: [
@@ -43,7 +44,7 @@ import { DailyCommandCenterModule } from './modules/daily-command-center/daily-c
     ConfigModule, PrismaModule, AuthModule, UsersModule, SettingsModule, ProfileModule, OnboardingModule,
     AssistantModule, UserIntelligenceModule, BudgetIntelligenceModule, PriceIntelligenceModule,
     ShoppingIntelligenceModule, DeviceIntelligenceModule, DecisionEngineModule, AdaptiveLearningModule,
-    ContextEngineModule, PreferencesModule, PersonalBrainModule, DashboardModule, DailyCommandCenterModule,
+    ContextEngineModule, PreferencesModule, PersonalBrainModule, DashboardModule, DailyCommandCenterModule, YogaModule,
   ],
   controllers: [AppController],
   providers: [AppService],
