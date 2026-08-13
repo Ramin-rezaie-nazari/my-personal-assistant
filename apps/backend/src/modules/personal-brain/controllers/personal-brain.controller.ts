@@ -3,6 +3,8 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CreateBrainRequestDto } from '../dto/create-brain-request.dto';
 import { BrainOrchestratorService } from '../services/brain-orchestrator.service';
+import { BrainReasoningContextService } from '../services/brain-reasoning-context.service';
+import { FitnessSessionOrchestratorService } from '../services/fitness-session-orchestrator.service';
 import { DynamicReplanningService } from '../services/dynamic-replanning.service';
 import { FullDaySchedulerService } from '../services/full-day-scheduler.service';
 import { NextBestActionService } from '../services/next-best-action.service';
@@ -22,14 +24,21 @@ import { ScenarioPlanningService } from '../services/scenario-planning.service';
 import { PersistentPlanStateService } from '../services/persistent-plan-state.service';
 import { DecisionAuditService } from '../services/decision-audit.service';
 import { DecisionCandidate } from '../services/unified-decision-engine.service';
+
 interface AuthenticatedRequest extends Request { user: { id: string } }
+
 @Controller('personal-brain')
 export class PersonalBrainController {
-  constructor(private readonly brainOrchestratorService: BrainOrchestratorService, private readonly smartPlanningService: SmartPlanningService, private readonly fullDaySchedulerService: FullDaySchedulerService, private readonly dynamicReplanningService: DynamicReplanningService, private readonly scheduleInsightsService: ScheduleInsightsService, private readonly nextBestActionService: NextBestActionService, private readonly scheduleHealthService: ScheduleHealthService, private readonly replanPolicyService: ReplanPolicyService, private readonly scheduleRecoveryService: ScheduleRecoveryService, private readonly proactiveCoachService: ProactiveCoachService, private readonly coachMessageService: CoachMessageService, private readonly proactiveEventEngineService: ProactiveEventEngineService, private readonly notificationOrchestratorService: NotificationOrchestratorService, private readonly notificationDeduplicationService: NotificationDeduplicationService, private readonly notificationFeedbackService: NotificationFeedbackService, private readonly notificationDeviceRegistryService: NotificationDeviceRegistryService, private readonly scenarioPlanningService: ScenarioPlanningService, private readonly persistentPlanStateService: PersistentPlanStateService, private readonly decisionAuditService: DecisionAuditService) {}
+  constructor(private readonly brainOrchestratorService: BrainOrchestratorService, private readonly brainReasoningContextService: BrainReasoningContextService, private readonly fitnessSessionOrchestratorService: FitnessSessionOrchestratorService, private readonly smartPlanningService: SmartPlanningService, private readonly fullDaySchedulerService: FullDaySchedulerService, private readonly dynamicReplanningService: DynamicReplanningService, private readonly scheduleInsightsService: ScheduleInsightsService, private readonly nextBestActionService: NextBestActionService, private readonly scheduleHealthService: ScheduleHealthService, private readonly replanPolicyService: ReplanPolicyService, private readonly scheduleRecoveryService: ScheduleRecoveryService, private readonly proactiveCoachService: ProactiveCoachService, private readonly coachMessageService: CoachMessageService, private readonly proactiveEventEngineService: ProactiveEventEngineService, private readonly notificationOrchestratorService: NotificationOrchestratorService, private readonly notificationDeduplicationService: NotificationDeduplicationService, private readonly notificationFeedbackService: NotificationFeedbackService, private readonly notificationDeviceRegistryService: NotificationDeviceRegistryService, private readonly scenarioPlanningService: ScenarioPlanningService, private readonly persistentPlanStateService: PersistentPlanStateService, private readonly decisionAuditService: DecisionAuditService) {}
   @Get() getStatus() { return { module: 'personal-brain', status: 'ready' }; }
   @Get('plan') @UseGuards(JwtAuthGuard) async getPlan(@Req() req: AuthenticatedRequest) { return this.smartPlanningService.getPlan(req.user.id); }
   @Get('plan/history') @UseGuards(JwtAuthGuard) async getPlanHistory(@Req() req: AuthenticatedRequest) { return this.persistentPlanStateService.listRecent(req.user.id, 10); }
   @Get('trace') @UseGuards(JwtAuthGuard) async getTrace(@Req() req: AuthenticatedRequest) { return this.decisionAuditService.recent(req.user.id, 20); }
+  @Post('fitness/session') @UseGuards(JwtAuthGuard) async generateFitnessSession(@Body() body: { message?: string; durationMin?: number; level?: string; focus?: string }, @Req() req: AuthenticatedRequest) {
+    const message = body.message?.trim() || 'I want a workout today';
+    const context = await this.brainReasoningContextService.build(message, req.user.id);
+    return this.fitnessSessionOrchestratorService.generate(context, { durationMin: Math.min(120, Math.max(5, Math.round(body.durationMin ?? 30))), level: body.level, focus: body.focus });
+  }
   @Get('schedule/today') @UseGuards(JwtAuthGuard) async getTodaySchedule(@Req() req: AuthenticatedRequest) { return this.fullDaySchedulerService.buildDay(req.user.id); }
   @Get('schedule/replan') @UseGuards(JwtAuthGuard) async replan(@Req() req: AuthenticatedRequest) { return this.dynamicReplanningService.replanRemainingDay(req.user.id); }
   @Get('schedule/insights') @UseGuards(JwtAuthGuard) async getScheduleInsights(@Req() req: AuthenticatedRequest) { return this.scheduleInsightsService.getInsights(req.user.id); }
