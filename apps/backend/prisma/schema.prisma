@@ -41,7 +41,8 @@ model User {
   userBehaviors    UserBehavior[]
   userInsights     UserInsight[]
   planExecutionStates PlanExecutionState[]
-  
+  fitnessProfileState FitnessProfileState?
+  decisionAudits DecisionAuditEntry[]
 }
 
 model AuthAccount {
@@ -395,6 +396,16 @@ model DecisionAuditEntry {
   blockedIds Json
   reason String
   createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([userId, createdAt])
   @@index([userId, decisionId])
+}
+model FitnessProfileState {
+  id String @id @default(uuid())
+  userId String @unique
+  profile Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([updatedAt])
 }
