@@ -17,7 +17,15 @@ export class ProactiveCoachService {
     const actions: CoachAction[] = [];
     const add = (input: Omit<CoachAction, 'explanation'> & { evidence?: string[] }) => {
       const reasons = [input.reason, ...(input.evidence ?? [])];
-      const explanation = this.explanation?.fromCoachAction(input.title, input.message, input.priority, reasons) ?? { summary: input.reason, details: reasons.join(' '), confidence: 0.5, reasons };
+      const explanation: DecisionExplanation = this.explanation?.fromCoachAction(input.title, input.message, input.priority, reasons) ?? {
+        summary: input.reason,
+        details: reasons.join(' '),
+        confidence: 0.5,
+        reasons,
+        rejectedReasons: [],
+        blockedReasons: [],
+        historicalReasons: [],
+      };
       actions.push({ ...input, explanation });
     };
     if (recovery.overdue.length) { const item = recovery.overdue[0]; add({ type: 'start_task', priority: 'critical', title: `Focus on ${item.title}`, message: 'This scheduled item has already passed. Starting it now is the fastest way to recover the day.', taskId: item.id, reason: 'overdue scheduled item', evidence: ['An overdue item is already affecting the schedule.'] }); }
