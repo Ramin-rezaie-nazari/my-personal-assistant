@@ -18,7 +18,7 @@ describe('DecisionOutcomeLearningService', () => {
     const prisma = {
       $queryRaw: jest.fn().mockResolvedValue(Array.from({ length: 6 }, (_, index) => ({
         outcome: 'positive', score: 0.9, createdAt: new Date(Date.now() - index * 1000),
-      })),
+      }))),
     } as any;
     const service = new DecisionOutcomeLearningService(prisma);
     const profile = await service.profile('user-1');
@@ -30,7 +30,7 @@ describe('DecisionOutcomeLearningService', () => {
     const prisma = {
       $queryRaw: jest.fn().mockResolvedValue(Array.from({ length: 6 }, (_, index) => ({
         outcome: 'negative', score: 0.2, createdAt: new Date(Date.now() - index * 1000),
-      })),
+      }))),
     } as any;
     const service = new DecisionOutcomeLearningService(prisma);
     const profile = await service.profile('user-1');
