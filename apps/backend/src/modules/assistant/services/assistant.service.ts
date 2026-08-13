@@ -95,10 +95,10 @@ export class AssistantService {
     if (!command.referencesPrevious || !(command.targetResourceId || command.targetExecutionId)) return response;
     const previousAction = (command.targetAction ?? '').toLowerCase();
     const previousResource = (command.targetResourceType ?? '').toLowerCase();
-    const hasTime = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
-    const hasDuration = /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)\b/i.test(input);
-    const hasCalories = /\b\d{2,5}\s*(?:cal|calories|کالری)\b/i.test(input);
-    const hasWeekTarget = /\b[1-7]\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?\b/i.test(input);
+    const hasTime = /(?:[01]?\d|2[0-3]):[0-5]\d/.test(input);
+    const hasDuration = /\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)/i.test(input);
+    const hasCalories = /\d{2,5}\s*(?:cal|calories|کالری)/i.test(input);
+    const hasWeekTarget = /[1-7]\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?/i.test(input) || /[1-7]\s*بار/.test(input);
     if (command.operation === 'update' && previousResource === 'calendar' && hasTime) return { ...response, intent: 'calendar', nextAction: 'update_calendar_event' };
     if (command.operation === 'cancel' && previousResource === 'calendar') return { ...response, intent: 'calendar', nextAction: 'cancel_calendar_event' };
     if (command.operation === 'update' && previousAction.includes('reminder') && hasTime) return { ...response, intent: 'reminder', nextAction: 'update_reminder' };
