@@ -34,13 +34,16 @@ export class FitnessDecisionPolicyService {
     type FitnessWithLegacyMemory = typeof fitness & { decisionMemory?: NonNullable<typeof context.state.lifeContext>['decisionMemory'] };
     const memory = (fitness as FitnessWithLegacyMemory).decisionMemory ?? context.state.lifeContext?.decisionMemory;
     const decisionCount = memory?.decisions ?? 0;
-    if (decisionCount >= 5 && memory?.changeSignal === 'stable' && memory.selectedFrequency?.length) { const prior = memory.selectedFrequency[0]; const priorCandidate = candidates.find(c => c.discipline === prior.id); if (priorCandidate && prior.count >= 3) { priorCandidate.score += 0.04; priorCandidate.reasons.push(`prior-choice-pattern:${prior.count}`); } }
+    const prior = memory?.selectedFrequency?.[0];
+    if (decisionCount >= 5 && memory?.changeSignal === 'stable' && prior) {
+      const priorCandidate = candidates.find(c => c.discipline === prior.id);
+      if (priorCandidate && prior.count >= 3) { priorCandidate.score += 0.04; priorCandidate.reasons.push(`prior-choice-pattern:${prior.count}`); }
+    }
     candidates.sort((a, b) => b.score - a.score);
     const best = candidates[0];
     const reasons = [...best.reasons, goal ? `primary-goal:${goal.kind}` : 'no-primary-goal', `target:${(fitness.targetAreas ?? []).join(',')}`, `equipment:${[...equipment].join(',')}`];
     if (decisionCount >= 5 && memory) reasons.push(`decision-history:${memory.changeSignal}`);
-    const prior = memory?.selectedFrequency?.[0];
-    if (prior?.id === best.discipline && (prior.count ?? 0) >= 3) reasons.push(`prior-choice-pattern:${prior.count}`);
+    if (prior?.count >= 3) reasons.push(`prior-choice-pattern:${prior.count}`);
     return { canDecide: context.reasoning.uncertainties.length === 0, confidence: Math.min(0.98, Math.max(0.35, best.score)), blockers: [...context.reasoning.uncertainties], intent: 'fitness-recommendation', recommendation: `Best training branch today: ${best.discipline}. ${reasons.join(' | ')}`, nextAction: `Generate a ${best.discipline} session using the user's fitness context`, candidates: candidates.map(c => ({ id: c.discipline, score: Number(c.score.toFixed(2)), rationale: c.reasons })) } as BrainDecisionResult & { candidates: unknown[] };
   }
 }
