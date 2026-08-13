@@ -47,6 +47,15 @@ export type BrainDecisionExplanationMemory = {
   changeSignal: 'stable' | 'changing' | 'insufficient-data';
 };
 
+export type BrainDecisionOutcomeMemory = {
+  sampleSize: number;
+  averageScore: number | null;
+  positiveRate: number;
+  negativeRate: number;
+  trend: 'improving' | 'declining' | 'stable' | 'insufficient-data';
+  confidenceAdjustment: number;
+};
+
 export type BrainFitnessContext = {
   disciplines: string[];
   primaryGoal: {
@@ -75,24 +84,14 @@ export type BrainLifeContext = {
   };
   reminders: {
     pending: number;
-    next: {
-      id: string;
-      title: string;
-      type: string;
-      scheduledAt: string;
-    } | null;
+    next: { id: string; title: string; type: string; scheduledAt: string } | null;
   };
   supplements: {
     total: number;
     taken: number;
     remaining: number;
     completionPercent: number;
-    next: {
-      id: string;
-      name: string;
-      dosage: string | null;
-      scheduledTime: string;
-    } | null;
+    next: { id: string; name: string; dosage: string | null; scheduledTime: string } | null;
   };
   goals: {
     active: number;
@@ -103,4 +102,5 @@ export type BrainLifeContext = {
   };
   fitness: BrainFitnessContext;
   decisionMemory?: BrainDecisionExplanationMemory;
+  outcomeMemory?: BrainDecisionOutcomeMemory;
 };
