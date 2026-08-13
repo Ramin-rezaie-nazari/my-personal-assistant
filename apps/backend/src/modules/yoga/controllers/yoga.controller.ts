@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { YogaFocus, YogaLevel, YogaSession } from '../models/yoga.model';
+import { YogaSession } from '../models/yoga.model';
+import type { YogaFocus, YogaLevel } from '../models/yoga.model';
 import { YogaCoachService, YogaCoachState } from '../services/yoga-coach.service';
 import { YogaLibraryService } from '../services/yoga-library.service';
 import { YogaSessionGeneratorService } from '../services/yoga-session-generator.service';
