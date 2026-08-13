@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { DynamicReplanningService } from './dynamic-replanning.service';
-import { PlanExecutionResult } from './plan-execution.service';
+import type { PlanExecutionResult } from './plan-execution.service';
 
 export type AdaptiveReplanResult = {
   shouldReplan: boolean;
