@@ -16,6 +16,29 @@ export type BrainGoalSnapshot = {
   daysRemaining: number | null;
 };
 
+export type BrainFitnessPerformanceMemory = {
+  windowDays: number;
+  sessions: number;
+  averageForm: number | null;
+  averageCompletion: number | null;
+  averageDifficulty: number | null;
+  averageRecovery: number | null;
+  formTrend: number | null;
+  completionTrend: number | null;
+  recoveryTrend: number | null;
+  disciplineSummary: Record<string, { sessions: number; averageForm: number | null; averageDifficulty: number | null }>;
+  exerciseTrends: Array<{
+    exerciseId: string | null;
+    exerciseName: string | null;
+    sessions: number;
+    firstScore: number | null;
+    latestScore: number | null;
+    scoreTrend: number | null;
+    latestReps: number | null;
+    latestLoadKg: number | null;
+  }>;
+};
+
 export type BrainFitnessContext = {
   disciplines: string[];
   primaryGoal: {
@@ -31,6 +54,7 @@ export type BrainFitnessContext = {
   equipment: string[];
   constraints: string[];
   targetAreas: string[];
+  performanceMemory?: BrainFitnessPerformanceMemory;
 };
 
 export type BrainLifeContext = {
