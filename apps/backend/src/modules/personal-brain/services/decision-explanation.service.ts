@@ -19,7 +19,8 @@ export class DecisionExplanationService {
     if (fitness?.targetAreas?.length) reasons.push(`You asked me to focus on ${fitness.targetAreas.join(', ')}.`);
     if (fitness?.equipment?.length) reasons.push(`I considered the equipment you currently have: ${fitness.equipment.join(', ')}.`);
     if (fitness?.primaryGoal?.avoidBulk) reasons.push('You asked to avoid excessive muscle bulk, so I treated that as a constraint.');
-    const performance = fitness?.performanceMemory ?? fitness?.performance;
+    type LegacyFitness = NonNullable<typeof fitness> & { performance?: NonNullable<NonNullable<typeof fitness>['performanceMemory']> };
+    const performance = fitness?.performanceMemory ?? (fitness as LegacyFitness | undefined)?.performance;
     if (performance?.formTrend != null) reasons.push(`Your recent form trend is ${this.trendText(performance.formTrend)}.`);
     if (performance?.completionTrend != null) reasons.push(`Your recent completion trend is ${this.trendText(performance.completionTrend)}.`);
     if (performance?.recoveryTrend != null) reasons.push(`Your recovery trend is ${this.trendText(performance.recoveryTrend)}.`);
