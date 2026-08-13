@@ -39,35 +39,13 @@ export type BrainFitnessPerformanceMemory = {
   }>;
 };
 
-export type BrainDecisionExplanationMemory = {
-  windowDays: number;
-  decisions: number;
-  repeatedReasons: Array<{ reason: string; count: number }>;
-  selectedFrequency: Array<{ id: string; count: number }>;
-  changeSignal: 'stable' | 'changing' | 'insufficient-data';
-};
-
-export type BrainDecisionOutcomeMemory = {
-  sampleSize: number;
-  averageScore: number | null;
-  positiveRate: number;
-  negativeRate: number;
-  trend: 'improving' | 'declining' | 'stable' | 'insufficient-data';
-  confidenceAdjustment: number;
-};
+export type BrainDecisionExplanationMemory = { windowDays: number; decisions: number; repeatedReasons: Array<{ reason: string; count: number }>; selectedFrequency: Array<{ id: string; count: number }>; changeSignal: 'stable' | 'changing' | 'insufficient-data' };
+export type BrainDecisionOutcomeMemory = { sampleSize: number; averageScore: number | null; positiveRate: number; negativeRate: number; trend: 'improving' | 'declining' | 'stable' | 'insufficient-data'; confidenceAdjustment: number };
+export type BrainFusionSignal = { value: unknown; source: string; observedAt: string | null; freshness: string; confidence: number };
 
 export type BrainFitnessContext = {
   disciplines: string[];
-  primaryGoal: {
-    id: string;
-    kind: string;
-    title: string;
-    targetAreas: string[];
-    desiredOutcome: string;
-    priority: number;
-    avoidBulk: boolean;
-    active: boolean;
-  } | null;
+  primaryGoal: { id: string; kind: string; title: string; targetAreas: string[]; desiredOutcome: string; priority: number; avoidBulk: boolean; active: boolean } | null;
   equipment: string[];
   constraints: string[];
   targetAreas: string[];
@@ -75,32 +53,15 @@ export type BrainFitnessContext = {
 };
 
 export type BrainLifeContext = {
-  habits: {
-    active: number;
-    completedThisWeek: number;
-    completionPercent: number;
-    currentStreak: number;
-    items: BrainHabitSnapshot[];
-  };
-  reminders: {
-    pending: number;
-    next: { id: string; title: string; type: string; scheduledAt: string } | null;
-  };
-  supplements: {
-    total: number;
-    taken: number;
-    remaining: number;
-    completionPercent: number;
-    next: { id: string; name: string; dosage: string | null; scheduledTime: string } | null;
-  };
-  goals: {
-    active: number;
-    dueSoon: number;
-    averageProgress: number;
-    next: BrainGoalSnapshot | null;
-    items: BrainGoalSnapshot[];
-  };
+  habits: { active: number; completedThisWeek: number; completionPercent: number; currentStreak: number; items: BrainHabitSnapshot[] };
+  reminders: { pending: number; next: { id: string; title: string; type: string; scheduledAt: string } | null };
+  supplements: { total: number; taken: number; remaining: number; completionPercent: number; next: { id: string; name: string; dosage: string | null; scheduledTime: string } | null };
+  goals: { active: number; dueSoon: number; averageProgress: number; next: BrainGoalSnapshot | null; items: BrainGoalSnapshot[] };
   fitness: BrainFitnessContext;
   decisionMemory?: BrainDecisionExplanationMemory;
   outcomeMemory?: BrainDecisionOutcomeMemory;
+  userId?: string;
+  generatedAt?: string;
+  memory?: BrainFusionSignal;
+  wearable?: BrainFusionSignal;
 };
