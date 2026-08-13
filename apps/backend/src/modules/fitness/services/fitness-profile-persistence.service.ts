@@ -29,11 +29,7 @@ export class FitnessProfilePersistenceService {
 
   async save(userId: string, profile: FitnessProfile): Promise<FitnessProfile> {
     const normalized = this.normalize(profile);
-    await this.prisma.fitnessProfileState.upsert({
-      where: { userId },
-      create: { userId, profile: normalized },
-      update: { profile: normalized },
-    });
+    await this.prisma.fitnessProfileState.upsert({ where: { userId }, create: { userId, profile: normalized }, update: { profile: normalized } });
     return normalized;
   }
 
@@ -59,5 +55,19 @@ export class FitnessProfilePersistenceService {
     const equipment: FitnessEquipment[] = profile.equipment.filter((item) => item.active).map((item) => item.type);
     if (equipment.length === 0) equipment.push('none');
     return { disciplines: profile.disciplines, primaryGoal, equipment: [...new Set(equipment)], constraints: profile.constraints, targetAreas };
+  }
+
+  parseNaturalGoal(text: string): FitnessGoal {
+    const normalized = text.toLowerCase();
+    const targets: BodyTarget[] = [];
+    const push = (target: BodyTarget, ...words: string[]) => { if (words.some((word) => normalized.includes(word))) targets.push(target); };
+    push('thighs', 'ران', 'thigh'); push('glutes', 'باسن', 'glute'); push('shoulders', 'سرشانه', 'شانه', 'shoulder');
+    push('waist', 'کمر', 'waist'); push('core', 'شکم', 'core', 'abs'); push('back', 'پشت', 'back');
+    const avoidBulk = normalized.includes('حجم') && (normalized.includes('نمی') || normalized.includes('نه'));
+    const fatLoss = normalized.includes('لاغر') || normalized.includes('چربی') || normalized.includes('fat loss');
+    const sculpt = normalized.includes('خوش فرم') || normalized.includes('خوش‌فرم') || normalized.includes('tone') || normalized.includes('sculpt');
+    const strength = normalized.includes('قوی') || normalized.includes('قدرت') || normalized.includes('strength');
+    const kind = fatLoss ? 'fat_loss' : sculpt ? 'body_sculpt' : strength ? 'strength' : 'general_fitness';
+    return { id: `parsed-${Date.now()}`, kind, title: text.trim(), targetAreas: targets.length ? [...new Set(targets)] : ['full_body'], desiredOutcome: text.trim(), priority: 80, avoidBulk, active: true };
   }
 }
