@@ -8,7 +8,6 @@ describe('NutritionService', () => {
 
   const prisma = {
     nutritionLog: { findMany: jest.fn() },
-    meal: { findMany: jest.fn() },
     nutritionProfile: { findUnique: jest.fn() },
     dailyLog: { findUnique: jest.fn() },
     $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx)),
@@ -21,15 +20,12 @@ describe('NutritionService', () => {
     service = new NutritionService(prisma as never);
     tx.nutritionLog.create.mockResolvedValue({ id: 'log-1' });
     tx.dailyLog.upsert.mockResolvedValue({});
-    prisma.meal.findMany.mockResolvedValue([]);
     prisma.nutritionLog.findMany.mockResolvedValue([]);
     prisma.nutritionProfile.findUnique.mockResolvedValue(null);
     prisma.dailyLog.findUnique.mockResolvedValue(null);
   });
 
   it('filters logs by calendar day', async () => {
-    prisma.nutritionLog.findMany.mockResolvedValue([]);
-
     await service.getLogs('user-1', '2026-08-11');
 
     expect(prisma.nutritionLog.findMany).toHaveBeenCalledWith({
@@ -73,13 +69,10 @@ describe('NutritionService', () => {
     });
   });
 
-  it('builds a goal-aware daily summary from canonical daily totals', async () => {
+  it('builds a goal-aware daily summary from logged nutrition and daily totals', async () => {
     prisma.nutritionLog.findMany.mockResolvedValue([
       { calories: 500, protein: 30, carbs: 50, fat: 15 },
-    ]);
-    prisma.meal.findMany.mockResolvedValue([
-      { calories: 700, protein: 45, carbs: 60, fat: 20 },
-      { calories: 300, protein: 15, carbs: 25, fat: 10 },
+      { calories: 500, protein: 30, carbs: 25, fat: 10 },
     ]);
     prisma.nutritionProfile.findUnique.mockResolvedValue({
       dailyCaloriesGoal: 1500,
@@ -97,11 +90,11 @@ describe('NutritionService', () => {
     expect(summary).toEqual({
       dateKey: '2026-08-11',
       meals: {
-        count: 1,
+        count: 2,
         calories: 1000,
         protein: 60,
-        carbs: 50,
-        fat: 15,
+        carbs: 75,
+        fat: 25,
       },
       goals: { calories: 1500, protein: 80, waterMl: 2000 },
       remaining: { calories: 500, protein: 20, waterMl: 800 },
