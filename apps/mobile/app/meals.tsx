@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -32,10 +32,10 @@ export default function MealsScreen() {
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
 
-  const filtered = meals.filter((meal) => {
+  const filtered = useMemo(() => meals.filter((meal) => {
     const value = query.trim().toLowerCase();
     return !value || meal.name.toLowerCase().includes(value) || meal.type.toLowerCase().includes(value) || meal.items.some((item) => item.food.name.toLowerCase().includes(value));
-  });
+  }), [meals, query]);
   const caloriesGoal = summary?.goals.calories ?? null;
   const calories = summary?.meals.calories ?? 0;
   const proteinGoal = summary?.goals.protein ?? null;
