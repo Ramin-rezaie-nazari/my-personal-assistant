@@ -16,49 +16,28 @@ export type NaturalActionExecution = {
 export class NaturalActionExecutionService {
   constructor(private readonly coordinator: DecisionExecutionCoordinatorService) {}
 
-  async execute(
-    input: string,
-    userId: string,
-    response: BrainResponse,
-    contextualState: Record<string, unknown> = {},
-  ): Promise<NaturalActionExecution> {
-    if (!response.nextAction) {
-      return { executed: false, action: 'none', message: 'No executable action was selected.', intent: response.intent };
-    }
+  async execute(input: string, userId: string, response: BrainResponse, contextualState: Record<string, unknown> = {}): Promise<NaturalActionExecution> {
+    if (!response.nextAction) return { executed: false, action: 'none', message: 'No executable action was selected.', intent: response.intent };
+    const candidate: DecisionCandidate = { id: this.buildId(userId, input, response.nextAction), domain: this.domainFor(response.intent), action: response.nextAction, score: response.confidence, confidence: response.confidence, source: 'natural-language' };
+    const receipt = await this.coordinator.execute(userId, candidate, { userId, source: 'natural-language', input, contextualState });
+    return this.fromReceipt(candidate, response.intent, receipt);
+  }
 
-    const candidate: DecisionCandidate = {
-      id: this.buildId(userId, input, response.nextAction),
-      domain: this.domainFor(response.intent),
-      action: response.nextAction,
-      score: response.confidence,
-      confidence: response.confidence,
-      source: 'natural-language',
-    };
+  async confirm(userId: string, token: string) {
+    return this.coordinator.confirmAndExecute(userId, token);
+  }
 
-    const receipt = await this.coordinator.execute(userId, candidate, {
-      userId,
-      source: 'natural-language',
-      input,
-      contextualState,
-    });
-    if (receipt.status === 'completed') {
-      return { executed: true, action: candidate.action, message: 'Done. I completed that action.', intent: response.intent, receipt };
-    }
-    if (receipt.status === 'blocked') {
-      return { executed: false, action: candidate.action, message: 'I did not execute that action because a safety rule blocked it.', intent: response.intent, receipt };
-    }
-    if (receipt.status === 'unsupported') {
-      return { executed: false, action: candidate.action, message: 'I understood what you want, but that action is not connected yet.', intent: response.intent, receipt };
-    }
-    return { executed: false, action: candidate.action, message: 'I could not complete that action safely.', intent: response.intent, receipt };
+  private fromReceipt(candidate: DecisionCandidate, intent: string, receipt: any): NaturalActionExecution {
+    if (receipt.status === 'completed') return { executed: true, action: candidate.action, message: 'Done. I completed that action.', intent, receipt };
+    if (receipt.status === 'pending_confirmation') return { executed: false, action: candidate.action, message: 'I can do that, but I need your confirmation first.', intent, receipt };
+    if (receipt.status === 'blocked') return { executed: false, action: candidate.action, message: 'I did not execute that action because a safety rule blocked it.', intent, receipt };
+    if (receipt.status === 'unsupported') return { executed: false, action: candidate.action, message: 'I understood what you want, but that action is not connected yet.', intent, receipt };
+    return { executed: false, action: candidate.action, message: receipt.reason || 'I could not complete that action safely.', intent, receipt };
   }
 
   private buildId(userId: string, input: string, action: string): string {
     let hash = 2166136261;
-    for (const char of `${userId}:${action}:${input.trim().toLowerCase()}`) {
-      hash ^= char.charCodeAt(0);
-      hash = Math.imul(hash, 16777619);
-    }
+    for (const char of `${userId}:${action}:${input.trim().toLowerCase()}`) { hash ^= char.charCodeAt(0); hash = Math.imul(hash, 16777619); }
     return `nl-${(hash >>> 0).toString(16)}`;
   }
 
