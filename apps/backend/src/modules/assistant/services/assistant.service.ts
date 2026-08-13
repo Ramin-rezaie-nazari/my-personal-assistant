@@ -95,10 +95,10 @@ export class AssistantService {
     if (!command.referencesPrevious || !(command.targetResourceId || command.targetExecutionId)) return response;
     const previousAction = (command.targetAction ?? '').toLowerCase();
     const previousResource = (command.targetResourceType ?? '').toLowerCase();
-    const hasTime = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
-    const hasDuration = /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)\b/i.test(input);
-    const hasCalories = /\b\d{2,5}\s*(?:cal|calories|کالری)\b/i.test(input);
-    const hasWeekTarget = /\b[1-7]\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?\b/i.test(input);
+    const hasTime = /(?:^|\s)(?:[01]?\d|2[0-3]):[0-5]\d(?:\s|$)/.test(input);
+    const hasDuration = /(?:^|\s)\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)(?:\s|$)/iu.test(input);
+    const hasCalories = /(?:^|\s)\d{2,5}\s*(?:cal|calories|کالری)(?:\s|$)/iu.test(input);
+    const hasWeekTarget = /(?:^|\s)[1-7]\s*(?:times?|x|بار|مرتبه)(?:(?:\s+(?:per|a)?\s*week)|(?:\s*در\s*هفته))?(?:\s|$)/iu.test(input);
     if (command.operation === 'update' && previousResource === 'calendar' && hasTime) return { ...response, intent: 'calendar', nextAction: 'update_calendar_event' };
     if (command.operation === 'cancel' && previousResource === 'calendar') return { ...response, intent: 'calendar', nextAction: 'cancel_calendar_event' };
     if (command.operation === 'update' && previousAction.includes('reminder') && hasTime) return { ...response, intent: 'reminder', nextAction: 'update_reminder' };
