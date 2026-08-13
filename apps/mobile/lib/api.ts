@@ -16,19 +16,8 @@ export type SupplementStatus = { dateKey:string;total:number;taken:number;remain
 export type Notification = { id:string;title:string;body:string|null;type:string;scheduledAt:string|null;readAt:string|null;createdAt:string;priority:number };
 export type DailyCalendarEvent = { id:string;title:string;type:string;scheduledAt:string;completed:boolean };
 export type PlanExecutionState = { planId:string;userId:string;status:'pending'|'running'|'completed'|'partial'|'blocked'|'failed'|'cancelled';stepIds:string[];completed:string[];blocked:string[];failed:string[];currentStep:string|null;updatedAt:string };
-export type DailyCommandCenterResponse = {
-  dateKey:string;
-  greeting:string;
-  primaryGoal:string|null;
-  priorities:string[];
-  nutrition:{calories:number;calorieGoal:number|null;protein:number;proteinGoal:number|null;waterMl:number;waterGoalMl:number|null};
-  habits:{total:number;completed:number};
-  supplements:{total:number;taken:number};
-  reminders:{pending:number;next:{id:string;title:string;type:string;scheduledAt:string}|null};
-  calendar:{today:DailyCalendarEvent[];next:DailyCalendarEvent|null};
-  notifications:{unread:number};
-  workouts:{countToday:number;latest:{name:string;type:string;durationMinutes:number}|null};
-};
+export type DecisionTrace = { id:string;userId:string;decisionId:string;selectedIds:string[];rejectedIds:string[];blockedIds:string[];reason:string;createdAt:string };
+export type DailyCommandCenterResponse = { dateKey:string;greeting:string;primaryGoal:string|null;priorities:string[];nutrition:{calories:number;calorieGoal:number|null;protein:number;proteinGoal:number|null;waterMl:number;waterGoalMl:number|null};habits:{total:number;completed:number};supplements:{total:number;taken:number};reminders:{pending:number;next:{id:string;title:string;type:string;scheduledAt:string}|null};calendar:{today:DailyCalendarEvent[];next:DailyCalendarEvent|null};notifications:{unread:number};workouts:{countToday:number;latest:{name:string;type:string;durationMinutes:number}|null};};
 export async function setAuthSession(auth:AuthResponse){await AsyncStorage.multiSet([[ACCESS_TOKEN_KEY,auth.accessToken],[REFRESH_TOKEN_KEY,auth.refreshToken]])}
 export async function setAccessToken(token:string){await AsyncStorage.setItem(ACCESS_TOKEN_KEY,token)}
 export async function getStoredAccessToken(){return AsyncStorage.getItem(ACCESS_TOKEN_KEY)}
@@ -48,6 +37,7 @@ export async function getDashboardOverview(dateKey?:string){const q=dateKey?`?da
 export function getPersonalInsights(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<PersonalInsightsResponse>(`/adaptive-learning/insights${q}`)}
 export function getDailyCommandCenter(){return request<DailyCommandCenterResponse>('/daily-command-center')}
 export function getPlanHistory(limit=5){return request<PlanExecutionState[]>(`/personal-brain/plan/history?limit=${Math.min(Math.max(limit,1),20)}`)}
+export function getDecisionTrace(){return request<DecisionTrace[]>('/personal-brain/trace')}
 export function addWater(amountMl:number,dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<{waterMl:number}>(`/daily/water${q}`,{method:'POST',body:JSON.stringify({amountMl})})}
 export function createWorkout(data:{name:string;type:string;durationMinutes:number;caloriesBurned:number}){return request('/workout',{method:'POST',body:JSON.stringify(data)})}
 export function getReminders(includeCompleted=false){return request<Reminder[]>(`/reminders${includeCompleted?'?includeCompleted=true':''}`)}
