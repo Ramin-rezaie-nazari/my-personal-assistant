@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { PriceIntelligenceService } from '../services/price-intelligence.service';
 import { PriceCollectionSchedulerService } from '../services/price-collection-scheduler.service';
 import { PriceSourceRegistryService } from '../services/price-source-registry.service';
+import { ProductCandidate } from '../services/product-matching.service';
 
 @Controller('price-intelligence')
 export class PriceIntelligenceController {
@@ -24,6 +25,11 @@ export class PriceIntelligenceController {
   @Get('schedule')
   getSchedule(@Query('timezone') timezone?: string) {
     return this.scheduler.schedule(timezone ? { timezone } : {});
+  }
+
+  @Post('match')
+  matchProduct(@Body() body: { reference: ProductCandidate; candidates: ProductCandidate[] }) {
+    return this.priceService.matchProduct(body.reference, body.candidates);
   }
 
   @Post('nightly/preview')
