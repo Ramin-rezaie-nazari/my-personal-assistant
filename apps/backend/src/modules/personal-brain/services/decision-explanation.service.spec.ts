@@ -1,14 +1,47 @@
 import { DecisionExplanationService } from './decision-explanation.service';
 
 describe('DecisionExplanationService', () => {
-  it('creates a compact explainable decision summary', () => {
-    const service = new DecisionExplanationService();
+  const service = new DecisionExplanationService();
+
+  it('explains why a candidate was selected and why alternatives lost', () => {
     const result = service.explain({
-      selected: [{ id: '1', domain: 'workout', action: 'train', score: 0.9, confidence: 0.8 }],
-      rejected: [{ id: '2', domain: 'notification', action: 'push', score: 0.2, confidence: 0.4 }],
-      blocked: [], reason: 'ranked_by_priority',
+      selected: [{ id: 'yoga', domain: 'workout', action: 'do_yoga', score: 0.9, confidence: 0.92, goalAlignment: 0.95 }],
+      rejected: [{ id: 'gym', domain: 'workout', action: 'do_gym', score: 0.7, confidence: 0.8, goalAlignment: 0.4 }],
+      blocked: [],
+      reason: 'ranked_by_priority_confidence_and_score',
+      rationale: ['Yoga strongly matched the active goal.'],
     });
-    expect(result.selected[0].action).toBe('train');
-    expect(result.rejected[0].id).toBe('2');
+
+    expect(result.summary).toContain('Do Yoga');
+    expect(result.reasons.join(' ')).toContain('strongly matched');
+    expect(result.rejectedReasons.join(' ')).toContain('matched the current goal less closely');
+  });
+
+  it('explains real user context without exposing raw implementation details', () => {
+    const result = service.explainBrain({
+      state: {
+        lifeContext: {
+          fitness: {
+            primaryGoal: { active: true, title: 'Stronger lower body', targetAreas: ['legs'], avoidBulk: false },
+            targetAreas: ['legs'],
+            equipment: ['dumbbells'],
+            performance: { formTrend: 0.12, completionTrend: 0.08, recoveryTrend: 0.05 },
+          },
+        },
+      },
+    } as any, {
+      canDecide: true,
+      confidence: 0.91,
+      blockers: [],
+      intent: 'fitness-recommendation',
+      recommendation: 'Gym',
+      nextAction: 'Start today workout',
+      message: 'fitness-aware brain decision ready',
+    });
+
+    expect(result.summary).toContain('Gym');
+    expect(result.details).toContain('Stronger lower body');
+    expect(result.details).toContain('improving');
+    expect(result.confidence).toBe(0.91);
   });
 });
