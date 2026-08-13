@@ -18,6 +18,8 @@ export type DecisionCandidate = {
   startAt?: Date;
   endAt?: Date;
   durationMinutes?: number;
+  goalAlignment?: number;
+  goalDownside?: number;
 };
 
 export type UnifiedDecisionContext = {
@@ -29,6 +31,7 @@ export type UnifiedDecisionContext = {
   capacityPressure?: boolean;
   healthConstraint?: boolean;
   goalConflict?: boolean;
+  longTermPlanning?: boolean;
 };
 
 export type UnifiedDecision = {
@@ -57,7 +60,7 @@ export class UnifiedDecisionEngineService {
     const hard = eligible.filter((candidate) => candidate.hardConstraint);
     const pool = hard.length ? hard : eligible;
     const resolved = this.conflicts.resolve(pool, context);
-    const ranked = [...resolved.candidates].sort((a, b) => this.weight(b) - this.weight(a));
+    const ranked = [...resolved.candidates].sort((a, b) => this.weight(b, context) - this.weight(a, context));
     const selected = ranked.slice(0, Math.max(1, context.maxActions ?? 1));
     const selectedIds = new Set(selected.map((candidate) => candidate.id));
     const rejected = candidates.filter((candidate) => !selectedIds.has(candidate.id) && !blocked.some((item) => item.id === candidate.id));
@@ -70,16 +73,26 @@ export class UnifiedDecisionEngineService {
         ? 'conflicts_resolved_before_ranking'
         : hard.length
           ? 'hard_constraints_take_precedence'
-          : 'ranked_by_priority_confidence_and_score',
+          : context.longTermPlanning
+            ? 'ranked_with_long_term_goal_impact'
+            : 'ranked_by_priority_confidence_and_score',
       conflicts: resolved.conflicts,
       rationale: resolved.rationale,
     };
   }
 
-  private weight(candidate: DecisionCandidate): number {
-    const priority = Math.max(0, Math.min(1, candidate.priority ?? 0.5));
-    const confidence = Math.max(0, Math.min(1, candidate.confidence));
-    const score = Math.max(0, Math.min(1, candidate.score));
-    return priority * 0.40 + confidence * 0.30 + score * 0.30;
+  private weight(candidate: DecisionCandidate, context: UnifiedDecisionContext): number {
+    const priority = this.clamp(candidate.priority ?? 0.5);
+    const confidence = this.clamp(candidate.confidence);
+    const score = this.clamp(candidate.score);
+    const goalAlignment = this.clamp(candidate.goalAlignment ?? 0.5);
+    const goalDownside = this.clamp(candidate.goalDownside ?? 0);
+    const base = priority * 0.35 + confidence * 0.25 + score * 0.25;
+    const longTerm = context.longTermPlanning ? goalAlignment * 0.15 - goalDownside * 0.1 : 0;
+    return base + longTerm;
+  }
+
+  private clamp(value: number) {
+    return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
   }
 }
