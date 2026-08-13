@@ -24,7 +24,8 @@ export class FitnessDecisionPolicyService {
     ];
 
     const goal = fitness.primaryGoal;
-    const equipment = new Set(fitness.equipment);
+    const equipment = new Set(fitness.equipment ?? ['none']);
+    const targetAreas = fitness.targetAreas ?? [];
     if (goal) {
       if (goal.kind === 'body_sculpt') {
         candidates.find(c => c.discipline === 'calisthenics')!.score += 0.15;
@@ -51,13 +52,13 @@ export class FitnessDecisionPolicyService {
     if (equipment.has('dumbbells') || equipment.has('barbell') || equipment.has('cable_machine')) {
       candidates.find(c => c.discipline === 'gym')!.score += 0.20;
     }
-    if (fitness.constraints.includes('low_impact')) {
+    if (fitness.constraints?.includes('low_impact')) {
       candidates.find(c => c.discipline === 'yoga')!.score += 0.15;
       candidates.find(c => c.discipline === 'calisthenics')!.score -= 0.04;
     }
 
     const memory = context.state.lifeContext?.decisionMemory;
-    if (memory && memory.decisions != null && memory.decisions >= 5 && memory.changeSignal === 'stable' && memory.selectedFrequency.length) {
+    if (memory && memory.decisions != null && memory.decisions >= 5 && memory.changeSignal === 'stable' && memory.selectedFrequency?.length) {
       const prior = memory.selectedFrequency[0];
       const priorCandidate = candidates.find(c => c.discipline === prior.id);
       if (priorCandidate && prior.count >= 3) {
@@ -71,7 +72,7 @@ export class FitnessDecisionPolicyService {
     const reasons = [
       ...best.reasons,
       goal ? `primary-goal:${goal.kind}` : 'no-primary-goal',
-      `target:${fitness.targetAreas.join(',')}`,
+      `target:${targetAreas.join(',')}`,
       `equipment:${[...equipment].join(',')}`,
     ];
     if (memory && memory.decisions != null && memory.decisions >= 5) reasons.push(`decision-history:${memory.changeSignal}`);
