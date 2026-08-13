@@ -54,13 +54,16 @@ export class FitnessDecisionPolicyService {
     }
 
     const lowImpact = Array.isArray(fitness.constraints)
-      && fitness.constraints.some((constraint: unknown) => constraint === 'low_impact' || (typeof constraint === 'object' && constraint !== null && 'key' in constraint && (constraint as { key?: unknown }).key === 'low_impact' && ('enabled' in constraint ? (constraint as { enabled?: unknown }).enabled !== false : true)));
+      && fitness.constraints.some((constraint: unknown) => constraint === 'low_impact'
+        || (typeof constraint === 'object' && constraint !== null && 'key' in constraint
+          && (constraint as { key?: unknown }).key === 'low_impact'
+          && (!('enabled' in constraint) || (constraint as { enabled?: unknown }).enabled !== false)));
     if (lowImpact) {
       candidates.find(c => c.discipline === 'yoga')!.score += 0.15;
       candidates.find(c => c.discipline === 'calisthenics')!.score -= 0.04;
     }
 
-    const memory = context.state.lifeContext?.decisionMemory ?? (fitness as typeof fitness & { decisionMemory?: typeof context.state.lifeContext extends never ? never : any }).decisionMemory;
+    const memory = context.state.lifeContext?.decisionMemory ?? (fitness as any).decisionMemory;
     if (memory && memory.decisions != null && memory.decisions >= 5 && memory.changeSignal === 'stable' && memory.selectedFrequency?.length) {
       const prior = memory.selectedFrequency[0];
       const priorCandidate = candidates.find(c => c.discipline === prior.id);
@@ -70,7 +73,6 @@ export class FitnessDecisionPolicyService {
       }
     }
 
-    // An explicit recovery/low-impact request is a hard preference for yoga.
     if (lowImpact && /(?:yoga|یوگا|recovery|ریکاوری|آرام)/i.test(input)) {
       candidates.find(c => c.discipline === 'yoga')!.score += 0.30;
     }
