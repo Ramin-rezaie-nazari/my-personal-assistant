@@ -16,6 +16,23 @@ export type BrainGoalSnapshot = {
   daysRemaining: number | null;
 };
 
+export type BrainFitnessContext = {
+  disciplines: string[];
+  primaryGoal: {
+    id: string;
+    kind: string;
+    title: string;
+    targetAreas: string[];
+    desiredOutcome: string;
+    priority: number;
+    avoidBulk: boolean;
+    active: boolean;
+  } | null;
+  equipment: string[];
+  constraints: string[];
+  targetAreas: string[];
+};
+
 export type BrainLifeContext = {
   habits: {
     active: number;
@@ -52,4 +69,5 @@ export type BrainLifeContext = {
     next: BrainGoalSnapshot | null;
     items: BrainGoalSnapshot[];
   };
+  fitness: BrainFitnessContext;
 };
