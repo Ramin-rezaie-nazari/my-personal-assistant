@@ -6,6 +6,7 @@ import { DecisionFeedbackLoopService } from './decision-feedback-loop.service';
 import { DecisionExecutionPolicyService } from './decision-execution-policy.service';
 import { DecisionExecutionHistoryService } from './decision-execution-history.service';
 import { ActionConfirmationIntelligenceService } from './action-confirmation-intelligence.service';
+import { DecisionAuditService } from './decision-audit.service';
 
 export type DecisionExecutionStatus = 'completed' | 'blocked' | 'unsupported' | 'failed' | 'dry_run' | 'pending_confirmation' | 'confirmation_invalid';
 
@@ -33,6 +34,7 @@ export class DecisionExecutionCoordinatorService {
     private readonly policy: DecisionExecutionPolicyService,
     private readonly history: DecisionExecutionHistoryService,
     private readonly confirmation: ActionConfirmationIntelligenceService,
+    private readonly audit: DecisionAuditService,
   ) {}
 
   async execute(userId: string, candidate: DecisionCandidate, context: Record<string, unknown> = {}): Promise<DecisionExecutionReceipt> {
@@ -57,7 +59,7 @@ export class DecisionExecutionCoordinatorService {
   async confirmAndExecute(userId: string, token: string): Promise<DecisionExecutionReceipt> {
     const pending = this.confirmation.consume(userId, token);
     if (!pending) {
-      return {
+      return this.record({
         userId,
         decisionId: 'unknown',
         action: 'unknown',
@@ -68,7 +70,7 @@ export class DecisionExecutionCoordinatorService {
         attempts: 0,
         recordedAt: Date.now(),
         policy: { timeoutMs: 30_000, maxAttempts: 1, retryDelayMs: 0, dryRun: false },
-      };
+      });
     }
     const startedAt = Date.now();
     const resolved = this.policy.resolve(pending.candidate, pending.context);
@@ -114,6 +116,14 @@ export class DecisionExecutionCoordinatorService {
 
   private record(receipt: DecisionExecutionReceipt): DecisionExecutionReceipt {
     this.history.record(receipt);
+    void this.audit.record({
+      userId: receipt.userId,
+      decisionId: receipt.decisionId,
+      selectedIds: receipt.status === 'completed' || receipt.status === 'dry_run' ? [receipt.decisionId] : [],
+      rejectedIds: receipt.status === 'unsupported' || receipt.status === 'failed' ? [receipt.decisionId] : [],
+      blockedIds: receipt.status === 'blocked' || receipt.status === 'pending_confirmation' || receipt.status === 'confirmation_invalid' ? [receipt.decisionId] : [],
+      reason: `${receipt.status}:${receipt.reason}`,
+    }).catch(() => undefined);
     return receipt;
   }
 }
