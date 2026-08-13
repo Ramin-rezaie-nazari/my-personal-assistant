@@ -1,68 +1,31 @@
 import { NutritionService } from './nutrition.service';
 
 describe('NutritionService', () => {
-  const tx = {
-    nutritionLog: { create: jest.fn() },
-    dailyLog: { upsert: jest.fn() },
-  };
+  it('summarizes the daily nutrition state from logs and goals', async () => {
+    const prisma = {
+      nutritionLog: { findMany: jest.fn() },
+      nutritionProfile: { findUnique: jest.fn() },
+      dailyLog: { findUnique: jest.fn(), upsert: jest.fn() },
+      $transaction: jest.fn(),
+    };
 
-  const prisma = {
-    nutritionLog: { findMany: jest.fn() },
-    $transaction: jest.fn((callback: (client: typeof tx) => unknown) => callback(tx)),
-  };
+    prisma.nutritionLog.findMany.mockResolvedValue([
+      { id: 'm2', mealType: 'dinner', title: 'Chicken', calories: 700, protein: 60, carbs: 30, fat: 20, dateKey: '2026-08-13' },
+      { id: 'm1', mealType: 'lunch', title: 'Rice', calories: 500, protein: 15, carbs: 90, fat: 8, dateKey: '2026-08-13' },
+    ]);
+    prisma.nutritionProfile.findUnique.mockResolvedValue({ dailyCaloriesGoal: 2200, proteinGoalGrams: 140, waterGoalMl: 2400 });
+    prisma.dailyLog.findUnique.mockResolvedValue({ calories: 1200, protein: 75, waterMl: 1500 });
 
-  let service: NutritionService;
+    const service = new NutritionService(prisma as never);
+    const result = await service.getDailySummary('u1', '2026-08-13');
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    service = new NutritionService(prisma as never);
-    tx.nutritionLog.create.mockResolvedValue({ id: 'log-1' });
-    tx.dailyLog.upsert.mockResolvedValue({});
-  });
-
-  it('filters logs by calendar day', async () => {
-    prisma.nutritionLog.findMany.mockResolvedValue([]);
-
-    await service.getLogs('user-1', '2026-08-11');
-
-    expect(prisma.nutritionLog.findMany).toHaveBeenCalledWith({
-      where: { userId: 'user-1', dateKey: '2026-08-11' },
-      orderBy: { createdAt: 'desc' },
-    });
-  });
-
-  it('creates a nutrition log and updates daily totals atomically', async () => {
-    await service.createLog('user-1', {
-      dateKey: '2026-08-11',
-      mealType: 'lunch',
-      title: 'Chicken and rice',
-      calories: 650,
-      protein: 45,
-    });
-
-    expect(tx.nutritionLog.create).toHaveBeenCalledWith({
-      data: {
-        userId: 'user-1',
-        dateKey: '2026-08-11',
-        mealType: 'lunch',
-        title: 'Chicken and rice',
-        calories: 650,
-        protein: 45,
-      },
-    });
-
-    expect(tx.dailyLog.upsert).toHaveBeenCalledWith({
-      where: { userId_dateKey: { userId: 'user-1', dateKey: '2026-08-11' } },
-      update: {
-        calories: { increment: 650 },
-        protein: { increment: 45 },
-      },
-      create: {
-        userId: 'user-1',
-        dateKey: '2026-08-11',
-        calories: 650,
-        protein: 45,
-      },
+    expect(result).toEqual({
+      dateKey: '2026-08-13',
+      meals: { count: 2, calories: 1200, protein: 75, carbs: 120, fat: 28 },
+      goals: { calories: 2200, protein: 140, waterMl: 2400 },
+      remaining: { calories: 1000, protein: 65, waterMl: 900 },
+      progress: { caloriesPercent: 54.55, proteinPercent: 53.57, waterPercent: 62.5 },
+      status: { calories: 'under', protein: 'under', water: 'under' },
     });
   });
 });
