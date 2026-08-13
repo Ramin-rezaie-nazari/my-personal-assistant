@@ -18,10 +18,7 @@ export type DecisionExplanation = {
 export class DecisionExplanationService {
   explain(decision: UnifiedDecision, conflict?: ConflictResolution): DecisionExplanation {
     const selected = decision.selected;
-    const reasons = [
-      ...(decision.rationale ?? []),
-      ...selected.map((item) => this.candidateReason(item)),
-    ].filter(Boolean);
+    const reasons = [...(decision.rationale ?? []), ...selected.map((item) => this.candidateReason(item))].filter(Boolean);
     const rejectedReasons = decision.rejected.map((item) => this.rejectionReason(item, selected[0]));
     const blockedReasons = decision.blocked.map((item) => this.blockReason(item));
     const confidence = selected.length ? Math.max(...selected.map((item) => item.confidence)) : null;
@@ -35,7 +32,7 @@ export class DecisionExplanationService {
     if (fitness?.targetAreas?.length) reasons.push(`You asked me to focus on ${fitness.targetAreas.join(', ')}.`);
     if (fitness?.equipment?.length) reasons.push(`I considered the equipment you currently have: ${fitness.equipment.join(', ')}.`);
     if (fitness?.primaryGoal?.avoidBulk) reasons.push('You asked to avoid excessive muscle bulk, so I treated that as a constraint.');
-    const performance = fitness?.performanceMemory;
+    const performance = (fitness as any)?.performance ?? (fitness as any)?.performanceMemory;
     if (performance?.formTrend != null) reasons.push(`Your recent form trend is ${this.trendText(performance.formTrend)}.`);
     if (performance?.completionTrend != null) reasons.push(`Your recent completion trend is ${this.trendText(performance.completionTrend)}.`);
     if (performance?.recoveryTrend != null) reasons.push(`Your recovery trend is ${this.trendText(performance.recoveryTrend)}.`);
@@ -53,34 +50,12 @@ export class DecisionExplanationService {
   private compose(summary: string, baseDetails: string, confidence: number | null, reasons: string[], rejectedReasons: string[], blockedReasons: string[], historicalReasons: string[], conflictReason?: string): DecisionExplanation {
     const uniqueReasons = this.unique(reasons).slice(0, 8);
     const uniqueHistorical = this.unique(historicalReasons).slice(0, 5);
-    const details = [
-      baseDetails,
-      uniqueReasons.length ? `Why: ${uniqueReasons.slice(0, 5).join(' ')}` : '',
-      uniqueHistorical.length ? `From your history: ${uniqueHistorical.slice(0, 3).join(' ')}` : '',
-      rejectedReasons.length ? `I did not prioritize: ${this.unique(rejectedReasons).slice(0, 3).join(' ')}` : '',
-      blockedReasons.length ? `Blocked: ${this.unique(blockedReasons).slice(0, 3).join(' ')}` : '',
-      conflictReason ? `Conflict handling: ${this.humanizeReason(conflictReason)}.` : '',
-      confidence != null ? `Confidence: ${Math.round(confidence * 100)}%.` : '',
-    ].filter(Boolean).join(' ');
+    const details = [baseDetails, uniqueReasons.length ? `Why: ${uniqueReasons.slice(0, 5).join(' ')}` : '', uniqueHistorical.length ? `From your history: ${uniqueHistorical.slice(0, 3).join(' ')}` : '', rejectedReasons.length ? `I did not prioritize: ${this.unique(rejectedReasons).slice(0, 3).join(' ')}` : '', blockedReasons.length ? `Blocked: ${this.unique(blockedReasons).slice(0, 3).join(' ')}` : '', conflictReason ? `Conflict handling: ${this.humanizeReason(conflictReason)}.` : '', confidence != null ? `Confidence: ${Math.round(confidence * 100)}%.` : ''].filter(Boolean).join(' ');
     return { summary, details, confidence, reasons: uniqueReasons, rejectedReasons: this.unique(rejectedReasons).slice(0, 8), blockedReasons: this.unique(blockedReasons).slice(0, 8), historicalReasons: uniqueHistorical, conflictReason };
   }
 
-  private candidateReason(candidate: DecisionCandidate): string {
-    const reasons: string[] = [];
-    if (candidate.hardConstraint) reasons.push(`${this.actionLabel(candidate.action)} satisfied a required constraint.`);
-    if ((candidate.goalAlignment ?? 0) >= 0.8) reasons.push(`${this.actionLabel(candidate.action)} strongly matched the active goal.`);
-    if ((candidate.goalDownside ?? 0) >= 0.5) reasons.push(`${this.actionLabel(candidate.action)} had a meaningful downside for the longer-term goal.`);
-    if (candidate.source) reasons.push(`The recommendation came from ${candidate.source}.`);
-    return reasons.join(' ');
-  }
-
-  private rejectionReason(candidate: DecisionCandidate, selected?: DecisionCandidate): string {
-    if ((candidate.goalDownside ?? 0) > (selected?.goalDownside ?? 0)) return `${this.actionLabel(candidate.action)} had a higher downside for the current goal.`;
-    if ((candidate.goalAlignment ?? 0) < (selected?.goalAlignment ?? 0)) return `${this.actionLabel(candidate.action)} matched the current goal less closely.`;
-    if (candidate.confidence < (selected?.confidence ?? 1)) return `${this.actionLabel(candidate.action)} had lower confidence.`;
-    return `${this.actionLabel(candidate.action)} ranked below the selected option.`;
-  }
-
+  private candidateReason(candidate: DecisionCandidate): string { const reasons: string[] = []; if (candidate.hardConstraint) reasons.push(`${this.actionLabel(candidate.action)} satisfied a required constraint.`); if ((candidate.goalAlignment ?? 0) >= 0.8) reasons.push(`${this.actionLabel(candidate.action)} strongly matched the active goal.`); if ((candidate.goalDownside ?? 0) >= 0.5) reasons.push(`${this.actionLabel(candidate.action)} had a meaningful downside for the longer-term goal.`); if (candidate.source) reasons.push(`The recommendation came from ${candidate.source}.`); return reasons.join(' '); }
+  private rejectionReason(candidate: DecisionCandidate, selected?: DecisionCandidate): string { if ((candidate.goalDownside ?? 0) > (selected?.goalDownside ?? 0)) return `${this.actionLabel(candidate.action)} had a higher downside for the current goal.`; if ((candidate.goalAlignment ?? 0) < (selected?.goalAlignment ?? 0)) return `${this.actionLabel(candidate.action)} matched the current goal less closely.`; if (candidate.confidence < (selected?.confidence ?? 1)) return `${this.actionLabel(candidate.action)} had lower confidence.`; return `${this.actionLabel(candidate.action)} ranked below the selected option.`; }
   private blockReason(candidate: DecisionCandidate): string { return `${this.actionLabel(candidate.action)} was blocked by ${candidate.blockedBy?.join(', ') || 'a prerequisite or safety constraint'}.`; }
   private trendText(value: number): string { const percent = Math.round(Math.abs(value) * 100); if (value > 0) return `improving by about ${percent}%`; if (value < 0) return `declining by about ${percent}%`; return 'stable'; }
   private actionLabel(action: string): string { return action.replace(/[_-]+/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase()); }
