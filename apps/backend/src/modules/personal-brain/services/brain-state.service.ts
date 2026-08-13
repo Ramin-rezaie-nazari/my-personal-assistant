@@ -52,7 +52,7 @@ export class BrainStateService {
       this.brainLifeContextService.getToday(userId),
     ]);
 
-    const generatedContext = await this.contextEngineService.buildContext({ userId, query });
+    const generatedContext = await this.contextEngineService.buildContext(userId);
     const fusedLifeContext = this.lifeContextFusionService.build(userId, {
       calendar: { value: lifeContext.reminders ?? {}, source: 'brain-life-context', observedAt: new Date(), confidence: 0.85 },
       schedule: { value: { dailyStatus, weeklyStatus }, source: 'brain-schedule', observedAt: new Date(), confidence: 0.8 },
@@ -64,7 +64,7 @@ export class BrainStateService {
       shopping: { value: {}, source: 'shopping', observedAt: null, confidence: 0 },
       budget: { value: {}, source: 'budget', observedAt: null, confidence: 0 },
       wearable: { value: {}, source: 'wearable', observedAt: null, confidence: 0 },
-    }, new Date(), typeof generatedContext?.timezone === 'string' ? generatedContext.timezone : undefined);
+    });
 
     const userContext = this.userContextService.build({
       context: generatedContext,
