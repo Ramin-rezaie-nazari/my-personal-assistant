@@ -15,10 +15,10 @@ describe('DecisionConflictResolutionService', () => {
     expect(result.rationale[0]).toContain('meeting');
   });
 
-  it('detects budget pressure for shopping decisions', () => {
+  it('detects budget pressure when shopping decisions compete', () => {
     const candidates: DecisionCandidate[] = [
-      { id: 'shopping-a', domain: 'conversation', action: 'buy', score: 0.7, confidence: 0.8, priority: 0.6 },
-      { id: 'shopping-b', domain: 'nutrition', action: 'buy', score: 0.6, confidence: 0.8, priority: 0.5 },
+      { id: 'shopping-a', domain: 'shopping', action: 'buy', score: 0.7, confidence: 0.8, priority: 0.6 },
+      { id: 'shopping-b', domain: 'shopping', action: 'buy', score: 0.6, confidence: 0.8, priority: 0.5 },
     ];
     const result = service.resolve(candidates, { budgetPressure: true });
     expect(result.conflicts[0]?.type).toBe('budget');
