@@ -1,7 +1,7 @@
 import { Body, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { Controller } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { CalisthenicsFocus, CalisthenicsLevel, Equipment, CalisthenicsSession } from '../models/calisthenics.model';
+import type { CalisthenicsFocus, CalisthenicsLevel, Equipment, CalisthenicsSession } from '../models/calisthenics.model';
 import { CalisthenicsLibraryService } from '../services/calisthenics-library.service';
 import { CalisthenicsSessionGeneratorService } from '../services/calisthenics-session-generator.service';
 import { CalisthenicsCoachService, CalisthenicsCoachState } from '../services/calisthenics-coach.service';
