@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../common/database/prisma.service';
 
 export type PersistedPlanState = {
   planId: string;
@@ -14,20 +15,43 @@ export type PersistedPlanState = {
 
 @Injectable()
 export class PersistentPlanStateService {
-  private readonly records = new Map<string, PersistedPlanState>();
+  constructor(private readonly prisma: PrismaService) {}
 
-  save(state: PersistedPlanState): PersistedPlanState {
-    const next = { ...state, updatedAt: new Date() };
-    this.records.set(this.key(state.userId, state.planId), next);
-    return next;
+  async save(state: PersistedPlanState): Promise<PersistedPlanState> {
+    const record = await this.prisma.planExecutionState.upsert({
+      where: { userId_planId: { userId: state.userId, planId: state.planId } },
+      create: {
+        userId: state.userId,
+        planId: state.planId,
+        status: state.status,
+        stepIds: state.stepIds,
+        completed: state.completed,
+        blocked: state.blocked,
+        failed: state.failed,
+        currentStep: state.currentStep,
+      },
+      update: {
+        status: state.status,
+        stepIds: state.stepIds,
+        completed: state.completed,
+        blocked: state.blocked,
+        failed: state.failed,
+        currentStep: state.currentStep,
+      },
+    });
+
+    return this.map(record);
   }
 
-  get(userId: string, planId: string): PersistedPlanState | null {
-    return this.records.get(this.key(userId, planId)) ?? null;
+  async get(userId: string, planId: string): Promise<PersistedPlanState | null> {
+    const record = await this.prisma.planExecutionState.findUnique({
+      where: { userId_planId: { userId, planId } },
+    });
+    return record ? this.map(record) : null;
   }
 
-  resume(userId: string, planId: string): PersistedPlanState | null {
-    const current = this.get(userId, planId);
+  async resume(userId: string, planId: string): Promise<PersistedPlanState | null> {
+    const current = await this.get(userId, planId);
     if (!current) return null;
     if (current.status === 'running') {
       return this.save({ ...current, status: 'partial' });
@@ -35,11 +59,31 @@ export class PersistentPlanStateService {
     return current;
   }
 
-  clear(userId: string, planId: string): void {
-    this.records.delete(this.key(userId, planId));
+  async clear(userId: string, planId: string): Promise<void> {
+    await this.prisma.planExecutionState.deleteMany({ where: { userId, planId } });
   }
 
-  private key(userId: string, planId: string): string {
-    return `${userId}:${planId}`;
+  private map(record: {
+    userId: string;
+    planId: string;
+    status: string;
+    stepIds: unknown;
+    completed: unknown;
+    blocked: unknown;
+    failed: unknown;
+    currentStep: string | null;
+    updatedAt: Date;
+  }): PersistedPlanState {
+    return {
+      userId: record.userId,
+      planId: record.planId,
+      status: record.status as PersistedPlanState['status'],
+      stepIds: Array.isArray(record.stepIds) ? record.stepIds.map(String) : [],
+      completed: Array.isArray(record.completed) ? record.completed.map(String) : [],
+      blocked: Array.isArray(record.blocked) ? record.blocked.map(String) : [],
+      failed: Array.isArray(record.failed) ? record.failed.map(String) : [],
+      currentStep: record.currentStep,
+      updatedAt: record.updatedAt,
+    };
   }
 }
