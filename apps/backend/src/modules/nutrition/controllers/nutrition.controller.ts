@@ -24,6 +24,14 @@ export class NutritionController {
     return this.nutritionService.getLogs(req.user.id, dateKey);
   }
 
+  @Get('summary')
+  summary(
+    @Request() req: { user: { id: string } },
+    @Query('dateKey') dateKey?: string,
+  ) {
+    return this.nutritionService.getDailySummary(req.user.id, dateKey);
+  }
+
   @Post()
   create(
     @Request() req: { user: { id: string } },
