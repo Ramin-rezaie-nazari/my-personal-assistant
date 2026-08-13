@@ -17,3 +17,4 @@ export class HouseholdInventoryIntelligenceService {
   }
   prioritize(items: InventoryItem[]): InventoryForecast[] { const rank = { critical: 0, soon: 1, normal: 2, none: 3 }; return this.forecast(items).sort((a, b) => rank[a.urgency] - rank[b.urgency] || Number(Boolean(b.essential)) - Number(Boolean(a.essential))); }
 }
+// CI validation checkpoint: preserve the production reorder formula while forcing a fresh PR verification run.
