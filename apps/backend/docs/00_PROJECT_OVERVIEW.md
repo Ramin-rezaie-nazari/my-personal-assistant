@@ -35,11 +35,15 @@ The long-term goal is to build a friendly personal Brain that understands the us
 
 Brain-centered architecture, fitness intelligence, long-term memory, outcome learning, proactive coaching, and hands-free coach foundations.
 
-For the detailed implementation history, Brain reasoning model, file/folder connections, database map, decision architecture and living engineering changelog, see:
+For the detailed implementation history and living engineering record, see:
 
 **[03_PROJECT_BRAIN_BOOK.md](./03_PROJECT_BRAIN_BOOK.md)**
 
-That file is the permanent living project record. Every major implementation change must be documented there.
+For the complete repository architecture, module ownership, file relationships, Brain pipeline, database map, memory layers, Fitness architecture, and production-readiness boundaries, see:
+
+**[04_ARCHITECTURE_ATLAS.md](./04_ARCHITECTURE_ATLAS.md)**
+
+Those documents are the permanent living project record. Every major implementation change must be documented there.
 
 ---
 
