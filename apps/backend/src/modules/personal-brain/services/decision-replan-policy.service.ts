@@ -11,7 +11,8 @@ export class DecisionReplanPolicyService {
     if (trigger === 'user_feedback' || trigger === 'constraint_changed' || trigger === 'candidate_expired') return true;
     const currentWeight = this.weight(current);
     const replacementWeight = this.weight(replacement);
-    return trigger === 'higher_priority_action' ? replacementWeight > currentWeight : replacementWeight > currentWeight + 0.15;
+    if (trigger === 'higher_priority_action') return replacementWeight > currentWeight;
+    return replacement.score > current.score + 0.15;
   }
 
   private weight(candidate: DecisionCandidate): number {
