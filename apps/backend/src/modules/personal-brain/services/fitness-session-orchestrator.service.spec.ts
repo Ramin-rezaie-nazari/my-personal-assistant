@@ -14,7 +14,8 @@ describe('FitnessSessionOrchestratorService', () => {
     const policy = { evaluate: () => ({ intent: 'fitness-recommendation', recommendation: 'Best training branch today: calisthenics', confidence: 0.9, blockers: [], canDecide: true }) } as any;
     const yoga = { generate: jest.fn() } as any;
     const calisthenics = { generate: jest.fn(() => ({ id: 'cal-1' })) } as any;
-    const service = new FitnessSessionOrchestratorService(policy, yoga, calisthenics);
+    const gym = { generate: jest.fn() } as any;
+    const service = new FitnessSessionOrchestratorService(policy, yoga, calisthenics, gym);
     const result = service.generate(context('calisthenics', ['none']), { durationMin: 30 });
     expect(result.status).toBe('generated');
     expect(result.discipline).toBe('calisthenics');
@@ -25,18 +26,23 @@ describe('FitnessSessionOrchestratorService', () => {
     const policy = { evaluate: () => ({ intent: 'fitness-recommendation', recommendation: 'Best training branch today: yoga', confidence: 0.9, blockers: [], canDecide: true }) } as any;
     const yoga = { generate: jest.fn(() => ({ id: 'yoga-1' })) } as any;
     const calisthenics = { generate: jest.fn() } as any;
-    const service = new FitnessSessionOrchestratorService(policy, yoga, calisthenics);
+    const gym = { generate: jest.fn() } as any;
+    const service = new FitnessSessionOrchestratorService(policy, yoga, calisthenics, gym);
     const result = service.generate(context('yoga', ['yoga_mat']), { durationMin: 45 });
     expect(result.status).toBe('generated');
     expect(result.discipline).toBe('yoga');
     expect(yoga.generate).toHaveBeenCalled();
   });
 
-  it('does not invent a gym session before a gym generator exists', () => {
+  it('generates gym when policy selects gym', () => {
     const policy = { evaluate: () => ({ intent: 'fitness-recommendation', recommendation: 'Best training branch today: gym', confidence: 0.9, blockers: [], canDecide: true }) } as any;
-    const service = new FitnessSessionOrchestratorService(policy, {} as any, {} as any);
+    const yoga = { generate: jest.fn() } as any;
+    const calisthenics = { generate: jest.fn() } as any;
+    const gym = { generate: jest.fn(() => ({ id: 'gym-1' })) } as any;
+    const service = new FitnessSessionOrchestratorService(policy, yoga, calisthenics, gym);
     const result = service.generate(context('gym', ['dumbbells']), { durationMin: 45 });
-    expect(result.status).toBe('unsupported');
+    expect(result.status).toBe('generated');
     expect(result.discipline).toBe('gym');
+    expect(gym.generate).toHaveBeenCalledWith(expect.objectContaining({ equipment: ['dumbbells'], avoidBulk: true }));
   });
 });
