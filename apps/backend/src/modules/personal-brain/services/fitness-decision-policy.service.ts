@@ -56,6 +56,16 @@ export class FitnessDecisionPolicyService {
       candidates.find(c => c.discipline === 'calisthenics')!.score -= 0.04;
     }
 
+    const memory = context.state.lifeContext?.decisionMemory;
+    if (memory?.decisions >= 5 && memory.changeSignal === 'stable' && memory.selectedFrequency.length) {
+      const prior = memory.selectedFrequency[0];
+      const priorCandidate = candidates.find(c => c.discipline === prior.id);
+      if (priorCandidate && prior.count >= 3) {
+        priorCandidate.score += 0.04;
+        priorCandidate.reasons.push(`prior-choice-pattern:${prior.count}`);
+      }
+    }
+
     candidates.sort((a, b) => b.score - a.score);
     const best = candidates[0];
     const reasons = [
@@ -64,6 +74,7 @@ export class FitnessDecisionPolicyService {
       `target:${fitness.targetAreas.join(',')}`,
       `equipment:${[...equipment].join(',')}`,
     ];
+    if (memory?.decisions >= 5) reasons.push(`decision-history:${memory.changeSignal}`);
 
     return {
       canDecide: context.reasoning.uncertainties.length === 0,
