@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { getDailyCommandCenter, DailyCommandCenterResponse, getPlanHistory, hasAuthSession, PlanExecutionState } from '../lib/api';
+import { getDailyCommandCenter, DailyCommandCenterResponse, getDecisionTrace, getPlanHistory, hasAuthSession, PlanExecutionState, DecisionTrace } from '../lib/api';
 import { AppLocale, getStoredLocale } from '../lib/i18n';
 import { runQuickCommand } from '../lib/command-actions';
 import { PlanStatusCard } from '../components/plan-status-card';
+import { DecisionTraceCard } from '../components/decision-trace-card';
 
 const copy = {
   en: { eyebrow: 'PERSONAL COMMAND CENTER', assistant: 'Talk to your assistant', priorities: "Today's priorities", nutrition: "Today's balance", habits: 'Habits', supplements: 'Supplements', reminders: 'Next reminder', calendar: 'Next event', workouts: 'Training', notifications: 'Notifications', none: 'Nothing urgent right now.', unread: 'unread', done: 'done', daily: 'Daily view', retry: 'Retry', quick: 'Quick actions', water: 'Log water', walk: 'Log walk', strength: 'Log strength', reminder: 'Add reminder', success: 'Done' },
@@ -16,13 +17,14 @@ export default function CommandCenterScreen() {
   const [locale, setLocale] = useState<AppLocale>('en');
   const [data, setData] = useState<DailyCommandCenterResponse | null>(null);
   const [plan, setPlan] = useState<PlanExecutionState | null>(null);
+  const [trace, setTrace] = useState<DecisionTrace | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {
-    try { setError(null); const [daily, plans] = await Promise.all([getDailyCommandCenter(), getPlanHistory(1)]); setData(daily); setPlan(plans[0] ?? null); }
+    try { setError(null); const [daily, plans, traces] = await Promise.all([getDailyCommandCenter(), getPlanHistory(1), getDecisionTrace()]); setData(daily); setPlan(plans[0] ?? null); setTrace(traces[0] ?? null); }
     catch (err) { setError(err instanceof Error ? err.message : 'Unable to load your command center.'); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);
@@ -54,6 +56,7 @@ export default function CommandCenterScreen() {
           <View style={styles.assistantIcon}><Text style={styles.assistantEmoji}>✨</Text></View><View style={styles.assistantCopy}><Text style={styles.assistantTitle}>{ui.assistant}</Text><Text style={styles.assistantSubtitle}>{data?.primaryGoal ?? ui.none}</Text></View><Text style={styles.arrow}>{rtl ? '←' : '→'}</Text>
         </Pressable>
         <PlanStatusCard plan={plan} rtl={rtl} />
+        <DecisionTraceCard trace={trace} />
         <View style={[styles.card, rtl && styles.rtl]}>
           <View style={styles.rowBetween}><Text style={styles.cardTitle}>{ui.priorities}</Text><Text style={styles.live}>LIVE</Text></View>
           {data?.priorities.length ? data.priorities.slice(0, 4).map((item, index) => <View key={`${item}-${index}`} style={styles.priorityRow}><View style={styles.priorityDot}><Text style={styles.priorityNumber}>{index + 1}</Text></View><Text style={styles.priorityText}>{item}</Text></View>) : <Text style={styles.muted}>{ui.none}</Text>}
