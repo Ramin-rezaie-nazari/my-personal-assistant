@@ -8,6 +8,7 @@ export type DecisionOutcomeInput = {
   outcome: 'positive' | 'neutral' | 'negative';
   score?: number;
   note?: string;
+  source?: 'user' | 'system' | 'behavior';
 };
 
 export type DecisionOutcomeProfile = {
@@ -26,15 +27,15 @@ export class DecisionOutcomeLearningService {
   async record(input: DecisionOutcomeInput) {
     const id = randomUUID();
     await this.prisma.$executeRaw`
-      INSERT INTO "DecisionOutcome" ("id", "userId", "decisionId", "outcome", "score", "note")
-      VALUES (${id}, ${input.userId}, ${input.decisionId}, ${input.outcome}, ${input.score ?? null}, ${input.note ?? null})
+      INSERT INTO "DecisionOutcome" ("id", "userId", "decisionId", "outcome", "score", "note", "source")
+      VALUES (${id}, ${input.userId}, ${input.decisionId}, ${input.outcome}, ${input.score ?? null}, ${input.note ?? null}, ${input.source ?? 'user'})
     `;
-    return { id, ...input };
+    return { id, ...input, source: input.source ?? 'user' };
   }
 
   async profile(userId: string, decisionId?: string): Promise<DecisionOutcomeProfile> {
-    const rows = await this.prisma.$queryRaw<Array<{ outcome: string; score: number | null; createdAt: Date }>>`
-      SELECT "outcome", "score", "createdAt"
+    const rows = await this.prisma.$queryRaw<Array<{ outcome: string; score: number | null; createdAt: Date; source: string }>>`
+      SELECT "outcome", "score", "createdAt", "source"
       FROM "DecisionOutcome"
       WHERE "userId" = ${userId}
         AND (${decisionId ?? null}::text IS NULL OR "decisionId" = ${decisionId ?? null})
@@ -52,12 +53,15 @@ export class DecisionOutcomeLearningService {
     const olderScore = this.average(older);
     const delta = recentScore != null && olderScore != null ? recentScore - olderScore : 0;
     const trend = delta > 0.08 ? 'improving' : delta < -0.08 ? 'declining' : 'stable';
+    const qualityRows = rows.filter((row) => row.source !== 'system');
+    const qualityPositiveRate = this.rate(qualityRows, 'positive');
+    const qualityNegativeRate = this.rate(qualityRows, 'negative');
     const positiveRate = this.rate(rows, 'positive');
     const negativeRate = this.rate(rows, 'negative');
 
     let confidenceAdjustment = 0;
-    if (rows.length >= 5 && positiveRate >= 0.7 && trend !== 'declining') confidenceAdjustment = 0.04;
-    if (rows.length >= 5 && negativeRate >= 0.7 && trend !== 'improving') confidenceAdjustment = -0.04;
+    if (qualityRows.length >= 5 && qualityPositiveRate >= 0.7 && trend !== 'declining') confidenceAdjustment = 0.04;
+    if (qualityRows.length >= 5 && qualityNegativeRate >= 0.7 && trend !== 'improving') confidenceAdjustment = -0.04;
 
     return { sampleSize: rows.length, averageScore: this.average(rows), positiveRate, negativeRate, trend, confidenceAdjustment };
   }
