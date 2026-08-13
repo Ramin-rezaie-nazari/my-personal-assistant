@@ -9,7 +9,7 @@ export class CalisthenicsSessionGeneratorService {
   constructor(private readonly library: CalisthenicsLibraryService) {}
 
   generate(input: { durationMin: number; level?: CalisthenicsLevel; focus?: CalisthenicsFocus; equipment?: Equipment[]; progress?: Partial<CalisthenicsProgress> }): CalisthenicsSession {
-    const equipment = input.equipment?.length ? input.equipment : ['none'];
+    const equipment: Equipment[] = input.equipment?.length ? input.equipment : ['none'];
     const level = this.adaptLevel(input.level ?? input.progress?.currentLevel ?? 'beginner', input.progress);
     const pool = this.library.list(level, input.focus, equipment);
     const selected = pool.slice(0, Math.max(4, Math.min(8, Math.floor(input.durationMin / 5))));
