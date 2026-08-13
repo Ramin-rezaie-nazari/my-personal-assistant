@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { RecipesService, RecipeInput } from '../services/recipes.service';
+import { RecipesService } from '../services/recipes.service';
+import type { RecipeInput } from '../services/recipes.service';
 
 @Controller('recipes')
 @UseGuards(JwtAuthGuard)
