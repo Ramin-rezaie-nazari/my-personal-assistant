@@ -98,6 +98,9 @@ export class AssistantService {
     const previousAction = (command.targetAction ?? '').toLowerCase();
     const previousResource = (command.targetResourceType ?? '').toLowerCase();
     const hasTime = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
+    const hasDuration = /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)\b/i.test(input);
+    const hasCalories = /\b\d{2,5}\s*(?:cal|calories|کالری)\b/i.test(input);
+    const hasWeekTarget = /\b[1-7]\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?\b/i.test(input);
 
     if (command.operation === 'update' && previousResource === 'calendar' && hasTime) {
       return { ...response, intent: 'calendar', nextAction: 'update_calendar_event' };
@@ -110,6 +113,24 @@ export class AssistantService {
     }
     if (command.operation === 'cancel' && previousAction.includes('reminder')) {
       return { ...response, intent: 'reminder', nextAction: 'cancel_reminder' };
+    }
+    if (command.operation === 'update' && previousResource === 'workout' && (hasDuration || hasCalories || hasTime)) {
+      return { ...response, intent: 'workout', nextAction: 'update_workout' };
+    }
+    if (command.operation === 'cancel' && previousResource === 'workout') {
+      return { ...response, intent: 'workout', nextAction: 'delete_workout' };
+    }
+    if (command.operation === 'update' && previousResource === 'habit' && hasWeekTarget) {
+      return { ...response, intent: 'habit', nextAction: 'update_habit' };
+    }
+    if (command.operation === 'cancel' && previousResource === 'habit') {
+      return { ...response, intent: 'habit', nextAction: 'delete_habit' };
+    }
+    if (command.operation === 'cancel' && previousResource === 'supplement') {
+      return { ...response, intent: 'supplement', nextAction: 'delete_supplement' };
+    }
+    if (command.operation === 'update' && previousResource === 'supplement' && hasTime) {
+      return { ...response, intent: 'supplement', nextAction: 'update_supplement' };
     }
     return response;
   }
