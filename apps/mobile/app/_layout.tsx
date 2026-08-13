@@ -13,7 +13,7 @@ export default function RootLayout() {
       if (!mounted) return;
       if (locale) {
         I18nManager.allowRTL(isRTL(locale));
-        if (segments[0] === 'language' || segments.length === 0) router.replace('/command-center');
+        if (segments[0] === 'language' || segments.length < 1) router.replace('/command-center');
       } else if (segments[0] !== 'language') {
         router.replace('/language');
       }
