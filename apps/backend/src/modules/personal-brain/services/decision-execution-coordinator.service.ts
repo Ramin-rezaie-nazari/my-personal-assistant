@@ -7,6 +7,7 @@ import { DecisionExecutionPolicyService } from './decision-execution-policy.serv
 import { DecisionExecutionHistoryService } from './decision-execution-history.service';
 import { ActionConfirmationIntelligenceService } from './action-confirmation-intelligence.service';
 import { DecisionAuditService } from './decision-audit.service';
+import { DecisionOutcomeLearningService } from './decision-outcome-learning.service';
 
 export type DecisionExecutionStatus = 'completed' | 'blocked' | 'unsupported' | 'failed' | 'dry_run' | 'pending_confirmation' | 'confirmation_invalid';
 
@@ -35,6 +36,7 @@ export class DecisionExecutionCoordinatorService {
     private readonly history: DecisionExecutionHistoryService,
     private readonly confirmation: ActionConfirmationIntelligenceService,
     private readonly audit: DecisionAuditService,
+    private readonly outcomeLearning: DecisionOutcomeLearningService,
   ) {}
 
   async execute(userId: string, candidate: DecisionCandidate, context: Record<string, unknown> = {}): Promise<DecisionExecutionReceipt> {
@@ -124,6 +126,20 @@ export class DecisionExecutionCoordinatorService {
       blockedIds: receipt.status === 'blocked' || receipt.status === 'pending_confirmation' || receipt.status === 'confirmation_invalid' ? [receipt.decisionId] : [],
       reason: `${receipt.status}:${receipt.reason}`,
     }).catch(() => undefined);
+
+    const systemOutcome = receipt.status === 'failed' || receipt.status === 'unsupported'
+      ? 'negative'
+      : receipt.status === 'completed'
+        ? 'neutral'
+        : 'neutral';
+    void this.outcomeLearning.record({
+      userId: receipt.userId,
+      decisionId: receipt.decisionId,
+      outcome: systemOutcome,
+      note: `${receipt.status}:${receipt.reason}`,
+      source: 'system',
+    }).catch(() => undefined);
+
     return receipt;
   }
 }
