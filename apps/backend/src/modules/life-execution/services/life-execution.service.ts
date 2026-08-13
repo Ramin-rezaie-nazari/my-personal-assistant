@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
-import { CreateTaskDto, TaskEventDto, UpdateTaskDto } from '../dto/task.dto';
+import { CreateTaskDto, TaskDependencyDto, TaskEventDto, UpdateTaskDto } from '../dto/task.dto';
 
 type TaskRow = { id: string; userId: string; title: string; description: string | null; source: string; goalId: string | null; status: string; priority: number; energy: string; scheduledAt: Date | null; dueAt: Date | null; estimatedMinutes: number | null; completedAt: Date | null; createdAt: Date; updatedAt: Date };
 
@@ -36,6 +36,15 @@ export class LifeExecutionService {
       return { task, score };
     }).sort((a, b) => b.score - a.score);
     return { task: ranked[0]?.task ?? null, alternatives: ranked.slice(1, 4).map((item) => item.task), reason: ranked[0] ? this.reason(ranked[0].task) : 'Nothing actionable right now' };
+  }
+
+  async addDependency(userId: string, taskId: string, dto: TaskDependencyDto) {
+    const task = await this.raw(userId, taskId);
+    const dependency = await this.raw(userId, dto.dependsOnTaskId);
+    if (!task || !dependency) throw new NotFoundException('Task not found');
+    if (taskId === dto.dependsOnTaskId) throw new BadRequestException('A task cannot depend on itself');
+    await this.prisma.$executeRaw`INSERT INTO "TaskDependency" ("id","taskId","dependsOnTaskId") VALUES (${randomUUID()},${taskId},${dto.dependsOnTaskId})`;
+    return { taskId, dependsOnTaskId: dto.dependsOnTaskId };
   }
 
   async update(userId: string, id: string, dto: UpdateTaskDto) {
