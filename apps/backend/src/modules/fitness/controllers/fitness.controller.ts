@@ -1,7 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { FitnessEquipment, FitnessGoal, FitnessProfile } from '../models/fitness.model';
+import { FitnessGoal, FitnessProfile } from '../models/fitness.model';
 import { FitnessProfileService } from '../services/fitness-profile.service';
+
+type AuthenticatedRequest = { user: { sub: string } };
 
 @Controller('fitness')
 @UseGuards(JwtAuthGuard)
@@ -9,22 +11,22 @@ export class FitnessController {
   constructor(private readonly profile: FitnessProfileService) {}
 
   @Get('profile')
-  getProfile(@Body() body: { userId: string }) { return this.profile.get(body.userId); }
+  getProfile(@Req() req: AuthenticatedRequest) { return this.profile.get(req.user.sub); }
 
   @Get('context')
-  context(@Body() body: { userId: string }) { return this.profile.buildRecommendationContext(body.userId); }
+  context(@Req() req: AuthenticatedRequest) { return this.profile.buildRecommendationContext(req.user.sub); }
 
   @Post('profile')
-  save(@Body() body: { userId: string; profile: FitnessProfile }) { return this.profile.save(body.userId, body.profile); }
+  save(@Req() req: AuthenticatedRequest, @Body() body: { profile: FitnessProfile }) { return this.profile.save(req.user.sub, body.profile); }
 
   @Post('equipment')
-  addEquipment(@Body() body: { userId: string; item: FitnessProfile['equipment'][number] }) { return this.profile.addEquipment(body.userId, body.item); }
+  addEquipment(@Req() req: AuthenticatedRequest, @Body() body: { item: FitnessProfile['equipment'][number] }) { return this.profile.addEquipment(req.user.sub, body.item); }
 
   @Delete('equipment/:id')
-  removeEquipment(@Body() body: { userId: string }, @Param('id') id: string) { return this.profile.removeEquipment(body.userId, id); }
+  removeEquipment(@Req() req: AuthenticatedRequest, @Param('id') id: string) { return this.profile.removeEquipment(req.user.sub, id); }
 
   @Post('goal')
-  addGoal(@Body() body: { userId: string; goal: FitnessGoal }) { return this.profile.addGoal(body.userId, body.goal); }
+  addGoal(@Req() req: AuthenticatedRequest, @Body() body: { goal: FitnessGoal }) { return this.profile.addGoal(req.user.sub, body.goal); }
 
   @Post('goal/from-text')
   parseGoal(@Body() body: { text: string }) { return this.profile.parseNaturalGoal(body.text); }
