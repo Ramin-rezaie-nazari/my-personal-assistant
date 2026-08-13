@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
-import { CreateTaskDto, TaskEventDto, UpdateTaskDto } from '../dto/task.dto';
+import { CreateTaskDto, TaskDependencyDto, TaskEventDto, UpdateTaskDto } from '../dto/task.dto';
 
 type TaskRow = { id: string; userId: string; title: string; description: string | null; source: string; goalId: string | null; status: string; priority: number; energy: string; scheduledAt: Date | null; dueAt: Date | null; estimatedMinutes: number | null; completedAt: Date | null; createdAt: Date; updatedAt: Date };
 
@@ -56,8 +56,15 @@ export class LifeExecutionService {
     return this.one(userId, id);
   }
 
-  async one(userId: string, id: string) { const row = await this.raw(userId, id); if (!row) throw new NotFoundException('Task not found'); return row; }
+  async addDependency(userId: string, taskId: string, dto: TaskDependencyDto) {
+    const [task, dependency] = await Promise.all([this.raw(userId, taskId), this.raw(userId, dto.dependsOnTaskId)]);
+    if (!task || !dependency) throw new NotFoundException('Task or dependency target not found');
+    if (taskId === dto.dependsOnTaskId) throw new BadRequestException('A task cannot depend on itself');
+    await this.prisma.$executeRaw`INSERT INTO "TaskDependency" ("id","taskId","dependsOnTaskId") VALUES (${randomUUID()},${taskId},${dto.dependsOnTaskId}) ON CONFLICT ("taskId","dependsOnTaskId") DO NOTHING`;
+    return { taskId, dependsOnTaskId: dto.dependsOnTaskId };
+  }
 
+  async one(userId: string, id: string) { const row = await this.raw(userId, id); if (!row) throw new NotFoundException('Task not found'); return row; }
   private async raw(userId: string, id: string) { const rows = await this.prisma.$queryRaw<TaskRow[]>`SELECT * FROM "LifeTask" WHERE "id"=${id} AND "userId"=${userId} LIMIT 1`; return rows[0]; }
   private async event(userId: string, taskId: string, event: string, reason?: string, metadata?: Record<string, unknown>) { await this.prisma.$executeRaw`INSERT INTO "TaskEvent" ("id","taskId","userId","event","reason","metadata") VALUES (${randomUUID()},${taskId},${userId},${event},${reason ?? null},${metadata ? JSON.stringify(metadata) : null}::jsonb)`; }
   private date(value?: string | null) { if (!value) return null; const date = new Date(value); if (Number.isNaN(date.getTime())) throw new BadRequestException('Invalid date'); return date; }
