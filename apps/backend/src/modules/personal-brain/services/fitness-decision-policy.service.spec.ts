@@ -24,4 +24,37 @@ describe('FitnessDecisionPolicyService', () => {
     const result: any = service.evaluate(base({ disciplines: [], primaryGoal: { kind: 'general_fitness', targetAreas: ['full_body'], avoidBulk: false }, equipment: ['none'], constraints: [{ key: 'low_impact', enabled: true }] }, 'give me yoga today'));
     expect(result?.candidates[0].id).toBe('yoga');
   });
+
+  it('uses stable long-term decision history as a bounded tie-breaker', () => {
+    const result: any = service.evaluate(base({
+      disciplines: [],
+      primaryGoal: { kind: 'body_sculpt', targetAreas: ['legs'], avoidBulk: true },
+      equipment: ['none'],
+      constraints: [],
+      decisionMemory: {
+        decisions: 12,
+        changeSignal: 'stable',
+        repeatedReasons: [],
+        selectedFrequency: [{ id: 'yoga', count: 4 }],
+      },
+    }));
+    expect(result?.recommendation).toContain('decision-history:stable');
+    expect(result?.recommendation).toContain('prior-choice-pattern:4');
+  });
+
+  it('does not use history when evidence is insufficient', () => {
+    const result: any = service.evaluate(base({
+      disciplines: [],
+      primaryGoal: null,
+      equipment: ['none'],
+      constraints: [],
+      decisionMemory: {
+        decisions: 3,
+        changeSignal: 'stable',
+        repeatedReasons: [],
+        selectedFrequency: [{ id: 'yoga', count: 2 }],
+      },
+    }));
+    expect(result?.recommendation).not.toContain('decision-history:stable');
+  });
 });
