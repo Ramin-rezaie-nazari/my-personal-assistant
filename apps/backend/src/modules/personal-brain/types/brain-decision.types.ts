@@ -10,6 +10,8 @@ export type BrainDecisionResult = {
   recommendation?: string;
 
   nextAction?: string;
+
+  historicalReasons?: string[];
 };
 
 export type BrainDecisionPipelineResult = BrainDecisionResult & {
