@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { DecisionConflictResolutionService } from './decision-conflict-resolution.service';
 
-export type DecisionDomain = 'schedule' | 'workout' | 'nutrition' | 'habit' | 'reminder' | 'notification' | 'conversation';
+export type DecisionDomain = 'schedule' | 'workout' | 'nutrition' | 'habit' | 'reminder' | 'notification' | 'conversation' | 'shopping';
 
 export type DecisionCandidate = {
   id: string;
