@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 
-import { ContextEngineService } from '../../context-engine/services/context-engine.service';
-import { BrainContextService } from '../../brain-integration/services/brain-context.service';
 import { BrainGoalService } from '../../brain-integration/services/brain-goal.service';
 
 import { BrainDailyStatusService } from './brain-daily-status.service';
@@ -17,7 +15,6 @@ import { BrainState } from '../types';
 @Injectable()
 export class BrainStateService {
   constructor(
-    private readonly brainContextService: BrainContextService,
     private readonly brainMemoryContextService: BrainMemoryContextService,
     private readonly brainGoalService: BrainGoalService,
     private readonly brainDailyStatusService: BrainDailyStatusService,
@@ -26,19 +23,10 @@ export class BrainStateService {
     private readonly brainWorkoutStatusService: BrainWorkoutStatusService,
     private readonly brainLifeContextService: BrainLifeContextService,
     private readonly userContextService: UserContextService,
-    private readonly contextEngineService: ContextEngineService,
   ) {}
 
   async buildState(query = '', userId: string): Promise<BrainState> {
-    const [
-      memoryContext,
-      goals,
-      dailyStatus,
-      weeklyStatus,
-      nutritionTargets,
-      workoutStatus,
-      lifeContext,
-    ] = await Promise.all([
+    const [memoryContext, goals, dailyStatus, weeklyStatus, nutritionTargets, workoutStatus, lifeContext] = await Promise.all([
       this.brainMemoryContextService.buildMemoryContext(query, userId),
       this.brainGoalService.getGoals(userId),
       this.brainDailyStatusService.getToday(userId),
@@ -48,25 +36,9 @@ export class BrainStateService {
       this.brainLifeContextService.getToday(userId),
     ]);
 
-    const generatedContext = await this.contextEngineService.buildContext(userId);
-    const context = { timestamp: new Date().toISOString(), source: 'context-engine' };
-    const userContext = this.userContextService.build({
-      context,
-      goals,
-      memories: memoryContext.memories,
-    });
+    const context = { timestamp: new Date().toISOString(), source: 'brain-state' };
+    const userContext = this.userContextService.build({ context, goals, memories: memoryContext.memories });
 
-    return {
-      userContext,
-      context,
-      memories: memoryContext.memories,
-      goals,
-      dailyStatus,
-      weeklyStatus,
-      nutritionTargets,
-      workoutStatus,
-      lifeContext,
-      ...(generatedContext && typeof generatedContext === 'object' ? {} : {}),
-    };
+    return { userContext, context, memories: memoryContext.memories, goals, dailyStatus, weeklyStatus, nutritionTargets, workoutStatus, lifeContext };
   }
 }
