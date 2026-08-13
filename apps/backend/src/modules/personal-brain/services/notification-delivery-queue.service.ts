@@ -23,12 +23,10 @@ export class NotificationDeliveryQueueService {
     job.status = 'delivered'; job.deliveredAt = now.toISOString(); return job;
   }
 
-  markFailed(id: string, error: string, now = new Date()) {
+  markFailed(id: string, error: string) {
     const job = this.jobs.get(id); if (!job) return null;
     job.attempts += 1; job.lastError = error;
-    if (now >= new Date(job.expiresAt)) job.status = 'expired';
-    else if (job.attempts >= job.maxAttempts) job.status = 'failed';
-    else job.status = 'queued';
+    job.status = job.attempts >= job.maxAttempts ? 'failed' : 'queued';
     return job;
   }
 
