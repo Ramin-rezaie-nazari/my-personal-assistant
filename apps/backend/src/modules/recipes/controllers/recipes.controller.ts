@@ -1,17 +1,19 @@
-import { Controller, Get, Post } from '@nestjs/common';
-import { RecipesService } from '../services/recipes.service';
+import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RecipesService, RecipeInput } from '../services/recipes.service';
 
 @Controller('recipes')
+@UseGuards(JwtAuthGuard)
 export class RecipesController {
   constructor(private readonly recipesService: RecipesService) {}
 
   @Post()
-  create() {
-    return this.recipesService.createRecipe();
+  create(@Request() req: { user: { id: string } }, @Body() body: RecipeInput) {
+    return this.recipesService.createRecipe(req.user.id, body);
   }
 
   @Get()
-  findAll() {
-    return this.recipesService.getRecipes();
+  findAll(@Request() req: { user: { id: string } }) {
+    return this.recipesService.getRecipes(req.user.id);
   }
 }
