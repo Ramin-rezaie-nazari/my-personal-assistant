@@ -5,16 +5,8 @@ import { HabitsService } from '../../habits/services/habits.service';
 
 @Injectable()
 export class HabitActionAdapter implements DecisionActionAdapter {
-  constructor(
-    private readonly registry: DecisionActionAdapterService,
-    private readonly habits: HabitsService,
-  ) {
-    registry.register(this);
-  }
-
-  supports(candidate: DecisionCandidate): boolean {
-    return ['complete_habit', 'update_habit', 'delete_habit'].includes(candidate.action);
-  }
+  constructor(private readonly registry: DecisionActionAdapterService, private readonly habits: HabitsService) { registry.register(this); }
+  supports(candidate: DecisionCandidate): boolean { return ['complete_habit', 'update_habit', 'delete_habit'].includes(candidate.action); }
 
   async execute(candidate: DecisionCandidate, context: Record<string, unknown>) {
     const userId = String(context.userId ?? '');
@@ -22,22 +14,15 @@ export class HabitActionAdapter implements DecisionActionAdapter {
     const state = (context.contextualState as Record<string, unknown> | undefined) ?? {};
     const habitId = String(state.targetResourceId ?? state.targetExecutionId ?? '');
     if (!habitId) throw new Error('Missing habit target');
-
-    if (candidate.action === 'complete_habit') {
-      return this.habits.completeToday(userId, habitId);
-    }
-    if (candidate.action === 'delete_habit') {
-      return this.habits.deleteHabit(userId, habitId);
-    }
-
+    if (candidate.action === 'complete_habit') return this.habits.completeToday(userId, habitId);
+    if (candidate.action === 'delete_habit') return this.habits.deleteHabit(userId, habitId);
     const input = String(context.input ?? '').trim();
     const target = this.extractTarget(input);
     if (target === null) throw new Error('Please provide a valid weekly target between 1 and 7');
     return this.habits.updateHabit(userId, habitId, { targetPerWeek: target });
   }
-
   private extractTarget(input: string): number | null {
-    const match = input.match(/\b([1-7])\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?\b/i);
+    const match = input.match(/(?:^|\s)([1-7])\s*(?:times?|x|بار|مرتبه)(?=\s|$)/i) ?? input.match(/([1-7])\s*بار/);
     return match ? Number(match[1]) : null;
   }
 }
