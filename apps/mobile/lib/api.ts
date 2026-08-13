@@ -15,6 +15,7 @@ export type Supplement = { id:string;name:string;dosage:string|null;frequency:st
 export type SupplementStatus = { dateKey:string;total:number;taken:number;remaining:number;completionPercent:number;supplements:Supplement[] };
 export type Notification = { id:string;title:string;body:string|null;type:string;scheduledAt:string|null;readAt:string|null;createdAt:string;priority:number };
 export type DailyCalendarEvent = { id:string;title:string;type:string;scheduledAt:string;completed:boolean };
+export type PlanExecutionState = { planId:string;userId:string;status:'pending'|'running'|'completed'|'partial'|'blocked'|'failed'|'cancelled';stepIds:string[];completed:string[];blocked:string[];failed:string[];currentStep:string|null;updatedAt:string };
 export type DailyCommandCenterResponse = {
   dateKey:string;
   greeting:string;
@@ -46,6 +47,7 @@ export function getTodayDashboard(dateKey?:string){const q=dateKey?`?dateKey=${e
 export async function getDashboardOverview(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';const data=await request<DashboardOverviewResponse>(`/dashboard/overview${q}`);data.today.nutrition.waterRemainingMl ??= data.today.nutrition.waterRemaining;return data}
 export function getPersonalInsights(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<PersonalInsightsResponse>(`/adaptive-learning/insights${q}`)}
 export function getDailyCommandCenter(){return request<DailyCommandCenterResponse>('/daily-command-center')}
+export function getPlanHistory(limit=5){return request<PlanExecutionState[]>(`/personal-brain/plan/history?limit=${Math.min(Math.max(limit,1),20)}`)}
 export function addWater(amountMl:number,dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<{waterMl:number}>(`/daily/water${q}`,{method:'POST',body:JSON.stringify({amountMl})})}
 export function createWorkout(data:{name:string;type:string;durationMinutes:number;caloriesBurned:number}){return request('/workout',{method:'POST',body:JSON.stringify(data)})}
 export function getReminders(includeCompleted=false){return request<Reminder[]>(`/reminders${includeCompleted?'?includeCompleted=true':''}`)}
