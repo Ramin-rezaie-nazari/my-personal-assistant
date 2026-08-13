@@ -12,11 +12,10 @@ const candidate = (id: string, action = id) => ({
 describe('PlanExecutionService', () => {
   const planner = { plan: jest.fn() };
   const coordinator = { execute: jest.fn() };
-  const state = {
-    start: jest.fn(),
-    complete: jest.fn(),
-    cancel: jest.fn(),
-    fail: jest.fn(),
+  const state = { start: jest.fn(), complete: jest.fn(), cancel: jest.fn(), fail: jest.fn() };
+  const persistentState = {
+    resume: jest.fn().mockResolvedValue(null),
+    save: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(() => jest.clearAllMocks());
@@ -27,10 +26,8 @@ describe('PlanExecutionService', () => {
       { order: 2, candidateId: 'b', domain: 'conversation', action: 'b', dependsOn: ['a'] },
     ]);
     coordinator.execute.mockResolvedValue({ status: 'completed', reason: 'action_executed' });
-    const service = new PlanExecutionService(planner as never, coordinator as never, state as never);
-
+    const service = new PlanExecutionService(planner as never, coordinator as never, state as never, persistentState as never);
     const result = await service.execute('u1', { selected: [candidate('a'), candidate('b')], rejected: [], blocked: [], reason: 'test' });
-
     expect(result.status).toBe('completed');
     expect(result.completed).toEqual(['a', 'b']);
     expect(coordinator.execute).toHaveBeenCalledTimes(2);
@@ -42,10 +39,8 @@ describe('PlanExecutionService', () => {
       { order: 2, candidateId: 'b', domain: 'conversation', action: 'b', dependsOn: ['a'] },
     ]);
     coordinator.execute.mockResolvedValueOnce({ status: 'failed', reason: 'boom' });
-    const service = new PlanExecutionService(planner as never, coordinator as never, state as never);
-
+    const service = new PlanExecutionService(planner as never, coordinator as never, state as never, persistentState as never);
     const result = await service.execute('u1', { selected: [candidate('a'), candidate('b')], rejected: [], blocked: [], reason: 'test' });
-
     expect(result.status).toBe('failed');
     expect(result.failed).toEqual(['a']);
     expect(coordinator.execute).toHaveBeenCalledTimes(1);
@@ -57,10 +52,8 @@ describe('PlanExecutionService', () => {
       { order: 2, candidateId: 'b', domain: 'conversation', action: 'b', dependsOn: ['a'] },
     ]);
     coordinator.execute.mockResolvedValueOnce({ status: 'pending_confirmation', reason: 'confirmation_required' });
-    const service = new PlanExecutionService(planner as never, coordinator as never, state as never);
-
+    const service = new PlanExecutionService(planner as never, coordinator as never, state as never, persistentState as never);
     const result = await service.execute('u1', { selected: [candidate('a'), candidate('b')], rejected: [], blocked: [], reason: 'test' });
-
     expect(result.status).toBe('blocked');
     expect(result.blocked).toEqual(['a']);
     expect(coordinator.execute).toHaveBeenCalledTimes(1);
