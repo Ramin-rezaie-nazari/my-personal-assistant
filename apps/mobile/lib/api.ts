@@ -20,6 +20,8 @@ export type DailyCommandCenterResponse = { dateKey:string;greeting:string;primar
 export type NutritionSummary = { dateKey:string; meals:{count:number;calories:number;protein:number;carbs:number;fat:number}; goals:{calories:number|null;protein:number|null;waterMl:number|null}; remaining:{calories:number|null;protein:number|null;waterMl:number|null}; progress:{caloriesPercent:number|null;proteinPercent:number|null;waterPercent:number|null}; status:{calories:string;protein:string;water:string} };
 export type FoodItem = { id:string;name:string;category:string;calories:number;protein:number;carbs:number;fat:number;imageUrl?:string|null;verified:boolean };
 export type Meal = { id:string;name:string;type:string;eatenAt:string;calories:number;protein:number;carbs:number;fat:number;items:Array<{id:string;foodId:string;quantity:number;calories:number;protein:number;carbs:number;fat:number;food:FoodItem}> };
+export type PlanExecutionState = { planId:string; userId:string; status:string; stepIds:string[]; completed:string[]; blocked:string[]; failed:string[]; currentStep:string|null; updatedAt:string };
+export type DecisionTrace = { id:string; decisionId:string; userId:string; selectedIds:string[]; rejectedIds:string[]; blockedIds:string[]; reason:string; createdAt:string };
 export type YogaStep = { id:string;poseId:string;order:number;phase:'warmup'|'flow'|'cooldown';holdSec:number;restSec:number;coachCues:Array<{id:string;phase:'enter'|'hold'|'exit';text:string;priority:number}> };
 export type YogaSession = { id:string;level:'beginner'|'foundation'|'intermediate'|'advanced'|'expert';focus:string[];durationMin:number;steps:YogaStep[];estimatedDifficulty:number };
 export type YogaCoachState = { sessionId:string;stepIndex:number;phase:'idle'|'enter'|'hold'|'exit'|'rest'|'completed';remainingSec:number;completedSteps:number[];currentPoseId:string|null;nextPoseId:string|null };
@@ -45,6 +47,8 @@ export async function getDashboardOverview(dateKey?:string){const q=dateKey?`?da
 export function getPersonalInsights(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<PersonalInsightsResponse>(`/adaptive-learning/insights${q}`)}
 export function getBrainContext(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<BrainContextResponse>(`/brain-integration/context${q}`)}
 export function getDailyCommandCenter(){return request<DailyCommandCenterResponse>('/daily-command-center')}
+export function getDecisionTrace(){return request<DecisionTrace[]>('/personal-brain/trace')}
+export function getPlanHistory(limit = 10){return request<PlanExecutionState[]>(`/personal-brain/plan/history?limit=${Math.max(1,Math.min(10,Math.round(limit)))}`)}
 export function addWater(amountMl:number,dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<{waterMl:number}>(`/daily/water${q}`,{method:'POST',body:JSON.stringify({amountMl})})}
 export function createWorkout(data:{name:string;type:string;durationMinutes:number;caloriesBurned:number}){return request('/workout',{method:'POST',body:JSON.stringify(data)})}
 export function getReminders(includeCompleted=false){return request<Reminder[]>(`/reminders${includeCompleted?'?includeCompleted=true':''}`)}
