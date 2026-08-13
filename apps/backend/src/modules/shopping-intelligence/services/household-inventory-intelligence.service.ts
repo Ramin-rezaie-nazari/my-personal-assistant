@@ -7,7 +7,7 @@ export class HouseholdInventoryIntelligenceService {
     return items.map((item) => {
       const consumption = Math.max(0, item.dailyConsumption ?? 0); const safetyStock = Math.max(0, item.safetyStock ?? 0); const reorderPoint = safetyStock;
       const daysRemaining = consumption > 0 ? item.quantity / consumption : null;
-      const recommendedQuantity = Math.max(0, safetyStock - item.quantity);
+      const recommendedQuantity = safetyStock;
       const urgency = item.quantity <= 0 ? 'critical' : daysRemaining !== null && daysRemaining <= 2 ? 'critical' : daysRemaining !== null && daysRemaining <= 7 ? 'soon' : item.quantity <= reorderPoint ? 'soon' : 'none';
       const reason = urgency === 'critical' ? 'stock_will_run_out_soon' : urgency === 'soon' ? 'below_reorder_threshold' : daysRemaining === null ? 'no_consumption_history' : 'stock_is_healthy';
       return { ...item, daysRemaining, reorderPoint, recommendedQuantity, urgency, reason };
