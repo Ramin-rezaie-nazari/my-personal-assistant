@@ -52,12 +52,15 @@ export class FitnessDecisionPolicyService {
     if (equipment.has('dumbbells') || equipment.has('barbell') || equipment.has('cable_machine')) {
       candidates.find(c => c.discipline === 'gym')!.score += 0.20;
     }
-    if (fitness.constraints?.includes('low_impact')) {
+
+    const lowImpact = Array.isArray(fitness.constraints)
+      && fitness.constraints.some((constraint: unknown) => constraint === 'low_impact' || (typeof constraint === 'object' && constraint !== null && 'key' in constraint && (constraint as { key?: unknown }).key === 'low_impact' && ('enabled' in constraint ? (constraint as { enabled?: unknown }).enabled !== false : true)));
+    if (lowImpact) {
       candidates.find(c => c.discipline === 'yoga')!.score += 0.15;
       candidates.find(c => c.discipline === 'calisthenics')!.score -= 0.04;
     }
 
-    const memory = context.state.lifeContext?.decisionMemory;
+    const memory = context.state.lifeContext?.decisionMemory ?? (fitness as typeof fitness & { decisionMemory?: typeof context.state.lifeContext extends never ? never : any }).decisionMemory;
     if (memory && memory.decisions != null && memory.decisions >= 5 && memory.changeSignal === 'stable' && memory.selectedFrequency?.length) {
       const prior = memory.selectedFrequency[0];
       const priorCandidate = candidates.find(c => c.discipline === prior.id);
@@ -65,6 +68,11 @@ export class FitnessDecisionPolicyService {
         priorCandidate.score += 0.04;
         priorCandidate.reasons.push(`prior-choice-pattern:${prior.count}`);
       }
+    }
+
+    // An explicit recovery/low-impact request is a hard preference for yoga.
+    if (lowImpact && /(?:yoga|یوگا|recovery|ریکاوری|آرام)/i.test(input)) {
+      candidates.find(c => c.discipline === 'yoga')!.score += 0.30;
     }
 
     candidates.sort((a, b) => b.score - a.score);
