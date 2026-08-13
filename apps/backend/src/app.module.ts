@@ -37,6 +37,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { DailyCommandCenterModule } from './modules/daily-command-center/daily-command-center.module';
 import { YogaModule } from './modules/yoga/yoga.module';
 import { CalisthenicsModule } from './modules/calisthenics/calisthenics.module';
+import { FitnessModule } from './modules/fitness/fitness.module';
 
 @Module({
   imports: [
@@ -46,7 +47,7 @@ import { CalisthenicsModule } from './modules/calisthenics/calisthenics.module';
     AssistantModule, UserIntelligenceModule, BudgetIntelligenceModule, PriceIntelligenceModule,
     ShoppingIntelligenceModule, DeviceIntelligenceModule, DecisionEngineModule, AdaptiveLearningModule,
     ContextEngineModule, PreferencesModule, PersonalBrainModule, DashboardModule, DailyCommandCenterModule, YogaModule,
-    CalisthenicsModule,
+    CalisthenicsModule, FitnessModule,
   ],
   controllers: [AppController],
   providers: [AppService],
