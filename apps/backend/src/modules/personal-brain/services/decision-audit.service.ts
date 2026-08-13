@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../common/database/prisma.service';
 
 export type DecisionAudit = {
+  id: string;
+  userId: string;
   decisionId: string;
   selectedIds: string[];
   rejectedIds: string[];
@@ -11,19 +14,62 @@ export type DecisionAudit = {
 
 @Injectable()
 export class DecisionAuditService {
-  private readonly entries: DecisionAudit[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  record(input: Omit<DecisionAudit, 'createdAt'>): DecisionAudit {
-    const entry = { ...input, createdAt: new Date() };
-    this.entries.push(entry);
-    return entry;
+  async record(input: Omit<DecisionAudit, 'id' | 'createdAt'>): Promise<DecisionAudit> {
+    const entry = await this.prisma.decisionAuditEntry.create({
+      data: {
+        userId: input.userId,
+        decisionId: input.decisionId,
+        selectedIds: input.selectedIds,
+        rejectedIds: input.rejectedIds,
+        blockedIds: input.blockedIds,
+        reason: input.reason,
+      },
+    });
+    return this.map(entry);
   }
 
-  recent(limit = 20): DecisionAudit[] {
-    return this.entries.slice(-Math.max(1, limit)).reverse();
+  async recent(userId: string, limit = 20): Promise<DecisionAudit[]> {
+    const entries = await this.prisma.decisionAuditEntry.findMany({
+      where: { userId },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(Math.max(limit, 1), 50),
+    });
+    return entries.map((entry) => this.map(entry));
   }
 
-  clear(): void {
-    this.entries.length = 0;
+  async byDecision(userId: string, decisionId: string): Promise<DecisionAudit[]> {
+    const entries = await this.prisma.decisionAuditEntry.findMany({
+      where: { userId, decisionId },
+      orderBy: { createdAt: 'desc' },
+    });
+    return entries.map((entry) => this.map(entry));
+  }
+
+  async clear(userId: string): Promise<void> {
+    await this.prisma.decisionAuditEntry.deleteMany({ where: { userId } });
+  }
+
+  private map(record: {
+    id: string;
+    userId: string;
+    decisionId: string;
+    selectedIds: unknown;
+    rejectedIds: unknown;
+    blockedIds: unknown;
+    reason: string;
+    createdAt: Date;
+  }): DecisionAudit {
+    return {
+      id: record.id,
+      userId: record.userId,
+      decisionId: record.decisionId,
+      selectedIds: Array.isArray(record.selectedIds) ? record.selectedIds.map(String) : [],
+      rejectedIds: Array.isArray(record.rejectedIds) ? record.rejectedIds.map(String) : [],
+      blockedIds: Array.isArray(record.blockedIds) ? record.blockedIds.map(String) : [],
+      reason: record.reason,
+      createdAt: record.createdAt,
+    };
   }
 }
