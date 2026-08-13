@@ -10,6 +10,22 @@ describe('HouseholdInventoryIntelligenceService', () => {
     expect(result.recommendedQuantity).toBe(2);
   });
 
+  it('uses consumption horizon plus safety stock for the reorder target', () => {
+    const result = service.forecast([
+      {
+        productKey: 'rice',
+        quantity: 3,
+        unit: 'kg',
+        dailyConsumption: 2,
+        safetyStock: 1,
+      },
+    ])[0];
+
+    expect(result.reorderPoint).toBe(5);
+    expect(result.recommendedQuantity).toBe(2);
+    expect(result.urgency).toBe('critical');
+  });
+
   it('prioritizes critical essential items first', () => {
     const result = service.prioritize([
       { productKey: 'soap', quantity: 1, unit: 'pcs', dailyConsumption: 0.1, safetyStock: 1 },
