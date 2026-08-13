@@ -40,6 +40,7 @@ model User {
   userFacts        UserFact[]
   userBehaviors    UserBehavior[]
   userInsights     UserInsight[]
+  planExecutionStates PlanExecutionState[]
   
 }
 
@@ -368,4 +369,20 @@ model UserInsight {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+model PlanExecutionState {
+  id String @id @default(uuid())
+  userId String
+  planId String
+  status String
+  stepIds Json
+  completed Json
+  blocked Json
+  failed Json
+  currentStep String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, planId])
+  @@index([userId, status, updatedAt])
 }
