@@ -43,6 +43,7 @@ export class DecisionExecutionCoordinatorService {
     const startedAt = Date.now();
     const base = { userId, decisionId: candidate.id, action: candidate.action, domain: candidate.domain, recordedAt: startedAt };
     const resolved = this.policy.resolve(candidate, context);
+    const receiptPolicy = this.normalizePolicy(resolved);
     const confirmation = this.confirmation.assess(userId, candidate, context);
     if (confirmation.required) {
       return this.record({
@@ -52,7 +53,7 @@ export class DecisionExecutionCoordinatorService {
         confirmationToken: confirmation.token,
         durationMs: Date.now() - startedAt,
         attempts: 0,
-        policy: resolved,
+        policy: receiptPolicy,
       });
     }
     return this.executeApproved(userId, candidate, context, resolved, startedAt, base);
@@ -94,26 +95,36 @@ export class DecisionExecutionCoordinatorService {
     base: Pick<DecisionExecutionReceipt, 'userId' | 'decisionId' | 'action' | 'domain' | 'recordedAt'>,
   ): Promise<DecisionExecutionReceipt> {
     const gate = this.gate.open(userId, candidate);
-    if (!gate.allowed) return this.record({ ...base, status: 'blocked', reason: gate.reason, durationMs: Date.now() - startedAt, attempts: 0, policy: resolved });
+    const receiptPolicy = this.normalizePolicy(resolved);
+    if (!gate.allowed) return this.record({ ...base, status: 'blocked', reason: gate.reason, durationMs: Date.now() - startedAt, attempts: 0, policy: receiptPolicy });
 
     try {
-      const execution = await this.policy.run(candidate, resolved, () => this.adapters.execute(candidate, context));
-      if (resolved.dryRun) return this.record({ ...base, status: 'dry_run', reason: 'dry_run', durationMs: Date.now() - startedAt, attempts: 0, policy: resolved });
+      const execution = await this.policy.run(candidate, receiptPolicy, () => this.adapters.execute(candidate, context));
+      if (receiptPolicy.dryRun) return this.record({ ...base, status: 'dry_run', reason: 'dry_run', durationMs: Date.now() - startedAt, attempts: 0, policy: receiptPolicy });
       const actionResult = execution.result as { handled: boolean; result?: unknown };
       if (!actionResult?.handled) {
         this.gate.fail(userId, candidate, 'unsupported_action');
         this.feedback.record({ userId, candidate, outcome: 'skipped' });
-        return this.record({ ...base, status: 'unsupported', reason: 'unsupported_action', durationMs: Date.now() - startedAt, attempts: execution.attempts.length, policy: resolved });
+        return this.record({ ...base, status: 'unsupported', reason: 'unsupported_action', durationMs: Date.now() - startedAt, attempts: execution.attempts.length, policy: receiptPolicy });
       }
       this.gate.complete(userId, candidate, actionResult.result);
       this.feedback.record({ userId, candidate, outcome: 'completed' });
-      return this.record({ ...base, status: 'completed', reason: 'action_executed', result: actionResult.result, durationMs: Date.now() - startedAt, attempts: execution.attempts.length, policy: resolved });
+      return this.record({ ...base, status: 'completed', reason: 'action_executed', result: actionResult.result, durationMs: Date.now() - startedAt, attempts: execution.attempts.length, policy: receiptPolicy });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       this.gate.fail(userId, candidate, message);
       this.feedback.record({ userId, candidate, outcome: 'failed' });
-      return this.record({ ...base, status: 'failed', reason: message || 'action_failed', durationMs: Date.now() - startedAt, attempts: resolved.maxAttempts, policy: resolved });
+      return this.record({ ...base, status: 'failed', reason: message || 'action_failed', durationMs: Date.now() - startedAt, attempts: receiptPolicy.maxAttempts, policy: receiptPolicy });
     }
+  }
+
+  private normalizePolicy(policy: ReturnType<DecisionExecutionPolicyService['resolve']>): DecisionExecutionReceipt['policy'] {
+    return {
+      timeoutMs: policy.timeoutMs,
+      maxAttempts: policy.maxAttempts,
+      retryDelayMs: policy.retryDelayMs,
+      dryRun: policy.dryRun === true,
+    };
   }
 
   private record(receipt: DecisionExecutionReceipt): DecisionExecutionReceipt {
