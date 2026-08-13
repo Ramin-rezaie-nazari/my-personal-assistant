@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { LifeContext, LifeContextSourceInput } from '../types/life-context';
+import { LifeContextFusionService } from './life-context-fusion.service';
 
 @Injectable()
 export class ContextEngineService {
-  async buildContext() {
-    await Promise.resolve();
+  constructor(private readonly fusion: LifeContextFusionService) {}
 
-    return {
-      message: 'User context generated',
-      context: {},
-    };
+  async buildContext(userId: string, sources: Partial<Record<keyof Omit<LifeContext, 'userId' | 'generatedAt' | 'timezone'>, LifeContextSourceInput>> = {}) {
+    return this.fusion.build(userId, sources);
   }
 }
