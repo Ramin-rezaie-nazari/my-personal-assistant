@@ -14,7 +14,8 @@ export class DecisionExecutionStateService {
   get(decisionId: string) { return this.records.get(decisionId) ?? null; }
 
   private set(decisionId: string, patch: Partial<ExecutionRecord>) {
-    const next = { decisionId, ...(this.records.get(decisionId) ?? { state: 'pending' as ExecutionState }), ...patch };
+    const previous = this.records.get(decisionId);
+    const next: ExecutionRecord = { ...(previous ?? { decisionId, state: 'pending' as ExecutionState }), ...patch, decisionId };
     this.records.set(decisionId, next);
     return next;
   }
