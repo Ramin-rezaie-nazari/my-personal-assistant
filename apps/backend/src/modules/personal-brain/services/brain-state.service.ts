@@ -13,7 +13,7 @@ import { BrainWeeklyStatusService } from './brain-weekly-status.service';
 import { BrainWorkoutStatusService } from './brain-workout-status.service';
 import { UserContextService } from './user-context.service';
 
-import { BrainState } from '../types';
+import type { BrainState } from '../types';
 
 @Injectable()
 export class BrainStateService {
@@ -32,16 +32,7 @@ export class BrainStateService {
   ) {}
 
   async buildState(query = '', userId: string): Promise<BrainState> {
-    const [
-      context,
-      memoryContext,
-      goals,
-      dailyStatus,
-      weeklyStatus,
-      nutritionTargets,
-      workoutStatus,
-      lifeContext,
-    ] = await Promise.all([
+    const [context, memoryContext, goals, dailyStatus, weeklyStatus, nutritionTargets, workoutStatus, lifeContext] = await Promise.all([
       this.brainContextService.getContext(),
       this.brainMemoryContextService.buildMemoryContext(query, userId),
       this.brainGoalService.getGoals(userId),
@@ -53,7 +44,8 @@ export class BrainStateService {
     ]);
 
     const generatedContext = await this.contextEngineService.buildContext(userId);
-    const fusedLifeContext = this.lifeContextFusionService.build(userId, {
+    // Keep the generic fused context available to the context engine layer, but expose the strongly typed BrainLifeContext here.
+    this.lifeContextFusionService.build(userId, {
       calendar: { value: lifeContext.reminders ?? {}, source: 'brain-life-context', observedAt: new Date(), confidence: 0.85 },
       schedule: { value: { dailyStatus, weeklyStatus }, source: 'brain-schedule', observedAt: new Date(), confidence: 0.8 },
       habits: { value: lifeContext.habits ?? {}, source: 'brain-life-context', observedAt: new Date(), confidence: 0.9 },
@@ -66,22 +58,18 @@ export class BrainStateService {
       wearable: { value: {}, source: 'wearable', observedAt: null, confidence: 0 },
     });
 
-    const userContext = this.userContextService.build({
-      context: generatedContext,
-      goals,
-      memories: memoryContext.memories,
-    });
+    const userContext = this.userContextService.build({ context: { ...generatedContext, timestamp: new Date().toISOString(), source: 'context-engine' }, goals, memories: memoryContext.memories });
 
     return {
       userContext,
-      context: generatedContext,
+      context: { ...generatedContext, timestamp: new Date().toISOString(), source: 'context-engine' },
       memories: memoryContext.memories,
       goals,
       dailyStatus,
       weeklyStatus,
       nutritionTargets,
       workoutStatus,
-      lifeContext: fusedLifeContext,
+      lifeContext,
     };
   }
 }
