@@ -14,7 +14,10 @@ export class MemorySurfaceService {
     return memories
       .filter((memory) => !memory.expiresAt || memory.expiresAt > now)
       .filter((memory) => (memory.confidence ?? 0) >= 0.35 || memory.source === 'explicit_user')
-      .sort((a, b) => ((b.importance * (b.confidence ?? 0)) - (a.importance * (a.confidence ?? 0))))
+      .sort((a, b) => {
+        const score = (memory: Memory) => (memory.importance * 0.55) + ((memory.confidence ?? 0) * 0.45);
+        return score(b) - score(a);
+      })
       .slice(0, Math.max(1, Math.min(limit, 500)));
   }
 }
