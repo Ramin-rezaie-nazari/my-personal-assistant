@@ -15,7 +15,7 @@ export class GymSessionGeneratorService {
     avoidBulk?: boolean;
   }): GymSession {
     const durationMin = Math.min(120, Math.max(10, Math.round(input.durationMin)));
-    const equipment = input.equipment?.length ? input.equipment : ['none'];
+    const equipment: GymEquipment[] = input.equipment?.length ? input.equipment : ['none'];
     const level = this.adaptLevel(input.level ?? input.progress?.currentLevel ?? 'beginner', input.progress);
     const pool = this.library.list(level, input.focus, equipment);
     const ordered = [...pool].sort((a, b) => Number(b.compound) - Number(a.compound));
@@ -37,15 +37,7 @@ export class GymSessionGeneratorService {
       ? Number((selected.reduce((sum, item) => sum + (item.level === level ? 0.65 : 0.45) + (item.compound ? 0.15 : 0), 0) / selected.length).toFixed(2))
       : 0;
 
-    return {
-      id: `gym-session-${Date.now()}`,
-      level,
-      focus: input.focus ? [input.focus] : ['full_body'],
-      durationMin,
-      equipment,
-      steps,
-      estimatedDifficulty,
-    };
+    return { id: `gym-session-${Date.now()}`, level, focus: input.focus ? [input.focus] : ['full_body'], durationMin, equipment, steps, estimatedDifficulty };
   }
 
   private adaptLevel(level: GymLevel, progress?: Partial<GymProgress>): GymLevel {
