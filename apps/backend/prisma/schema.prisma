@@ -386,3 +386,15 @@ model PlanExecutionState {
   @@unique([userId, planId])
   @@index([userId, status, updatedAt])
 }
+model DecisionAuditEntry {
+  id String @id @default(uuid())
+  userId String
+  decisionId String
+  selectedIds Json
+  rejectedIds Json
+  blockedIds Json
+  reason String
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt])
+  @@index([userId, decisionId])
+}
