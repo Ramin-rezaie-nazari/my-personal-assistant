@@ -6,7 +6,16 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "mypersonalassistant",
-    "plugins": ["expo-router", "expo-notifications"],
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "اجازه می‌دی دوربین فقط برای مربی یوگا و تحلیل حرکت استفاده بشه؟"
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true
     }
