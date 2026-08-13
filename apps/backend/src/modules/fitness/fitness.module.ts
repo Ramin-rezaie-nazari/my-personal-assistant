@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { FitnessController } from './controllers/fitness.controller';
 import { FitnessProfileService } from './services/fitness-profile.service';
+import { FitnessProfilePersistenceService } from './services/fitness-profile-persistence.service';
 
 @Module({
   controllers: [FitnessController],
-  providers: [FitnessProfileService],
-  exports: [FitnessProfileService],
+  providers: [FitnessProfilePersistenceService, { provide: FitnessProfileService, useExisting: FitnessProfilePersistenceService }],
+  exports: [FitnessProfileService, FitnessProfilePersistenceService],
 })
 export class FitnessModule {}
