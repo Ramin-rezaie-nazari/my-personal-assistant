@@ -1,7 +1,9 @@
+import { DecisionConflictResolutionService } from './decision-conflict-resolution.service';
 import { UnifiedDecisionEngineService } from './unified-decision-engine.service';
 
 describe('UnifiedDecisionEngineService', () => {
-  const service = new UnifiedDecisionEngineService();
+  const conflicts = new DecisionConflictResolutionService();
+  const service = new UnifiedDecisionEngineService(conflicts);
 
   it('selects the strongest cross-domain action', () => {
     const result = service.decide([
