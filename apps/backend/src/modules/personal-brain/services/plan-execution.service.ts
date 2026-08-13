@@ -75,11 +75,11 @@ export class PlanExecutionService {
         continue;
       }
 
-      if (normalized === 'pending_confirmation') {
+      if (normalized === 'pending_confirmation' || normalized === 'confirmation_invalid') {
         this.state.cancel(step.candidateId);
         if (!blocked.includes(step.candidateId)) blocked.push(step.candidateId);
         await this.persistentState.save({ planId, userId, status: 'blocked', stepIds: plan.map((item) => item.candidateId), completed, blocked, failed, currentStep: step.candidateId, updatedAt: new Date() });
-        continue;
+        break;
       }
 
       this.state.fail(step.candidateId, receipt.reason);
