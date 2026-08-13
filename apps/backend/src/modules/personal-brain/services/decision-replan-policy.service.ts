@@ -9,7 +9,7 @@ export class DecisionReplanPolicyService {
     if (trigger === 'user_feedback' || trigger === 'constraint_changed' || trigger === 'candidate_expired') return true;
     if (trigger === 'context_changed') return (replacement.score ?? 0) >= (current.score ?? 0) + 0.15;
     const currentWeight = this.weight(current); const replacementWeight = this.weight(replacement);
-    return trigger === 'higher_priority_action' ? replacementWeight > currentWeight : replacementWeight >= currentWeight + 0.20;
+    return trigger === 'higher_priority_action' ? replacementWeight > currentWeight : replacementWeight >= currentWeight + 0.05;
   }
   private weight(candidate: DecisionCandidate): number { return Math.max(0, Math.min(1, candidate.priority ?? 0.5))*0.4 + Math.max(0, Math.min(1, candidate.confidence))*0.3 + Math.max(0, Math.min(1, candidate.score))*0.3; }
 }
