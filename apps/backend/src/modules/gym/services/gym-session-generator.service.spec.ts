@@ -7,11 +7,11 @@ describe('GymSessionGeneratorService', () => {
   it('uses available equipment when generating a session', () => {
     const session = service.generate({ durationMin: 40, equipment: ['dumbbells'], focus: 'shoulders' });
     expect(session.steps.length).toBeGreaterThan(0);
-    expect(session.steps.every((step) => ['lateral-raise'].includes(step.exerciseId))).toBe(true);
+    expect(session.steps.every((step) => step.exerciseId === 'lateral-raise')).toBe(true);
   });
 
   it('does not select unavailable cable-only exercises', () => {
-    const session = service.generate({ durationMin: 40, equipment: ['dumbbells'], focus: 'back' });
+    const session = service.generate({ durationMin: 40, equipment: ['dumbbells', 'bench'], focus: 'back' });
     expect(session.steps.some((step) => step.exerciseId === 'cable-row' || step.exerciseId === 'lat-pulldown')).toBe(false);
   });
 
