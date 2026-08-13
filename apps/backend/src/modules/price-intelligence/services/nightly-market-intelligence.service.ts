@@ -2,10 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PriceSourceService } from './price-source.service';
 import { PriceHistoryStoreService } from './price-history-store.service';
 import type { NormalizedPrice } from '../models/price-intelligence.model';
-
 export type NightlyMarketConfig = { hour: number; minute: number; timezone?: string; enabled: boolean; maxRetries: number; retryDelayMs: number; catchUpAfterMissedRun: boolean };
 export type NightlyRunResult = { runId: string; status: 'completed' | 'partial' | 'failed' | 'skipped'; attempts: number; collected: number; failedSources: string[]; attemptedSources: string[]; scheduledFor: Date; startedAt: Date; completedAt: Date };
-
 @Injectable()
 export class NightlyMarketIntelligenceService {
   private readonly defaults: NightlyMarketConfig = { hour: 3, minute: 30, timezone: undefined, enabled: true, maxRetries: 3, retryDelayMs: 30_000, catchUpAfterMissedRun: true };
@@ -16,8 +14,12 @@ export class NightlyMarketIntelligenceService {
     const startedAt = new Date(); const runId = `market:${scheduledFor.toISOString()}`; const policy = this.config();
     let attempts = 0; let collected: NormalizedPrice[] = []; let failedSources: string[] = []; let attemptedSources: string[] = [];
     for (attempts = 1; attempts <= Math.max(1, policy.maxRetries + 1); attempts += 1) {
-      const result = await this.sources.collectDetailed(productKeys, sourceIds);
-      collected = result.prices; failedSources = result.failedSourceIds; attemptedSources = result.attemptedSourceIds;
+      const collector = this.sources as PriceSourceService & { collectDetailed?: PriceSourceService['collectDetailed']; collect?: PriceSourceService['collect'] };
+      if (typeof collector.collectDetailed === 'function') {
+        const result = await collector.collectDetailed(productKeys, sourceIds); collected = result.prices; failedSources = result.failedSourceIds; attemptedSources = result.attemptedSourceIds;
+      } else {
+        collected = (await collector.collect?.(productKeys, sourceIds)) ?? []; failedSources = []; attemptedSources = sourceIds?.length ? sourceIds : [];
+      }
       if (!failedSources.length) break;
       if (attempts <= policy.maxRetries && policy.retryDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(policy.retryDelayMs, 250)));
     }
