@@ -6,6 +6,9 @@ export type AuthResponse = { accessToken:string; refreshToken:string; user:AuthU
 export type YogaStep = { id:string;poseId:string;order:number;phase:'warmup'|'flow'|'cooldown';holdSec:number;restSec:number;coachCues:Array<{id:string;phase:'enter'|'hold'|'exit';text:string;priority:number}> };
 export type YogaSession = { id:string;level:'beginner'|'foundation'|'intermediate'|'advanced'|'expert';focus:string[];durationMin:number;steps:YogaStep[];estimatedDifficulty:number };
 export type YogaCoachState = { sessionId:string;stepIndex:number;phase:'idle'|'enter'|'hold'|'exit'|'rest'|'completed';remainingSec:number;completedSteps:number[];currentPoseId:string|null;nextPoseId:string|null };
+export type YogaBodyLandmark = { x:number;y:number;z?:number;confidence:number };
+export type YogaPoseFrame = { capturedAt:number;landmarks:Record<string,YogaBodyLandmark>;overallConfidence:number };
+export type YogaPoseAssessment = { poseId:string;score:number;confidence:number;stable:boolean;coachReady:boolean;issues:Array<{key:string;severity:'info'|'warning'|'critical';cue:string}>;metrics:Record<string,number> };
 export async function setAuthSession(auth:AuthResponse){await AsyncStorage.multiSet([[ACCESS_TOKEN_KEY,auth.accessToken],[REFRESH_TOKEN_KEY,auth.refreshToken]])}
 export async function getStoredAccessToken(){return AsyncStorage.getItem(ACCESS_TOKEN_KEY)}
 export async function getStoredRefreshToken(){return AsyncStorage.getItem(REFRESH_TOKEN_KEY)}
@@ -19,3 +22,4 @@ export function getYogaSession(durationMin:number,level?:YogaSession['level'],fo
 export function startYogaCoach(session:YogaSession){return request<YogaCoachState>('/yoga/coach/start',{method:'POST',body:JSON.stringify({session})})}
 export function tickYogaCoach(session:YogaSession,state:YogaCoachState,elapsedSec:number){return request<YogaCoachState>('/yoga/coach/tick',{method:'POST',body:JSON.stringify({session,state,elapsedSec})})}
 export function getYogaCue(state:YogaCoachState){return request<{poseId:string;phase:YogaCoachState['phase'];text:string}|null>('/yoga/coach/cue',{method:'POST',body:JSON.stringify({state})})}
+export function analyzeYogaPose(poseId:string,frame:YogaPoseFrame){return request<YogaPoseAssessment>('/yoga/motion/analyze',{method:'POST',body:JSON.stringify({poseId,frame})})}
