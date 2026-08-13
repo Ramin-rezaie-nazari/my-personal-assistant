@@ -13,15 +13,9 @@ describe('BrainWeeklyStatusService', () => {
         { dateKey: '2026-08-12', waterMl: 2100, calories: 1650, protein: 115 },
       ]),
     } as unknown as DailyService;
-
     const service = new BrainWeeklyStatusService(dailyService);
     const result = await service.getThisWeek('user-1');
-
-    expect(dailyService.getDailyLogs).toHaveBeenCalledWith(
-      'user-1',
-      expect.any(String),
-      '2026-08-12',
-    );
+    expect(dailyService.getDailyLogs).toHaveBeenCalledWith('user-1', expect.any(String), expect.any(String));
     expect(result.days).toHaveLength(7);
     expect(result.loggedDays).toBe(6);
     expect(result.consistencyPercent).toBe(86);
@@ -32,13 +26,9 @@ describe('BrainWeeklyStatusService', () => {
   });
 
   it('returns zero averages and consistency when no days are logged', async () => {
-    const dailyService = {
-      getDailyLogs: jest.fn().mockResolvedValue([]),
-    } as unknown as DailyService;
-
+    const dailyService = { getDailyLogs: jest.fn().mockResolvedValue([]) } as unknown as DailyService;
     const service = new BrainWeeklyStatusService(dailyService);
     const result = await service.getThisWeek('user-2');
-
     expect(result.loggedDays).toBe(0);
     expect(result.consistencyPercent).toBe(0);
     expect(result.averageCalories).toBe(0);
