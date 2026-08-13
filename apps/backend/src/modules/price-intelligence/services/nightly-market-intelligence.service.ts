@@ -3,7 +3,7 @@ import { PriceSourceService } from './price-source.service';
 import { PriceHistoryStoreService } from './price-history-store.service';
 
 export type NightlyMarketConfig = { hour: number; minute: number; timezone?: string; enabled: boolean; maxRetries: number; retryDelayMs: number; catchUpAfterMissedRun: boolean };
-export type NightlyRunResult = { runId: string; status: 'completed' | 'partial' | 'failed' | 'skipped'; attempts: number; collected: number; failedSources: string[]; scheduledFor: Date; startedAt: Date; completedAt: Date };
+export type NightlyRunResult = { runId: string; status: 'completed' | 'partial' | 'failed' | 'skipped'; attempts: number; collected: number; failedSources: string[]; attemptedSources: string[]; scheduledFor: Date; startedAt: Date; completedAt: Date };
 
 @Injectable()
 export class NightlyMarketIntelligenceService {
@@ -30,15 +30,24 @@ export class NightlyMarketIntelligenceService {
     const runId = `market:${scheduledFor.toISOString()}`;
     const policy = this.config();
     let attempts = 0;
-    let prices = [];
-    const failedSources: string[] = [];
+    let collected = [];
+    let failedSources: string[] = [];
+    let attemptedSources: string[] = [];
+
     for (attempts = 1; attempts <= Math.max(1, policy.maxRetries + 1); attempts += 1) {
-      prices = await this.sources.collect(productKeys, sourceIds);
-      if (prices.length || !sourceIds?.length) break;
+      const result = await this.sources.collectDetailed(productKeys, sourceIds);
+      collected = result.prices;
+      failedSources = result.failedSourceIds;
+      attemptedSources = result.attemptedSourceIds;
+      if (!failedSources.length) break;
       if (attempts <= policy.maxRetries && policy.retryDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, Math.min(policy.retryDelayMs, 250)));
     }
-    this.history.record(prices);
-    const status: NightlyRunResult['status'] = prices.length ? (failedSources.length ? 'partial' : 'completed') : 'failed';
-    return { runId, status, attempts, collected: prices.length, failedSources, scheduledFor, startedAt, completedAt: new Date() };
+
+    this.history.record(collected);
+    const status: NightlyRunResult['status'] = collected.length
+      ? failedSources.length ? 'partial' : 'completed'
+      : 'failed';
+
+    return { runId, status, attempts, collected: collected.length, failedSources, attemptedSources, scheduledFor, startedAt, completedAt: new Date() };
   }
 }
