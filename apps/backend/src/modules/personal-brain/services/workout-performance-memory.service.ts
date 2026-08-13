@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
 
 export type ExerciseTrend = {
@@ -39,9 +40,37 @@ type Row = {
   loadKg: number | null;
 };
 
+export type RecordWorkoutPerformanceInput = {
+  userId: string;
+  discipline: string;
+  exerciseId?: string;
+  exerciseName?: string;
+  sessionId?: string;
+  workoutId?: string;
+  formScore?: number;
+  completionRate?: number;
+  perceivedDifficulty?: number;
+  recoveryScore?: number;
+  reps?: number;
+  sets?: number;
+  durationSeconds?: number;
+  loadKg?: number;
+  metadata?: Record<string, unknown>;
+  performedAt?: Date;
+};
+
 @Injectable()
 export class WorkoutPerformanceMemoryService {
   constructor(private readonly prisma: PrismaService) {}
+
+  async record(input: RecordWorkoutPerformanceInput) {
+    const id = randomUUID();
+    await this.prisma.$executeRaw`
+      INSERT INTO "WorkoutPerformance" ("id","userId","workoutId","discipline","exerciseId","exerciseName","sessionId","performedAt","formScore","completionRate","perceivedDifficulty","recoveryScore","reps","sets","durationSeconds","loadKg","metadata")
+      VALUES (${id},${input.userId},${input.workoutId ?? null},${input.discipline},${input.exerciseId ?? null},${input.exerciseName ?? null},${input.sessionId ?? null},${input.performedAt ?? new Date()},${input.formScore ?? null},${input.completionRate ?? null},${input.perceivedDifficulty ?? null},${input.recoveryScore ?? null},${input.reps ?? null},${input.sets ?? null},${input.durationSeconds ?? null},${input.loadKg ?? null},${input.metadata ? JSON.stringify(input.metadata) : null}::jsonb)
+    `;
+    return { id, recorded: true };
+  }
 
   async get(userId: string, windowDays = 28): Promise<FitnessPerformanceMemory> {
     const safeDays = Math.min(365, Math.max(7, Math.round(windowDays)));
