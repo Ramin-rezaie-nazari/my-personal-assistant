@@ -14,32 +14,12 @@ import type { BrainState } from '../types';
 
 @Injectable()
 export class BrainStateService {
-  constructor(
-    private readonly brainContextService: BrainContextService,
-    private readonly brainMemoryContextService: BrainMemoryContextService,
-    private readonly brainGoalService: BrainGoalService,
-    private readonly brainDailyStatusService: BrainDailyStatusService,
-    private readonly brainWeeklyStatusService: BrainWeeklyStatusService,
-    private readonly brainNutritionTargetsService: BrainNutritionTargetsService,
-    private readonly brainWorkoutStatusService: BrainWorkoutStatusService,
-    private readonly brainLifeContextService: BrainLifeContextService,
-    private readonly userContextService: UserContextService,
-    private readonly contextEngineService: ContextEngineService,
-    private readonly lifeContextFusionService: LifeContextFusionService,
-  ) {}
+  constructor(private readonly brainContextService: BrainContextService, private readonly brainMemoryContextService: BrainMemoryContextService, private readonly brainGoalService: BrainGoalService, private readonly brainDailyStatusService: BrainDailyStatusService, private readonly brainWeeklyStatusService: BrainWeeklyStatusService, private readonly brainNutritionTargetsService: BrainNutritionTargetsService, private readonly brainWorkoutStatusService: BrainWorkoutStatusService, private readonly brainLifeContextService: BrainLifeContextService, private readonly userContextService: UserContextService, private readonly contextEngineService: ContextEngineService, private readonly lifeContextFusionService: LifeContextFusionService) {}
 
   async buildState(query = '', userId: string): Promise<BrainState> {
     const [context, memoryContext, goals, dailyStatus, weeklyStatus, nutritionTargets, workoutStatus, lifeContext] = await Promise.all([
-      this.brainContextService.getContext(),
-      this.brainMemoryContextService.buildMemoryContext(query, userId),
-      this.brainGoalService.getGoals(userId),
-      this.brainDailyStatusService.getToday(userId),
-      this.brainWeeklyStatusService.getThisWeek(userId),
-      this.brainNutritionTargetsService.getTargets(userId),
-      this.brainWorkoutStatusService.getThisWeek(userId),
-      this.brainLifeContextService.getToday(userId),
+      this.brainContextService.getContext(), this.brainMemoryContextService.buildMemoryContext(query, userId), this.brainGoalService.getGoals(userId), this.brainDailyStatusService.getToday(userId), this.brainWeeklyStatusService.getThisWeek(userId), this.brainNutritionTargetsService.getTargets(userId), this.brainWorkoutStatusService.getThisWeek(userId), this.brainLifeContextService.getToday(userId),
     ]);
-
     const generatedContext = await this.contextEngineService.buildContext(userId);
     const fusedLifeContext = this.lifeContextFusionService.build(userId, {
       calendar: { value: lifeContext.reminders ?? {}, source: 'brain-life-context', observedAt: new Date(), confidence: 0.85 },
@@ -49,14 +29,11 @@ export class BrainStateService {
       supplements: { value: lifeContext.supplements ?? {}, source: 'brain-life-context', observedAt: new Date(), confidence: 0.9 },
       nutrition: { value: { nutritionTargets }, source: 'brain-nutrition-targets', observedAt: new Date(), confidence: 0.9 },
       memory: { value: { memories: memoryContext.memories }, source: 'brain-memory-context', observedAt: new Date(), confidence: 0.95 },
-      shopping: { value: {}, source: 'shopping', observedAt: null, confidence: 0 },
-      budget: { value: {}, source: 'budget', observedAt: null, confidence: 0 },
-      wearable: { value: {}, source: 'wearable', observedAt: null, confidence: 0 },
+      shopping: { value: {}, source: 'shopping', observedAt: null, confidence: 0 }, budget: { value: {}, source: 'budget', observedAt: null, confidence: 0 }, wearable: { value: {}, source: 'wearable', observedAt: null, confidence: 0 },
     });
-
+    const normalizedWearable = fusedLifeContext.wearable.observedAt ? fusedLifeContext.wearable : { ...fusedLifeContext.wearable, freshness: 'missing' };
     const userContext = this.userContextService.build({ context: { ...generatedContext, timestamp: new Date().toISOString(), source: 'context-engine' }, goals, memories: memoryContext.memories });
-    const normalizedLifeContext = { ...lifeContext, userId: fusedLifeContext.userId, generatedAt: fusedLifeContext.generatedAt, memory: fusedLifeContext.memory, wearable: fusedLifeContext.wearable };
-
+    const normalizedLifeContext = { ...lifeContext, userId: fusedLifeContext.userId, generatedAt: fusedLifeContext.generatedAt, memory: fusedLifeContext.memory, wearable: normalizedWearable };
     return { userContext, context: { ...generatedContext, timestamp: new Date().toISOString(), source: 'context-engine' }, memories: memoryContext.memories, goals, dailyStatus, weeklyStatus, nutritionTargets, workoutStatus, lifeContext: normalizedLifeContext };
   }
 }
