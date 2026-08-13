@@ -11,7 +11,7 @@ export type DecisionSafetyPolicy = {
 export class DecisionSafetyGuardService {
   sanitize(result: UnifiedDecision, policy: DecisionSafetyPolicy = {}): UnifiedDecision {
     const blockedDomains = new Set(policy.blockedDomains ?? []);
-    const maxActions = Math.max(1, (policy.maxActions ?? result.selected.length) || 1);
+    const maxActions = Math.max(1, policy.maxActions ?? (result.selected.length || 1));
     const maxPerDomain = Math.max(1, policy.maxPerDomain ?? Number.MAX_SAFE_INTEGER);
     const domainCounts = new Map<string, number>();
     const selected: DecisionCandidate[] = [];
@@ -27,11 +27,6 @@ export class DecisionSafetyGuardService {
       selected.push(candidate);
     }
 
-    return {
-      ...result,
-      selected,
-      rejected: [...result.rejected, ...safetyRejected],
-      reason: safetyRejected.length ? `${result.reason};safety_guard_applied` : result.reason,
-    };
+    return { ...result, selected, rejected: [...result.rejected, ...safetyRejected], reason: safetyRejected.length ? `${result.reason};safety_guard_applied` : result.reason };
   }
 }
