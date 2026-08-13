@@ -52,3 +52,5 @@ export class NutritionService {
     return value;
   }
 }
+
+// CI verification marker: keep this file in the backend workflow path.
