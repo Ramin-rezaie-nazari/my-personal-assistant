@@ -4,6 +4,7 @@ import { LearningService } from '../../user-intelligence/services/learning.servi
 import { FitnessProfileService } from '../../fitness/services/fitness-profile.service';
 import { WorkoutPerformanceMemoryService } from './workout-performance-memory.service';
 import { DecisionExplanationMemoryService } from './decision-explanation-memory.service';
+import { DecisionOutcomeLearningService } from './decision-outcome-learning.service';
 import { BrainLifeContext } from '../types';
 
 type GoalRow = { id: string; title: string; category: string; priority: number; progressPercent: number; targetDate: Date | null };
@@ -16,11 +17,12 @@ export class BrainLifeContextService {
     private readonly fitness: FitnessProfileService,
     private readonly performanceMemory: WorkoutPerformanceMemoryService,
     private readonly decisionMemory: DecisionExplanationMemoryService,
+    private readonly outcomeMemory: DecisionOutcomeLearningService,
   ) {}
 
   async getToday(userId: string, dateKey = new Date().toISOString().slice(0, 10)): Promise<BrainLifeContext & { adaptive: Awaited<ReturnType<LearningService['buildProfile']>> }> {
     const end = new Date(`${dateKey}T23:59:59.999Z`); const start = new Date(end); start.setUTCDate(start.getUTCDate() - 6);
-    const [habits, pendingReminders, nextReminder, supplements, goals, adaptive, fitnessContext, performanceMemory, decisionMemory] = await Promise.all([
+    const [habits, pendingReminders, nextReminder, supplements, goals, adaptive, fitnessContext, performanceMemory, decisionMemory, outcomeMemory] = await Promise.all([
       this.prisma.habit.findMany({ where: { userId, active: true }, include: { logs: { where: { dateKey: { gte: this.key(start), lte: dateKey } } } }, orderBy: { createdAt: 'asc' } }),
       this.prisma.reminder.count({ where: { userId, completed: false } }),
       this.prisma.reminder.findFirst({ where: { userId, completed: false, scheduledAt: { gte: new Date() } }, orderBy: { scheduledAt: 'asc' } }),
@@ -30,6 +32,7 @@ export class BrainLifeContextService {
       this.fitness.buildRecommendationContext(userId),
       this.performanceMemory.get(userId, 28),
       this.decisionMemory.trend(userId, 90),
+      this.outcomeMemory.profile(userId),
     ]);
     const completedThisWeek = habits.reduce((sum, h) => sum + h.logs.length, 0); const possible = habits.reduce((sum, h) => sum + Math.min(h.targetPerWeek, 7), 0);
     const habitItems = habits.map(h => { const dates = new Set(h.logs.map(l => l.dateKey)); let streak = 0; for (let i = 0; i < 14; i++) { const d = new Date(`${dateKey}T00:00:00.000Z`); d.setUTCDate(d.getUTCDate() - i); if (!dates.has(this.key(d))) break; streak++; } return { id: h.id, name: h.name, targetPerWeek: h.targetPerWeek, completedThisWeek: h.logs.length, streak }; });
@@ -60,6 +63,7 @@ export class BrainLifeContextService {
         performanceMemory,
       },
       decisionMemory,
+      outcomeMemory,
       adaptive,
     };
   }
