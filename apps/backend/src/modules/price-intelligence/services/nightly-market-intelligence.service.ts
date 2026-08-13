@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PriceSourceService } from './price-source.service';
 import { PriceHistoryStoreService } from './price-history-store.service';
+import type { NormalizedPrice } from '../models/price-intelligence.model';
 
 export type NightlyMarketConfig = { hour: number; minute: number; timezone?: string; enabled: boolean; maxRetries: number; retryDelayMs: number; catchUpAfterMissedRun: boolean };
 export type NightlyRunResult = { runId: string; status: 'completed' | 'partial' | 'failed' | 'skipped'; attempts: number; collected: number; failedSources: string[]; attemptedSources: string[]; scheduledFor: Date; startedAt: Date; completedAt: Date };
@@ -30,7 +31,7 @@ export class NightlyMarketIntelligenceService {
     const runId = `market:${scheduledFor.toISOString()}`;
     const policy = this.config();
     let attempts = 0;
-    let collected = [];
+    let collected: NormalizedPrice[] = [];
     let failedSources: string[] = [];
     let attemptedSources: string[] = [];
 
