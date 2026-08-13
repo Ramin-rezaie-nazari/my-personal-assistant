@@ -4,7 +4,7 @@
 
 My Personal Assistant is a comprehensive lifestyle assistant platform designed to help users manage health, nutrition, fitness, habits, planning, and daily life through intelligent automation.
 
-The long-term goal is to build a friendly AI-powered personal companion that understands the user's lifestyle and provides proactive assistance.
+The long-term goal is to build a friendly personal Brain that understands the user's lifestyle, remembers meaningful history, explains its decisions, executes actions safely, learns from outcomes, and provides proactive assistance.
 
 ---
 
@@ -22,13 +22,24 @@ The long-term goal is to build a friendly AI-powered personal companion that und
 - Habits
 - Calendar
 - Reminders
-- AI Assistant
+- Personal Brain
+- Yoga
+- Calisthenics
+- Gym / Bodybuilding
+- Proactive Coach
+- Notifications
 
 ---
 
 ## Current Phase
 
-Foundation & Backend Architecture
+Brain-centered architecture, fitness intelligence, long-term memory, outcome learning, proactive coaching, and hands-free coach foundations.
+
+For the detailed implementation history, Brain reasoning model, file/folder connections, database map, decision architecture and living engineering changelog, see:
+
+**[03_PROJECT_BRAIN_BOOK.md](./03_PROJECT_BRAIN_BOOK.md)**
+
+That file is the permanent living project record. Every major implementation change must be documented there.
 
 ---
 
@@ -48,13 +59,20 @@ Foundation & Backend Architecture
 - Jest
 - Supertest
 - ESLint
+- GitHub Actions workflows for backend and mobile validation
 
 ---
 
 ## Engineering Principles
 
 - Security first
+- Privacy aware
 - Scalable architecture
 - Clean separation of modules
 - Test-driven development
 - Documentation-driven decisions
+- Deterministic domain intelligence before paid AI dependency
+- User-specific personalization
+- Explainable decisions
+- Outcome-based learning with bounded confidence updates
+- Mobile/device abstractions that avoid locking core logic to one provider
