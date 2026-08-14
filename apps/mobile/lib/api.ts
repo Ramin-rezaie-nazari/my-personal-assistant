@@ -21,13 +21,14 @@ export type NutritionSummary = { dateKey:string; meals:{count:number;calories:nu
 export type FoodItem = { id:string;name:string;category:string;calories:number;protein:number;carbs:number;fat:number;imageUrl?:string|null;verified:boolean };
 export type Meal = { id:string;name:string;type:string;eatenAt:string;calories:number;protein:number;carbs:number;fat:number;items:Array<{id:string;foodId:string;quantity:number;calories:number;protein:number;carbs:number;fat:number;food:FoodItem}> };
 export type PlanExecutionState = { planId:string; userId:string; status:string; stepIds:string[]; completed:string[]; blocked:string[]; failed:string[]; currentStep:string|null; updatedAt:string };
-export type DecisionTrace = { id:string; decisionId:string; userId:string; selectedIds:string[]; rejectedIds:string[]; blockedIds:string[]; reason:string; createdAt:string };
+export type DecisionTrace = { id:string;decisionId:string;userId:string;selectedIds:string[];rejectedIds:string[];blockedIds:string[];reason:string;createdAt:string };
 export type YogaStep = { id:string;poseId:string;order:number;phase:'warmup'|'flow'|'cooldown';holdSec:number;restSec:number;coachCues:Array<{id:string;phase:'enter'|'hold'|'exit';text:string;priority:number}> };
 export type YogaSession = { id:string;level:'beginner'|'foundation'|'intermediate'|'advanced'|'expert';focus:string[];durationMin:number;steps:YogaStep[];estimatedDifficulty:number };
 export type YogaCoachState = { sessionId:string;stepIndex:number;phase:'idle'|'enter'|'hold'|'exit'|'completed'|'rest';remainingSec:number;completedSteps:number[];currentPoseId:string|null;nextPoseId:string|null };
 export type YogaBodyLandmark = { x:number;y:number;z?:number;confidence:number };
 export type YogaPoseFrame = { capturedAt:number;landmarks:Record<string,YogaBodyLandmark>;overallConfidence:number };
 export type YogaPoseAssessment = { poseId:string;score:number;confidence:number;stable:boolean;coachReady:boolean;issues:Array<{key:string;severity:'info'|'warning'|'critical';cue:string}>;metrics:Record<string,number> };
+export type BrainOverview = { plan:unknown; nextAction:{action:{id:string;title:string;estimatedMinutes:number;priority:number;urgent:boolean;reasons:string[]}|null;mode:string;message?:string;alternatives:unknown[];signals:unknown[]}; coachNext:unknown; scheduleHealth:unknown };
 export async function setAuthSession(auth:AuthResponse){await AsyncStorage.multiSet([[ACCESS_TOKEN_KEY,auth.accessToken],[REFRESH_TOKEN_KEY,auth.refreshToken]])}
 export function setAccessToken(token:string){return AsyncStorage.setItem(ACCESS_TOKEN_KEY,token)}
 export async function getStoredAccessToken(){return AsyncStorage.getItem(ACCESS_TOKEN_KEY)}
@@ -49,6 +50,8 @@ export function getBrainContext(dateKey?:string){const q=dateKey?`?dateKey=${enc
 export function getDailyCommandCenter(){return request<DailyCommandCenterResponse>('/daily-command-center')}
 export function getDecisionTrace(){return request<DecisionTrace[]>('/personal-brain/trace')}
 export function getPlanHistory(limit=10){return request<PlanExecutionState[]>(`/personal-brain/plan/history?limit=${Math.max(1,Math.min(10,Math.round(limit)))}`)}
+export function getBrainOverview(){return request<BrainOverview>('/personal-brain/overview')}
+export function recordDecisionOutcome(data:{decisionId:string;outcome:'positive'|'neutral'|'negative';score?:number;note?:string}){return request('/personal-brain/decision/outcome',{method:'POST',body:JSON.stringify(data)})}
 export function addWater(amountMl:number,dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<{waterMl:number}>(`/daily/water${q}`,{method:'POST',body:JSON.stringify({amountMl})})}
 export function createWorkout(data:{name:string;type:string;durationMinutes:number;caloriesBurned:number}){return request('/workout',{method:'POST',body:JSON.stringify(data)})}
 export function getReminders(includeCompleted=false){return request<Reminder[]>(`/reminders${includeCompleted?'?includeCompleted=true':''}`)}
