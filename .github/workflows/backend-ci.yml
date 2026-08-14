@@ -7,7 +7,6 @@ on:
     branches: [main]
     paths:
       - 'apps/backend/**'
-      - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/backend-ci.yml'
 
