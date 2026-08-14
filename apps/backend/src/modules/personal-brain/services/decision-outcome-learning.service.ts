@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
@@ -34,12 +34,26 @@ export class DecisionOutcomeLearningService {
   constructor(private readonly prisma: PrismaService) {}
 
   async record(input: DecisionOutcomeInput) {
+    const userId = input.userId.trim();
+    const decisionId = input.decisionId.trim();
+    if (!userId || !decisionId) throw new BadRequestException('userId and decisionId are required');
+    if (!['positive', 'neutral', 'negative'].includes(input.outcome)) {
+      throw new BadRequestException('invalid outcome');
+    }
+
+    const score = input.score === undefined ? null : Number(input.score);
+    if (score !== null && (!Number.isFinite(score) || score < -1 || score > 1)) {
+      throw new BadRequestException('score must be a finite number between -1 and 1');
+    }
+
+    const note = input.note?.trim().slice(0, 1000) || null;
+    const source = input.source ?? 'user';
     const id = randomUUID();
     await this.prisma.$executeRaw`
       INSERT INTO "DecisionOutcome" ("id", "userId", "decisionId", "outcome", "score", "note", "source")
-      VALUES (${id}, ${input.userId}, ${input.decisionId}, ${input.outcome}, ${input.score ?? null}, ${input.note ?? null}, ${input.source ?? 'user'})
+      VALUES (${id}, ${userId}, ${decisionId}, ${input.outcome}, ${score}, ${note}, ${source})
     `;
-    return { id, ...input, source: input.source ?? 'user' };
+    return { id, userId, decisionId, outcome: input.outcome, score, note, source };
   }
 
   async profile(userId: string, decisionId?: string): Promise<DecisionOutcomeProfile> {
