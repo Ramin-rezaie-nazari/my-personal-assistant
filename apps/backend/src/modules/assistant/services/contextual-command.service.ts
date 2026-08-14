@@ -13,11 +13,13 @@ export type ContextualCommand = {
     quantity?: number;
     time?: string;
     durationMinutes?: number;
+    relativeMinutes?: number;
+    ordinal?: number;
     date?: string;
     negated?: boolean;
     confirmation?: 'yes' | 'no';
   };
-};
+}
 
 @Injectable()
 export class ContextualCommandService {
@@ -71,6 +73,11 @@ export class ContextualCommandService {
     if (time) entities.time = `${time[1].padStart(2, '0')}:${time[2]}`;
     const duration = text.match(/\b(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\b/i);
     if (duration) entities.durationMinutes = Number(duration[1]);
+    const relative = text.match(/\b(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\s*(?:بعد|دیگه|later|from now)\b/i);
+    if (relative) entities.relativeMinutes = Number(relative[1]);
+    if (this.matches(text, ['اول', 'اولی', 'first'])) entities.ordinal = 1;
+    else if (this.matches(text, ['دوم', 'دومی', 'second'])) entities.ordinal = 2;
+    else if (this.matches(text, ['سوم', 'سومی', 'third'])) entities.ordinal = 3;
     if (this.matches(text, ['امروز', 'today'])) entities.date = 'today';
     else if (this.matches(text, ['فردا', 'tomorrow'])) entities.date = 'tomorrow';
     else if (this.matches(text, ['پس فردا', 'پس‌فردا'])) entities.date = 'day_after_tomorrow';
