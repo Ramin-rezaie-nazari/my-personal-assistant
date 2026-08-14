@@ -25,10 +25,9 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
   controllers: [AssistantController],
   providers: [
     KnowledgeService, RuleEngineService, PlanningService, AssistantService, MemoryService, ContextService,
-    ReasoningService, RecommendationService, PlanningService, NaturalActionExecutionService,
-    ConversationHistoryService, ConversationContextService, ContextualCommandService,
-    AiProviderRouterService, LocalLanguageUnderstandingService, LocalIntelligenceProvider,
-    LocalBasketActionAdapter,
+    ReasoningService, RecommendationService, NaturalActionExecutionService, ConversationHistoryService,
+    ConversationContextService, ContextualCommandService, AiProviderRouterService,
+    LocalLanguageUnderstandingService, LocalIntelligenceProvider, LocalBasketActionAdapter,
   ],
   exports: [
     AssistantService, MemoryService, ContextService, ReasoningService, RecommendationService,
