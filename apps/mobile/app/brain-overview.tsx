@@ -2,7 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
-import { BrainOverview, getBrainOverview, hasAuthSession, recordDecisionOutcome } from '../lib/api';
+import { BrainOverview, getBrainOverview, hasAuthSession } from '../lib/api';
+import { confirmNextBestAction, executeNextBestAction, recordBrainFeedback } from '../lib/brain-execution';
 
 function pretty(value: unknown) {
   if (value == null) return 'No signal yet.';
@@ -18,8 +19,9 @@ export default function BrainOverviewScreen() {
   const [data, setData] = useState<BrainOverview | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [feedbackBusy, setFeedbackBusy] = useState<string | null>(null);
-  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [confirmationToken, setConfirmationToken] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -32,16 +34,53 @@ export default function BrainOverviewScreen() {
 
   useEffect(() => { void hasAuthSession().then((ok) => { if (ok) void load(); else { setError('Please sign in first.'); setLoading(false); } }); }, [load]);
 
-  const sendFeedback = useCallback(async (outcome: 'positive' | 'neutral' | 'negative') => {
+  const execute = useCallback(async () => {
+    try {
+      setBusy('execute'); setError(null); setMessage(null);
+      const receipt = await executeNextBestAction();
+      if (receipt.status === 'pending_confirmation' && receipt.confirmationToken) {
+        setConfirmationToken(receipt.confirmationToken);
+        setMessage('This action needs your confirmation before it can run.');
+      } else if (receipt.status === 'completed') {
+        setMessage('Done — the action was executed successfully.');
+        await load();
+      } else {
+        setMessage(`${receipt.status}: ${receipt.reason}`);
+      }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Unable to execute the next action'); }
+    finally { setBusy(null); }
+  }, [load]);
+
+  const confirm = useCallback(async () => {
+    if (!confirmationToken) return;
+    try {
+      setBusy('confirm'); setError(null); setMessage(null);
+      const receipt = await confirmNextBestAction(confirmationToken);
+      setConfirmationToken(null);
+      if (receipt.status === 'completed') {
+        setMessage('Confirmed and completed.');
+        await load();
+      } else {
+        setMessage(`${receipt.status}: ${receipt.reason}`);
+      }
+    } catch (err) { setError(err instanceof Error ? err.message : 'Unable to confirm the action'); }
+    finally { setBusy(null); }
+  }, [confirmationToken, load]);
+
+  const sendFeedback = useCallback(async (outcome: 'completed' | 'skipped' | 'dismissed') => {
     const action = data?.nextAction?.action;
     if (!action) return;
     try {
-      setFeedbackBusy(outcome); setFeedbackMessage(null); setError(null);
-      await recordDecisionOutcome({ decisionId: action.id, outcome, score: outcome === 'positive' ? 1 : outcome === 'negative' ? -1 : 0, note: outcome === 'positive' ? 'User marked next action as done.' : outcome === 'negative' ? 'User marked next action as not useful.' : 'User chose to defer the next action.' });
-      setFeedbackMessage(outcome === 'positive' ? 'Nice — outcome recorded.' : outcome === 'negative' ? 'Got it — we will treat this as negative feedback.' : 'Deferred — we will keep this as neutral feedback.');
+      setBusy(outcome); setError(null); setMessage(null);
+      await recordBrainFeedback({
+        candidate: { id: action.id, domain: 'schedule', action: 'complete_life_task', priority: action.priority, source: 'mobile_brain', durationMinutes: action.estimatedMinutes, confidence: 1 },
+        outcome,
+        note: outcome === 'completed' ? 'User marked next action as done.' : outcome === 'dismissed' ? 'User marked next action as not useful.' : 'User deferred the next action.',
+      });
+      setMessage(outcome === 'completed' ? 'Outcome recorded.' : outcome === 'dismissed' ? 'Got it — negative feedback recorded.' : 'Deferred — recorded as skipped.');
       await load();
     } catch (err) { setError(err instanceof Error ? err.message : 'Unable to record feedback'); }
-    finally { setFeedbackBusy(null); }
+    finally { setBusy(null); }
   }, [data, load]);
 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
@@ -53,29 +92,27 @@ export default function BrainOverviewScreen() {
       <View style={styles.nav}><Link href="/" asChild><Pressable><Text style={styles.back}>← Home</Text></Pressable></Link><Link href="/assistant" asChild><Pressable><Text style={styles.back}>Assistant</Text></Pressable></Link></View>
       <Text style={styles.eyebrow}>PERSONAL BRAIN</Text>
       <Text style={styles.title}>Your assistant's live view</Text>
-      <Text style={styles.subtitle}>The mobile app is consuming the same decision layer that powers planning, next actions, coaching and schedule health.</Text>
+      <Text style={styles.subtitle}>Plan, execute, observe and learn — with the same safety layer protecting every action.</Text>
       {error ? <View style={styles.errorCard}><Text style={styles.errorTitle}>Brain unavailable</Text><Text style={styles.errorText}>{error}</Text><Pressable onPress={() => void load()} style={styles.retry}><Text style={styles.retryText}>Retry</Text></Pressable></View> : null}
-      {feedbackMessage ? <View style={styles.successCard}><Text style={styles.successText}>{feedbackMessage}</Text></View> : null}
+      {message ? <View style={styles.successCard}><Text style={styles.successText}>{message}</Text></View> : null}
       {action ? <View style={styles.actionCard}>
         <Text style={styles.actionEyebrow}>{data?.nextAction.mode === 'urgent' ? 'URGENT NEXT ACTION' : 'NEXT BEST ACTION'}</Text>
         <Text style={styles.actionTitle}>{action.title}</Text>
         <Text style={styles.actionMeta}>{action.estimatedMinutes} min · priority {action.priority}{action.urgent ? ' · due now' : ''}</Text>
         {action.reasons.length ? <Text style={styles.actionReason}>{action.reasons.join(' · ')}</Text> : null}
+        {!confirmationToken ? <Pressable disabled={!!busy} onPress={() => void execute()} style={({ pressed }) => [styles.executeButton, pressed && styles.pressed]}><Text style={styles.executeText}>{busy === 'execute' ? 'Executing…' : '▶ Do it'}</Text></Pressable> : null}
+        {confirmationToken ? <Pressable disabled={!!busy} onPress={() => void confirm()} style={({ pressed }) => [styles.confirmButton, pressed && styles.pressed]}><Text style={styles.executeText}>{busy === 'confirm' ? 'Confirming…' : 'Confirm & do it'}</Text></Pressable> : null}
         <Text style={styles.feedbackPrompt}>What happened?</Text>
         <View style={styles.feedbackRow}>
-          <Pressable disabled={!!feedbackBusy} onPress={() => void sendFeedback('positive')} style={({ pressed }) => [styles.feedbackButton, styles.positive, pressed && styles.pressed]}><Text style={styles.feedbackText}>{feedbackBusy === 'positive' ? '…' : '✓ Done'}</Text></Pressable>
-          <Pressable disabled={!!feedbackBusy} onPress={() => void sendFeedback('neutral')} style={({ pressed }) => [styles.feedbackButton, styles.neutral, pressed && styles.pressed]}><Text style={styles.feedbackText}>{feedbackBusy === 'neutral' ? '…' : 'Later'}</Text></Pressable>
-          <Pressable disabled={!!feedbackBusy} onPress={() => void sendFeedback('negative')} style={({ pressed }) => [styles.feedbackButton, styles.negative, pressed && styles.pressed]}><Text style={styles.feedbackText}>{feedbackBusy === 'negative' ? '…' : 'Not useful'}</Text></Pressable>
+          <Pressable disabled={!!busy} onPress={() => void sendFeedback('completed')} style={({ pressed }) => [styles.feedbackButton, styles.positive, pressed && styles.pressed]}><Text style={styles.feedbackText}>{busy === 'completed' ? '…' : '✓ Done'}</Text></Pressable>
+          <Pressable disabled={!!busy} onPress={() => void sendFeedback('skipped')} style={({ pressed }) => [styles.feedbackButton, styles.neutral, pressed && styles.pressed]}><Text style={styles.feedbackText}>{busy === 'skipped' ? '…' : 'Later'}</Text></Pressable>
+          <Pressable disabled={!!busy} onPress={() => void sendFeedback('dismissed')} style={({ pressed }) => [styles.feedbackButton, styles.negative, pressed && styles.pressed]}><Text style={styles.feedbackText}>{busy === 'dismissed' ? '…' : 'Not useful'}</Text></Pressable>
         </View>
       </View> : null}
-      {data ? <>
-        <BrainCard title="Current plan" emoji="🧭" value={data.plan} />
-        <BrainCard title="Coach" emoji="🗣️" value={data.coachNext} />
-        <BrainCard title="Schedule health" emoji="❤️" value={data.scheduleHealth} />
-      </> : null}
+      {data ? <><BrainCard title="Current plan" emoji="🧭" value={data.plan} /><BrainCard title="Coach" emoji="🗣️" value={data.coachNext} /><BrainCard title="Schedule health" emoji="❤️" value={data.scheduleHealth} /></> : null}
       <Text style={styles.footer}>Deterministic decisioning · bounded learning · safety preserved</Text>
     </ScrollView>
   </SafeAreaView>;
 }
 
-const styles = StyleSheet.create({ safe:{flex:1,backgroundColor:'#F7F8FA'}, content:{padding:20,gap:14,paddingBottom:34}, center:{flex:1,justifyContent:'center',alignItems:'center',backgroundColor:'#F7F8FA'}, nav:{flexDirection:'row',justifyContent:'space-between'}, back:{color:'#374151',fontWeight:'800',paddingVertical:8}, eyebrow:{color:'#6B7280',fontSize:11,fontWeight:'800',letterSpacing:1.5,marginTop:8}, title:{color:'#111827',fontSize:30,fontWeight:'900'}, subtitle:{color:'#6B7280',fontSize:14,lineHeight:20}, card:{backgroundColor:'#FFFFFF',borderRadius:20,padding:18}, cardTitle:{color:'#111827',fontSize:17,fontWeight:'800'}, cardBody:{color:'#374151',fontSize:12,lineHeight:18,marginTop:12}, actionCard:{backgroundColor:'#111827',borderRadius:22,padding:20}, actionEyebrow:{color:'#A7F3D0',fontSize:11,fontWeight:'900',letterSpacing:1.2}, actionTitle:{color:'#FFFFFF',fontSize:24,fontWeight:'900',marginTop:8}, actionMeta:{color:'#D1D5DB',marginTop:7,fontSize:13}, actionReason:{color:'#9CA3AF',marginTop:8,fontSize:12}, feedbackPrompt:{color:'#FFFFFF',fontSize:13,fontWeight:'800',marginTop:18}, feedbackRow:{flexDirection:'row',gap:8,marginTop:10}, feedbackButton:{flex:1,borderRadius:12,paddingVertical:12,alignItems:'center'}, positive:{backgroundColor:'#10B981'}, neutral:{backgroundColor:'#374151'}, negative:{backgroundColor:'#7F1D1D'}, feedbackText:{color:'#FFFFFF',fontWeight:'900',fontSize:12}, errorCard:{backgroundColor:'#FEF2F2',borderRadius:18,padding:18}, errorTitle:{color:'#991B1B',fontWeight:'900'}, errorText:{color:'#7F1D1D',marginTop:6}, retry:{alignSelf:'flex-start',marginTop:12,backgroundColor:'#111827',paddingHorizontal:14,paddingVertical:9,borderRadius:10}, retryText:{color:'#FFFFFF',fontWeight:'800'}, successCard:{backgroundColor:'#ECFDF5',borderRadius:16,padding:14}, successText:{color:'#065F46',fontWeight:'800'}, pressed:{opacity:0.75}, footer:{color:'#9CA3AF',textAlign:'center',fontSize:10,marginTop:4} });
+const styles = StyleSheet.create({ safe:{flex:1,backgroundColor:'#F7F8FA'}, content:{padding:20,gap:14,paddingBottom:34}, center:{flex:1,justifyContent:'center',alignItems:'center',backgroundColor:'#F7F8FA'}, nav:{flexDirection:'row',justifyContent:'space-between'}, back:{color:'#374151',fontWeight:'800',paddingVertical:8}, eyebrow:{color:'#6B7280',fontSize:11,fontWeight:'800',letterSpacing:1.5,marginTop:8}, title:{color:'#111827',fontSize:30,fontWeight:'900'}, subtitle:{color:'#6B7280',fontSize:14,lineHeight:20}, card:{backgroundColor:'#FFFFFF',borderRadius:20,padding:18}, cardTitle:{color:'#111827',fontSize:17,fontWeight:'800'}, cardBody:{color:'#374151',fontSize:12,lineHeight:18,marginTop:12}, actionCard:{backgroundColor:'#111827',borderRadius:22,padding:20}, actionEyebrow:{color:'#A7F3D0',fontSize:11,fontWeight:'900',letterSpacing:1.2}, actionTitle:{color:'#FFFFFF',fontSize:24,fontWeight:'900',marginTop:8}, actionMeta:{color:'#D1D5DB',marginTop:7,fontSize:13}, actionReason:{color:'#9CA3AF',marginTop:8,fontSize:12}, executeButton:{marginTop:18,borderRadius:14,paddingVertical:14,alignItems:'center',backgroundColor:'#10B981'}, confirmButton:{marginTop:18,borderRadius:14,paddingVertical:14,alignItems:'center',backgroundColor:'#F59E0B'}, executeText:{color:'#FFFFFF',fontWeight:'900',fontSize:14}, feedbackPrompt:{color:'#FFFFFF',fontSize:13,fontWeight:'800',marginTop:18}, feedbackRow:{flexDirection:'row',gap:8,marginTop:10}, feedbackButton:{flex:1,borderRadius:12,paddingVertical:12,alignItems:'center'}, positive:{backgroundColor:'#10B981'}, neutral:{backgroundColor:'#374151'}, negative:{backgroundColor:'#7F1D1D'}, feedbackText:{color:'#FFFFFF',fontWeight:'900',fontSize:12}, errorCard:{backgroundColor:'#FEF2F2',borderRadius:18,padding:18}, errorTitle:{color:'#991B1B',fontWeight:'900'}, errorText:{color:'#7F1D1D',marginTop:6}, retry:{alignSelf:'flex-start',marginTop:12,backgroundColor:'#111827',paddingHorizontal:14,paddingVertical:9,borderRadius:10}, retryText:{color:'#FFFFFF',fontWeight:'800'}, successCard:{backgroundColor:'#ECFDF5',borderRadius:16,padding:14}, successText:{color:'#065F46',fontWeight:'800'}, pressed:{opacity:0.75}, footer:{color:'#9CA3AF',textAlign:'center',fontSize:10,marginTop:4} });
