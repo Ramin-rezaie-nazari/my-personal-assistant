@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
+import { LocalIntelligenceProvider } from '../providers/local-intelligence.provider';
 import { AiProvider, AiProviderRequest, AiProviderResponse } from './ai-provider.types';
 
 @Injectable()
 export class AiProviderRouterService {
   private readonly providers: AiProvider[] = [];
   private readonly cooldownUntil = new Map<string, number>();
+
+  constructor(private readonly localProvider: LocalIntelligenceProvider) {
+    this.register(localProvider);
+  }
 
   register(provider: AiProvider): void {
     if (!this.providers.some((candidate) => candidate.id === provider.id)) this.providers.push(provider);
