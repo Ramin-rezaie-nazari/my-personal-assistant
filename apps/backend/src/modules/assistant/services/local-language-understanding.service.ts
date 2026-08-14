@@ -12,7 +12,7 @@ export type LocalIntent =
 
 export type LocalUnderstanding = {
   intent: LocalIntent;
-  entities: Record<string, string | number | boolean>;
+  entities: Record<string, string | number | boolean | string[]>;
   confidence: number;
   normalizedText: string;
 };
@@ -21,54 +21,47 @@ export type LocalUnderstanding = {
 export class LocalLanguageUnderstandingService {
   understand(input: string): LocalUnderstanding {
     const normalizedText = this.normalize(input);
-    const entities: Record<string, string | number | boolean> = {};
-
+    const entities: Record<string, string | number | boolean | string[]> = {};
     const quantity = this.extractQuantity(normalizedText);
     if (quantity !== undefined) entities.quantity = quantity;
-
     const time = normalizedText.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
     if (time) entities.time = `${time[1].padStart(2, '0')}:${time[2]}`;
-
     const duration = normalizedText.match(/\b(\d{1,3})\s*(?:دقیقه|min|mins|minute|minutes)\b/i);
     if (duration) entities.durationMinutes = Number(duration[1]);
-
     const calories = normalizedText.match(/\b(\d{2,5})\s*(?:کالری|cal|calories)\b/i);
     if (calories) entities.calories = Number(calories[1]);
-
+    const mealType = this.findMealType(normalizedText);
+    if (mealType) entities.mealType = mealType;
     const food = this.findFood(normalizedText);
     if (food) entities.food = food;
+    const referencesPrevious = this.hasReference(normalizedText);
+    if (referencesPrevious) entities.referencesPrevious = true;
+    const negations = this.findNegatedFoods(normalizedText);
+    if (negations.length) entities.excludedFoods = negations;
+    const wantsAutomation = this.matches(normalizedText, ['خودت', 'اتوماتیک', 'هوشمند', 'خودکار', 'automatically', 'smartly']);
+    if (wantsAutomation) entities.wantsAutomation = true;
 
-    const reference = this.hasReference(normalizedText);
-    if (reference) entities.referencesPrevious = true;
-
-    if (this.matches(normalizedText, ['لغو', 'کنسل', 'باطل', 'حذفش کن', 'بیخیال', 'cancel', 'delete'])) {
-      return this.result('CANCEL_REQUEST', entities, reference ? 0.97 : 0.91, normalizedText);
+    if (this.matches(normalizedText, ['لغو', 'کنسل', 'باطل', 'حذفش کن', 'بیخیال', 'cancel'])) {
+      return this.result('CANCEL_REQUEST', entities, referencesPrevious ? 0.98 : 0.91, normalizedText);
     }
-
-    if (reference && this.matches(normalizedText, ['تغییر', 'عوض', 'کن', 'بکن', 'ویرایش', 'update', 'change'])) {
+    if (referencesPrevious && this.matches(normalizedText, ['تغییر', 'عوض', 'کن', 'بکن', 'ویرایش', 'update', 'change'])) {
       return this.result('UPDATE_REQUEST', entities, 0.96, normalizedText);
     }
-
     if (food && this.matches(normalizedText, ['اضافه', 'بذار', 'بگذار', 'بخر', 'خرید', 'سبد', 'اضافه کن', 'add', 'basket'])) {
-      return this.result('ADD_TO_BASKET', entities, 0.96, normalizedText);
+      return this.result('ADD_TO_BASKET', entities, 0.97, normalizedText);
     }
-
     if (food && this.matches(normalizedText, ['حذف', 'بردار', 'پاک', 'remove', 'delete'])) {
-      return this.result('REMOVE_FROM_BASKET', entities, 0.96, normalizedText);
+      return this.result('REMOVE_FROM_BASKET', entities, 0.97, normalizedText);
     }
-
     if (this.matches(normalizedText, ['یادم بنداز', 'یادآوری', 'یادآور', 'یادم نره', 'یادآوری کن', 'remind', 'reminder'])) {
-      return this.result('CREATE_REMINDER', entities, time ? 0.96 : 0.90, normalizedText);
+      return this.result('CREATE_REMINDER', entities, time ? 0.97 : 0.90, normalizedText);
     }
-
     if (this.matches(normalizedText, ['چی بخور', 'چه بخور', 'شام', 'ناهار', 'صبحانه', 'غذا پیشنهاد', 'پیشنهاد غذا', 'غذا چی', 'meal', 'dinner', 'lunch'])) {
-      return this.result('RECOMMEND_MEAL', entities, 0.93, normalizedText);
+      return this.result('RECOMMEND_MEAL', entities, 0.94, normalizedText);
     }
-
     if (this.matches(normalizedText, ['کالری', 'پروتئین', 'تغذیه امروز', 'درشت مغذی', 'مواد مغذی', 'nutrition', 'calories', 'protein'])) {
-      return this.result('GET_NUTRITION_SUMMARY', entities, 0.94, normalizedText);
+      return this.result('GET_NUTRITION_SUMMARY', entities, 0.95, normalizedText);
     }
-
     return this.result('UNKNOWN', entities, 0, normalizedText);
   }
 
@@ -90,6 +83,13 @@ export class LocalLanguageUnderstandingService {
     return undefined;
   }
 
+  private findMealType(text: string): string | undefined {
+    if (this.matches(text, ['صبحانه', 'صبح'])) return 'breakfast';
+    if (this.matches(text, ['ناهار', 'ظهر'])) return 'lunch';
+    if (this.matches(text, ['شام', 'شب'])) return 'dinner';
+    return undefined;
+  }
+
   private findFood(text: string): string | undefined {
     const foods: Record<string, string> = {
       'سینه مرغ': 'chicken', 'ماست کم چرب': 'yogurt', 'تخم مرغ': 'eggs', 'تخم مرغی': 'eggs',
@@ -100,13 +100,27 @@ export class LocalLanguageUnderstandingService {
     return Object.entries(foods).sort(([a], [b]) => b.length - a.length).find(([phrase]) => text.includes(phrase))?.[1];
   }
 
+  private findNegatedFoods(text: string): string[] {
+    const foods = this.findAllFoods(text);
+    const excluded: string[] = [];
+    for (const [phrase, value] of Object.entries(foods)) {
+      const index = text.indexOf(phrase);
+      if (index >= 0 && this.matches(text.slice(Math.max(0, index - 14), index), ['نه', 'بدون', 'نذار', 'نمیخوام', 'نمی‌خوام'])) excluded.push(value);
+    }
+    return [...new Set(excluded)];
+  }
+
+  private findAllFoods(text: string): Record<string, string> {
+    return { 'سینه مرغ': 'chicken', 'ماست کم چرب': 'yogurt', 'تخم مرغ': 'eggs', 'شیر': 'milk', 'مرغ': 'chicken', 'برنج': 'rice', 'ماست': 'yogurt', 'نان': 'bread', 'موز': 'banana', 'سیب': 'apple', 'پنیر': 'cheese' };
+  }
+
   private hasReference(text: string): boolean {
     return this.matches(text, ['همون', 'همین', 'اینو', 'اونو', 'این یکی', 'اون یکی', 'قبلی', 'دوباره', 'همونی که', 'the previous', 'that one', 'same']);
   }
 
   private matches(text: string, phrases: string[]): boolean { return phrases.some((phrase) => text.includes(phrase)); }
 
-  private result(intent: LocalIntent, entities: Record<string, string | number | boolean>, confidence: number, normalizedText: string): LocalUnderstanding {
+  private result(intent: LocalIntent, entities: Record<string, string | number | boolean | string[]>, confidence: number, normalizedText: string): LocalUnderstanding {
     return { intent, entities, confidence, normalizedText };
   }
 }
