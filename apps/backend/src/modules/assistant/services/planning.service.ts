@@ -34,13 +34,31 @@ export class PlanningService {
       return { steps: [], requiresClarification: true, reason: 'low_confidence' };
     }
 
-    const steps = clauses.map((clause, index) => ({
-      index,
-      intent: intents[index] ?? 'unknown',
-      clause,
-      requiresConfirmation: (intents[index] ?? 'unknown') === 'cancel',
-      ...(index > 0 && intents[index] === 'update' && intents[index - 1] === 'create' ? { dependsOn: index - 1 } : {}),
-    })).filter((step) => step.intent !== 'unknown');
+    const steps = clauses.map((clause, index) => {
+      const intent = intents[index] ?? 'unknown';
+      const previousIntent = index > 0 ? intents[index - 1] : undefined;
+      const referencesPreviousStep = /\b(?:همون|همین|اینو|اونو|قبلی|previous|same|it|that)\b/i.test(clause);
+      const dependsOn = index > 0 && (
+        (intent === 'update' && previousIntent === 'create') ||
+        referencesPreviousStep
+      ) ? index - 1 : undefined;
+
+      return {
+        index,
+        intent,
+        clause,
+        ...(dependsOn !== undefined ? { dependsOn } : {}),
+        requiresConfirmation: intent === 'cancel',
+      };
+    }).filter((step) => step.intent !== 'unknown');
+
+    if (clauses.length > 1 && steps.length !== clauses.filter((_, index) => (intents[index] ?? 'unknown') !== 'unknown').length) {
+      return { steps, requiresClarification: true, reason: 'partially_understood_request' };
+    }
+
+    if (steps.some((step) => step.dependsOn !== undefined && step.dependsOn >= step.index)) {
+      return { steps: [], requiresClarification: true, reason: 'invalid_plan_dependency' };
+    }
 
     return {
       steps,
