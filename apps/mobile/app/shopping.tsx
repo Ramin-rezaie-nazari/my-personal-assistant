@@ -7,14 +7,9 @@ import { getSmartShoppingList, SmartShoppingItem } from '../lib/shopping-api';
 import { BasketItem, completeBasketItem, getBasket } from '../lib/shopping-basket-api';
 
 export default function ShoppingScreen() {
-  const [suggestions, setSuggestions] = useState<SmartShoppingItem[]>([]);
-  const [basket, setBasket] = useState<BasketItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
-  const load = useCallback(async () => { try { setError(null); const [nextSuggestions,nextBasket]=await Promise.all([getSmartShoppingList(),getBasket()]); setSuggestions(nextSuggestions); setBasket(nextBasket); } catch(e){ setError(e instanceof Error?e.message:'Unable to load your basket.'); } finally { setLoading(false); setRefreshing(false); } },[]);
-  useEffect(()=>{ void hasAuthSession().then(ok=>{if(ok) void load(); else router.replace('/');});},[load]);
+  const [suggestions,setSuggestions]=useState<SmartShoppingItem[]>([]); const [basket,setBasket]=useState<BasketItem[]>([]); const [loading,setLoading]=useState(true); const [refreshing,setRefreshing]=useState(false); const [error,setError]=useState<string|null>(null); const [busy,setBusy]=useState<string|null>(null);
+  const load=useCallback(async()=>{try{setError(null);const [s,b]=await Promise.all([getSmartShoppingList(),getBasket()]);setSuggestions(s);setBasket(b);}catch(e){setError(e instanceof Error?e.message:'Unable to load your basket.');}finally{setLoading(false);setRefreshing(false);}},[]);
+  useEffect(()=>{void hasAuthSession().then(ok=>{if(ok)void load();else router.replace('/');});},[load]);
   const critical=useMemo(()=>suggestions.filter(i=>i.urgency==='critical').length,[suggestions]);
   const complete=async(id:string)=>{try{setBusy(id);await completeBasketItem(id);setBasket(items=>items.filter(i=>i.id!==id));}catch(e){setError(e instanceof Error?e.message:'Unable to update basket.');}finally{setBusy(null);}};
   if(loading)return <View style={styles.center}><ActivityIndicator size="large"/></View>;
@@ -23,8 +18,8 @@ export default function ShoppingScreen() {
     <Text style={styles.eyebrow}>SHOPPING</Text><Text style={styles.title}>Your basket</Text><Text style={styles.subtitle}>Everything you need, without the clutter.</Text>
     <View style={styles.summary}><View><Text style={styles.summaryValue}>{basket.length}</Text><Text style={styles.summaryLabel}>in basket</Text></View><View><Text style={styles.summaryValue}>{critical}</Text><Text style={styles.summaryLabel}>need soon</Text></View></View>
     {error?<View style={styles.card}><Text style={styles.cardTitle}>Something went wrong</Text><Text style={styles.body}>{error}</Text><Pressable onPress={()=>void load()} style={styles.button}><Text style={styles.buttonText}>Try again</Text></Pressable></View>:null}
-    {basket.length>0?<View style={styles.section}><Text style={styles.sectionTitle}>To buy</Text>{basket.map(item=><View key={item.id} style={styles.item}><Pressable disabled={busy===item.id} onPress={()=>void complete(item.id)} style={styles.check}><Text style={styles.checkText}>{busy===item.id?'…':'✓'}</Text></Pressable><View style={styles.itemCopy}><Text style={styles.name}>{item.name}</Text><Text style={styles.meta}>+{item.quantity} {item.unit}{item.source==='recipe'?' · from a recipe':''}</Text></View></View>)}</View>:<View style={styles.empty}><Text style={styles.emptyTitle}>Basket is clear 🎉</Text><Text style={styles.body}>Nothing is waiting for you to buy.</Text></View>}
-    {suggestions.length>0?<View style={styles.suggest}><Text style={styles.sectionTitle}>Need soon</Text><Text style={styles.body}>A few things are running low. Add them only when you want.</Text><View style={styles.chips}>{suggestions.slice(0,4).map(item=><View key={item.foodId} style={styles.chip}><Text style={styles.chipText}>{item.name}</Text></View>)}</View></View>:null}
+    {basket.length>0?<View style={styles.section}><Text style={styles.sectionTitle}>To buy</Text>{basket.map(item=><View key={item.id} style={styles.item}><Pressable accessibilityRole="checkbox" accessibilityLabel={`Mark ${item.name} as bought`} disabled={busy===item.id} onPress={()=>void complete(item.id)} style={styles.check}><Text style={styles.checkText}>{busy===item.id?'…':'✓'}</Text></Pressable><View style={styles.itemCopy}><Text style={styles.name}>{item.name}</Text><Text style={styles.meta}>{item.quantity} {item.unit}{item.source==='recipe'?' · from a recipe':''}</Text></View></View>)}</View>:<View style={styles.empty}><Text style={styles.emptyTitle}>Basket is clear 🎉</Text><Text style={styles.body}>Nothing is waiting for you to buy.</Text></View>}
+    {suggestions.length>0?<View style={styles.suggest}><Text style={styles.sectionTitle}>Running low</Text><Text style={styles.body}>These are suggestions only. Add them when you need them.</Text><View style={styles.chips}>{suggestions.slice(0,4).map(item=><View key={item.foodId} style={styles.chip}><Text style={styles.chipText}>{item.name}</Text></View>)}</View></View>:null}
     <Pressable onPress={()=>router.push('/recipe-match')} style={styles.secondary}><Text style={styles.secondaryText}>Find a meal to cook</Text></Pressable>
   </ScrollView></SafeAreaView>;
 }
