@@ -6,6 +6,9 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "mypersonalassistant",
+    "android": {
+      "package": "com.mypersonalassistant.app"
+    },
     "plugins": [
       "expo-router",
       "expo-notifications",
