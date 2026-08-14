@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { getYogaCue, getYogaSession, startYogaCoach, tickYogaCoach, YogaCoachState, YogaSession } from '../lib/api';
 import { CameraBridgeState, UnconfiguredYogaCameraBridge } from '../lib/yoga-camera-bridge';
 
+const TypedCameraView = CameraView as unknown as React.ComponentType<any>;
 const cameraBridge = new UnconfiguredYogaCameraBridge();
 
 export default function YogaScreen() {
@@ -73,7 +74,7 @@ export default function YogaScreen() {
 
       <View style={styles.cameraStage}>
         {trainingMode ? (
-          <CameraView style={styles.camera} facing="front" active />
+          <TypedCameraView style={styles.camera} facing="front" active />
         ) : (
           <View style={styles.previewFallback}>
             <Text style={styles.guideText}>TRAINING MODE</Text>
