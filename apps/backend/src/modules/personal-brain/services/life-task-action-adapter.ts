@@ -1,19 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
-import { DecisionActionAdapter } from './decision-action-adapter.service';
+import { DecisionActionAdapter, DecisionActionAdapterService } from './decision-action-adapter.service';
 import { DecisionCandidate } from './unified-decision-engine.service';
 
 @Injectable()
 export class LifeTaskActionAdapter implements DecisionActionAdapter {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly registry: DecisionActionAdapterService,
+  ) {
+    registry.register(this);
+  }
 
   supports(candidate: DecisionCandidate) {
     return candidate.domain === 'schedule' && candidate.action === 'complete_life_task';
   }
 
   async execute(candidate: DecisionCandidate, context: Record<string, unknown>) {
+    const userId = String(context.userId ?? '');
+    if (!userId) throw new Error('Missing userId');
+
     const task = await this.prisma.lifeTask.findFirst({
-      where: { id: candidate.id, userId: String(context.userId ?? '') },
+      where: { id: candidate.id, userId },
       select: { id: true, status: true, title: true },
     });
     if (!task) throw new Error('life_task_not_found');
