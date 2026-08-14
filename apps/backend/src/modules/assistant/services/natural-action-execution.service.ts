@@ -17,12 +17,14 @@ export type SequentialPlanStep = {
   candidate: DecisionCandidate;
   contextualState?: Record<string, unknown>;
   requiresConfirmation?: boolean;
+  maxRecoveryAttempts?: number;
 };
 
 export type SequentialPlanResult = {
   completed: NaturalActionExecution[];
   stoppedAt?: string;
-  reason?: 'pending_confirmation' | 'blocked' | 'unsupported' | 'failed';
+  reason?: 'pending_confirmation' | 'blocked' | 'unsupported' | 'failed' | 'recovery_exhausted';
+  recovered?: string[];
 };
 
 @Injectable()
@@ -39,18 +41,11 @@ export class NaturalActionExecutionService {
   async executePlan(userId: string, steps: SequentialPlanStep[]): Promise<SequentialPlanResult> {
     const completed: NaturalActionExecution[] = [];
     const resultsByStep: Record<string, unknown> = {};
+    const recovered: string[] = [];
 
     for (const step of steps) {
-      const contextualState = {
-        ...(step.contextualState ?? {}),
-        previousStepResults: resultsByStep,
-      };
-      const receipt = await this.coordinator.execute(userId, step.candidate, {
-        userId,
-        source: 'local-plan',
-        input: step.candidate.action,
-        contextualState,
-      });
+      const contextualState = { ...(step.contextualState ?? {}), previousStepResults: resultsByStep };
+      const receipt = await this.coordinator.execute(userId, step.candidate, { userId, source: 'local-plan', input: step.candidate.action, contextualState });
       const result = this.fromReceipt(step.candidate, step.candidate.action, receipt);
 
       if (result.executed) {
@@ -59,20 +54,45 @@ export class NaturalActionExecutionService {
         continue;
       }
 
-      if (receipt.status === 'pending_confirmation') {
-        return { completed, stoppedAt: step.id, reason: 'pending_confirmation' };
+      if (receipt.status === 'pending_confirmation') return { completed, stoppedAt: step.id, reason: 'pending_confirmation', recovered };
+      if (receipt.status === 'blocked') return { completed, stoppedAt: step.id, reason: 'blocked', recovered };
+      if (receipt.status === 'unsupported') return { completed, stoppedAt: step.id, reason: 'unsupported', recovered };
+
+      const recoveryLimit = Math.max(0, step.maxRecoveryAttempts ?? 1);
+      let recoveredReceipt: Awaited<ReturnType<DecisionExecutionCoordinatorService['execute']>> | undefined;
+      for (let attempt = 0; attempt < recoveryLimit; attempt += 1) {
+        const recoveryContext = {
+          ...contextualState,
+          recovery: { attempt: attempt + 1, failedStep: step.id, reason: receipt.reason },
+          previousStepResults: resultsByStep,
+        };
+        recoveredReceipt = await this.coordinator.execute(userId, step.candidate, {
+          userId,
+          source: 'local-plan-recovery',
+          input: step.candidate.action,
+          contextualState: recoveryContext,
+        });
+        if (recoveredReceipt.status === 'completed') break;
+        if (recoveredReceipt.status === 'pending_confirmation' || recoveredReceipt.status === 'blocked' || recoveredReceipt.status === 'unsupported') break;
       }
-      if (receipt.status === 'blocked') return { completed, stoppedAt: step.id, reason: 'blocked' };
-      if (receipt.status === 'unsupported') return { completed, stoppedAt: step.id, reason: 'unsupported' };
-      return { completed, stoppedAt: step.id, reason: 'failed' };
+
+      if (recoveredReceipt?.status === 'completed') {
+        const recoveredResult = this.fromReceipt(step.candidate, step.candidate.action, recoveredReceipt);
+        completed.push(recoveredResult);
+        resultsByStep[step.id] = recoveredResult.receipt;
+        recovered.push(step.id);
+        continue;
+      }
+      if (recoveredReceipt?.status === 'pending_confirmation') return { completed, stoppedAt: step.id, reason: 'pending_confirmation', recovered };
+      if (recoveredReceipt?.status === 'blocked') return { completed, stoppedAt: step.id, reason: 'blocked', recovered };
+      if (recoveredReceipt?.status === 'unsupported') return { completed, stoppedAt: step.id, reason: 'unsupported', recovered };
+      return { completed, stoppedAt: step.id, reason: recoveryLimit > 0 ? 'recovery_exhausted' : 'failed', recovered };
     }
 
-    return { completed };
+    return { completed, recovered };
   }
 
-  async confirm(userId: string, token: string) {
-    return this.coordinator.confirmAndExecute(userId, token);
-  }
+  async confirm(userId: string, token: string) { return this.coordinator.confirmAndExecute(userId, token); }
 
   private fromReceipt(candidate: DecisionCandidate, intent: string, receipt: any): NaturalActionExecution {
     if (receipt.status === 'completed') return { executed: true, action: candidate.action, message: 'Done. I completed that action.', intent, receipt };
