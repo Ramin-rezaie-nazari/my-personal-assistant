@@ -33,11 +33,9 @@ jobs:
           path = Path('apps/mobile/app/index.tsx')
           text = path.read_text()
           marker = "pressed:{opacity:.9}}"
-          if marker not in text:
-              raise SystemExit('Expected StyleSheet terminator not found')
           if not text.rstrip().endswith(marker):
               raise SystemExit('Unexpected app/index.tsx ending')
-          text = text.rstrip()[:-len(marker)] + marker[:-1] + ');\n'
+          text = text.rstrip() + ');\n'
           path.write_text(text)
           PY
           pnpm install --lockfile-only
