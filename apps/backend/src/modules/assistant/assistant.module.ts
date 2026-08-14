@@ -16,34 +16,20 @@ import { NaturalActionExecutionService } from './services/natural-action-executi
 import { ConversationHistoryService } from './services/conversation-history.service';
 import { ConversationContextService } from './services/conversation-context.service';
 import { ContextualCommandService } from './services/contextual-command.service';
+import { AiProviderRouterService } from './services/ai-provider-router.service';
 
 @Module({
   imports: [PrismaModule, PersonalBrainModule],
   controllers: [AssistantController],
   providers: [
-    KnowledgeService,
-    RuleEngineService,
-    PlanningService,
-    AssistantService,
-    MemoryService,
-    ContextService,
-    ReasoningService,
-    RecommendationService,
-    NaturalActionExecutionService,
-    ConversationHistoryService,
-    ConversationContextService,
-    ContextualCommandService,
+    KnowledgeService, RuleEngineService, PlanningService, AssistantService, MemoryService, ContextService,
+    ReasoningService, RecommendationService, NaturalActionExecutionService, ConversationHistoryService,
+    ConversationContextService, ContextualCommandService, AiProviderRouterService,
   ],
   exports: [
-    AssistantService,
-    MemoryService,
-    ContextService,
-    ReasoningService,
-    RecommendationService,
-    NaturalActionExecutionService,
-    ConversationHistoryService,
-    ConversationContextService,
-    ContextualCommandService,
+    AssistantService, MemoryService, ContextService, ReasoningService, RecommendationService,
+    NaturalActionExecutionService, ConversationHistoryService, ConversationContextService,
+    ContextualCommandService, AiProviderRouterService,
   ],
 })
 export class AssistantModule {}
