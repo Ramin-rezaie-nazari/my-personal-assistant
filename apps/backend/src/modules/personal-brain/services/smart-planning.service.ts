@@ -1,12 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { LearningService } from '../../user-intelligence/services/learning.service';
+import { DecisionOutcomeLearningService } from './decision-outcome-learning.service';
 
 type Candidate = { id: string; title: string; priority: number; estimatedMinutes: number; energyLevel: string; dueAt: Date | null; scheduledAt: Date | null; goalId: string | null; score: number; reasons: string[] };
 
 @Injectable()
 export class SmartPlanningService {
-  constructor(private readonly prisma: PrismaService, private readonly learning: LearningService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly learning: LearningService,
+    private readonly outcomeLearning: DecisionOutcomeLearningService,
+  ) {}
 
   async getPlan(userId: string, date = new Date()) {
     const start = new Date(date); start.setHours(0, 0, 0, 0);
@@ -31,7 +36,21 @@ export class SmartPlanningService {
       if (adaptive.snoozeRate >= 0.5 && task.estimatedMinutes > 90) { score -= 8; reasons.push('long task is less suitable when snooze rate is high'); }
       if (adaptive.acceptanceRate >= 0.7 && task.priority <= 1) { score += 4; reasons.push('matches a pattern of accepting important suggestions'); }
       return { id: task.id, title: task.title, priority: task.priority, estimatedMinutes: task.estimatedMinutes, energyLevel: task.energyLevel, dueAt: task.dueAt, scheduledAt: task.scheduledAt, goalId: task.goalId, score, reasons };
-    }).sort((a, b) => b.score - a.score);
+    });
+
+    const outcomeAdjustments = await this.outcomeLearning.decisionAdjustments(userId, candidates.map(candidate => candidate.id));
+    for (const candidate of candidates) {
+      const adjustment = outcomeAdjustments[candidate.id] ?? 0;
+      if (adjustment > 0) {
+        candidate.score += Math.round(adjustment * 100);
+        candidate.reasons.push('has a stable positive outcome history');
+      } else if (adjustment < 0) {
+        candidate.score += Math.round(adjustment * 100);
+        candidate.reasons.push('has a stable negative outcome history');
+      }
+    }
+
+    candidates.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     const actionable = candidates.filter(c => !c.reasons.includes('blocked by another task'));
     const best = actionable[0] ?? null;
     return { date: start.toISOString().slice(0, 10), bestAction: best, alternatives: actionable.filter(c => c.id !== best?.id).slice(0, 4), blocked: candidates.filter(c => c.reasons.includes('blocked by another task')).slice(0, 10), adaptive: { bestHours: adaptive.bestHours, preferredTaskMinutes: adaptive.preferredTaskMinutes, snoozeRate: adaptive.snoozeRate, acceptanceRate: adaptive.acceptanceRate } };
