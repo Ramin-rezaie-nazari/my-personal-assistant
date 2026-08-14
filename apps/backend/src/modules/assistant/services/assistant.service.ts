@@ -76,12 +76,12 @@ export class AssistantService {
     return selected ? { ...selected, confidence: local.confidence, metadata: { local: true, entities: local.entities } } as BrainResponse : undefined;
   }
 
-  private resolveContextualExecution(response: BrainResponse, command: { referencesPrevious: boolean; operation: string; targetAction?: string; targetExecutionId?: string; targetResourceType?: string; targetResourceId?: string }, input: string): BrainResponse {
+  private resolveContextualExecution(response: BrainResponse, command: ReturnType<ContextualCommandService['resolve']> extends Promise<infer T> ? T : never, input: string): BrainResponse {
     if (!command.referencesPrevious || !(command.targetResourceId || command.targetExecutionId)) return response;
     const previousAction = (command.targetAction ?? '').toLowerCase();
     const previousResource = (command.targetResourceType ?? '').toLowerCase();
-    const hasTime = /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
-    const hasDuration = /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)\b/i.test(input);
+    const hasTime = Boolean(command.entities.time) || /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
+    const hasDuration = Boolean(command.entities.durationMinutes) || /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)\b/i.test(input);
     const hasCalories = /\b\d{2,5}\s*(?:cal|calories|کالری)\b/i.test(input);
     const hasWeekTarget = /\b[1-7]\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?\b/i.test(input);
     if (command.operation === 'update' && previousResource === 'calendar' && hasTime) return { ...response, intent: 'calendar', nextAction: 'update_calendar_event' };
