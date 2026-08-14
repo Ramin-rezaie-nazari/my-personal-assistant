@@ -7,6 +7,7 @@ import { NutritionModule } from './modules/nutrition/nutrition.module';
 import { FoodsModule } from './modules/foods/foods.module';
 import { MealsModule } from './modules/meals/meals.module';
 import { RecipesModule } from './modules/recipes/recipes.module';
+import { InventoryModule } from './modules/inventory/inventory.module';
 import { WorkoutModule } from './modules/workout/workout.module';
 import { SupplementsModule } from './modules/supplements/supplements.module';
 import { RemindersModule } from './modules/reminders/reminders.module';
@@ -41,7 +42,7 @@ import { FitnessModule } from './modules/fitness/fitness.module';
 
 @Module({
   imports: [
-    HealthModule, DailyModule, NutritionModule, FoodsModule, MealsModule, RecipesModule, WorkoutModule,
+    HealthModule, DailyModule, NutritionModule, FoodsModule, MealsModule, RecipesModule, InventoryModule, WorkoutModule,
     SupplementsModule, RemindersModule, CalendarModule, NotificationsModule, HabitsModule, GoalsModule, LifeExecutionModule,
     ConfigModule, PrismaModule, AuthModule, UsersModule, SettingsModule, ProfileModule, OnboardingModule,
     AssistantModule, UserIntelligenceModule, BudgetIntelligenceModule, PriceIntelligenceModule,
