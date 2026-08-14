@@ -19,6 +19,8 @@ export type ContextualCommand = {
     confirmation?: 'yes' | 'no';
   };
   clauses: string[];
+  intents: Array<'create' | 'update' | 'cancel' | 'unknown'>;
+  contradictions: string[];
   confidence: number;
 };
 
@@ -30,9 +32,11 @@ export class ContextualCommandService {
     const normalized = this.normalize(text);
     const previous = (await this.context.get(userId)).lastAction;
     const referencesPrevious = this.referencesPrevious(normalized);
-    const operation = this.detectOperation(normalized, referencesPrevious);
-    const entities = this.extractEntities(normalized);
     const clauses = this.splitClauses(normalized);
+    const intents = clauses.map((clause) => this.detectOperation(clause, referencesPrevious));
+    const operation = this.pickPrimaryIntent(intents, referencesPrevious);
+    const entities = this.extractEntities(normalized);
+    const contradictions = this.detectContradictions(normalized, intents, entities);
 
     return {
       text,
@@ -44,7 +48,9 @@ export class ContextualCommandService {
       targetResourceId: referencesPrevious ? previous?.resourceId : undefined,
       entities,
       clauses,
-      confidence: this.scoreConfidence(normalized, referencesPrevious, operation, entities),
+      intents,
+      contradictions,
+      confidence: this.scoreConfidence(normalized, referencesPrevious, operation, entities, contradictions),
     };
   }
 
@@ -56,6 +62,13 @@ export class ContextualCommandService {
     return 'unknown';
   }
 
+  private pickPrimaryIntent(intents: ContextualCommand['operation'][], referencesPrevious: boolean): ContextualCommand['operation'] {
+    if (intents.includes('cancel')) return 'cancel';
+    if (intents.includes('update')) return 'update';
+    if (intents.includes('create')) return 'create';
+    return referencesPrevious ? 'update' : 'unknown';
+  }
+
   private normalize(input: string): string {
     return input.trim().toLowerCase()
       .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
@@ -64,11 +77,7 @@ export class ContextualCommandService {
   }
 
   private referencesPrevious(text: string): boolean {
-    return this.matches(text, [
-      'that', 'it', 'this', 'same', 'previous', 'earlier', 'the last one',
-      'همون', 'همون قبلی', 'همون یکی', 'همین', 'اینو', 'این یکی', 'قبلی',
-      'اونو', 'اون یکی', 'دوباره', 'باز هم', 'به جاش', 'بجاش', 'همونی که',
-    ]);
+    return this.matches(text, ['that', 'it', 'this', 'same', 'previous', 'earlier', 'the last one', 'همون', 'همون قبلی', 'همون یکی', 'همین', 'اینو', 'این یکی', 'قبلی', 'اونو', 'اون یکی', 'دوباره', 'باز هم', 'به جاش', 'بجاش', 'همونی که']);
   }
 
   private extractEntities(text: string): ContextualCommand['entities'] {
@@ -95,12 +104,21 @@ export class ContextualCommandService {
     return text.split(/\s+(?:و|ولی|اما|بعد|سپس|then|and|but)\s+/i).map((part) => part.trim()).filter(Boolean);
   }
 
-  private scoreConfidence(text: string, referencesPrevious: boolean, operation: ContextualCommand['operation'], entities: ContextualCommand['entities']): number {
+  private detectContradictions(text: string, intents: ContextualCommand['operation'][], entities: ContextualCommand['entities']): string[] {
+    const issues: string[] = [];
+    if (intents.includes('cancel') && intents.includes('create')) issues.push('create_and_cancel_same_turn');
+    if (entities.confirmation === 'no' && entities.confirmation === 'yes') issues.push('conflicting_confirmation');
+    if (entities.negated && intents.includes('create') && !this.matches(text, ['بدون', 'نذار', 'نمیخوام'])) issues.push('negation_create_ambiguity');
+    return issues;
+  }
+
+  private scoreConfidence(text: string, referencesPrevious: boolean, operation: ContextualCommand['operation'], entities: ContextualCommand['entities'], contradictions: string[]): number {
     let score = operation === 'unknown' ? 0.35 : 0.65;
     if (text.length > 3) score += 0.05;
     if (referencesPrevious) score += 0.1;
     if (Object.keys(entities).length) score += 0.1;
-    return Math.min(0.95, Number(score.toFixed(2)));
+    if (contradictions.length) score -= 0.25;
+    return Math.max(0.05, Math.min(0.95, Number(score.toFixed(2))));
   }
 
   private matches(text: string, phrases: string[]): boolean { return phrases.some((phrase) => text.includes(phrase)); }
