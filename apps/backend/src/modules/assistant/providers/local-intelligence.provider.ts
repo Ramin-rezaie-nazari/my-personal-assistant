@@ -1,26 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { AiProvider, AiProviderRequest, AiProviderResponse } from '../services/ai-provider.types';
+import { LocalLanguageUnderstandingService } from '../services/local-language-understanding.service';
 
 @Injectable()
 export class LocalIntelligenceProvider implements AiProvider {
   readonly id = 'local-core';
   readonly name = 'Local Assistant Core';
 
+  constructor(private readonly language: LocalLanguageUnderstandingService) {}
+
   async isAvailable(): Promise<boolean> { return true; }
 
   async generate(request: AiProviderRequest): Promise<AiProviderResponse> {
-    const text = request.input.trim();
-    if (!text) return { providerId: this.id, text: '' };
-    const normalized = text.toLowerCase();
-    if (/(شیر|milk).*(سبد|basket)|(سبد|basket).*(شیر|milk)/i.test(normalized)) {
-      return { providerId: this.id, text: 'باشه، شیر رو برای سبد خرید آماده می‌کنم.' };
+    const understanding = this.language.understand(request.input);
+    const food = understanding.entities.food;
+    const quantity = understanding.entities.quantity ?? 1;
+
+    switch (understanding.intent) {
+      case 'ADD_TO_BASKET':
+        return { providerId: this.id, text: food ? `باشه، ${food} رو به سبد خرید اضافه می‌کنم.` : 'باشه، مورد موردنظر رو برای سبد خرید آماده می‌کنم.' };
+      case 'REMOVE_FROM_BASKET':
+        return { providerId: this.id, text: food ? `${food} رو از سبد خرید حذف می‌کنم.` : 'باشه، مورد موردنظر رو از سبد خرید حذف می‌کنم.' };
+      case 'RECOMMEND_MEAL':
+        return { providerId: this.id, text: 'حتماً. موجودی خونه و برنامه غذایی‌ات رو بررسی می‌کنم تا گزینه مناسب پیدا کنم.' };
+      case 'GET_NUTRITION_SUMMARY':
+        return { providerId: this.id, text: 'باشه، خلاصه تغذیه امروزت رو از اطلاعات ثبت‌شده بررسی می‌کنم.' };
+      case 'CREATE_REMINDER':
+        return { providerId: this.id, text: 'حتماً. درخواست یادآوری رو بررسی می‌کنم تا زمان مناسبش رو تنظیم کنم.' };
+      default:
+        return { providerId: this.id, text: 'درخواستت رو متوجه شدم، اما برای انجام دقیقش به اطلاعات بیشتری نیاز دارم.' };
     }
-    if (/(چی|چه).*(بخور|درست).*(امشب|امروز)|(غذا|شام).*(پیشنهاد|چی)/i.test(normalized)) {
-      return { providerId: this.id, text: 'حتماً. موجودی خونه و برنامه غذایی‌ات رو بررسی می‌کنم تا چند گزینه مناسب پیشنهاد بدم.' };
-    }
-    if (/(کالری|پروتئین).*(امروز|امروزم)/i.test(normalized)) {
-      return { providerId: this.id, text: 'باشه، خلاصه تغذیه امروزت رو از اطلاعات ثبت‌شده بررسی می‌کنم.' };
-    }
-    return { providerId: this.id, text: 'متوجه شدم. برای این درخواست هنوز یک فرمان محلی مشخص ندارم، اما می‌تونم از اطلاعات شخصی و قابلیت‌های خود دستیار برای انجامش استفاده کنم.' };
   }
 }
