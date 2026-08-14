@@ -8,9 +8,13 @@ on:
       - 'pnpm-lock.yaml'
       - '.github/workflows/android-build.yml'
 
+permissions:
+  contents: read
+
 jobs:
   android:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
     defaults:
       run:
         working-directory: apps/mobile
@@ -22,6 +26,7 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 11.18.0
+          run_install: false
 
       - name: Setup Node
         uses: actions/setup-node@v4
