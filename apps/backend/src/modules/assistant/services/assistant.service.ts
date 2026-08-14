@@ -4,6 +4,7 @@ import { BrainOrchestratorService } from '../../personal-brain/services/brain-or
 import { NaturalActionExecutionService } from './natural-action-execution.service';
 import { ContextualCommandService } from './contextual-command.service';
 import { ConversationContextService } from './conversation-context.service';
+import { LocalLanguageUnderstandingService } from './local-language-understanding.service';
 import { BrainResponse } from '../../personal-brain/types';
 
 @Injectable()
@@ -13,11 +14,10 @@ export class AssistantService {
     private readonly naturalActionExecutionService: NaturalActionExecutionService,
     private readonly contextualCommandService: ContextualCommandService,
     private readonly conversationContextService: ConversationContextService,
+    private readonly localLanguageUnderstandingService: LocalLanguageUnderstandingService,
   ) {}
 
-  async getStatus() {
-    return { name: 'My Personal Assistant', status: 'brain foundation active' };
-  }
+  async getStatus() { return { name: 'My Personal Assistant', status: 'brain foundation active' }; }
 
   async getHistory(userId: string, limit = 24) {
     const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
@@ -26,30 +26,26 @@ export class AssistantService {
 
   async confirm(userId: string, token: string) {
     const receipt = await this.naturalActionExecutionService.confirm(userId, token);
-    await this.conversationContextService.append({
-      userId,
-      role: 'assistant',
-      text: receipt.status === 'completed' ? 'تأیید شد و انجام شد.' : receipt.reason,
-      action: receipt.action,
-      executionId: receipt.decisionId,
-      resourceType: this.resourceTypeFor(receipt.action),
-    });
+    await this.conversationContextService.append({ userId, role: 'assistant', text: receipt.status === 'completed' ? 'تأیید شد و انجام شد.' : receipt.reason, action: receipt.action, executionId: receipt.decisionId, resourceType: this.resourceTypeFor(receipt.action) });
     return receipt;
   }
 
   async process(input: string, userId: string) {
     await this.conversationContextService.append({ userId, role: 'user', text: input });
     const contextualCommand = await this.contextualCommandService.resolve(userId, input);
-    const response = await this.brainOrchestratorService.processRequest(input, userId);
+    const local = this.localLanguageUnderstandingService.understand(input);
+    const response = this.responseForLocalIntent(local) ?? await this.brainOrchestratorService.processRequest(input, userId);
     const executionResponse = this.resolveContextualExecution(response, contextualCommand, input);
     const execution = executionResponse.nextAction
       ? await this.naturalActionExecutionService.execute(input, userId, executionResponse, {
+          userId,
           referencesPrevious: contextualCommand.referencesPrevious,
           previousAction: contextualCommand.targetAction,
           previousExecutionId: contextualCommand.targetExecutionId,
           targetResourceType: contextualCommand.targetResourceType,
           targetResourceId: contextualCommand.targetResourceId,
           operation: contextualCommand.operation,
+          localUnderstanding: local,
         })
       : undefined;
 
@@ -57,38 +53,27 @@ export class AssistantService {
       ...executionResponse,
       message: execution?.executed ? execution.message : (execution?.message ?? executionResponse.message),
       ...(execution ? { execution } : {}),
-      metadata: {
-        ...(executionResponse.metadata ?? {}),
-        contextualCommand: {
-          referencesPrevious: contextualCommand.referencesPrevious,
-          operation: contextualCommand.operation,
-          targetAction: contextualCommand.targetAction,
-          targetExecutionId: contextualCommand.targetExecutionId,
-          targetResourceType: contextualCommand.targetResourceType,
-          targetResourceId: contextualCommand.targetResourceId,
-        },
-      },
+      metadata: { ...(executionResponse.metadata ?? {}), localUnderstanding: local, contextualCommand },
     };
-
     const receipt = execution?.receipt;
-    const resourceId = receipt && typeof receipt === 'object' && receipt !== null && 'result' in receipt
-      ? this.extractExecutionEntityId((receipt as { result?: unknown }).result)
-      : undefined;
+    const resourceId = receipt && typeof receipt === 'object' && receipt !== null && 'result' in receipt ? this.extractExecutionEntityId((receipt as { result?: unknown }).result) : undefined;
     const executionId = this.extractDecisionId(receipt);
     const resourceType = this.resourceTypeFor(execution?.action ?? finalResponse.nextAction);
-
-    await this.conversationContextService.append({
-      userId,
-      role: 'assistant',
-      text: finalResponse.message,
-      intent: finalResponse.intent,
-      action: execution?.action ?? finalResponse.nextAction,
-      executionId,
-      resourceType,
-      resourceId,
-    });
-
+    await this.conversationContextService.append({ userId, role: 'assistant', text: finalResponse.message, intent: finalResponse.intent, action: execution?.action ?? finalResponse.nextAction, executionId, resourceType, resourceId });
     return finalResponse;
+  }
+
+  private responseForLocalIntent(local: ReturnType<LocalLanguageUnderstandingService['understand']>): BrainResponse | undefined {
+    if (local.intent === 'UNKNOWN' || local.confidence < 0.7) return undefined;
+    const map: Record<string, { intent: string; nextAction: string; message: string }> = {
+      ADD_TO_BASKET: { intent: 'shopping', nextAction: 'add_to_basket', message: 'باشه، به سبد خرید اضافه‌اش می‌کنم.' },
+      REMOVE_FROM_BASKET: { intent: 'shopping', nextAction: 'remove_from_basket', message: 'باشه، از سبد خرید حذفش می‌کنم.' },
+      RECOMMEND_MEAL: { intent: 'nutrition', nextAction: 'recommend_meal', message: 'حتماً، بر اساس اطلاعات خودت یک گزینه مناسب پیدا می‌کنم.' },
+      GET_NUTRITION_SUMMARY: { intent: 'nutrition', nextAction: 'get_nutrition_summary', message: 'حتماً، خلاصه تغذیه امروزت رو بررسی می‌کنم.' },
+      CREATE_REMINDER: { intent: 'reminder', nextAction: 'create_reminder', message: 'حتماً، یادآوری رو برایت آماده می‌کنم.' },
+    };
+    const selected = map[local.intent];
+    return selected ? { ...selected, confidence: local.confidence, metadata: { local: true, entities: local.entities } } as BrainResponse : undefined;
   }
 
   private resolveContextualExecution(response: BrainResponse, command: { referencesPrevious: boolean; operation: string; targetAction?: string; targetExecutionId?: string; targetResourceType?: string; targetResourceId?: string }, input: string): BrainResponse {
@@ -112,26 +97,7 @@ export class AssistantService {
     return response;
   }
 
-  private extractExecutionEntityId(result: unknown): string | undefined {
-    if (!result || typeof result !== 'object') return undefined;
-    const value = (result as { id?: unknown }).id;
-    return typeof value === 'string' && value ? value : undefined;
-  }
-
-  private extractDecisionId(receipt: unknown): string | undefined {
-    if (!receipt || typeof receipt !== 'object') return undefined;
-    const value = (receipt as { decisionId?: unknown }).decisionId;
-    return typeof value === 'string' && value ? value : undefined;
-  }
-
-  private resourceTypeFor(value?: string): string | undefined {
-    const text = (value ?? '').toLowerCase();
-    if (text.includes('reminder')) return 'reminder';
-    if (text.includes('calendar') || text.includes('schedule')) return 'calendar';
-    if (text.includes('workout') || text.includes('exercise') || text.includes('training')) return 'workout';
-    if (text.includes('habit')) return 'habit';
-    if (text.includes('supplement') || text.includes('vitamin')) return 'supplement';
-    if (text.includes('notification')) return 'notification';
-    return undefined;
-  }
+  private extractExecutionEntityId(result: unknown): string | undefined { if (!result || typeof result !== 'object') return undefined; const value = (result as { id?: unknown }).id; return typeof value === 'string' && value ? value : undefined; }
+  private extractDecisionId(receipt: unknown): string | undefined { if (!receipt || typeof receipt !== 'object') return undefined; const value = (receipt as { decisionId?: unknown }).decisionId; return typeof value === 'string' && value ? value : undefined; }
+  private resourceTypeFor(value?: string): string | undefined { const text = (value ?? '').toLowerCase(); if (text.includes('reminder')) return 'reminder'; if (text.includes('calendar') || text.includes('schedule')) return 'calendar'; if (text.includes('workout') || text.includes('exercise') || text.includes('training')) return 'workout'; if (text.includes('habit')) return 'habit'; if (text.includes('supplement') || text.includes('vitamin')) return 'supplement'; if (text.includes('notification')) return 'notification'; if (text.includes('basket')) return 'shopping'; return undefined; }
 }
