@@ -4,8 +4,8 @@ describe('DecisionOutcomeLearningService', () => {
   it('requires enough evidence before learning', async () => {
     const prisma = {
       $queryRaw: jest.fn().mockResolvedValue([
-        { outcome: 'positive', score: 0.9, createdAt: new Date() },
-        { outcome: 'positive', score: 0.8, createdAt: new Date() },
+        { outcome: 'positive', score: 0.9, createdAt: new Date(), source: 'user' },
+        { outcome: 'positive', score: 0.8, createdAt: new Date(), source: 'user' },
       ]),
     } as any;
     const service = new DecisionOutcomeLearningService(prisma);
@@ -17,7 +17,7 @@ describe('DecisionOutcomeLearningService', () => {
   it('learns a positive stable outcome pattern', async () => {
     const prisma = {
       $queryRaw: jest.fn().mockResolvedValue(Array.from({ length: 6 }, (_, index) => ({
-        outcome: 'positive', score: 0.9, createdAt: new Date(Date.now() - index * 1000),
+        outcome: 'positive', score: 0.9, createdAt: new Date(Date.now() - index * 1000), source: 'user',
       })),
     } as any;
     const service = new DecisionOutcomeLearningService(prisma);
@@ -29,12 +29,27 @@ describe('DecisionOutcomeLearningService', () => {
   it('learns a negative stable outcome pattern', async () => {
     const prisma = {
       $queryRaw: jest.fn().mockResolvedValue(Array.from({ length: 6 }, (_, index) => ({
-        outcome: 'negative', score: 0.2, createdAt: new Date(Date.now() - index * 1000),
+        outcome: 'negative', score: 0.2, createdAt: new Date(Date.now() - index * 1000), source: 'user',
       })),
     } as any;
     const service = new DecisionOutcomeLearningService(prisma);
     const profile = await service.profile('user-1');
     expect(profile.negativeRate).toBe(1);
     expect(profile.confidenceAdjustment).toBe(-0.04);
+  });
+
+  it('returns bounded per-decision adjustments for candidate ranking', async () => {
+    const prisma = {
+      $queryRaw: jest.fn().mockResolvedValue([
+        ...Array.from({ length: 6 }, (_, index) => ({ decisionId: 'task-good', outcome: 'positive', score: 0.9, createdAt: new Date(Date.now() - index * 1000), source: 'user' })),
+        ...Array.from({ length: 6 }, (_, index) => ({ decisionId: 'task-bad', outcome: 'negative', score: 0.2, createdAt: new Date(Date.now() - index * 1000), source: 'user' })),
+      ]),
+    } as any;
+    const service = new DecisionOutcomeLearningService(prisma);
+    const adjustments = await service.decisionAdjustments('user-1', ['task-good', 'task-bad', 'task-new']);
+    expect(adjustments['task-good']).toBe(0.04);
+    expect(adjustments['task-bad']).toBe(-0.04);
+    expect(adjustments['task-new']).toBe(0);
+    expect(Object.values(adjustments).every((value) => value >= -0.04 && value <= 0.04)).toBe(true);
   });
 });
