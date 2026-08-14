@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 
 import { PrismaModule } from '../../common/database/prisma.module';
 import { PersonalBrainModule } from '../personal-brain/personal-brain.module';
-
 import { AssistantController } from './controllers/assistant.controller';
 import { AssistantService } from './services/assistant.service';
 import { MemoryService } from './services/memory.service';
@@ -17,6 +16,7 @@ import { ConversationHistoryService } from './services/conversation-history.serv
 import { ConversationContextService } from './services/conversation-context.service';
 import { ContextualCommandService } from './services/contextual-command.service';
 import { AiProviderRouterService } from './services/ai-provider-router.service';
+import { LocalIntelligenceProvider } from './providers/local-intelligence.provider';
 
 @Module({
   imports: [PrismaModule, PersonalBrainModule],
@@ -24,7 +24,7 @@ import { AiProviderRouterService } from './services/ai-provider-router.service';
   providers: [
     KnowledgeService, RuleEngineService, PlanningService, AssistantService, MemoryService, ContextService,
     ReasoningService, RecommendationService, NaturalActionExecutionService, ConversationHistoryService,
-    ConversationContextService, ContextualCommandService, AiProviderRouterService,
+    ConversationContextService, ContextualCommandService, LocalIntelligenceProvider, AiProviderRouterService,
   ],
   exports: [
     AssistantService, MemoryService, ContextService, ReasoningService, RecommendationService,
