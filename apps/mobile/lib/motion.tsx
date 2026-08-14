@@ -8,6 +8,14 @@ export const motion = {
   spring: { tension: 90, friction: 11 },
 } as const;
 
+export function pressIn(scale: Animated.Value, scaleTo = 0.97) {
+  Animated.spring(scale, { toValue: scaleTo, ...motion.spring, useNativeDriver: true }).start();
+}
+
+export function pressOut(scale: Animated.Value) {
+  Animated.spring(scale, { toValue: 1, ...motion.spring, useNativeDriver: true }).start();
+}
+
 export function useEntrance(delay = 0, distance = 18) {
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(distance)).current;
@@ -38,8 +46,8 @@ export function usePulse(active = true, amount = 1.035) {
 
 export function usePressScale(scaleTo = 0.97) {
   const scale = useRef(new Animated.Value(1)).current;
-  const onPressIn = () => Animated.spring(scale, { toValue: scaleTo, ...motion.spring, useNativeDriver: true }).start();
-  const onPressOut = () => Animated.spring(scale, { toValue: 1, ...motion.spring, useNativeDriver: true }).start();
+  const onPressIn = () => pressIn(scale, scaleTo);
+  const onPressOut = () => pressOut(scale);
   return { scale, onPressIn, onPressOut };
 }
 
@@ -56,16 +64,25 @@ export function useSuccessPop(active: boolean) {
   return { opacity, transform: [{ scale }] };
 }
 
+type AnimatedPressableProps = Omit<PressableProps, 'children' | 'style'> & {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle> | ((state: { pressed: boolean; hovered: boolean }) => StyleProp<ViewStyle>);
+  scaleTo?: number;
+};
+
 export function AnimatedSection({ children, delay = 0, distance = 18, style }: { children: React.ReactNode; delay?: number; distance?: number; style?: StyleProp<ViewStyle> }) {
   const animatedStyle = useEntrance(delay, distance);
   return <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>;
 }
 
-export function AnimatedPressable({ children, style, scaleTo = 0.97, ...props }: PressableProps & { scaleTo?: number }) {
+export function AnimatedPressable({ children, style, scaleTo = 0.97, ...props }: AnimatedPressableProps) {
   const { scale, onPressIn, onPressOut } = usePressScale(scaleTo);
   return (
     <Pressable {...props} onPressIn={(event) => { onPressIn(); props.onPressIn?.(event); }} onPressOut={(event) => { onPressOut(); props.onPressOut?.(event); }}>
-      {({ pressed }) => <Animated.View style={[typeof style === 'function' ? style({ pressed }) : style, { transform: [{ scale }] }]}>{children}</Animated.View>}
+      {({ pressed, hovered }) => {
+        const resolvedStyle = typeof style === 'function' ? style({ pressed, hovered }) : style;
+        return <Animated.View style={[resolvedStyle, { transform: [{ scale }] }]}>{children}</Animated.View>;
+      }}
     </Pressable>
   );
 }
