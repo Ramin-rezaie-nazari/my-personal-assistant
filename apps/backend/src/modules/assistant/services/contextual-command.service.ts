@@ -12,14 +12,15 @@ export type ContextualCommand = {
   entities: {
     quantity?: number;
     time?: string;
-    durationMinutes?: number;
     relativeMinutes?: number;
     ordinal?: number;
     date?: string;
     negated?: boolean;
     confirmation?: 'yes' | 'no';
   };
-}
+  clauses: string[];
+  confidence: number;
+};
 
 @Injectable()
 export class ContextualCommandService {
@@ -30,6 +31,9 @@ export class ContextualCommandService {
     const previous = (await this.context.get(userId)).lastAction;
     const referencesPrevious = this.referencesPrevious(normalized);
     const operation = this.detectOperation(normalized, referencesPrevious);
+    const entities = this.extractEntities(normalized);
+    const clauses = this.splitClauses(normalized);
+
     return {
       text,
       referencesPrevious,
@@ -38,7 +42,9 @@ export class ContextualCommandService {
       targetExecutionId: referencesPrevious ? previous?.executionId : undefined,
       targetResourceType: referencesPrevious ? previous?.resourceType : undefined,
       targetResourceId: referencesPrevious ? previous?.resourceId : undefined,
-      entities: this.extractEntities(normalized),
+      entities,
+      clauses,
+      confidence: this.scoreConfidence(normalized, referencesPrevious, operation, entities),
     };
   }
 
@@ -53,8 +59,8 @@ export class ContextualCommandService {
   private normalize(input: string): string {
     return input.trim().toLowerCase()
       .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
-      .replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[؟?!،؛]/g, ' ').replace(/‌/g, ' ')
-      .replace(/\s+/g, ' ');
+      .replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/‌/g, ' ')
+      .replace(/[؟?!،؛]/g, ' ').replace(/\s+/g, ' ');
   }
 
   private referencesPrevious(text: string): boolean {
@@ -71,8 +77,6 @@ export class ContextualCommandService {
     if (quantity) entities.quantity = Number(quantity[1]);
     const time = text.match(/\b([01]?\d|2[0-3])\s*(?::|\.)([0-5]\d)\b/);
     if (time) entities.time = `${time[1].padStart(2, '0')}:${time[2]}`;
-    const duration = text.match(/\b(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\b/i);
-    if (duration) entities.durationMinutes = Number(duration[1]);
     const relative = text.match(/\b(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\s*(?:بعد|دیگه|later|from now)\b/i);
     if (relative) entities.relativeMinutes = Number(relative[1]);
     if (this.matches(text, ['اول', 'اولی', 'first'])) entities.ordinal = 1;
@@ -85,6 +89,18 @@ export class ContextualCommandService {
     else if (this.matches(text, ['بله', 'آره', 'اره', 'حتما', 'باشه', 'اوکی', 'yes', 'sure'])) entities.confirmation = 'yes';
     if (this.matches(text, ['نه', 'بدون', 'نذار', 'نمیخوام', 'نمی خوام'])) entities.negated = true;
     return entities;
+  }
+
+  private splitClauses(text: string): string[] {
+    return text.split(/\s+(?:و|ولی|اما|بعد|سپس|then|and|but)\s+/i).map((part) => part.trim()).filter(Boolean);
+  }
+
+  private scoreConfidence(text: string, referencesPrevious: boolean, operation: ContextualCommand['operation'], entities: ContextualCommand['entities']): number {
+    let score = operation === 'unknown' ? 0.35 : 0.65;
+    if (text.length > 3) score += 0.05;
+    if (referencesPrevious) score += 0.1;
+    if (Object.keys(entities).length) score += 0.1;
+    return Math.min(0.95, Number(score.toFixed(2)));
   }
 
   private matches(text: string, phrases: string[]): boolean { return phrases.some((phrase) => text.includes(phrase)); }
