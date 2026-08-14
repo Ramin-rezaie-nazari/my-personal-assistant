@@ -11,6 +11,30 @@ export class NextBestActionService {
     const action = plan.bestAction;
     if (!action) return { action: null, mode: 'maintenance', message: 'No actionable task is currently available.', alternatives: plan.alternatives, signals: insights.recommendations };
     const urgent = action.reasons.includes('overdue') || action.reasons.includes('due today');
-    return { action: { id: action.id, title: action.title, estimatedMinutes: action.estimatedMinutes, priority: action.priority, urgent, reasons: action.reasons }, mode: urgent ? 'urgent' : 'normal', alternatives: plan.alternatives, signals: insights.recommendations };
+    return {
+      action: {
+        id: action.id,
+        title: action.title,
+        estimatedMinutes: action.estimatedMinutes,
+        priority: action.priority,
+        urgent,
+        reasons: action.reasons,
+      },
+      execution: {
+        candidate: {
+          id: action.id,
+          domain: 'schedule' as const,
+          action: 'complete_life_task',
+          score: action.score,
+          confidence: 1,
+          priority: action.priority,
+          source: 'smart_planning',
+          durationMinutes: action.estimatedMinutes,
+        },
+      },
+      mode: urgent ? 'urgent' : 'normal',
+      alternatives: plan.alternatives,
+      signals: insights.recommendations,
+    };
   }
 }
