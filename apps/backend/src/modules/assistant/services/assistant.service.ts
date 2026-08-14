@@ -5,6 +5,7 @@ import { NaturalActionExecutionService } from './natural-action-execution.servic
 import { ContextualCommandService } from './contextual-command.service';
 import { ConversationContextService } from './conversation-context.service';
 import { LocalLanguageUnderstandingService } from './local-language-understanding.service';
+import { PlanningService } from './planning.service';
 import { BrainResponse } from '../../personal-brain/types';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class AssistantService {
     private readonly contextualCommandService: ContextualCommandService,
     private readonly conversationContextService: ConversationContextService,
     private readonly localLanguageUnderstandingService: LocalLanguageUnderstandingService,
+    private readonly planningService: PlanningService,
   ) {}
 
   async getStatus() { return { name: 'My Personal Assistant', status: 'brain foundation active' }; }
@@ -34,7 +36,10 @@ export class AssistantService {
     await this.conversationContextService.append({ userId, role: 'user', text: input });
     const contextualCommand = await this.contextualCommandService.resolve(userId, input);
     const local = this.localLanguageUnderstandingService.understand(input);
-    const response = this.responseForLocalIntent(local) ?? await this.brainOrchestratorService.processRequest(input, userId);
+    const plan = await this.planningService.createPlan({ clauses: contextualCommand.clauses, intents: contextualCommand.intents, contradictions: contextualCommand.contradictions, confidence: contextualCommand.confidence });
+    const response = plan.requiresClarification
+      ? { intent: 'assistant', nextAction: undefined, message: plan.reason === 'conflicting_request' ? 'یه بخش از درخواستت با بخش دیگه تناقض داره؛ قبل از انجامش باید مشخص کنی دقیقاً کدوم رو می‌خوای.', confidence: contextualCommand.confidence, metadata: { local: true, clarification: true } } as BrainResponse
+      : this.responseForLocalIntent(local) ?? await this.brainOrchestratorService.processRequest(input, userId);
     const executionResponse = this.resolveContextualExecution(response, contextualCommand, input);
     const execution = executionResponse.nextAction
       ? await this.naturalActionExecutionService.execute(input, userId, executionResponse, {
@@ -46,6 +51,7 @@ export class AssistantService {
           targetResourceId: contextualCommand.targetResourceId,
           operation: contextualCommand.operation,
           localUnderstanding: local,
+          localPlan: plan,
         })
       : undefined;
 
@@ -53,7 +59,7 @@ export class AssistantService {
       ...executionResponse,
       message: execution?.executed ? execution.message : (execution?.message ?? executionResponse.message),
       ...(execution ? { execution } : {}),
-      metadata: { ...(executionResponse.metadata ?? {}), localUnderstanding: local, contextualCommand },
+      metadata: { ...(executionResponse.metadata ?? {}), localUnderstanding: local, contextualCommand, localPlan: plan },
     };
     const receipt = execution?.receipt;
     const resourceId = receipt && typeof receipt === 'object' && receipt !== null && 'result' in receipt ? this.extractExecutionEntityId((receipt as { result?: unknown }).result) : undefined;
