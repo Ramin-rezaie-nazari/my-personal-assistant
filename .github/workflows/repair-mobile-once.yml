@@ -1,0 +1,64 @@
+name: repair-mobile-once
+
+on:
+  push:
+    branches:
+      - fix/mobile-typescript-and-doctor
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Repair JSX syntax and regenerate lockfile
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('apps/mobile/app/index.tsx')
+          text = path.read_text()
+          marker = "pressed:{opacity:.9}}"
+          if marker not in text:
+              raise SystemExit('Expected StyleSheet terminator not found')
+          if not text.rstrip().endswith(marker):
+              raise SystemExit('Unexpected app/index.tsx ending')
+          text = text.rstrip()[:-len(marker)] + marker[:-1] + ');\n'
+          path.write_text(text)
+          PY
+          pnpm install --lockfile-only
+
+      - name: Validate mobile TypeScript
+        run: pnpm --filter @my-personal-assistant/mobile typecheck
+
+      - name: Validate Expo config
+        working-directory: apps/mobile
+        run: pnpm exec expo config --json --full > /tmp/expo-config.json
+
+      - name: Commit verified repair
+        shell: bash
+        run: |
+          rm -f .github/workflows/repair-mobile-once.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/mobile/app/index.tsx pnpm-lock.yaml .github/workflows/repair-mobile-once.yml
+          if git diff --cached --quiet; then
+            echo 'No repair changes to commit.'
+            exit 0
+          fi
+          git commit -m 'fix(mobile): repair JSX syntax and lockfile'
+          git push origin HEAD:fix/mobile-typescript-and-doctor
