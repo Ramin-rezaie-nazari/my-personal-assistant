@@ -71,6 +71,8 @@ export class AssistantService {
       RECOMMEND_MEAL: { intent: 'nutrition', nextAction: 'recommend_meal', message: 'حتماً، بر اساس اطلاعات خودت یک گزینه مناسب پیدا می‌کنم.' },
       GET_NUTRITION_SUMMARY: { intent: 'nutrition', nextAction: 'get_nutrition_summary', message: 'حتماً، خلاصه تغذیه امروزت رو بررسی می‌کنم.' },
       CREATE_REMINDER: { intent: 'reminder', nextAction: 'create_reminder', message: 'حتماً، یادآوری رو برایت آماده می‌کنم.' },
+      UPDATE_REQUEST: { intent: 'assistant', nextAction: 'update_contextual_request', message: 'باشه، درخواست قبلی رو با تغییر جدیدت به‌روزرسانی می‌کنم.' },
+      CANCEL_REQUEST: { intent: 'assistant', nextAction: 'cancel_contextual_request', message: 'باشه، درخواست قبلی رو لغو می‌کنم.' },
     };
     const selected = map[local.intent];
     return selected ? { ...selected, confidence: local.confidence, metadata: { local: true, entities: local.entities } } as BrainResponse : undefined;
