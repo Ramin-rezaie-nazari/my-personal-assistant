@@ -16,6 +16,7 @@ import { ConversationHistoryService } from './services/conversation-history.serv
 import { ConversationContextService } from './services/conversation-context.service';
 import { ContextualCommandService } from './services/contextual-command.service';
 import { AiProviderRouterService } from './services/ai-provider-router.service';
+import { LocalLanguageUnderstandingService } from './services/local-language-understanding.service';
 import { LocalIntelligenceProvider } from './providers/local-intelligence.provider';
 
 @Module({
@@ -24,12 +25,13 @@ import { LocalIntelligenceProvider } from './providers/local-intelligence.provid
   providers: [
     KnowledgeService, RuleEngineService, PlanningService, AssistantService, MemoryService, ContextService,
     ReasoningService, RecommendationService, NaturalActionExecutionService, ConversationHistoryService,
-    ConversationContextService, ContextualCommandService, LocalIntelligenceProvider, AiProviderRouterService,
+    ConversationContextService, ContextualCommandService, AiProviderRouterService,
+    LocalLanguageUnderstandingService, LocalIntelligenceProvider,
   ],
   exports: [
     AssistantService, MemoryService, ContextService, ReasoningService, RecommendationService,
     NaturalActionExecutionService, ConversationHistoryService, ConversationContextService,
-    ContextualCommandService, AiProviderRouterService,
+    ContextualCommandService, AiProviderRouterService, LocalLanguageUnderstandingService,
   ],
 })
 export class AssistantModule {}
