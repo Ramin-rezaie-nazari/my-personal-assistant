@@ -12,6 +12,19 @@ export type NaturalActionExecution = {
   receipt?: unknown;
 };
 
+export type SequentialPlanStep = {
+  id: string;
+  candidate: DecisionCandidate;
+  contextualState?: Record<string, unknown>;
+  requiresConfirmation?: boolean;
+};
+
+export type SequentialPlanResult = {
+  completed: NaturalActionExecution[];
+  stoppedAt?: string;
+  reason?: 'pending_confirmation' | 'blocked' | 'unsupported' | 'failed';
+};
+
 @Injectable()
 export class NaturalActionExecutionService {
   constructor(private readonly coordinator: DecisionExecutionCoordinatorService) {}
@@ -21,6 +34,40 @@ export class NaturalActionExecutionService {
     const candidate: DecisionCandidate = { id: this.buildId(userId, input, response.nextAction), domain: this.domainFor(response.intent), action: response.nextAction, score: response.confidence, confidence: response.confidence, source: 'natural-language' };
     const receipt = await this.coordinator.execute(userId, candidate, { userId, source: 'natural-language', input, contextualState });
     return this.fromReceipt(candidate, response.intent, receipt);
+  }
+
+  async executePlan(userId: string, steps: SequentialPlanStep[]): Promise<SequentialPlanResult> {
+    const completed: NaturalActionExecution[] = [];
+    const resultsByStep: Record<string, unknown> = {};
+
+    for (const step of steps) {
+      const contextualState = {
+        ...(step.contextualState ?? {}),
+        previousStepResults: resultsByStep,
+      };
+      const receipt = await this.coordinator.execute(userId, step.candidate, {
+        userId,
+        source: 'local-plan',
+        input: step.candidate.action,
+        contextualState,
+      });
+      const result = this.fromReceipt(step.candidate, step.candidate.action, receipt);
+
+      if (result.executed) {
+        completed.push(result);
+        resultsByStep[step.id] = result.receipt;
+        continue;
+      }
+
+      if (receipt.status === 'pending_confirmation') {
+        return { completed, stoppedAt: step.id, reason: 'pending_confirmation' };
+      }
+      if (receipt.status === 'blocked') return { completed, stoppedAt: step.id, reason: 'blocked' };
+      if (receipt.status === 'unsupported') return { completed, stoppedAt: step.id, reason: 'unsupported' };
+      return { completed, stoppedAt: step.id, reason: 'failed' };
+    }
+
+    return { completed };
   }
 
   async confirm(userId: string, token: string) {
