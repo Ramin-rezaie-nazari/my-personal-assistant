@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
 
@@ -18,6 +19,14 @@ export type DecisionOutcomeProfile = {
   negativeRate: number;
   trend: 'improving' | 'declining' | 'stable' | 'insufficient-data';
   confidenceAdjustment: number;
+};
+
+type OutcomeRow = {
+  decisionId?: string;
+  outcome: string;
+  score: number | null;
+  createdAt: Date;
+  source: string;
 };
 
 @Injectable()
@@ -43,8 +52,43 @@ export class DecisionOutcomeLearningService {
       LIMIT 100
     `;
 
+    return this.buildProfile(rows);
+  }
+
+  async decisionAdjustments(userId: string, decisionIds: string[]): Promise<Record<string, number>> {
+    const ids = [...new Set(decisionIds.filter(Boolean))].slice(0, 100);
+    if (!ids.length) return {};
+
+    const rows = await this.prisma.$queryRaw<OutcomeRow[]>`
+      SELECT "decisionId", "outcome", "score", "createdAt", "source"
+      FROM "DecisionOutcome"
+      WHERE "userId" = ${userId}
+        AND "decisionId" IN (${Prisma.join(ids)})
+      ORDER BY "createdAt" DESC
+      LIMIT 500
+    `;
+
+    const grouped = new Map<string, OutcomeRow[]>();
+    for (const row of rows) {
+      if (!row.decisionId) continue;
+      const bucket = grouped.get(row.decisionId) ?? [];
+      if (bucket.length < 20) bucket.push(row);
+      grouped.set(row.decisionId, bucket);
+    }
+
+    return Object.fromEntries(ids.map((id) => [id, this.buildProfile(grouped.get(id) ?? []).confidenceAdjustment]));
+  }
+
+  private buildProfile(rows: Array<{ outcome: string; score: number | null; createdAt: Date; source: string }>): DecisionOutcomeProfile {
     if (rows.length < 3) {
-      return { sampleSize: rows.length, averageScore: this.average(rows), positiveRate: this.rate(rows, 'positive'), negativeRate: this.rate(rows, 'negative'), trend: 'insufficient-data', confidenceAdjustment: 0 };
+      return {
+        sampleSize: rows.length,
+        averageScore: this.average(rows),
+        positiveRate: this.rate(rows, 'positive'),
+        negativeRate: this.rate(rows, 'negative'),
+        trend: 'insufficient-data',
+        confidenceAdjustment: 0,
+      };
     }
 
     const recent = rows.slice(0, Math.ceil(rows.length / 3));
@@ -63,7 +107,14 @@ export class DecisionOutcomeLearningService {
     if (qualityRows.length >= 5 && qualityPositiveRate >= 0.7 && trend !== 'declining') confidenceAdjustment = 0.04;
     if (qualityRows.length >= 5 && qualityNegativeRate >= 0.7 && trend !== 'improving') confidenceAdjustment = -0.04;
 
-    return { sampleSize: rows.length, averageScore: this.average(rows), positiveRate, negativeRate, trend, confidenceAdjustment };
+    return {
+      sampleSize: rows.length,
+      averageScore: this.average(rows),
+      positiveRate,
+      negativeRate,
+      trend,
+      confidenceAdjustment,
+    };
   }
 
   private average(rows: Array<{ score: number | null }>) {
