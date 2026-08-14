@@ -37,6 +37,16 @@ interface AuthenticatedRequest extends Request { user: { id: string } }
 export class PersonalBrainController {
   constructor(private readonly brainOrchestratorService: BrainOrchestratorService, private readonly brainReasoningContextService: BrainReasoningContextService, private readonly brainDecisionPipelineService: BrainDecisionPipelineService, private readonly fitnessSessionOrchestratorService: FitnessSessionOrchestratorService, private readonly fitnessSkillUnlockService: FitnessSkillUnlockService, private readonly workoutPerformanceMemoryService: WorkoutPerformanceMemoryService, private readonly decisionExplanationMemoryService: DecisionExplanationMemoryService, private readonly decisionOutcomeLearningService: DecisionOutcomeLearningService, private readonly coachCueEngineService: CoachCueEngineService, private readonly smartPlanningService: SmartPlanningService, private readonly fullDaySchedulerService: FullDaySchedulerService, private readonly dynamicReplanningService: DynamicReplanningService, private readonly scheduleInsightsService: ScheduleInsightsService, private readonly nextBestActionService: NextBestActionService, private readonly scheduleHealthService: ScheduleHealthService, private readonly replanPolicyService: ReplanPolicyService, private readonly scheduleRecoveryService: ScheduleRecoveryService, private readonly proactiveCoachService: ProactiveCoachService, private readonly coachMessageService: CoachMessageService, private readonly proactiveEventEngineService: ProactiveEventEngineService, private readonly notificationOrchestratorService: NotificationOrchestratorService, private readonly notificationDeduplicationService: NotificationDeduplicationService, private readonly notificationFeedbackService: NotificationFeedbackService, private readonly notificationDeviceRegistryService: NotificationDeviceRegistryService, private readonly scenarioPlanningService: ScenarioPlanningService, private readonly persistentPlanStateService: PersistentPlanStateService, private readonly decisionAuditService: DecisionAuditService) {}
   @Get() getStatus() { return { module: 'personal-brain', status: 'ready' }; }
+  @Get('overview') @UseGuards(JwtAuthGuard) async getOverview(@Req() req: AuthenticatedRequest) {
+    const userId = req.user.id;
+    const [plan, nextAction, coachNext, scheduleHealth] = await Promise.all([
+      this.smartPlanningService.getPlan(userId),
+      this.nextBestActionService.get(userId),
+      this.proactiveCoachService.getNextCoach(userId),
+      this.scheduleHealthService.evaluate(userId),
+    ]);
+    return { plan, nextAction, coachNext, scheduleHealth };
+  }
   @Get('plan') @UseGuards(JwtAuthGuard) async getPlan(@Req() req: AuthenticatedRequest) { return this.smartPlanningService.getPlan(req.user.id); }
   @Get('plan/history') @UseGuards(JwtAuthGuard) async getPlanHistory(@Req() req: AuthenticatedRequest) { return this.persistentPlanStateService.listRecent(req.user.id, 10); }
   @Get('trace') @UseGuards(JwtAuthGuard) async getTrace(@Req() req: AuthenticatedRequest) { return this.decisionAuditService.recent(req.user.id, 20); }
