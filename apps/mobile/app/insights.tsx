@@ -20,6 +20,7 @@ export default function InsightsScreen() {
         <View style={styles.navRow}>
           <Link href="/" asChild><Pressable style={styles.back}><Text style={styles.backText}>← Home</Text></Pressable></Link>
           <View style={styles.navLinks}>
+            <Link href="/brain-overview" asChild><Pressable style={styles.navLink}><Text style={styles.navLinkText}>🧠 Brain</Text></Pressable></Link>
             <Link href="/daily" asChild><Pressable style={styles.navLink}><Text style={styles.navLinkText}>☀️ Today</Text></Pressable></Link>
             <Link href="/reminders" asChild><Pressable style={styles.navLink}><Text style={styles.navLinkText}>⏰ Reminders</Text></Pressable></Link>
           </View>
