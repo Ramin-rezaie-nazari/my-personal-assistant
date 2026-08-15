@@ -1,31 +1,18 @@
 import { NormalizedPrice, PriceSourceKind } from '../models/price-intelligence.model';
 
-export type HttpSourceConfig = {
-  id: string;
-  kind: PriceSourceKind;
-  baseUrl: string;
-  searchUrlTemplate: string;
-  timeoutMs?: number;
-};
+export type HttpSourceConfig = { id: string; kind: PriceSourceKind; baseUrl: string; searchUrlTemplate: string; timeoutMs?: number };
 
 export class HttpPriceSourceAdapter {
   readonly id: string;
   readonly kind: PriceSourceKind;
-
-  constructor(private readonly config: HttpSourceConfig) {
-    this.id = config.id;
-    this.kind = config.kind;
-  }
+  constructor(private readonly config: HttpSourceConfig) { this.id = config.id; this.kind = config.kind; }
 
   async fetchPrices(productKeys: string[]): Promise<NormalizedPrice[]> {
     const output: NormalizedPrice[] = [];
     for (const productKey of productKeys) {
       const query = productKey.replace(/-/g, ' ');
       const url = this.config.searchUrlTemplate.replace('{query}', encodeURIComponent(query));
-      const response = await fetch(url, {
-        headers: { accept: 'text/html,application/xhtml+xml,application/json', 'user-agent': 'MyPersonalAssistant/1.0 price-intelligence' },
-        signal: AbortSignal.timeout(this.config.timeoutMs ?? 12_000),
-      });
+      const response = await fetch(url, { headers: { accept: 'text/html,application/xhtml+xml,application/json', 'user-agent': 'MyPersonalAssistant/1.0 price-intelligence' }, signal: AbortSignal.timeout(this.config.timeoutMs ?? 12_000) });
       if (!response.ok) throw new Error(`price_source_http_${this.id}_${response.status}`);
       output.push(...this.parse(productKey, await response.text(), url));
     }
@@ -49,26 +36,23 @@ export class HttpPriceSourceAdapter {
             prices.push(this.normalize(productKey, title, amount, offer?.priceCurrency, offer?.availability, offer?.url ?? sourceUrl));
           }
         }
-      } catch {
-        // Ignore malformed JSON-LD and use the HTML fallback.
-      }
+      } catch { /* malformed JSON-LD */ }
     }
     if (!prices.length) {
-      const patterns = [/(?:"price"|data-price|price)["'=:\s]+(?:"|')?([0-9۰-۹,٬\.]+)/gi, /([0-9۰-۹,٬\.]+)\s*(?:تومان|تومن|ریال)/gi];
-      for (const pattern of patterns) {
-        const match = pattern.exec(html);
-        if (!match) continue;
-        const amount = this.number(match[1]);
-        if (amount > 0) prices.push(this.normalize(productKey, productKey.replace(/-/g, ' '), amount, 'IRR', 'unknown', sourceUrl));
-        break;
-      }
+      const toman = /([0-9۰-۹,٬\.]+)\s*(?:تومان|تومن)/i.exec(html);
+      const rial = /([0-9۰-۹,٬\.]+)\s*ریال/i.exec(html);
+      const generic = /(?:"price"|data-price|price)["'=:\s]+(?:"|')?([0-9۰-۹,٬\.]+)/i.exec(html);
+      if (toman) prices.push(this.normalize(productKey, productKey.replace(/-/g, ' '), this.number(toman[1]), 'IRT', 'unknown', sourceUrl));
+      else if (rial) prices.push(this.normalize(productKey, productKey.replace(/-/g, ' '), this.number(rial[1]), 'IRR', 'unknown', sourceUrl));
+      else if (generic) prices.push(this.normalize(productKey, productKey.replace(/-/g, ' '), this.number(generic[1]), 'IRT', 'unknown', sourceUrl));
     }
     return prices;
   }
 
   private normalize(productKey: string, title: string, amount: number, currency: unknown, availability: unknown, url: string): NormalizedPrice {
     const rawCurrency = String(currency ?? '').toUpperCase();
-    return { productKey, title, sourceId: this.id, sourceKind: this.kind, url, currency: rawCurrency || 'IRR', amount, availability: this.availability(availability), observedAt: new Date() };
+    const isRial = rawCurrency === 'IRR' || rawCurrency.includes('RIAL');
+    return { productKey, title, sourceId: this.id, sourceKind: this.kind, url, currency: 'IRT', amount: isRial ? amount / 10 : amount, availability: this.availability(availability), observedAt: new Date() };
   }
 
   private isRelevant(title: string, key: string) {
@@ -90,7 +74,5 @@ export class HttpPriceSourceAdapter {
     return Number.isFinite(parsed) ? parsed : 0;
   }
 
-  private decode(value: string) {
-    return value.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&');
-  }
+  private decode(value: string) { return value.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&'); }
 }
