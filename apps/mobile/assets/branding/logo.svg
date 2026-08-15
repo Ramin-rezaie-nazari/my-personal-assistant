@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="520" viewBox="0 0 1600 520" role="img" aria-labelledby="title desc">
+  <title id="title">My Personal Assistant</title>
+  <desc id="desc">Canonical dark brand lockup with assistant mark and wordmark.</desc>
+  <defs>
+    <linearGradient id="core" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#7C3AED"/>
+      <stop offset="0.55" stop-color="#A78BFA"/>
+      <stop offset="1" stop-color="#22D3EE"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="520" rx="64" fill="#070B1A"/>
+  <rect x="64" y="64" width="392" height="392" rx="112" fill="#111A39" stroke="#6D5CE7" stroke-width="3"/>
+  <rect x="142" y="142" width="236" height="236" rx="70" fill="url(#core)"/>
+  <path d="M180 260h160M260 194v132" stroke="#fff" stroke-width="16" stroke-linecap="round"/>
+  <circle cx="180" cy="260" r="18" fill="#fff"/>
+  <circle cx="260" cy="194" r="18" fill="#22D3EE"/>
+  <circle cx="340" cy="260" r="18" fill="#fff"/>
+  <circle cx="260" cy="326" r="18" fill="#fff"/>
+  <path d="M192 228C220 174 300 174 328 228" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round" opacity=".82"/>
+  <text x="520" y="246" fill="#fff" font-family="Inter, Arial, sans-serif" font-size="72" font-weight="800">My Personal Assistant</text>
+  <text x="524" y="318" fill="#B7B8C7" font-family="Inter, Arial, sans-serif" font-size="30">Your day. Your goals. Your assistant.</text>
+  <circle cx="526" cy="376" r="7" fill="#22D3EE"/>
+  <text x="548" y="386" fill="#A78BFA" font-family="Inter, Arial, sans-serif" font-size="21" font-weight="700" letter-spacing="1.5">PERSONAL · CONTEXTUAL · ACTIONABLE</text>
+</svg>
