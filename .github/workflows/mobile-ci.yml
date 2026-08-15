@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/mobile-ci.yml'
 
 permissions:
   contents: read
@@ -12,7 +16,7 @@ permissions:
 jobs:
   mobile:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -36,3 +40,9 @@ jobs:
 
       - name: Typecheck mobile
         run: pnpm --filter @my-personal-assistant/mobile typecheck
+
+      - name: Validate Expo project
+        run: pnpm --filter @my-personal-assistant/mobile exec expo config --type public
+
+      - name: Bundle Android JavaScript
+        run: pnpm --filter @my-personal-assistant/mobile exec expo export --platform android --output-dir /tmp/mobile-export
