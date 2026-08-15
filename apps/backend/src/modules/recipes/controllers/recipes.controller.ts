@@ -1,19 +1,44 @@
-import { Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RecipesService } from '../services/recipes.service';
 import { RecipeInventoryMatcherService } from '../services/recipe-inventory-matcher.service';
+import { CreateRecipeDto } from '../dto/create-recipe.dto';
 
 @Controller('recipes')
 @UseGuards(JwtAuthGuard)
 export class RecipesController {
-  constructor(private readonly recipesService: RecipesService, private readonly matcher: RecipeInventoryMatcherService) {}
+  constructor(
+    private readonly recipesService: RecipesService,
+    private readonly matcher: RecipeInventoryMatcherService,
+  ) {}
 
   @Post()
-  create() { return this.recipesService.createRecipe(); }
+  create(@Request() req: { user: { id: string } }, @Body() dto: CreateRecipeDto) {
+    return this.recipesService.createRecipe(req.user.id, dto);
+  }
 
   @Get()
-  findAll() { return this.recipesService.getRecipes(); }
+  findAll(@Request() req: { user: { id: string } }) {
+    return this.recipesService.getRecipes(req.user.id);
+  }
 
   @Get('match')
-  match(@Request() req: { user: { id: string } }) { return this.matcher.match(req.user.id); }
+  match(@Request() req: { user: { id: string } }) {
+    return this.matcher.match(req.user.id);
+  }
+
+  @Get(':id')
+  findOne(@Request() req: { user: { id: string } }, @Param('id') id: string) {
+    return this.recipesService.getRecipe(req.user.id, id);
+  }
+
+  @Patch(':id')
+  update(@Request() req: { user: { id: string } }, @Param('id') id: string, @Body() body: Partial<CreateRecipeDto>) {
+    return this.recipesService.updateRecipe(req.user.id, id, body);
+  }
+
+  @Delete(':id')
+  remove(@Request() req: { user: { id: string } }, @Param('id') id: string) {
+    return this.recipesService.deleteRecipe(req.user.id, id);
+  }
 }
