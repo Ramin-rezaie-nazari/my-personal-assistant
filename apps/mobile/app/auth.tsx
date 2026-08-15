@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { AuthUser, login, register } from '../lib/api';
 import { AppLocale, getStoredLocale, t } from '../lib/i18n';
+import { hasCompletedOnboarding } from '../lib/onboarding';
 
 export default function AuthScreen() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -15,12 +16,13 @@ export default function AuthScreen() {
   const [error, setError] = useState<string | null>(null);
   const [locale, setLocale] = useState<AppLocale>('en');
 
-  useEffect(() => {
-    void getStoredLocale().then((stored) => { if (stored) setLocale(stored); });
-  }, []);
+  useEffect(() => { void getStoredLocale().then((stored) => { if (stored) setLocale(stored); }); }, []);
 
   const isFa = locale === 'fa';
-  const onAuthenticated = (_user: AuthUser) => router.replace('/onboarding');
+
+  const onAuthenticated = async (_user: AuthUser) => {
+    router.replace((await hasCompletedOnboarding()) ? '/' : '/onboarding');
+  };
 
   const submit = async () => {
     if (!email.trim() || !password) { setError(isFa ? 'ایمیل و رمز عبور را وارد کن.' : 'Email and password are required.'); return; }
@@ -31,7 +33,7 @@ export default function AuthScreen() {
       const auth = mode === 'login'
         ? await login(email.trim(), password)
         : await register({ email: email.trim(), password, firstName: firstName.trim() || undefined, lastName: lastName.trim() || undefined });
-      onAuthenticated(auth.user);
+      await onAuthenticated(auth.user);
     } catch (err) {
       setError(err instanceof Error ? err.message : (isFa ? 'ورود ناموفق بود.' : 'Unable to authenticate.'));
     } finally {
