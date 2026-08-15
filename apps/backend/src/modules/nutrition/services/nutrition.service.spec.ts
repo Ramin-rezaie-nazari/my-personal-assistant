@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { NutritionService } from './nutrition.service';
 
 describe('NutritionService', () => {
@@ -69,6 +70,35 @@ describe('NutritionService', () => {
     });
   });
 
+  it('rejects invalid date keys before touching the database', async () => {
+    await expect(service.getDailySummary('user-1', '2026-02-30')).rejects.toThrow(BadRequestException);
+    expect(prisma.nutritionLog.findMany).not.toHaveBeenCalled();
+  });
+
+  it('rejects blank labels and negative or non-finite nutrition values', async () => {
+    await expect(service.createLog('user-1', {
+      mealType: ' ',
+      title: 'Breakfast',
+    })).rejects.toThrow('mealType must not be empty');
+
+    await expect(service.createLog('user-1', {
+      mealType: 'breakfast',
+      title: ' ',
+    })).rejects.toThrow('title must not be empty');
+
+    await expect(service.createLog('user-1', {
+      mealType: 'breakfast',
+      title: 'Eggs',
+      calories: -1,
+    })).rejects.toThrow('calories must be a finite non-negative number');
+
+    await expect(service.createLog('user-1', {
+      mealType: 'breakfast',
+      title: 'Eggs',
+      protein: Number.POSITIVE_INFINITY,
+    })).rejects.toThrow('protein must be a finite non-negative number');
+  });
+
   it('builds a goal-aware daily summary from logged nutrition and daily totals', async () => {
     prisma.nutritionLog.findMany.mockResolvedValue([
       { calories: 500, protein: 30, carbs: 50, fat: 15 },
@@ -105,5 +135,42 @@ describe('NutritionService', () => {
       },
       status: { calories: 'under', protein: 'under', water: 'under' },
     });
+  });
+
+  it('clamps remaining values to zero and reports over-target status', async () => {
+    prisma.nutritionLog.findMany.mockResolvedValue([
+      { calories: 1800, protein: 100, carbs: 40, fat: 20 },
+    ]);
+    prisma.nutritionProfile.findUnique.mockResolvedValue({
+      dailyCaloriesGoal: 1500,
+      proteinGoalGrams: 80,
+      waterGoalMl: 2000,
+    });
+    prisma.dailyLog.findUnique.mockResolvedValue({
+      calories: 1800,
+      protein: 100,
+      waterMl: 2400,
+    });
+
+    const summary = await service.getDailySummary('user-1', '2026-08-11');
+
+    expect(summary.remaining).toEqual({ calories: 0, protein: 0, waterMl: 0 });
+    expect(summary.status).toEqual({ calories: 'over', protein: 'over', water: 'over' });
+    expect(summary.progress).toEqual({ caloriesPercent: 120, proteinPercent: 125, waterPercent: 120 });
+  });
+
+  it('returns unknown progress/status when goals are missing or invalid', async () => {
+    prisma.dailyLog.findUnique.mockResolvedValue({ calories: 500, protein: 20, waterMl: 400 });
+    prisma.nutritionProfile.findUnique.mockResolvedValue({
+      dailyCaloriesGoal: 0,
+      proteinGoalGrams: null,
+      waterGoalMl: null,
+    });
+
+    const summary = await service.getDailySummary('user-1', '2026-08-11');
+
+    expect(summary.progress).toEqual({ caloriesPercent: null, proteinPercent: null, waterPercent: null });
+    expect(summary.remaining).toEqual({ calories: 0, protein: null, waterMl: null });
+    expect(summary.status).toEqual({ calories: 'unknown', protein: 'unknown', water: 'unknown' });
   });
 });
