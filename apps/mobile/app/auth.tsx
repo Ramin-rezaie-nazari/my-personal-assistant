@@ -20,11 +20,11 @@ export default function AuthScreen() {
   }, []);
 
   const isFa = locale === 'fa';
-  const onAuthenticated = (_user: AuthUser) => router.replace('/');
+  const onAuthenticated = (_user: AuthUser) => router.replace('/onboarding');
 
   const submit = async () => {
     if (!email.trim() || !password) { setError(isFa ? 'ایمیل و رمز عبور را وارد کن.' : 'Email and password are required.'); return; }
-    if (mode === 'register' && password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (mode === 'register' && password.length < 8) { setError(isFa ? 'رمز عبور باید حداقل ۸ کاراکتر باشد.' : 'Password must be at least 8 characters.'); return; }
     try {
       setBusy(true);
       setError(null);
