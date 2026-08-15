@@ -89,3 +89,5 @@ export function getNutritionSummary(dateKey?:string){const q=dateKey?`?dateKey=$
 export function getYogaSession(durationMin:number,level?:YogaSession['level'],focus?:string){return request<YogaSession>('/yoga/session',{method:'POST',body:JSON.stringify({durationMin,level,focus})})}
 export function startYogaCoach(session:YogaSession){return request<YogaCoachState>('/yoga/coach/start',{method:'POST',body:JSON.stringify({session})})}
 export function tickYogaCoach(session:YogaSession,state:YogaCoachState,elapsedSec:number){return request<YogaCoachState>('/yoga/coach/tick',{method:'POST',body:JSON.stringify({session,state,elapsedSec})})}
+export function getYogaCue(state:YogaCoachState){return request<{poseId:string;phase:YogaCoachState['phase'];text:string}|null>('/yoga/coach/cue',{method:'POST',body:JSON.stringify({state})})}
+export function analyzeYogaPose(poseId:string,frame:YogaPoseFrame){return request<YogaPoseAssessment>('/yoga/motion/analyze',{method:'POST',body:JSON.stringify({poseId,frame})})}
