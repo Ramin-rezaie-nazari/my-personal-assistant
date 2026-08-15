@@ -13,6 +13,7 @@ import {
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RemindersService } from '../services/reminders.service';
 import { CreateReminderDto } from '../dto/create-reminder.dto';
+import { UpdateReminderDto } from '../dto/update-reminder.dto';
 
 @Controller('reminders')
 @UseGuards(JwtAuthGuard)
@@ -38,7 +39,11 @@ export class RemindersController {
   }
 
   @Patch(':id')
-  update(@Request() req: { user: { id: string } }, @Param('id') reminderId: string, @Body() patch: { title?: string; time?: string }) {
+  update(
+    @Request() req: { user: { id: string } },
+    @Param('id') reminderId: string,
+    @Body() patch: UpdateReminderDto,
+  ) {
     return this.remindersService.updateReminder(req.user.id, reminderId, patch);
   }
 
