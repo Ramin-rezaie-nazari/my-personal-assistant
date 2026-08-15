@@ -27,7 +27,7 @@ export default function LanguageScreen() {
     setBusy(true);
     await setStoredLocale(locale);
     I18nManager.allowRTL(isRTL(locale));
-    router.replace('/');
+    router.replace('/auth');
   };
 
   if (!ready) return <View style={styles.loading}><BrandMark /><ActivityIndicator color="#7C3AED" style={styles.loadingSpinner} /></View>;

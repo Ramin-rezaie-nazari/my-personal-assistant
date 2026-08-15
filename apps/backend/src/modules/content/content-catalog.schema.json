@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "My Personal Assistant Content Catalog",
+  "type": "object",
+  "required": ["recipes", "exercises"],
+  "properties": {
+    "recipes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "cuisines", "countries", "tags", "ingredients"],
+        "properties": {
+          "id": {"type": "string"},
+          "title": {"type": "string"},
+          "originCountry": {"type": "string"},
+          "cuisines": {"type": "array", "items": {"type": "string"}},
+          "countries": {"type": "array", "items": {"type": "string"}},
+          "tags": {"type": "array", "items": {"type": "string"}},
+          "ingredients": {"type": "array", "items": {"type": "string"}},
+          "calories": {"type": "number"},
+          "protein": {"type": "number"},
+          "prepTimeMinutes": {"type": "integer"},
+          "difficulty": {"type": "string"},
+          "popularityScore": {"type": "number"},
+          "image": {"$ref": "#/$defs/media"},
+          "video": {"$ref": "#/$defs/media"}
+        }
+      }
+    },
+    "exercises": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "discipline", "tags", "equipment"],
+        "properties": {
+          "id": {"type": "string"},
+          "title": {"type": "string"},
+          "discipline": {"type": "string"},
+          "targetCountries": {"type": "array", "items": {"type": "string"}},
+          "tags": {"type": "array", "items": {"type": "string"}},
+          "equipment": {"type": "array", "items": {"type": "string"}},
+          "difficulty": {"type": "string"},
+          "goals": {"type": "array", "items": {"type": "string"}},
+          "popularityScore": {"type": "number"},
+          "image": {"$ref": "#/$defs/media"},
+          "video": {"$ref": "#/$defs/media"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "media": {
+      "type": "object",
+      "required": ["url", "source", "license"],
+      "properties": {
+        "url": {"type": "string", "format": "uri"},
+        "thumbnailUrl": {"type": "string", "format": "uri"},
+        "source": {"type": "string"},
+        "sourceUrl": {"type": "string", "format": "uri"},
+        "license": {"type": "string"},
+        "author": {"type": "string"},
+        "attribution": {"type": "string"}
+      }
+    }
+  }
+}

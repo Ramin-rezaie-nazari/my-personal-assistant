@@ -40,6 +40,7 @@ import { DailyCommandCenterModule } from './modules/daily-command-center/daily-c
 import { YogaModule } from './modules/yoga/yoga.module';
 import { CalisthenicsModule } from './modules/calisthenics/calisthenics.module';
 import { FitnessModule } from './modules/fitness/fitness.module';
+import { ContentModule } from './modules/content/content.module';
 
 @Module({
   imports: [
@@ -49,7 +50,7 @@ import { FitnessModule } from './modules/fitness/fitness.module';
     AssistantModule, UserIntelligenceModule, BudgetIntelligenceModule, PriceIntelligenceModule,
     ShoppingIntelligenceModule, DeviceIntelligenceModule, DecisionEngineModule, AdaptiveLearningModule,
     ContextEngineModule, PreferencesModule, PersonalBrainModule, DashboardModule, DailyCommandCenterModule, YogaModule,
-    CalisthenicsModule, FitnessModule,
+    CalisthenicsModule, FitnessModule, ContentModule,
   ],
   controllers: [AppController],
   providers: [AppService],
