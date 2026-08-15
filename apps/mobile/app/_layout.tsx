@@ -1,31 +1,41 @@
 import { Stack, router, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { I18nManager, View, ActivityIndicator, Pressable, Text, StyleSheet } from 'react-native';
+import { ActivityIndicator, I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
 import { getStoredLocale, isRTL } from '../lib/i18n';
 
 export default function RootLayout() {
-  const [ready, setReady] = useState(false);
+  const [localeReady, setLocaleReady] = useState(false);
+  const [hasLocale, setHasLocale] = useState(false);
   const segments = useSegments();
+  const currentSegment = segments[0];
 
   useEffect(() => {
     let mounted = true;
     void getStoredLocale().then((locale) => {
       if (!mounted) return;
-      if (locale) {
-        I18nManager.allowRTL(isRTL(locale));
-        if (segments[0] === 'language') router.replace('/');
-      } else if (segments[0] !== 'language') {
-        router.replace('/language');
-      }
-      setReady(true);
+      setHasLocale(Boolean(locale));
+      setLocaleReady(true);
+      if (locale) I18nManager.allowRTL(isRTL(locale));
     });
     return () => { mounted = false; };
-  }, [segments]);
+  }, []);
 
-  if (!ready) return <View style={styles.loading}><ActivityIndicator color="#7C3AED" /></View>;
+  useEffect(() => {
+    if (!localeReady) return;
+    if (!hasLocale && currentSegment !== 'language') {
+      router.replace('/language');
+      return;
+    }
+    if (hasLocale && currentSegment === 'language') {
+      router.replace('/auth');
+    }
+  }, [currentSegment, hasLocale, localeReady]);
 
-  const currentSegment = segments[0];
-  const showAssistantBubble = currentSegment != null && currentSegment !== 'assistant' && currentSegment !== 'language' && currentSegment !== 'command-center';
+  if (!localeReady) {
+    return <View style={styles.loading}><ActivityIndicator color="#7C3AED" /></View>;
+  }
+
+  const showAssistantBubble = currentSegment != null && !['assistant', 'language', 'auth', 'command-center'].includes(currentSegment);
 
   return (
     <View style={styles.root}>
