@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Query,
   Request,
@@ -36,9 +37,19 @@ export class RemindersController {
     return this.remindersService.getNextReminder(req.user.id);
   }
 
+  @Patch(':id')
+  update(@Request() req: { user: { id: string } }, @Param('id') reminderId: string, @Body() patch: { title?: string; time?: string }) {
+    return this.remindersService.updateReminder(req.user.id, reminderId, patch);
+  }
+
   @Post(':id/complete')
   complete(@Request() req: { user: { id: string } }, @Param('id') reminderId: string) {
     return this.remindersService.completeReminder(req.user.id, reminderId);
+  }
+
+  @Post(':id/reopen')
+  reopen(@Request() req: { user: { id: string } }, @Param('id') reminderId: string) {
+    return this.remindersService.reopenReminder(req.user.id, reminderId);
   }
 
   @Delete(':id')
