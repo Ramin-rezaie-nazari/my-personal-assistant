@@ -13,6 +13,22 @@ on:
 jobs:
   backend:
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: personal_assistant
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d personal_assistant"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
     defaults:
       run:
         working-directory: apps/backend
@@ -38,8 +54,25 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: .
 
+      - name: Validate Prisma schema
+        run: pnpm exec prisma validate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/personal_assistant?schema=public
+
       - name: Generate Prisma client
         run: pnpm exec prisma generate
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/personal_assistant?schema=public
+
+      - name: Apply database migrations
+        run: pnpm exec prisma migrate deploy
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/personal_assistant?schema=public
+
+      - name: Verify migrations are fully applied and idempotent
+        run: |
+          pnpm exec prisma migrate status
+          pnpm exec prisma migrate deploy
         env:
           DATABASE_URL: postgresql://postgres:postgres@localhost:5432/personal_assistant?schema=public
 
