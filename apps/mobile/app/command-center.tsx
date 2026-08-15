@@ -46,9 +46,9 @@ export default function CommandCenterScreen() {
     finally { setBusyAction(null); }
   }, [load]);
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
-  const calorieGoal = nutrition?.goals.calories;
-  const proteinGoal = nutrition?.goals.protein;
-  const waterGoal = nutrition?.goals.waterMl;
+  const calorieGoal = nutrition?.goals.calories ?? null;
+  const proteinGoal = nutrition?.goals.protein ?? null;
+  const waterGoal = nutrition?.goals.waterMl ?? null;
   return (
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}>
