@@ -1,9 +1,12 @@
 import { Stack, router, useSegments } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
-import { hasAuthSession } from '../lib/api';
 import { getStoredLocale, isRTL } from '../lib/i18n';
-import { hasCompletedOnboarding } from '../lib/onboarding';
+import { hasAuthSession } from '../lib/api';
+import { getOnboardingState } from '../lib/onboarding';
+import { BRAND } from '../lib/branding';
+import { BrandMark } from '../components/BrandMark';
+import { BrandWordmark } from '../components/BrandWordmark';
 
 function StartupScreen() {
   const glow = useRef(new Animated.Value(0.35)).current;
@@ -29,12 +32,10 @@ function StartupScreen() {
   return (
     <View style={styles.startup}>
       <Animated.View style={[styles.startupGlow, { opacity: glow, transform: [{ scale }] }]} />
-      <View style={styles.startupMark}>
-        <Text style={styles.startupEmoji}>🧠</Text>
-      </View>
-      <Text style={styles.startupTitle}>My Personal Assistant</Text>
+      <View style={styles.startupMark}><BrandMark size={104} dark /></View>
+      <BrandWordmark dark />
       <Text style={styles.startupSubtitle}>Your day, your goals, your assistant.</Text>
-      <ActivityIndicator color="#A78BFA" style={styles.startupSpinner} />
+      <ActivityIndicator color={BRAND.colors.violet} style={styles.startupSpinner} />
     </View>
   );
 }
@@ -55,17 +56,13 @@ export default function RootLayout() {
 
     const bootstrap = async () => {
       try {
-        const [locale, authenticated, onboardingComplete] = await Promise.all([
-          getStoredLocale(),
-          hasAuthSession(),
-          hasCompletedOnboarding(),
-        ]);
+        const [locale, authenticated, onboarding] = await Promise.all([getStoredLocale(), hasAuthSession(), getOnboardingState()]);
         if (!mounted) return;
         clearTimeout(timeoutId);
         if (locale) I18nManager.allowRTL(isRTL(locale));
         if (!locale) setTargetRoute('/language');
         else if (!authenticated) setTargetRoute('/auth');
-        else if (!onboardingComplete) setTargetRoute('/onboarding');
+        else if (!onboarding.completed) setTargetRoute('/onboarding');
         else setTargetRoute('/');
         setBootReady(true);
       } catch {
@@ -99,7 +96,7 @@ export default function RootLayout() {
 
   return (
     <View style={styles.root}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#F7F8FA' } }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: BRAND.colors.canvas } }} />
       {showAssistantBubble ? (
         <Pressable
           onPress={() => router.push('/assistant')}
@@ -107,7 +104,7 @@ export default function RootLayout() {
           accessibilityRole="button"
           accessibilityLabel="Open assistant"
         >
-          <Text style={styles.emoji}>🧠</Text>
+          <BrandMark size={58} dark />
         </Pressable>
       ) : null}
     </View>
@@ -116,14 +113,11 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  startup: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#070B1A', paddingHorizontal: 28 },
-  startupGlow: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: '#7C3AED' },
-  startupMark: { width: 104, height: 104, borderRadius: 30, backgroundColor: '#111A39', borderWidth: 1, borderColor: '#6D5CE7', alignItems: 'center', justifyContent: 'center' },
-  startupEmoji: { fontSize: 42 },
-  startupTitle: { marginTop: 24, color: '#FFFFFF', fontSize: 24, fontWeight: '900', textAlign: 'center' },
-  startupSubtitle: { marginTop: 8, color: '#B7B8C7', fontSize: 13, textAlign: 'center' },
+  startup: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.startup, paddingHorizontal: 28 },
+  startupGlow: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: BRAND.colors.primaryStrong },
+  startupMark: { marginBottom: 18 },
+  startupSubtitle: { marginTop: 6, color: BRAND.colors.startupMuted, fontSize: 13, textAlign: 'center' },
   startupSpinner: { marginTop: 28 },
-  assistantBubble: { position: 'absolute', right: 18, bottom: 24, width: 58, height: 58, borderRadius: 20, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center', elevation: 6, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
-  emoji: { fontSize: 25 },
+  assistantBubble: { position: 'absolute', right: 18, bottom: 24, borderRadius: 20, elevation: 6, shadowColor: '#000', shadowOpacity: BRAND.shadow.opacity, shadowRadius: BRAND.shadow.radius, shadowOffset: { width: 0, height: BRAND.shadow.offsetY } },
   pressed: { opacity: 0.82, transform: [{ scale: 0.96 }] },
 });
