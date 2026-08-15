@@ -23,8 +23,19 @@ export class MealsService {
       items: Array<{ foodId: string; quantity: number }>;
     },
   ) {
+    this.assertText(data.name, 'name');
+    this.assertText(data.type, 'type');
+    if (!Number.isFinite(Date.parse(data.eatenAt))) {
+      throw new BadRequestException('eatenAt must be a valid date-time');
+    }
     if (data.items.length === 0) {
       throw new BadRequestException('A meal must contain at least one food item');
+    }
+    for (const item of data.items) {
+      this.assertText(item.foodId, 'foodId');
+      if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
+        throw new BadRequestException('quantity must be a finite number greater than zero');
+      }
     }
 
     const dateKey = this.normalizeDateKey(data.dateKey ?? data.eatenAt.slice(0, 10));
@@ -93,6 +104,12 @@ export class MealsService {
 
       return meal;
     });
+  }
+
+  private assertText(value: string, field: string) {
+    if (!value || !value.trim()) {
+      throw new BadRequestException(`${field} must not be empty`);
+    }
   }
 
   private normalizeDateKey(value: string): string {
