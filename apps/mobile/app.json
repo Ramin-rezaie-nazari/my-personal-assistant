@@ -13,7 +13,11 @@
     "backgroundColor": "#F7F8FA",
     "primaryColor": "#7C3AED",
     "android": {
-      "package": "com.mypersonalassistant.app"
+      "package": "com.mypersonalassistant.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -28,6 +32,17 @@
     ],
     "experiments": {
       "typedRoutes": false
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "827afeab-0faa-479d-9e17-fa70ca50dc27"
+      }
+    },
+    "sdkVersion": "53.0.0",
+    "platforms": [
+      "ios",
+      "android"
+    ]
   }
 }
