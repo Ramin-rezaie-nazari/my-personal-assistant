@@ -1,0 +1,1 @@
+ALTER TABLE "Reminder" ADD COLUMN "endsAt" TIMESTAMP(3);
