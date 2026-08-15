@@ -3,6 +3,7 @@ import { SmartNotificationService } from './smart-notification.service';
 describe('SmartNotificationService', () => {
   const makePrisma = () => ({
     userPreference: { findUnique: jest.fn() },
+    userSettings: { findUnique: jest.fn() },
     dailyLog: { findUnique: jest.fn() },
     nutritionProfile: { findUnique: jest.fn() },
     habit: { findMany: jest.fn() },
@@ -14,6 +15,7 @@ describe('SmartNotificationService', () => {
   it('creates actionable notifications and dedupes by user/date/rule', async () => {
     const prisma = makePrisma();
     prisma.userPreference.findUnique.mockResolvedValue({ notificationsEnabled: true });
+    prisma.userSettings.findUnique.mockResolvedValue({ language: 'en' });
     prisma.dailyLog.findUnique.mockResolvedValue({ waterMl: 400, protein: 20 });
     prisma.nutritionProfile.findUnique.mockResolvedValue({ waterGoalMl: 2400, proteinGoalGrams: 140 });
     prisma.habit.findMany.mockResolvedValue([{ name: 'Walk', logs: [] }, { name: 'Read', logs: [{ id: 'l1' }] }]);
@@ -34,6 +36,26 @@ describe('SmartNotificationService', () => {
     );
   });
 
+  it('creates Persian smart notifications for Persian users', async () => {
+    const prisma = makePrisma();
+    prisma.userPreference.findUnique.mockResolvedValue({ notificationsEnabled: true });
+    prisma.userSettings.findUnique.mockResolvedValue({ language: 'fa' });
+    prisma.dailyLog.findUnique.mockResolvedValue({ waterMl: 400, protein: 20 });
+    prisma.nutritionProfile.findUnique.mockResolvedValue({ waterGoalMl: 2400, proteinGoalGrams: 140 });
+    prisma.habit.findMany.mockResolvedValue([]);
+    prisma.supplement.findMany.mockResolvedValue([]);
+    prisma.workout.findMany.mockResolvedValue([]);
+    prisma.notification.createMany.mockResolvedValue({ count: 3 });
+
+    const service = new SmartNotificationService(prisma as never);
+    await service.generateForUser('u1', '2026-08-12');
+
+    const data = prisma.notification.createMany.mock.calls[0][0].data;
+    expect(data[0].title).toContain('آب');
+    expect(data[0].body).toContain('میلی‌لیتر');
+    expect(data[2].title).toContain('تحرک');
+  });
+
   it('does nothing when notifications are disabled', async () => {
     const prisma = makePrisma();
     prisma.userPreference.findUnique.mockResolvedValue({ notificationsEnabled: false });
@@ -50,6 +72,7 @@ describe('SmartNotificationService', () => {
   it('stays quiet when the user is on track', async () => {
     const prisma = makePrisma();
     prisma.userPreference.findUnique.mockResolvedValue({ notificationsEnabled: true });
+    prisma.userSettings.findUnique.mockResolvedValue({ language: 'en' });
     prisma.dailyLog.findUnique.mockResolvedValue({ waterMl: 2200, protein: 130 });
     prisma.nutritionProfile.findUnique.mockResolvedValue({ waterGoalMl: 2400, proteinGoalGrams: 140 });
     prisma.habit.findMany.mockResolvedValue([{ name: 'Walk', logs: [{ id: 'l1' }] }]);
