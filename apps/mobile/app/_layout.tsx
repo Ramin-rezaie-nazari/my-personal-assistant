@@ -13,7 +13,7 @@ export default function RootLayout() {
       if (!mounted) return;
       if (locale) {
         I18nManager.allowRTL(isRTL(locale));
-        if (segments[0] === 'language' || segments.length < 1) router.replace('/command-center');
+        if (segments[0] === 'language') router.replace('/');
       } else if (segments[0] !== 'language') {
         router.replace('/language');
       }
@@ -22,9 +22,10 @@ export default function RootLayout() {
     return () => { mounted = false; };
   }, [segments]);
 
-  if (!ready) return <View style={styles.loading}><ActivityIndicator /></View>;
+  if (!ready) return <View style={styles.loading}><ActivityIndicator color="#7C3AED" /></View>;
 
-  const showAssistantBubble = segments[0] !== 'assistant' && segments[0] !== 'language' && segments[0] !== 'command-center';
+  const currentSegment = segments[0];
+  const showAssistantBubble = currentSegment != null && currentSegment !== 'assistant' && currentSegment !== 'language' && currentSegment !== 'command-center';
 
   return (
     <View style={styles.root}>
