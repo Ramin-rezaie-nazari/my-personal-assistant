@@ -1,8 +1,9 @@
 import { Stack, router, useSegments } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
-import { getStoredLocale, isRTL } from '../lib/i18n';
 import { hasAuthSession } from '../lib/api';
+import { getStoredLocale, isRTL } from '../lib/i18n';
+import { hasCompletedOnboarding } from '../lib/onboarding';
 
 function StartupScreen() {
   const glow = useRef(new Animated.Value(0.35)).current;
@@ -40,7 +41,7 @@ function StartupScreen() {
 
 export default function RootLayout() {
   const [bootReady, setBootReady] = useState(false);
-  const [targetRoute, setTargetRoute] = useState<'/language' | '/auth' | '/'>('/language');
+  const [targetRoute, setTargetRoute] = useState<'/language' | '/auth' | '/onboarding' | '/'>('/language');
   const segments = useSegments();
   const currentSegment = segments[0];
 
@@ -54,13 +55,18 @@ export default function RootLayout() {
 
     const bootstrap = async () => {
       try {
-        const [locale, authenticated] = await Promise.all([getStoredLocale(), hasAuthSession()]);
+        const [locale, authenticated, onboardingComplete] = await Promise.all([
+          getStoredLocale(),
+          hasAuthSession(),
+          hasCompletedOnboarding(),
+        ]);
         if (!mounted) return;
         clearTimeout(timeoutId);
         if (locale) I18nManager.allowRTL(isRTL(locale));
         if (!locale) setTargetRoute('/language');
-        else if (authenticated) setTargetRoute('/');
-        else setTargetRoute('/auth');
+        else if (!authenticated) setTargetRoute('/auth');
+        else if (!onboardingComplete) setTargetRoute('/onboarding');
+        else setTargetRoute('/');
         setBootReady(true);
       } catch {
         if (!mounted) return;
@@ -82,13 +88,14 @@ export default function RootLayout() {
     const onExpectedRoute =
       (targetRoute === '/language' && currentSegment === 'language') ||
       (targetRoute === '/auth' && currentSegment === 'auth') ||
+      (targetRoute === '/onboarding' && currentSegment === 'onboarding') ||
       (targetRoute === '/' && currentSegment == null);
     if (!onExpectedRoute) router.replace(targetRoute);
   }, [bootReady, currentSegment, targetRoute]);
 
   if (!bootReady) return <StartupScreen />;
 
-  const showAssistantBubble = currentSegment != null && !['assistant', 'language', 'auth', 'command-center'].includes(currentSegment);
+  const showAssistantBubble = currentSegment != null && !['assistant', 'language', 'auth', 'onboarding', 'command-center'].includes(currentSegment);
 
   return (
     <View style={styles.root}>
