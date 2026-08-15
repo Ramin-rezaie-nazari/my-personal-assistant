@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
+import { normalizeLocale } from '../../../common/i18n/locale';
 
 export type SmartNotificationResult = {
   enabled: boolean;
@@ -20,6 +21,10 @@ export class SmartNotificationService {
     if (preferences?.notificationsEnabled === false) {
       return { enabled: false, created: 0, rules: [] };
     }
+
+    const settings = await this.prisma.userSettings.findUnique({ where: { userId }, select: { language: true } });
+    const locale = normalizeLocale(settings?.language);
+    const fa = locale === 'fa';
 
     const [daily, nutrition, habits, supplements, workouts] = await Promise.all([
       this.prisma.dailyLog.findUnique({ where: { userId_dateKey: { userId, dateKey } } }),
@@ -58,8 +63,10 @@ export class SmartNotificationService {
       rules.push('hydration-low');
       notifications.push({
         userId,
-        title: 'Hydration needs a boost 💧',
-        body: `You are at ${daily?.waterMl ?? 0} ml of your ${nutrition.waterGoalMl} ml water goal. A quick glass now will help.`,
+        title: fa ? 'آب امروزت کمه 💧' : 'Hydration needs a boost 💧',
+        body: fa
+          ? `تا الان ${daily?.waterMl ?? 0} میلی‌لیتر آب خوردی و هدفت ${nutrition.waterGoalMl} میلی‌لیتره. یک لیوان آب الان کمک می‌کنه.`
+          : `You are at ${daily?.waterMl ?? 0} ml of your ${nutrition.waterGoalMl} ml water goal. A quick glass now will help.`,
         type: 'hydration',
         scheduledAt: now,
         dedupeKey: `${dateKey}:hydration-low`,
@@ -71,8 +78,10 @@ export class SmartNotificationService {
       rules.push('protein-low');
       notifications.push({
         userId,
-        title: 'Protein is lagging today 🥩',
-        body: `You have ${Math.round(daily?.protein ?? 0)} g so far against a ${nutrition.proteinGoalGrams} g goal.`,
+        title: fa ? 'پروتئین امروز عقب افتاده 🥩' : 'Protein is lagging today 🥩',
+        body: fa
+          ? `تا الان ${Math.round(daily?.protein ?? 0)} گرم پروتئین داری و هدفت ${nutrition.proteinGoalGrams} گرمه.`
+          : `You have ${Math.round(daily?.protein ?? 0)} g so far against a ${nutrition.proteinGoalGrams} g goal.`,
         type: 'nutrition',
         scheduledAt: now,
         dedupeKey: `${dateKey}:protein-low`,
@@ -83,11 +92,11 @@ export class SmartNotificationService {
     const pendingHabits = habits.filter((habit) => habit.logs.length === 0);
     if (pendingHabits.length > 0) {
       rules.push('habits-pending');
-      const names = pendingHabits.slice(0, 2).map((habit) => habit.name).join(' and ');
+      const names = pendingHabits.slice(0, 2).map((habit) => habit.name).join(fa ? ' و ' : ' and ');
       notifications.push({
         userId,
-        title: `${pendingHabits.length} habit${pendingHabits.length > 1 ? 's are' : ' is'} still open ✅`,
-        body: `Keep your rhythm going with ${names}.`,
+        title: fa ? `${pendingHabits.length} عادت هنوز بازه ✅` : `${pendingHabits.length} habit${pendingHabits.length > 1 ? 's are' : ' is'} still open ✅`,
+        body: fa ? `برای حفظ ریتم امروزت ${names} رو انجام بده.` : `Keep your rhythm going with ${names}.`,
         type: 'habit',
         scheduledAt: now,
         dedupeKey: `${dateKey}:habits-pending`,
@@ -98,11 +107,11 @@ export class SmartNotificationService {
     const pendingSupplements = supplements.filter((item) => item.logs.length === 0);
     if (pendingSupplements.length > 0) {
       rules.push('supplements-pending');
-      const names = pendingSupplements.slice(0, 2).map((item) => item.name).join(' and ');
+      const names = pendingSupplements.slice(0, 2).map((item) => item.name).join(fa ? ' و ' : ' and ');
       notifications.push({
         userId,
-        title: 'Supplement check 💊',
-        body: `${names} ${pendingSupplements.length > 1 ? 'are' : 'is'} still marked as not taken today.`,
+        title: fa ? 'وضعیت مکمل‌ها 💊' : 'Supplement check 💊',
+        body: fa ? `${names} هنوز برای امروز ثبت نشده.` : `${names} ${pendingSupplements.length > 1 ? 'are' : 'is'} still marked as not taken today.`,
         type: 'supplement',
         scheduledAt: now,
         dedupeKey: `${dateKey}:supplements-pending`,
@@ -114,8 +123,8 @@ export class SmartNotificationService {
       rules.push('movement-missing');
       notifications.push({
         userId,
-        title: 'A little movement would help 🏃',
-        body: 'You have not logged a workout today. Even a short walk counts.',
+        title: fa ? 'کمی تحرک امروزت رو بهتر می‌کنه 🏃' : 'A little movement would help 🏃',
+        body: fa ? 'امروز هنوز تمرینی ثبت نکردی؛ حتی یک پیاده‌روی کوتاه هم حساب می‌شه.' : 'You have not logged a workout today. Even a short walk counts.',
         type: 'workout',
         scheduledAt: now,
         dedupeKey: `${dateKey}:movement-missing`,
