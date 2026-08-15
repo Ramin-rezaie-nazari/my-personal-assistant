@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">My Personal Assistant app icon</title>
+  <desc id="desc">Square app icon with the canonical assistant mark.</desc>
+  <defs>
+    <linearGradient id="core" x1="0" x2="1" y1="0" y2="1"><stop offset="0" stop-color="#7C3AED"/><stop offset=".55" stop-color="#A78BFA"/><stop offset="1" stop-color="#22D3EE"/></linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="230" fill="#070B1A"/>
+  <circle cx="512" cy="512" r="380" fill="#7C3AED" opacity=".10"/>
+  <rect x="286" y="286" width="452" height="452" rx="130" fill="url(#core)"/>
+  <path d="M366 512h292M512 390v244" stroke="#fff" stroke-width="22" stroke-linecap="round"/>
+  <circle cx="366" cy="512" r="26" fill="#fff"/>
+  <circle cx="512" cy="390" r="26" fill="#22D3EE"/>
+  <circle cx="658" cy="512" r="26" fill="#fff"/>
+  <circle cx="512" cy="634" r="26" fill="#fff"/>
+  <path d="M388 450C426 374 598 374 636 450" fill="none" stroke="#fff" stroke-width="18" stroke-linecap="round" opacity=".82"/>
+</svg>
