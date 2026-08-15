@@ -27,7 +27,9 @@ export class NightlyMarketIntelligenceService {
 
   async run(productKeys?: string[], sourceIds?: string[], scheduledFor = new Date()): Promise<NightlyRunResult> {
     const startedAt = new Date();
-    const runId = await this.persistence.createRun(scheduledFor, startedAt);
+    const lock = await this.persistence.createRun(scheduledFor, startedAt);
+    if (!lock.acquired) return { runId: lock.id, status: 'skipped', attempts: 0, collected: 0, failedSources: [], attemptedSources: [], scheduledFor, startedAt, completedAt: new Date() };
+
     const keys = productKeys?.length ? productKeys : await this.persistence.trackedProductKeys();
     let attempts = 0;
     let collected: Awaited<ReturnType<PriceSourceService['collectDetailed']>>['prices'] = [];
@@ -55,8 +57,8 @@ export class NightlyMarketIntelligenceService {
     }
 
     const status: NightlyRunResult['status'] = collected.length ? failedSources.length ? 'partial' : 'completed' : 'failed';
-    await this.persistence.finishRun(runId, { status, attempts, collected: collected.length, failedSources, attemptedSources, error });
-    return { runId, status, attempts, collected: collected.length, failedSources, attemptedSources, scheduledFor, startedAt, completedAt: new Date() };
+    await this.persistence.finishRun(lock.id, { status, attempts, collected: collected.length, failedSources, attemptedSources, error });
+    return { runId: lock.id, status, attempts, collected: collected.length, failedSources, attemptedSources, scheduledFor, startedAt, completedAt: new Date() };
   }
 
   private isScheduledMinute(now: Date, policy: NightlyMarketConfig) {
