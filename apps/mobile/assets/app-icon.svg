@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#070B1A"/><stop offset="1" stop-color="#20134D"/></linearGradient>
+    <radialGradient id="glow" cx="50%" cy="42%" r="56%"><stop offset="0" stop-color="#8B5CF6" stop-opacity=".55"/><stop offset="1" stop-color="#8B5CF6" stop-opacity="0"/></radialGradient>
+    <linearGradient id="brain" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#6EE7FF"/><stop offset=".52" stop-color="#8B5CF6"/><stop offset="1" stop-color="#D8B4FE"/></linearGradient>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="16" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <rect width="1024" height="1024" rx="210" fill="url(#bg)"/>
+  <circle cx="512" cy="430" r="380" fill="url(#glow)"/>
+  <circle cx="512" cy="430" r="270" fill="#0B1026" stroke="#4C3A91" stroke-width="4"/>
+  <g fill="none" stroke="url(#brain)" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" filter="url(#shadow)">
+    <path d="M512 252 C452 222 394 258 394 320 C352 320 322 352 322 398 C322 430 337 452 357 468 C333 496 334 538 357 566 C378 590 408 602 441 598 C448 650 477 684 512 684"/>
+    <path d="M512 252 C572 222 630 258 630 320 C672 320 702 352 702 398 C702 430 687 452 667 468 C691 496 690 538 667 566 C646 590 616 602 583 598 C576 650 547 684 512 684"/>
+    <path d="M512 280 L512 675"/>
+    <path d="M398 360 C430 344 462 360 468 392"/>
+    <path d="M626 360 C594 344 562 360 556 392"/>
+    <path d="M374 472 C408 458 438 470 450 498"/>
+    <path d="M650 472 C616 458 586 470 574 498"/>
+    <path d="M388 548 C418 536 446 548 456 574"/>
+    <path d="M636 548 C606 536 578 548 568 574"/>
+  </g>
+  <circle cx="760" cy="235" r="14" fill="#FFFFFF"/>
+  <circle cx="760" cy="235" r="32" fill="#A78BFA" opacity=".24"/>
+  <text x="512" y="822" text-anchor="middle" fill="#FFFFFF" font-size="62" font-family="Arial, sans-serif" font-weight="700">دستیار شخصی من</text>
+  <text x="512" y="882" text-anchor="middle" fill="#C4B5FD" font-size="32" font-family="Arial, sans-serif">هوشمند، همراه، همیشه کنارت</text>
+</svg>
