@@ -1,22 +1,22 @@
 import { HttpPriceSourceAdapter } from './http-price-source.adapter';
 
 describe('HttpPriceSourceAdapter', () => {
-  it('parses JSON-LD product offers', async () => {
+  it('parses JSON-LD product offers and normalizes rial to toman', async () => {
     const adapter = new HttpPriceSourceAdapter({ id: 'test', kind: 'retailer', baseUrl: 'https://example.com', searchUrlTemplate: 'https://example.com/search?q={query}' });
     const originalFetch = global.fetch;
-    global.fetch = jest.fn().mockResolvedValue(new Response('<script type="application/ld+json">{"@type":"Product","name":"شیر کم چرب","offers":{"price":125000,"priceCurrency":"IRR","availability":"InStock"}}</script>', { status: 200 }));
+    global.fetch = jest.fn().mockResolvedValue(new Response('<script type="application/ld+json">{"@type":"Product","name":"شیر کم چرب","offers":{"price":1250000,"priceCurrency":"IRR","availability":"InStock"}}</script>', { status: 200 }));
     const prices = await adapter.fetchPrices(['شیر-کم-چرب']);
     expect(prices).toHaveLength(1);
-    expect(prices[0]).toMatchObject({ sourceId: 'test', amount: 125000, currency: 'IRR', availability: 'in_stock' });
+    expect(prices[0]).toMatchObject({ sourceId: 'test', amount: 125000, currency: 'IRT', availability: 'in_stock' });
     global.fetch = originalFetch;
   });
 
-  it('falls back to Persian numeric price text', async () => {
+  it('falls back to Persian toman price text', async () => {
     const adapter = new HttpPriceSourceAdapter({ id: 'test', kind: 'retailer', baseUrl: 'https://example.com', searchUrlTemplate: 'https://example.com/search?q={query}' });
     const originalFetch = global.fetch;
     global.fetch = jest.fn().mockResolvedValue(new Response('<div>قیمت: ۱٬۲۵۰٬۰۰۰ تومان</div>', { status: 200 }));
     const prices = await adapter.fetchPrices(['شیر']);
-    expect(prices[0].amount).toBe(1250000);
+    expect(prices[0]).toMatchObject({ amount: 1250000, currency: 'IRT' });
     global.fetch = originalFetch;
   });
 
