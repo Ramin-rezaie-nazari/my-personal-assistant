@@ -176,7 +176,7 @@ describe('NotificationsService', () => {
 
     expect(prisma.notification.findFirst).toHaveBeenCalledWith({
       where: { id: 'other-user-notification', userId: 'u1' },
-      select: { id: 'other-user-notification' },
+      select: { id: true },
     });
   });
 });
