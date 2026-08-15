@@ -36,20 +36,21 @@ export class NightlyMarketIntelligenceService {
     let failedSources: string[] = [];
     let attemptedSources: string[] = [];
     let error: string | undefined;
+    const policy = this.config();
 
     try {
-      for (attempts = 1; attempts <= Math.max(1, this.config().maxRetries + 1); attempts += 1) {
+      for (attempts = 1; attempts <= Math.max(1, policy.maxRetries + 1); attempts += 1) {
         try {
           const result = await this.sources.collectDetailed(keys, sourceIds);
           collected = result.prices;
           failedSources = result.failedSourceIds;
           attemptedSources = result.attemptedSourceIds;
-          if (!failedSources.length || attempts > this.config().maxRetries) break;
+          if (!failedSources.length || attempts > policy.maxRetries) break;
         } catch (cause) {
           error = cause instanceof Error ? cause.message : String(cause);
-          if (attempts > this.config().maxRetries) break;
+          if (attempts > policy.maxRetries) break;
         }
-        await new Promise((resolve) => setTimeout(resolve, Math.min(this.config().retryDelayMs, 250)));
+        if (policy.retryDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, policy.retryDelayMs));
       }
       await this.persistence.record(collected);
     } catch (cause) {
