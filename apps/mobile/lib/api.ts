@@ -56,8 +56,10 @@ export function addWater(amountMl:number,dateKey?:string){const q=dateKey?`?date
 export function createWorkout(data:{name:string;type:string;durationMinutes:number;caloriesBurned:number}){return request('/workout',{method:'POST',body:JSON.stringify(data)})}
 export function getReminders(includeCompleted=false){return request<Reminder[]>(`/reminders${includeCompleted?'?includeCompleted=true':''}`)}
 export function createReminder(data:{title:string;type:string;time:string}){return request<Reminder>('/reminders',{method:'POST',body:JSON.stringify(data)})}
-export function completeReminder(id:string){return request<{completed:true}>(`/reminders/${id}/complete`,{method:'POST'})}
-export function deleteReminder(id:string){return request<{deleted:true}>(`/reminders/${id}`,{method:'DELETE'})}
+export function updateReminder(id:string,data:{title?:string;time?:string}){return request<Reminder>(`/reminders/${id}`,{method:'PATCH',body:JSON.stringify(data)})}
+export function completeReminder(id:string){return request<{id:string;completed:true}>(`/reminders/${id}/complete`,{method:'POST'})}
+export function reopenReminder(id:string){return request<{id:string;completed:false}>(`/reminders/${id}/reopen`,{method:'POST'})}
+export function deleteReminder(id:string){return request<{id:string;deleted:true}>(`/reminders/${id}`,{method:'DELETE'})}
 export function getNextReminder(){return request<Reminder|null>('/reminders/next')}
 export function getCalendarEvents(from?:string,to?:string){const q=new URLSearchParams();if(from)q.set('from',from);if(to)q.set('to',to);return request<CalendarEvent[]>(`/calendar${q.toString()?`?${q.toString()}`:''}`)}
 export function createCalendarEvent(data:{title:string;type:string;startsAt:string;endsAt?:string}){return request<CalendarEvent>('/calendar',{method:'POST',body:JSON.stringify(data)})}
@@ -87,5 +89,3 @@ export function getNutritionSummary(dateKey?:string){const q=dateKey?`?dateKey=$
 export function getYogaSession(durationMin:number,level?:YogaSession['level'],focus?:string){return request<YogaSession>('/yoga/session',{method:'POST',body:JSON.stringify({durationMin,level,focus})})}
 export function startYogaCoach(session:YogaSession){return request<YogaCoachState>('/yoga/coach/start',{method:'POST',body:JSON.stringify({session})})}
 export function tickYogaCoach(session:YogaSession,state:YogaCoachState,elapsedSec:number){return request<YogaCoachState>('/yoga/coach/tick',{method:'POST',body:JSON.stringify({session,state,elapsedSec})})}
-export function getYogaCue(state:YogaCoachState){return request<{poseId:string;phase:YogaCoachState['phase'];text:string}|null>('/yoga/coach/cue',{method:'POST',body:JSON.stringify({state})})}
-export function analyzeYogaPose(poseId:string,frame:YogaPoseFrame){return request<YogaPoseAssessment>('/yoga/motion/analyze',{method:'POST',body:JSON.stringify({poseId,frame})})}
