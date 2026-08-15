@@ -6,8 +6,16 @@
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "scheme": "mypersonalassistant",
+    "icon": "https://raw.githubusercontent.com/Ramin-rezaie-nazari/my-personal-assistant/main/apps/mobile/assets/app-icon.svg",
+    "splash": {
+      "backgroundColor": "#070B1A",
+      "resizeMode": "contain"
+    },
+    "backgroundColor": "#F7F8FA",
+    "primaryColor": "#7C3AED",
     "android": {
-      "package": "com.mypersonalassistant.app"
+      "package": "com.mypersonalassistant.app",
+      "icon": "https://raw.githubusercontent.com/Ramin-rezaie-nazari/my-personal-assistant/main/apps/mobile/assets/app-icon.svg"
     },
     "plugins": [
       "expo-router",
