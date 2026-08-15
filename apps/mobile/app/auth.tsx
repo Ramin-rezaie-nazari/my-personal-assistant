@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { AuthUser, login, register } from '../lib/api';
-import { getStoredLocale, t, AppLocale } from '../lib/i18n';
+import { AppLocale, getStoredLocale, t } from '../lib/i18n';
 
 export default function AuthScreen() {
   const [mode, setMode] = useState<'login' | 'register'>('login');
@@ -15,14 +15,15 @@ export default function AuthScreen() {
   const [error, setError] = useState<string | null>(null);
   const [locale, setLocale] = useState<AppLocale>('en');
 
-  useState(() => {
+  useEffect(() => {
     void getStoredLocale().then((stored) => { if (stored) setLocale(stored); });
-  });
+  }, []);
 
+  const isFa = locale === 'fa';
   const onAuthenticated = (_user: AuthUser) => router.replace('/');
 
   const submit = async () => {
-    if (!email.trim() || !password) { setError(t(locale, 'email') + ' & ' + t(locale, 'password')); return; }
+    if (!email.trim() || !password) { setError(isFa ? 'ایمیل و رمز عبور را وارد کن.' : 'Email and password are required.'); return; }
     if (mode === 'register' && password.length < 8) { setError('Password must be at least 8 characters.'); return; }
     try {
       setBusy(true);
@@ -32,13 +33,11 @@ export default function AuthScreen() {
         : await register({ email: email.trim(), password, firstName: firstName.trim() || undefined, lastName: lastName.trim() || undefined });
       onAuthenticated(auth.user);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to authenticate.');
+      setError(err instanceof Error ? err.message : (isFa ? 'ورود ناموفق بود.' : 'Unable to authenticate.'));
     } finally {
       setBusy(false);
     }
   };
-
-  const isFa = locale === 'fa';
 
   return (
     <SafeAreaView style={styles.safe}>
