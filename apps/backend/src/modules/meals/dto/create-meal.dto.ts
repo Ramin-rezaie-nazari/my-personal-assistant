@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMinSize,
   IsArray,
   IsDateString,
   IsNumber,
@@ -7,11 +8,13 @@ import {
   IsString,
   Matches,
   Min,
+  MinLength,
   ValidateNested,
 } from 'class-validator';
 
 export class CreateMealItemDto {
   @IsString()
+  @MinLength(1)
   foodId: string;
 
   @IsNumber()
@@ -21,9 +24,11 @@ export class CreateMealItemDto {
 
 export class CreateMealDto {
   @IsString()
+  @MinLength(1)
   name: string;
 
   @IsString()
+  @MinLength(1)
   type: string;
 
   @IsDateString()
@@ -35,6 +40,7 @@ export class CreateMealDto {
   dateKey?: string;
 
   @IsArray()
+  @ArrayMinSize(1)
   @ValidateNested({ each: true })
   @Type(() => CreateMealItemDto)
   items: CreateMealItemDto[];
