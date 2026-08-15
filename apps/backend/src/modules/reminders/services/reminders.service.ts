@@ -50,7 +50,7 @@ export class RemindersService {
       data: { completed: false },
     });
     if (result.count === 0) {
-      const exists = await this.prisma.reminder.findFirst({ where: { id: reminderId, userId }, select: { id: 'id' } as never });
+      const exists = await this.prisma.reminder.findFirst({ where: { id: reminderId, userId }, select: { id: true } });
       if (!exists) throw new NotFoundException('Reminder not found');
     }
     return { id: reminderId, completed: false };
@@ -106,12 +106,12 @@ export class RemindersService {
 
   private zonedDateForLocalTime(reference: Date, hours: number, minutes: number, timezone: string) {
     try {
-      const parts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(reference);
-      const values = Object.fromEntries(parts.filter((part) => part.type !== 'literal').map((part) => [part.type, Number(part.value)]));
+      const dateParts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(reference);
+      const values = Object.fromEntries(dateParts.filter((part) => part.type !== 'literal').map((part) => [part.type, Number(part.value)]));
       const wall = Date.UTC(values.year, values.month - 1, values.day, hours, minutes, 0, 0);
-      const offsetParts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(wall));
-      const offsetValues = Object.fromEntries(offsetParts.filter((part) => part.type !== 'literal').map((part) => [part.type, Number(part.value)]));
-      const renderedAsUtc = Date.UTC(offsetValues.year, offsetValues.month - 1, offsetValues.day, offsetValues.hour, offsetValues.minute, offsetValues.second, 0);
+      const renderedParts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(wall));
+      const rendered = Object.fromEntries(renderedParts.filter((part) => part.type !== 'literal').map((part) => [part.type, Number(part.value)]));
+      const renderedAsUtc = Date.UTC(rendered.year, rendered.month - 1, rendered.day, rendered.hour, rendered.minute, rendered.second, 0);
       return new Date(wall - (renderedAsUtc - wall));
     } catch {
       throw new BadRequestException('invalid user timezone');
