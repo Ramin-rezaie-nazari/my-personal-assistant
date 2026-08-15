@@ -1,4 +1,5 @@
-import { IsInt, IsISO8601, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsDate, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
 
 export class CreateNotificationDto {
   @IsString()
@@ -17,8 +18,9 @@ export class CreateNotificationDto {
   type!: string;
 
   @IsOptional()
-  @IsISO8601()
-  scheduledAt?: string;
+  @Type(() => Date)
+  @IsDate()
+  scheduledAt?: Date;
 
   @IsOptional()
   @IsInt()
