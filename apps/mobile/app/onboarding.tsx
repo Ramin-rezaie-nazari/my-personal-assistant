@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { AppLocale, getStoredLocale } from '../lib/i18n';
 import { DEFAULT_ONBOARDING, OnboardingState, setOnboardingState } from '../lib/onboarding';
-import { useEffect } from 'react';
+import { BRAND } from '../lib/branding';
+import { BrandWordmark } from '../components/BrandWordmark';
 
 const steps = [0, 1, 2, 3, 4] as const;
 
@@ -13,7 +14,11 @@ export default function OnboardingScreen() {
   const [locale, setLocale] = useState<AppLocale>('en');
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => { void getStoredLocale().then((value) => { if (value) setLocale(value); }); }, []);
+  useEffect(() => {
+    void getStoredLocale().then((value) => {
+      if (value) setLocale(value);
+    });
+  }, []);
 
   const rtl = locale === 'fa';
   const copy = useMemo(() => rtl ? {
@@ -23,6 +28,7 @@ export default function OnboardingScreen() {
     next: step === steps.length - 1 ? 'شروع کنیم' : 'ادامه',
     back: 'قبلی',
     saving: 'در حال ذخیره…',
+    required: 'لطفاً این مرحله را تکمیل کن.',
   } : {
     eyebrow: 'One minute to personalize',
     title: ['What is your goal?', 'What is your level?', 'How do you eat?', 'Where are you from?', 'How do you train?'][step],
@@ -30,11 +36,20 @@ export default function OnboardingScreen() {
     next: step === steps.length - 1 ? 'Let’s start' : 'Continue',
     back: 'Back',
     saving: 'Saving…',
-  }, [locale, rtl, step]);
+    required: 'Please complete this step.',
+  }, [rtl, step]);
 
   const update = (patch: Partial<OnboardingState>) => setState((current) => ({ ...current, ...patch }));
 
+  const stepComplete =
+    step === 0 ? Boolean(state.goal) :
+    step === 1 ? Boolean(state.fitnessLevel) :
+    step === 2 ? Boolean(state.diet) :
+    step === 3 ? state.country.trim().length > 0 :
+    Boolean(state.equipment) && Number(state.sessionMinutes) > 0;
+
   const finish = async () => {
+    if (!stepComplete) return;
     try {
       setBusy(true);
       await setOnboardingState({ ...state, completed: true });
@@ -44,11 +59,16 @@ export default function OnboardingScreen() {
     }
   };
 
-  const canContinue = step < steps.length - 1 || state.country.trim().length > 0;
+  const goNext = () => {
+    if (!stepComplete || busy) return;
+    if (step === steps.length - 1) void finish();
+    else setStep((current) => current + 1);
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={[styles.container, rtl && styles.rtl]}>
+        <BrandWordmark compact />
         <View style={styles.topRow}>
           <Text style={styles.stepText}>{step + 1} / {steps.length}</Text>
           <View style={styles.progressTrack}>{steps.map((item) => <View key={item} style={[styles.progressDot, item <= step && styles.progressDotActive]} />)}</View>
@@ -82,10 +102,11 @@ export default function OnboardingScreen() {
           </> : null}
         </View>
 
+        {!stepComplete ? <Text style={styles.required}>{copy.required}</Text> : null}
         <View style={styles.actions}>
           {step > 0 ? <Pressable onPress={() => setStep((current) => current - 1)} style={styles.secondary}><Text style={styles.secondaryText}>{copy.back}</Text></Pressable> : <View style={styles.secondaryPlaceholder} />}
-          <Pressable disabled={busy || !canContinue} onPress={() => step === steps.length - 1 ? void finish() : setStep((current) => current + 1)} style={({ pressed }) => [styles.primary, pressed && styles.pressed, (!canContinue || busy) && styles.disabled]}>
-            {busy ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.primaryText}>{busy ? copy.saving : copy.next}</Text>}
+          <Pressable disabled={busy || !stepComplete} onPress={goNext} style={({ pressed }) => [styles.primary, pressed && styles.pressed, (!stepComplete || busy) && styles.disabled]}>
+            {busy ? <ActivityIndicator color={BRAND.colors.white} /> : <Text style={styles.primaryText}>{copy.next}</Text>}
           </Pressable>
         </View>
       </View>
@@ -94,36 +115,39 @@ export default function OnboardingScreen() {
 }
 
 function OptionGrid({ options, value, onSelect }: { options: [string, string][]; value: string; onSelect: (value: string) => void }) {
-  return <View style={styles.options}>{options.map(([key, label]) => <Pressable key={key} onPress={() => onSelect(key)} style={[styles.option, key === value && styles.optionSelected]}><View style={styles.optionCopy}><Text style={styles.optionTitle}>{label}</Text></View><Text style={styles.check}>{key === value ? '✓' : ''}</Text></Pressable>)}</View>;
+  return <View style={styles.options}>{options.map(([key, label]) => <Pressable key={key} onPress={() => onSelect(key)} accessibilityRole="radio" accessibilityState={{ selected: key === value }} style={[styles.option, key === value && styles.optionSelected]}><View style={styles.optionCopy}><Text style={styles.optionTitle}>{label}</Text></View><Text style={styles.check}>{key === value ? '✓' : ''}</Text></Pressable>)}</View>;
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F7F8FA' },
+  safe: { flex: 1, backgroundColor: BRAND.colors.canvas },
   container: { flex: 1, padding: 24, justifyContent: 'center', gap: 12 },
   rtl: { direction: 'rtl' },
-  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
-  stepText: { color: '#6B7280', fontSize: 12, fontWeight: '800' },
+  topRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, marginBottom: 10 },
+  stepText: { color: BRAND.colors.muted, fontSize: BRAND.typography.label, fontWeight: '800' },
   progressTrack: { flexDirection: 'row', gap: 6 },
-  progressDot: { width: 22, height: 5, borderRadius: 4, backgroundColor: '#E5E7EB' },
-  progressDotActive: { backgroundColor: '#6D28D9' },
-  eyebrow: { color: '#6D28D9', fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
-  title: { color: '#111827', fontSize: 31, lineHeight: 37, fontWeight: '900' },
-  subtitle: { color: '#6B7280', fontSize: 14, lineHeight: 21, marginBottom: 8 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 16, borderWidth: 1, borderColor: '#E5E7EB' },
+  progressDot: { width: 22, height: 5, borderRadius: 4, backgroundColor: BRAND.colors.border },
+  progressDotActive: { backgroundColor: BRAND.colors.primary },
+  eyebrow: { color: BRAND.colors.primary, fontSize: 11, fontWeight: '900', letterSpacing: 1.2 },
+  title: { color: BRAND.colors.ink, fontSize: BRAND.typography.display, lineHeight: 37, fontWeight: '900' },
+  subtitle: { color: BRAND.colors.muted, fontSize: BRAND.typography.body, lineHeight: 21, marginBottom: 8 },
+  card: { backgroundColor: BRAND.colors.surface, borderRadius: BRAND.radius.card, padding: 16, borderWidth: 1, borderColor: BRAND.colors.border },
   options: { gap: 10 },
-  option: { minHeight: 54, borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
-  optionSelected: { borderColor: '#6D28D9', borderWidth: 2, backgroundColor: '#FAF8FF' },
+  option: { minHeight: 54, borderRadius: BRAND.radius.control, borderWidth: 1, borderColor: BRAND.colors.border, backgroundColor: BRAND.colors.surface, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center' },
+  optionSelected: { borderColor: BRAND.colors.primary, borderWidth: 2, backgroundColor: BRAND.colors.primarySoft },
   optionCopy: { flex: 1 },
-  optionTitle: { color: '#111827', fontSize: 15, fontWeight: '800' },
-  check: { color: '#6D28D9', fontSize: 20, fontWeight: '900' },
-  sectionLabel: { color: '#374151', fontSize: 12, fontWeight: '900', marginBottom: 8 },
+  optionTitle: { color: BRAND.colors.ink, fontSize: 15, fontWeight: '800' },
+  check: { color: BRAND.colors.primary, fontSize: 20, fontWeight: '900' },
+  sectionLabel: { color: BRAND.colors.inkSoft, fontSize: BRAND.typography.label, fontWeight: '900', marginBottom: 8 },
   sectionSpacing: { marginTop: 18 },
+  required: { color: BRAND.colors.primary, fontSize: 12, fontWeight: '800', textAlign: rtlTextAlignPlaceholder() },
   actions: { flexDirection: 'row', gap: 10, alignItems: 'center', marginTop: 4 },
-  secondary: { minHeight: 54, flex: 0.38, borderRadius: 16, borderWidth: 1, borderColor: '#E5E7EB', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
+  secondary: { minHeight: 54, flex: 0.38, borderRadius: BRAND.radius.control, borderWidth: 1, borderColor: BRAND.colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.surface },
   secondaryPlaceholder: { flex: 0.38 },
-  secondaryText: { color: '#374151', fontWeight: '800' },
-  primary: { minHeight: 54, flex: 1, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#6D28D9' },
-  primaryText: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
+  secondaryText: { color: BRAND.colors.inkSoft, fontWeight: '800' },
+  primary: { minHeight: 54, flex: 1, borderRadius: BRAND.radius.control, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.primary },
+  primaryText: { color: BRAND.colors.white, fontSize: 16, fontWeight: '900' },
   pressed: { opacity: 0.82 },
   disabled: { opacity: 0.5 },
 });
+
+function rtlTextAlignPlaceholder(): 'left' | 'right' { return 'left'; }
