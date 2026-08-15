@@ -21,7 +21,11 @@ export class RecipeInventoryMatcherService {
 
   async match(userId: string): Promise<RecipeMatch[]> {
     const [recipes, inventory] = await Promise.all([
-      this.prisma.recipe.findMany({ include: { ingredients: { include: { food: true } } }, orderBy: [{ verified: 'desc' }, { name: 'asc' }] }),
+      this.prisma.recipe.findMany({
+        where: { OR: [{ userId: null }, { userId }] },
+        include: { ingredients: { include: { food: true } } },
+        orderBy: [{ verified: 'desc' }, { name: 'asc' }],
+      }),
       this.prisma.inventoryItem.findMany({ where: { userId }, include: { food: true } }),
     ]);
     const stock = new Map(inventory.map((item) => [item.foodId, item]));
