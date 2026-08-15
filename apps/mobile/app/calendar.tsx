@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 import {
   CalendarEvent,
   completeCalendarEvent,
@@ -52,16 +51,10 @@ export default function CalendarScreen() {
   }, [locale, rangeEnd, rangeStart]);
 
   useEffect(() => { void getStoredLocale().then((value) => { if (value) setLocale(value); }); }, []);
-  useFocusEffect(useCallback(() => { void load(); }, [load]));
+  useEffect(() => { void load(); }, [load]);
 
-  const resetEditor = () => {
-    setEditingId(null); setTitle(''); setStartTime(''); setEndTime('');
-  };
-
-  const selectDay = (day: Date) => {
-    setSelectedDay(day);
-    if (!editingId) { setStartTime(''); setEndTime(''); }
-  };
+  const resetEditor = () => { setEditingId(null); setTitle(''); setStartTime(''); setEndTime(''); };
+  const selectDay = (day: Date) => { setSelectedDay(day); if (!editingId) { setStartTime(''); setEndTime(''); } };
 
   const saveEvent = async () => {
     const normalizedTitle = title.trim();
@@ -70,39 +63,18 @@ export default function CalendarScreen() {
     if (!normalizedTitle || !start) { setError(locale === 'fa' ? 'عنوان و ساعت شروع را وارد کن.' : 'Add a title and a valid start time.'); return; }
     if (endTime.trim() && !end) { setError(locale === 'fa' ? 'ساعت پایان معتبر نیست.' : 'End time is invalid.'); return; }
     if (end && end <= start) { setError(locale === 'fa' ? 'ساعت پایان باید بعد از شروع باشد.' : 'End time must be after the start time.'); return; }
-
     try {
       setBusy(true); setError(null);
-      if (editingId) {
-        await updateCalendarEvent(editingId, { title: normalizedTitle, type: 'calendar', startsAt: start.toISOString(), endsAt: end?.toISOString() ?? null });
-      } else {
-        await createCalendarEvent({ title: normalizedTitle, type: 'calendar', startsAt: start.toISOString(), ...(end ? { endsAt: end.toISOString() } : {}) });
-      }
-      resetEditor();
-      await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : (locale === 'fa' ? 'ذخیره نشد.' : 'Unable to save event.'));
-    } finally { setBusy(false); }
-  };
-
-  const editEvent = (event: CalendarEvent) => {
-    const start = new Date(event.startsAt); setSelectedDay(startOfDay(start)); setTitle(event.title); setStartTime(formatTime(event.startsAt)); setEndTime(event.endsAt ? formatTime(event.endsAt) : ''); setEditingId(event.id); setError(null);
-  };
-
-  const toggleComplete = async (event: CalendarEvent) => {
-    try {
-      setBusy(true); setError(null);
-      if (event.completed) await reopenCalendarEvent(event.id); else await completeCalendarEvent(event.id);
-      await load();
-    } catch (err) { setError(err instanceof Error ? err.message : (locale === 'fa' ? 'وضعیت رو نتونستم تغییر بدم.' : 'Unable to change event status.')); }
+      if (editingId) await updateCalendarEvent(editingId, { title: normalizedTitle, type: 'calendar', startsAt: start.toISOString(), endsAt: end?.toISOString() ?? null });
+      else await createCalendarEvent({ title: normalizedTitle, type: 'calendar', startsAt: start.toISOString(), ...(end ? { endsAt: end.toISOString() } : {}) });
+      resetEditor(); await load();
+    } catch (err) { setError(err instanceof Error ? err.message : (locale === 'fa' ? 'ذخیره نشد.' : 'Unable to save event.')); }
     finally { setBusy(false); }
   };
 
-  const removeEvent = async (id: string) => {
-    try { setBusy(true); setError(null); await deleteCalendarEvent(id); if (editingId === id) resetEditor(); await load(); }
-    catch (err) { setError(err instanceof Error ? err.message : (locale === 'fa' ? 'حذف نشد.' : 'Unable to delete event.')); }
-    finally { setBusy(false); }
-  };
+  const editEvent = (event: CalendarEvent) => { const start = new Date(event.startsAt); setSelectedDay(startOfDay(start)); setTitle(event.title); setStartTime(formatTime(event.startsAt)); setEndTime(event.endsAt ? formatTime(event.endsAt) : ''); setEditingId(event.id); setError(null); };
+  const toggleComplete = async (event: CalendarEvent) => { try { setBusy(true); setError(null); if (event.completed) await reopenCalendarEvent(event.id); else await completeCalendarEvent(event.id); await load(); } catch (err) { setError(err instanceof Error ? err.message : (locale === 'fa' ? 'وضعیت رو نتونستم تغییر بدم.' : 'Unable to change event status.')); } finally { setBusy(false); } };
+  const removeEvent = async (id: string) => { try { setBusy(true); setError(null); await deleteCalendarEvent(id); if (editingId === id) resetEditor(); await load(); } catch (err) { setError(err instanceof Error ? err.message : (locale === 'fa' ? 'حذف نشد.' : 'Unable to delete event.')); } finally { setBusy(false); } };
 
   const grouped = events.reduce<Record<string, CalendarEvent[]>>((acc, event) => { const key = dayKey(new Date(event.startsAt)); (acc[key] ??= []).push(event); return acc; }, {});
   const days = Array.from({ length: 7 }, (_, index) => new Date(rangeStart.getTime() + index * 24 * 60 * 60 * 1000));
@@ -117,9 +89,7 @@ export default function CalendarScreen() {
         <Text style={styles.title}>{locale === 'fa' ? 'تقویم' : 'Calendar'}</Text>
         <Text style={styles.subtitle}>{locale === 'fa' ? 'برنامه روزهایت را کنار یادآوری‌ها و دستیار شخصی نگه دار.' : 'Keep your schedule connected to reminders and the assistant.'}</Text>
 
-        <View style={styles.weekRow}>
-          {days.map((day) => { const active = dayKey(day) === dayKey(selectedDay); return <Pressable key={dayKey(day)} onPress={() => selectDay(day)} style={[styles.dayChip, active && styles.dayChipActive]}><Text style={[styles.dayChipText, active && styles.dayChipTextActive]}>{day.toLocaleDateString(locale === 'fa' ? 'fa-IR' : undefined, { weekday: 'short' })}</Text><Text style={[styles.dayNumber, active && styles.dayChipTextActive]}>{day.getDate()}</Text></Pressable>; })}
-        </View>
+        <View style={styles.weekRow}>{days.map((day) => { const active = dayKey(day) === dayKey(selectedDay); return <Pressable key={dayKey(day)} onPress={() => selectDay(day)} style={[styles.dayChip, active && styles.dayChipActive]}><Text style={[styles.dayChipText, active && styles.dayChipTextActive]}>{day.toLocaleDateString(locale === 'fa' ? 'fa-IR' : undefined, { weekday: 'short' })}</Text><Text style={[styles.dayNumber, active && styles.dayChipTextActive]}>{day.getDate()}</Text></Pressable>; })}</View>
 
         <View style={[styles.card, components.card]}>
           <View style={styles.editorHeader}><Text style={styles.cardTitle}>{editingId ? (locale === 'fa' ? 'ویرایش رویداد' : 'Edit event') : (locale === 'fa' ? 'افزودن رویداد' : 'Add event')}</Text>{editingId ? <Pressable onPress={resetEditor}><Text style={styles.link}>{locale === 'fa' ? 'لغو' : 'Cancel'}</Text></Pressable> : null}</View>
@@ -139,6 +109,4 @@ export default function CalendarScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe:{flex:1,backgroundColor:colors.paper}, center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:colors.paper}, content:{padding:spacing.xl,gap:spacing.md,paddingBottom:spacing.xxxl,backgroundColor:colors.paper}, rtl:{direction:'rtl'}, nav:{flexDirection:'row',justifyContent:'space-between'}, link:{fontWeight:'800',color:colors.text}, eyebrow:{...typography.eyebrow,color:colors.textMuted,marginTop:8}, title:{...typography.title1,color:colors.text}, subtitle:{...typography.body,color:colors.textMuted}, weekRow:{flexDirection:'row',gap:6}, dayChip:{flex:1,alignItems:'center',paddingVertical:10,borderRadius:radius.md,backgroundColor:colors.surfaceWarm,borderWidth:1,borderColor:colors.border}, dayChipActive:{backgroundColor:colors.ink,borderColor:colors.ink}, dayChipText:{fontSize:10,fontWeight:'800',color:colors.textMuted}, dayNumber:{fontSize:15,fontWeight:'900',color:colors.text,marginTop:2}, dayChipTextActive:{color:colors.surface}, card:{gap:10}, editorHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}, cardTitle:{fontSize:18,fontWeight:'900',color:colors.text}, input:{minHeight:50,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,paddingHorizontal:14,color:colors.text,backgroundColor:colors.surface}, row:{flexDirection:'row',gap:10}, half:{flex:1}, selectedHint:{...typography.caption,color:colors.textMuted}, primary:{minHeight:52,borderRadius:radius.md,backgroundColor:colors.ink,alignItems:'center',justifyContent:'center'}, primaryText:{color:colors.surface,fontWeight:'900'}, error:{color:colors.dangerText,fontWeight:'700'}, switchRow:{flexDirection:'row',justifyContent:'space-between'}, dayBlock:{gap:8}, dayTitle:{fontSize:16,fontWeight:'900',color:colors.text,marginTop:8}, event:{backgroundColor:colors.surface,borderRadius:radius.lg,padding:16,flexDirection:'row',gap:14,borderWidth:1,borderColor:colors.border}, completed:{opacity:0.55}, eventTime:{width:70}, time:{fontSize:15,fontWeight:'900',color:colors.text}, type:{fontSize:11,fontWeight:'800',color:colors.textMuted,marginTop:3,textTransform:'uppercase'}, eventCopy:{flex:1}, eventTitle:{fontSize:16,fontWeight:'800',color:colors.text}, actions:{flexDirection:'row',gap:14,marginTop:9,flexWrap:'wrap'}, delete:{fontSize:12,fontWeight:'800',color:colors.dangerText},
-});
+const styles = StyleSheet.create({ safe:{flex:1,backgroundColor:colors.paper}, center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:colors.paper}, content:{padding:spacing.xl,gap:spacing.md,paddingBottom:spacing.xxxl,backgroundColor:colors.paper}, rtl:{direction:'rtl'}, nav:{flexDirection:'row',justifyContent:'space-between'}, link:{fontWeight:'800',color:colors.text}, eyebrow:{...typography.eyebrow,color:colors.textMuted,marginTop:8}, title:{...typography.title1,color:colors.text}, subtitle:{...typography.body,color:colors.textMuted}, weekRow:{flexDirection:'row',gap:6}, dayChip:{flex:1,alignItems:'center',paddingVertical:10,borderRadius:radius.md,backgroundColor:colors.surfaceWarm,borderWidth:1,borderColor:colors.border}, dayChipActive:{backgroundColor:colors.ink,borderColor:colors.ink}, dayChipText:{fontSize:10,fontWeight:'800',color:colors.textMuted}, dayNumber:{fontSize:15,fontWeight:'900',color:colors.text,marginTop:2}, dayChipTextActive:{color:colors.surface}, card:{gap:10}, editorHeader:{flexDirection:'row',justifyContent:'space-between',alignItems:'center'}, cardTitle:{fontSize:18,fontWeight:'900',color:colors.text}, input:{minHeight:50,borderWidth:1,borderColor:colors.border,borderRadius:radius.md,paddingHorizontal:14,color:colors.text,backgroundColor:colors.surface}, row:{flexDirection:'row',gap:10}, half:{flex:1}, selectedHint:{...typography.caption,color:colors.textMuted}, primary:{minHeight:52,borderRadius:radius.md,backgroundColor:colors.ink,alignItems:'center',justifyContent:'center'}, primaryText:{color:colors.surface,fontWeight:'900'}, error:{color:colors.dangerText,fontWeight:'700'}, switchRow:{flexDirection:'row',justifyContent:'space-between'}, dayBlock:{gap:8}, dayTitle:{fontSize:16,fontWeight:'900',color:colors.text,marginTop:8}, event:{backgroundColor:colors.surface,borderRadius:radius.lg,padding:16,flexDirection:'row',gap:14,borderWidth:1,borderColor:colors.border}, completed:{opacity:0.55}, eventTime:{width:70}, time:{fontSize:15,fontWeight:'900',color:colors.text}, type:{fontSize:11,fontWeight:'800',color:colors.textMuted,marginTop:3,textTransform:'uppercase'}, eventCopy:{flex:1}, eventTitle:{fontSize:16,fontWeight:'800',color:colors.text}, actions:{flexDirection:'row',gap:14,marginTop:9,flexWrap:'wrap'}, delete:{fontSize:12,fontWeight:'800',color:colors.dangerText} });
