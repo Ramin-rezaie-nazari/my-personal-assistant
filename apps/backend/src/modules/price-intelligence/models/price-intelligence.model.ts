@@ -9,6 +9,9 @@ export type NormalizedPrice = {
   url?: string;
   currency: string;
   amount: number;
+  unit?: string;
+  unitPrice?: number;
+  city?: string;
   availability?: 'in_stock' | 'out_of_stock' | 'unknown';
   observedAt: Date;
 };
