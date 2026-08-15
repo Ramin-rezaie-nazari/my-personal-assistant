@@ -1,12 +1,14 @@
 import { Stack, router, useSegments } from 'expo-router';
+import type { ErrorBoundaryProps } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Animated, I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
+import { AppErrorState } from '../components/app-error-state';
+import { BrandMark } from '../components/BrandMark';
+import { BrandWordmark } from '../components/BrandWordmark';
 import { getStoredLocale, isRTL } from '../lib/i18n';
 import { hasAuthSession } from '../lib/api';
 import { getOnboardingState } from '../lib/onboarding';
 import { BRAND } from '../lib/branding';
-import { BrandMark } from '../components/BrandMark';
-import { BrandWordmark } from '../components/BrandWordmark';
 
 function StartupScreen() {
   const glow = useRef(new Animated.Value(0.35)).current;
@@ -30,13 +32,24 @@ function StartupScreen() {
   }, [glow, scale]);
 
   return (
-    <View style={styles.startup}>
+    <View style={styles.startup} accessible accessibilityLabel="Starting My Personal Assistant">
       <Animated.View style={[styles.startupGlow, { opacity: glow, transform: [{ scale }] }]} />
       <View style={styles.startupMark}><BrandMark size={104} dark /></View>
       <BrandWordmark dark />
       <Text style={styles.startupSubtitle}>Your day, your goals, your assistant.</Text>
-      <ActivityIndicator color={BRAND.colors.violet} style={styles.startupSpinner} />
+      <ActivityIndicator accessibilityLabel="Loading" color={BRAND.colors.violet} style={styles.startupSpinner} />
     </View>
+  );
+}
+
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  return (
+    <AppErrorState
+      title="Something went wrong"
+      message={error.message}
+      retryLabel="Try again"
+      onRetry={retry}
+    />
   );
 }
 
@@ -96,13 +109,14 @@ export default function RootLayout() {
 
   return (
     <View style={styles.root}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: BRAND.colors.canvas } }} />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: BRAND.colors.canvas }, animation: 'fade' }} />
       {showAssistantBubble ? (
         <Pressable
           onPress={() => router.push('/assistant')}
           style={({ pressed }) => [styles.assistantBubble, pressed && styles.pressed]}
           accessibilityRole="button"
           accessibilityLabel="Open assistant"
+          accessibilityHint="Opens your personal assistant"
         >
           <BrandMark size={58} dark />
         </Pressable>
