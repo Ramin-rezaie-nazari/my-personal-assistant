@@ -13,10 +13,25 @@ export class AutomaticPriceSchedulerService implements OnModuleInit, OnModuleDes
   constructor(private readonly nightly: NightlyMarketIntelligenceService, private readonly persistence: PricePersistenceService) {}
 
   onModuleInit() {
-    if (process.env.PRICE_SCHEDULER_ENABLED !== 'false') this.scheduleNext();
+    if (process.env.PRICE_SCHEDULER_ENABLED === 'false') return;
+    this.scheduleNext();
+    void this.catchUpIfMissed();
   }
 
   onModuleDestroy() { if (this.timer) clearTimeout(this.timer); }
+
+  private async catchUpIfMissed() {
+    const lastSuccessfulRunAt = await this.persistence.latestSuccessfulRun();
+    if (!lastSuccessfulRunAt) return;
+    const decision = this.nightly.shouldRun(new Date(), lastSuccessfulRunAt, {
+      hour: this.hour,
+      minute: this.minute,
+      timezone: this.timezone,
+      enabled: true,
+      catchUpAfterMissedRun: true,
+    });
+    if (decision.reason === 'catch_up_after_missed_window') await this.execute(new Date());
+  }
 
   private scheduleNext() {
     if (this.timer) clearTimeout(this.timer);
@@ -26,12 +41,11 @@ export class AutomaticPriceSchedulerService implements OnModuleInit, OnModuleDes
   }
 
   private async execute(scheduledFor: Date) {
+    if (this.running) return;
+    this.running = true;
     try {
-      if (!this.running) {
-        this.running = true;
-        await this.persistence.ensureTrackedProducts();
-        await this.nightly.run(undefined, undefined, scheduledFor);
-      }
+      await this.persistence.ensureTrackedProducts();
+      await this.nightly.run(undefined, undefined, scheduledFor);
     } finally {
       this.running = false;
       this.scheduleNext();
@@ -49,7 +63,7 @@ export class AutomaticPriceSchedulerService implements OnModuleInit, OnModuleDes
   }
 
   private zonedUtc(year: number, month: number, day: number, hour: number, minute: number) {
-    let guess = new Date(Date.UTC(year, month - 1, day, hour, minute));
+    const guess = new Date(Date.UTC(year, month - 1, day, hour, minute));
     const parts = new Intl.DateTimeFormat('en-US', { timeZone: this.timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(guess);
     const actual = new Date(Date.UTC(Number(parts.find((p) => p.type === 'year')?.value), Number(parts.find((p) => p.type === 'month')?.value) - 1, Number(parts.find((p) => p.type === 'day')?.value), Number(parts.find((p) => p.type === 'hour')?.value), Number(parts.find((p) => p.type === 'minute')?.value)));
     return new Date(guess.getTime() - (actual.getTime() - guess.getTime()));
