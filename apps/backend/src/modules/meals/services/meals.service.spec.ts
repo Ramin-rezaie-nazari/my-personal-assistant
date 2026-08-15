@@ -17,6 +17,9 @@ describe('MealsService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service = new MealsService(prisma as never);
+    tx.foodItem.findMany.mockResolvedValue([]);
+    tx.meal.create.mockResolvedValue({ id: 'meal-1' });
+    tx.dailyLog.upsert.mockResolvedValue({});
   });
 
   it('rejects empty meals', async () => {
@@ -30,6 +33,29 @@ describe('MealsService', () => {
     ).rejects.toThrow('A meal must contain at least one food item');
   });
 
+  it('rejects blank labels, invalid time, and non-positive quantities', async () => {
+    await expect(service.create('user-1', {
+      name: ' ',
+      type: 'lunch',
+      eatenAt: '2026-08-11T12:00:00.000Z',
+      items: [{ foodId: 'food-1', quantity: 1 }],
+    })).rejects.toThrow('name must not be empty');
+
+    await expect(service.create('user-1', {
+      name: 'Lunch',
+      type: 'lunch',
+      eatenAt: 'not-a-date',
+      items: [{ foodId: 'food-1', quantity: 1 }],
+    })).rejects.toThrow('eatenAt must be a valid date-time');
+
+    await expect(service.create('user-1', {
+      name: 'Lunch',
+      type: 'lunch',
+      eatenAt: '2026-08-11T12:00:00.000Z',
+      items: [{ foodId: 'food-1', quantity: 0 }],
+    })).rejects.toThrow('quantity must be a finite number greater than zero');
+  });
+
   it('calculates meal nutrition and updates the daily aggregate', async () => {
     tx.foodItem.findMany.mockResolvedValue([
       {
@@ -41,8 +67,6 @@ describe('MealsService', () => {
         fat: 10,
       },
     ]);
-    tx.meal.create.mockResolvedValue({ id: 'meal-1' });
-    tx.dailyLog.upsert.mockResolvedValue({});
 
     await service.create('user-1', {
       name: 'Lunch',
