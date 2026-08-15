@@ -102,6 +102,13 @@ export class NutritionService {
       fat?: number;
     },
   ) {
+    this.assertText(data.mealType, 'mealType');
+    this.assertText(data.title, 'title');
+    this.assertNonNegativeNumber(data.calories, 'calories');
+    this.assertNonNegativeNumber(data.protein, 'protein');
+    this.assertNonNegativeNumber(data.carbs, 'carbs');
+    this.assertNonNegativeNumber(data.fat, 'fat');
+
     const dateKey = this.normalizeDateKey(data.dateKey);
     const calories = data.calories ?? 0;
     const protein = data.protein ?? 0;
@@ -132,6 +139,19 @@ export class NutritionService {
 
       return log;
     });
+  }
+
+  private assertText(value: string, field: string) {
+    if (!value || !value.trim()) {
+      throw new BadRequestException(`${field} must not be empty`);
+    }
+  }
+
+  private assertNonNegativeNumber(value: number | undefined, field: string) {
+    if (value === undefined) return;
+    if (!Number.isFinite(value) || value < 0) {
+      throw new BadRequestException(`${field} must be a finite non-negative number`);
+    }
   }
 
   private normalizeDateKey(dateKey?: string): string {
