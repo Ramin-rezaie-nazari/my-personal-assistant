@@ -17,14 +17,15 @@ export class CalendarService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createEvent(userId: string, data: { title: string; type: string; startsAt: string; endsAt?: string }) {
-    const title = data.title.trim();
+    const title = typeof data.title === 'string' ? data.title.trim() : '';
     if (!title) throw new BadRequestException('title is required');
+    const type = typeof data.type === 'string' ? data.type.trim() || 'general' : 'general';
     const startsAt = this.parseDate(data.startsAt, 'startsAt');
     const endsAt = data.endsAt ? this.parseDate(data.endsAt, 'endsAt') : null;
     this.validateRange(startsAt, endsAt);
 
     const event = await this.prisma.reminder.create({
-      data: { userId, title, type: data.type.trim() || 'general', scheduledAt: startsAt, endsAt },
+      data: { userId, title, type, scheduledAt: startsAt, endsAt },
     });
     return this.toEvent(event);
   }
@@ -47,11 +48,11 @@ export class CalendarService {
     }
     const patch: { title?: string; type?: string; scheduledAt?: Date; endsAt?: Date | null } = {};
     if (data.title !== undefined) {
-      const title = data.title.trim();
+      const title = typeof data.title === 'string' ? data.title.trim() : '';
       if (!title) throw new BadRequestException('title cannot be empty');
       patch.title = title;
     }
-    if (data.type !== undefined) patch.type = data.type.trim() || 'general';
+    if (data.type !== undefined) patch.type = typeof data.type === 'string' ? data.type.trim() || 'general' : 'general';
 
     const existing = await this.findOwnedEvent(userId, eventId);
     const startsAt = data.startsAt !== undefined ? this.parseDate(data.startsAt, 'startsAt') : existing.scheduledAt;
@@ -67,14 +68,15 @@ export class CalendarService {
   }
 
   async updateEventTime(userId: string, eventId: string, time: string) {
-    if (!/^\d{2}:\d{2}$/.test(time)) throw new BadRequestException('time must use HH:MM format');
+    if (typeof time !== 'string' || !/^\d{2}:\d{2}$/.test(time)) throw new BadRequestException('time must use HH:MM format');
     const [hours, minutes] = time.split(':').map(Number);
     if (hours > 23 || minutes > 59) throw new BadRequestException('time must be a valid time');
     const existing = await this.findOwnedEvent(userId, eventId);
     const scheduledAt = new Date(existing.scheduledAt);
     scheduledAt.setHours(hours, minutes, 0, 0);
     this.validateRange(scheduledAt, existing.endsAt);
-    await this.prisma.reminder.updateMany({ where: { id: eventId, userId }, data: { scheduledAt } });
+    const result = await this.prisma.reminder.updateMany({ where: { id: eventId, userId }, data: { scheduledAt } });
+    if (result.count === 0) throw new NotFoundException('Calendar event not found');
     return this.toEvent(await this.findOwnedEvent(userId, eventId));
   }
 
@@ -109,6 +111,7 @@ export class CalendarService {
   }
 
   private parseDate(value: string, field: string) {
+    if (typeof value !== 'string' || !value.trim()) throw new BadRequestException(`${field} must be a valid ISO date`);
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) throw new BadRequestException(`${field} must be a valid ISO date`);
     return parsed;
