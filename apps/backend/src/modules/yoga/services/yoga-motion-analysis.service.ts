@@ -1,6 +1,85 @@
-import { Injectable } from '@nestjs/common';import { BodyLandmark,PoseAssessment,PoseFrame } from '../models/pose-provider.model';
-export type MotionMetric={name:string;value:number;idealMin?:number;idealMax?:number;error:number};export type MotionAnalysis=PoseAssessment&{metrics:MotionMetric[];analyzedAt:number};
-@Injectable()export class YogaMotionAnalysisService{analyze(id:string,f:PoseFrame):MotionAnalysis{const d=this.definitions[id]??[],m=d.map(r=>{const v=r.measure(f.landmarks);return{name:r.name,value:v,idealMin:r.min,idealMax:r.max,error:r.error(v)}}),avg=m.length?m.reduce((s,x)=>s+x.error,0)/m.length:1,score=this.clamp(1-avg)*this.clamp(f.overallConfidence),issues=d.map(r=>{const x=m.find(y=>y.name===r.name)!;if(x.error<.08)return null;return{key:r.name,severity:x.error>=.35?'critical' as const:x.error>=.18?'warning' as const:'info' as const,cue:r.cue(x.value)}}).filter((x):x is NonNullable<typeof x>=>!!x).sort((a,b)=>(a.severity==='critical'?0:a.severity==='warning'?1:2)-(b.severity==='critical'?0:b.severity==='warning'?1:2));return{poseId:id,score:Number(score.toFixed(3)),confidence:Number(this.clamp(f.overallConfidence).toFixed(3)),issues:issues.slice(0,3),stable:m.length>0&&m.every(x=>x.error<.15),metrics:m,analyzedAt:Date.now()}}
-private readonly definitions:Record<string,Array<{name:string;min?:number;max?:number;measure:(p:Record<string,BodyLandmark>)=>number;error:(v:number)=>number;cue:(v:number)=>string}>>={mountain:[this.rangeRule('shoulder_level',.03,.18,p=>Math.abs((p.leftShoulder?.y??0)-(p.rightShoulder?.y??0)),()=> 'Keep both shoulders level.')],warrior_ii:[this.rangeRule('front_knee_angle',75,115,p=>this.angle(p.hip,p.knee,p.ankle),v=>v>115?'Bend the front knee a little more.':'Straighten the front knee slightly.')],plank:[this.rangeRule('body_line',160,175,p=>this.angle(p.shoulder,p.hip,p.ankle),v=>v<160?'Lift the hips slightly.':'Lower the hips slightly.')],downward_dog:[this.rangeRule('hip_angle',70,125,p=>this.angle(p.shoulder,p.hip,p.knee),v=>v<70?'Lift the hips and lengthen the spine.':'Soften the bend and lengthen your back.')]};
-private rangeRule(n:string,min:number,max:number,measure:(p:Record<string,BodyLandmark>)=>number,cue:(v:number)=>string){return{name:n,min,max,measure,error:(v:number)=>v<min?(min-v)/Math.max(Math.abs(min),1):v>max?(v-max)/Math.max(Math.abs(max),1):0,cue}}
-private angle(a?:BodyLandmark,b?:BodyLandmark,c?:BodyLandmark){if(!a||!b||!c)return 180;const abx=a.x-b.x,aby=a.y-b.y,cbx=c.x-b.x,cby=c.y-b.y,dot=abx*cbx+aby*cby,mag=Math.hypot(abx,aby)*Math.hypot(cbx,cby);if(!mag)return 180;return Math.acos(this.clamp(dot/mag,-1,1))*180/Math.PI}private clamp(v:number,min=0,max=1){return Math.min(max,Math.max(min,v))}}
+import { Injectable } from '@nestjs/common';
+import { BodyLandmark, PoseAssessment, PoseFrame } from '../models/pose-provider.model';
+
+export type MotionMetric = { name: string; value: number; idealMin?: number; idealMax?: number; error: number };
+export type MotionAnalysis = PoseAssessment & { metrics: MotionMetric[]; analyzedAt: number };
+
+@Injectable()
+export class YogaMotionAnalysisService {
+  analyze(poseId: string, frame: PoseFrame): MotionAnalysis {
+    const definition = this.definitions[poseId] ?? [];
+    const metrics = definition.map((rule) => {
+      const value = rule.measure(frame.landmarks);
+      return { name: rule.name, value, idealMin: rule.min, idealMax: rule.max, error: rule.error(value) };
+    });
+    const averageError = metrics.length ? metrics.reduce((sum, metric) => sum + metric.error, 0) / metrics.length : 1;
+    const score = this.clamp(1 - averageError) * this.clamp(frame.overallConfidence);
+    const issues = definition
+      .map((rule) => {
+        const metric = metrics.find((item) => item.name === rule.name)!;
+        if (metric.error < 0.02) return null;
+        return {
+          key: rule.name,
+          severity: metric.error >= 0.35 ? ('critical' as const) : metric.error >= 0.18 ? ('warning' as const) : ('info' as const),
+          cue: rule.cue(metric.value),
+        };
+      })
+      .filter((value): value is NonNullable<typeof value> => Boolean(value))
+      .sort((a, b) => (a.severity === 'critical' ? 0 : a.severity === 'warning' ? 1 : 2) - (b.severity === 'critical' ? 0 : b.severity === 'warning' ? 1 : 2));
+
+    return {
+      poseId,
+      score: Number(score.toFixed(3)),
+      confidence: Number(this.clamp(frame.overallConfidence).toFixed(3)),
+      issues: issues.slice(0, 3),
+      stable: metrics.length > 0 && metrics.every((metric) => metric.error < 0.15),
+      metrics,
+      analyzedAt: Date.now(),
+    };
+  }
+
+  private readonly definitions: Record<string, Array<{
+    name: string;
+    min?: number;
+    max?: number;
+    measure: (landmarks: Record<string, BodyLandmark>) => number;
+    error: (value: number) => number;
+    cue: (value: number) => string;
+  }>> = {
+    mountain: [
+      this.rangeRule('shoulder_level', 0.03, 0.18, (p) => Math.abs((p.leftShoulder?.y ?? 0) - (p.rightShoulder?.y ?? 0)), () => 'Keep both shoulders level.'),
+    ],
+    warrior_ii: [
+      this.rangeRule('front_knee_angle', 75, 115, (p) => this.angle(p.hip, p.knee, p.ankle), (v) => v > 115 ? 'Bend the front knee a little more.' : 'Straighten the front knee slightly.'),
+    ],
+    plank: [
+      this.rangeRule('body_line', 160, 175, (p) => this.angle(p.shoulder, p.hip, p.ankle), (v) => v < 160 ? 'Lift the hips slightly.' : 'Lower the hips slightly.'),
+    ],
+    downward_dog: [
+      this.rangeRule('hip_angle', 70, 125, (p) => this.angle(p.shoulder, p.hip, p.knee), (v) => v < 70 ? 'Lift the hips and lengthen the spine.' : 'Soften the bend and lengthen your back.'),
+    ],
+  };
+
+  private rangeRule(name: string, min: number, max: number, measure: (p: Record<string, BodyLandmark>) => number, cue: (v: number) => string) {
+    return {
+      name,
+      min,
+      max,
+      measure,
+      error: (value: number) => value < min ? (min - value) / Math.max(Math.abs(min), 1) : value > max ? (value - max) / Math.max(Math.abs(max), 1) : 0,
+      cue,
+    };
+  }
+
+  private angle(a?: BodyLandmark, b?: BodyLandmark, c?: BodyLandmark) {
+    if (!a || !b || !c) return 180;
+    const abx = a.x - b.x; const aby = a.y - b.y;
+    const cbx = c.x - b.x; const cby = c.y - b.y;
+    const dot = abx * cbx + aby * cby;
+    const mag = Math.hypot(abx, aby) * Math.hypot(cbx, cby);
+    if (!mag) return 180;
+    return Math.acos(this.clamp(dot / mag, -1, 1)) * 180 / Math.PI;
+  }
+
+  private clamp(value: number, min = 0, max = 1) { return Math.min(max, Math.max(min, value)); }
+}
