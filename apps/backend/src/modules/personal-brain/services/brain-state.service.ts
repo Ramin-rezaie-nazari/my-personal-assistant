@@ -4,6 +4,7 @@ import { ContextEngineService } from '../../context-engine/services/context-engi
 import { LifeContextFusionService } from '../../context-engine/services/life-context-fusion.service';
 import { BrainContextService } from '../../brain-integration/services/brain-context.service';
 import { BrainGoalService } from '../../brain-integration/services/brain-goal.service';
+import { BrainContext } from '../../brain-integration/types';
 
 import { BrainDailyStatusService } from './brain-daily-status.service';
 import { BrainLifeContextService } from './brain-life-context.service';
@@ -13,7 +14,7 @@ import { BrainWeeklyStatusService } from './brain-weekly-status.service';
 import { BrainWorkoutStatusService } from './brain-workout-status.service';
 import { UserContextService } from './user-context.service';
 
-import { BrainState } from '../types';
+import { BrainState, BrainLifeContext } from '../types';
 
 @Injectable()
 export class BrainStateService {
@@ -66,22 +67,29 @@ export class BrainStateService {
       wearable: { value: {}, source: 'wearable', observedAt: null, confidence: 0 },
     });
 
+    const brainContext: BrainContext = generatedContext && typeof generatedContext === 'object' && 'timestamp' in generatedContext && 'source' in generatedContext
+      ? generatedContext as unknown as BrainContext
+      : { timestamp: new Date().toISOString(), source: 'context-engine' };
+
     const userContext = this.userContextService.build({
-      context: generatedContext,
+      context: brainContext,
       goals,
       memories: memoryContext.memories,
     });
 
     return {
       userContext,
-      context: generatedContext,
+      context: brainContext,
       memories: memoryContext.memories,
       goals,
       dailyStatus,
       weeklyStatus,
       nutritionTargets,
       workoutStatus,
-      lifeContext: fusedLifeContext,
+      lifeContext: {
+        ...(lifeContext as BrainLifeContext),
+        ...(fusedLifeContext as unknown as Partial<BrainLifeContext>),
+      },
     };
   }
 }
