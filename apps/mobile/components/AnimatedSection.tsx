@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import { type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import { AnimatedPressable as MotionPressable, AnimatedSection as MotionSection } from '../lib/motion';
 
 type SectionProps = {
