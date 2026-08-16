@@ -85,6 +85,15 @@ export class ContextualCommandService {
     const entities: ContextualCommand['entities'] = {};
     const quantity = text.match(/(?:^|\s)(\d+(?:\.\d+)?)(?=\s*(?:تا|عدد|مورد|بار|x)?(?:\s|$))/i);
     if (quantity) entities.quantity = Number(quantity[1]);
+    else {
+      const wordQuantity: Record<string, number> = { یک: 1, یه: 1, یکی: 1, دو: 2, سه: 3, چهار: 4, پنج: 5, شش: 6, هفت: 7, هشت: 8, نه: 9, ده: 10 };
+      for (const [word, value] of Object.entries(wordQuantity)) {
+        if (new RegExp(`(?:^|\\s)${word}(?=\\s*(?:تا|عدد|مورد)?(?:\\s|$))`).test(text)) {
+          entities.quantity = value;
+          break;
+        }
+      }
+    }
     const time = text.match(/\b([01]?\d|2[0-3])\s*(?::|\.)([0-5]\d)\b/);
     if (time) entities.time = `${time[1].padStart(2, '0')}:${time[2]}`;
     const duration = text.match(/(?:^|\s)(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)(?=\s|$)/i);
