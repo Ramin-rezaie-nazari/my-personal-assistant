@@ -21,16 +21,21 @@ export class AutomaticPriceSchedulerService implements OnModuleInit, OnModuleDes
   onModuleDestroy() { if (this.timer) clearTimeout(this.timer); }
 
   private async catchUpIfMissed() {
-    const lastSuccessfulRunAt = await this.persistence.latestSuccessfulRun();
-    if (!lastSuccessfulRunAt) return;
-    const decision = this.nightly.shouldRun(new Date(), lastSuccessfulRunAt, {
-      hour: this.hour,
-      minute: this.minute,
-      timezone: this.timezone,
-      enabled: true,
-      catchUpAfterMissedRun: true,
-    });
-    if (decision.reason === 'catch_up_after_missed_window') await this.execute(new Date());
+    try {
+      const lastSuccessfulRunAt = await this.persistence.latestSuccessfulRun();
+      if (!lastSuccessfulRunAt) return;
+      const decision = this.nightly.shouldRun(new Date(), lastSuccessfulRunAt, {
+        hour: this.hour,
+        minute: this.minute,
+        timezone: this.timezone,
+        enabled: true,
+        catchUpAfterMissedRun: true,
+      });
+      if (decision.reason === 'catch_up_after_missed_window') await this.execute(new Date());
+    } catch {
+      // Price-intelligence persistence is optional during bootstrap/test environments.
+      // A missing price persistence table must not prevent the rest of the application from starting.
+    }
   }
 
   private scheduleNext() {
