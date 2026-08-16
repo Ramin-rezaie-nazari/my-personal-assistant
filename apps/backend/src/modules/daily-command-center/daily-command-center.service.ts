@@ -66,7 +66,10 @@ export class DailyCommandCenterService {
         orderBy: { scheduledTime: 'asc' },
       }),
       this.prisma.workout.findMany({
-        where: { userId, performedAt: { gte: todayStart } },
+        where: {
+          userId,
+          performedAt: { gte: todayStart, lt: tomorrowStart },
+        },
         orderBy: { performedAt: 'desc' },
         take: 3,
       }),
