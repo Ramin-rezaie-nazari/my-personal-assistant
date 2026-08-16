@@ -1,22 +1,2 @@
-import { Injectable } from '@nestjs/common';
-import { HouseholdConsumptionLearningService } from './household-consumption-learning.service';
-
-export type ReorderForecastInput = { productKey: string; currentQuantity: number; safetyStockDays?: number; leadTimeDays?: number };
-export type ReorderForecast = ReorderForecastInput & { daysRemaining: number | null; reorderPoint: number; recommendedQuantity: number; urgency: 'critical' | 'soon' | 'normal' | 'unknown' };
-
-@Injectable()
-export class HouseholdReorderForecastService {
-  constructor(private readonly consumption: HouseholdConsumptionLearningService) {}
-  forecast(input: ReorderForecastInput, now = new Date()): ReorderForecast {
-    const model = this.consumption.forecast(input.productKey, now);
-    const dailyRate = model.dailyRate;
-    if (dailyRate <= 0) return { ...input, daysRemaining: null, reorderPoint: 0, recommendedQuantity: 0, urgency: 'unknown' };
-    const leadTimeDays = Math.max(0, input.leadTimeDays ?? 2);
-    const safetyStockDays = Math.max(0, input.safetyStockDays ?? 2);
-    const daysRemaining = input.currentQuantity / dailyRate;
-    const reorderPoint = dailyRate * (leadTimeDays + safetyStockDays);
-    const recommendedQuantity = Math.max(0, Math.ceil(model.next30DayNeed + dailyRate * (leadTimeDays + safetyStockDays) - input.currentQuantity));
-    const urgency = daysRemaining <= leadTimeDays ? 'critical' : daysRemaining <= leadTimeDays + safetyStockDays ? 'soon' : 'normal';
-    return { ...input, daysRemaining, reorderPoint, recommendedQuantity, urgency };
-  }
-}
+import { Injectable } from '@nestjs/common';import { HouseholdConsumptionLearningService } from './household-consumption-learning.service';export type ReorderForecastInput={productKey:string;currentQuantity:number;safetyStockDays?:number;leadTimeDays?:number};export type ReorderForecast=ReorderForecastInput&{daysRemaining:number|null;reorderPoint:number;recommendedQuantity:number;urgency:'critical'|'soon'|'normal'|'unknown'};
+@Injectable()export class HouseholdReorderForecastService{constructor(private readonly consumption:HouseholdConsumptionLearningService){}forecast(i:ReorderForecastInput,now=new Date()):ReorderForecast{const m=this.consumption.forecast(i.productKey,now),r=m.dailyRate;if(r<=0)return{...i,daysRemaining:null,reorderPoint:0,recommendedQuantity:0,urgency:'unknown'};const lead=Math.max(0,i.leadTimeDays??2),safe=Math.max(0,i.safetyStockDays??2),days=i.currentQuantity/r,reorderPoint=r*(lead+safe),recommendedQuantity=Math.max(0,Math.ceil(m.next30DayNeed+r*(lead+safe)-i.currentQuantity)),urgency=days<=lead?'critical':days<=lead+safe?'soon':'normal';return{...i,daysRemaining:days,reorderPoint,recommendedQuantity,urgency}}}

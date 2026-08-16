@@ -1,16 +1,2 @@
-import { Injectable } from '@nestjs/common';
-import { DecisionCandidate } from './unified-decision-engine.service';
-export type ReplanTrigger = 'constraint_changed' | 'candidate_expired' | 'user_feedback' | 'higher_priority_action' | 'context_changed';
-
-@Injectable()
-export class DecisionReplanPolicyService {
-  shouldReplan(trigger: ReplanTrigger, current: DecisionCandidate | null, replacement: DecisionCandidate | null): boolean {
-    if (!current) return Boolean(replacement);
-    if (!replacement) return trigger === 'constraint_changed' || trigger === 'candidate_expired' || trigger === 'context_changed';
-    if (trigger === 'user_feedback' || trigger === 'constraint_changed' || trigger === 'candidate_expired') return true;
-    const currentWeight = this.weight(current); const replacementWeight = this.weight(replacement);
-    if (trigger === 'higher_priority_action') return replacementWeight > currentWeight;
-    return replacementWeight > currentWeight + 0.15 || (replacement.score - current.score >= 0.2);
-  }
-  private weight(candidate: DecisionCandidate): number { return Math.max(0, Math.min(1, candidate.priority ?? 0.5)) * 0.4 + Math.max(0, Math.min(1, candidate.confidence)) * 0.3 + Math.max(0, Math.min(1, candidate.score)) * 0.3; }
-}
+import { Injectable } from '@nestjs/common';import { DecisionCandidate } from './unified-decision-engine.service';export type ReplanTrigger='constraint_changed'|'candidate_expired'|'user_feedback'|'higher_priority_action'|'context_changed';
+@Injectable()export class DecisionReplanPolicyService{shouldReplan(t:ReplanTrigger,c:DecisionCandidate|null,r:DecisionCandidate|null){if(!c)return!!r;if(!r)return t==='constraint_changed'||t==='candidate_expired'||t==='context_changed';if(t==='user_feedback'||t==='constraint_changed'||t==='candidate_expired')return true;const cw=this.w(c),rw=this.w(r);return t==='higher_priority_action'?rw>cw:rw>cw+.15||(r.score-c.score>=.2)}private w(c:DecisionCandidate){return Math.max(0,Math.min(1,c.priority??.5))*.4+Math.max(0,Math.min(1,c.confidence))*.3+Math.max(0,Math.min(1,c.score))*.3}}

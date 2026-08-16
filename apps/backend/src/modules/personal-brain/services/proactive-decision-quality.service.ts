@@ -1,17 +1,3 @@
 import { Injectable } from '@nestjs/common';
-
-export type ProactiveSignal = { value: number; weight: number };
-export type ProactiveDecisionQuality = { score: number; confidence: number; shouldNotify: boolean; reason: string };
-
-@Injectable()
-export class ProactiveDecisionQualityService {
-  evaluate(input: { relevance: number; urgency: number; userBenefit: number; interruptionCost: number; duplicatePenalty?: number; snoozeRate?: number }): ProactiveDecisionQuality {
-    const relevance = this.clamp(input.relevance); const urgency = this.clamp(input.urgency); const userBenefit = this.clamp(input.userBenefit); const interruptionCost = this.clamp(input.interruptionCost); const duplicatePenalty = this.clamp(input.duplicatePenalty ?? 0); const snoozeRate = this.clamp(input.snoozeRate ?? 0);
-    const score = this.clamp(relevance * 0.32 + urgency * 0.24 + userBenefit * 0.32 - interruptionCost * 0.08 - duplicatePenalty * 0.04);
-    const confidence = this.clamp(relevance * 0.35 + userBenefit * 0.35 + urgency * 0.20 + (1 - snoozeRate) * 0.10 - duplicatePenalty * 0.08);
-    const shouldNotify = score >= 0.62 && confidence >= 0.55;
-    const reason = shouldNotify ? 'high expected user value' : score < 0.62 ? 'insufficient value for an interruption' : 'confidence too low for proactive delivery';
-    return { score, confidence, shouldNotify, reason };
-  }
-  private clamp(value: number) { return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0)); }
-}
+export type ProactiveDecisionQuality={score:number;confidence:number;shouldNotify:boolean;reason:string};
+@Injectable()export class ProactiveDecisionQualityService{evaluate(i:{relevance:number;urgency:number;userBenefit:number;interruptionCost:number;duplicatePenalty?:number;snoozeRate?:number}):ProactiveDecisionQuality{const r=this.c(i.relevance),u=this.c(i.urgency),b=this.c(i.userBenefit),cost=this.c(i.interruptionCost),dup=this.c(i.duplicatePenalty??0),s=this.c(i.snoozeRate??0),score=this.c(r*.32+u*.24+b*.32-cost*.08-dup*.04),confidence=this.c(r*.35+b*.35+u*.2+(1-s)*.1-dup*.08),shouldNotify=score>=.62&&confidence>=.55;return{score,confidence,shouldNotify,reason:shouldNotify?'high expected user value':score<.62?'insufficient value for an interruption':'confidence too low for proactive delivery'}}private c(v:number){return Math.max(0,Math.min(1,Number.isFinite(v)?v:0))}}
