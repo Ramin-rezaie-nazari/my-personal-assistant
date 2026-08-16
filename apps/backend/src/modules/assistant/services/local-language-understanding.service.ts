@@ -53,7 +53,7 @@ export class LocalLanguageUnderstandingService {
   private normalize(input: string): string {
     return input.trim().toLowerCase().replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
       .replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[ۀة]/g, 'ه').replace(/‌/g, ' ')
-      .replace(/[؟?!،؛:]/g, ' ').replace(/\s+/g, ' ');
+      .replace(/[؟?!،؛]/g, ' ').replace(/\s+/g, ' ');
   }
 
   private extractQuantity(text: string): number | undefined {
