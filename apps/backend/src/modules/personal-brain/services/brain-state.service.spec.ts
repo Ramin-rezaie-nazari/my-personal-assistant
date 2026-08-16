@@ -24,8 +24,17 @@ describe('BrainStateService', () => {
       { build: jest.fn().mockReturnValue({ user: 'ctx' }) } as any,
       { buildContext: jest.fn().mockResolvedValue({}) } as any,
       { build: jest.fn().mockImplementation((_userId, sources) => ({
-        userId: 'u1', generatedAt: '2026-08-13T04:00:00.000Z',
-        ...Object.fromEntries(Object.entries(sources).map(([key, source]) => [key, { ...source, observedAt: new Date().toISOString(), freshness: 'fresh', confidence: source.confidence }]))
+        userId: 'u1',
+        generatedAt: '2026-08-13T04:00:00.000Z',
+        ...Object.fromEntries(Object.entries(sources).map(([key, source]: [string, any]) => [
+          key,
+          {
+            ...source,
+            observedAt: source.observedAt ? new Date().toISOString() : null,
+            freshness: source.observedAt ? 'fresh' : 'missing',
+            confidence: source.confidence,
+          },
+        ])),
       })) } as any,
     );
 
