@@ -20,18 +20,13 @@ export class LifeTaskActionAdapter implements DecisionActionAdapter {
     const userId = String(context.userId ?? '');
     if (!userId) throw new Error('Missing userId');
 
-    const task = await this.prisma.lifeTask.findFirst({
-      where: { id: candidate.id, userId },
-      select: { id: true, status: true, title: true },
-    });
+    const rows = await this.prisma.$queryRaw<Array<{ id: string; status: string; title: string }>>`
+      SELECT "id","status","title" FROM "LifeTask" WHERE "id"=${candidate.id} AND "userId"=${userId} LIMIT 1`;
+    const task = rows[0];
     if (!task) throw new Error('life_task_not_found');
     if (task.status === 'completed') return { taskId: task.id, status: 'completed', alreadyCompleted: true };
 
-    const updated = await this.prisma.lifeTask.update({
-      where: { id: task.id },
-      data: { status: 'completed' },
-      select: { id: true, status: true, title: true },
-    });
-    return { taskId: updated.id, status: updated.status, title: updated.title };
+    await this.prisma.$executeRaw`UPDATE "LifeTask" SET "status"='completed', "completedAt"=CURRENT_TIMESTAMP, "updatedAt"=CURRENT_TIMESTAMP WHERE "id"=${task.id} AND "userId"=${userId}`;
+    return { taskId: task.id, status: 'completed', title: task.title };
   }
 }
