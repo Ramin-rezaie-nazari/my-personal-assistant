@@ -7,7 +7,7 @@ describe('ConversationContextService', () => {
     role: 'user' as const,
     text: `message-${index}`,
     action,
-    createdAt: new Date(`2026-08-16T00:${String(index).padStart(2, '0')}:00.000Z`),
+    createdAt: Date.parse(`2026-08-16T00:${String(index).padStart(2, '0')}:00.000Z`),
   });
 
   it('keeps user-scoped turns bounded and resolves the latest action', async () => {
@@ -15,7 +15,7 @@ describe('ConversationContextService', () => {
       append: jest.fn().mockImplementation(async (turn: any) => ({
         ...turn,
         id: `persisted-${Math.random()}`,
-        createdAt: new Date(),
+        createdAt: Date.now(),
       })),
       getRecent: jest.fn().mockResolvedValue([]),
       deleteAll: jest.fn().mockResolvedValue(undefined),
@@ -36,7 +36,7 @@ describe('ConversationContextService', () => {
 
   it('can clear one user without affecting another', async () => {
     const history = {
-      append: jest.fn().mockImplementation(async (turn: any) => ({ ...turn, id: `${turn.userId}-1`, createdAt: new Date() })),
+      append: jest.fn().mockImplementation(async (turn: any) => ({ ...turn, id: `${turn.userId}-1`, createdAt: Date.now() })),
       getRecent: jest.fn().mockResolvedValue([]),
       deleteAll: jest.fn().mockResolvedValue(undefined),
     };
