@@ -73,7 +73,7 @@ export class CalendarService {
     if (hours > 23 || minutes > 59) throw new BadRequestException('time must be a valid time');
     const existing = await this.findOwnedEvent(userId, eventId);
     const scheduledAt = new Date(existing.scheduledAt);
-    scheduledAt.setHours(hours, minutes, 0, 0);
+    scheduledAt.setUTCHours(hours, minutes, 0, 0);
     this.validateRange(scheduledAt, existing.endsAt);
     const result = await this.prisma.reminder.updateMany({ where: { id: eventId, userId }, data: { scheduledAt } });
     if (result.count === 0) throw new NotFoundException('Calendar event not found');
