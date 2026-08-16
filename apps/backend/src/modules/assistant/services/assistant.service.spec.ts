@@ -8,15 +8,25 @@ describe('AssistantService', () => {
     resolve: jest.Mock;
     append: jest.Mock;
     get: jest.Mock;
+    understand: jest.Mock;
+    createPlan: jest.Mock;
   }> = {}) => {
     const orchestrator = { processRequest: overrides.processRequest ?? jest.fn() } as unknown as BrainOrchestratorService;
     const execution = { execute: overrides.execute ?? jest.fn() } as any;
-    const contextual = { resolve: overrides.resolve ?? jest.fn().mockResolvedValue({ referencesPrevious: false, operation: 'unknown' }) } as any;
+    const contextual = {
+      resolve: overrides.resolve ?? jest.fn().mockResolvedValue({ referencesPrevious: false, operation: 'unknown', entities: {}, clauses: [], intents: [], contradictions: [], confidence: 0.7 }),
+    } as any;
     const conversation = {
       append: overrides.append ?? jest.fn().mockResolvedValue(undefined),
       get: overrides.get ?? jest.fn().mockResolvedValue({ turns: [] }),
     } as any;
-    return new AssistantService(orchestrator, execution, contextual, conversation);
+    const localLanguageUnderstanding = {
+      understand: overrides.understand ?? jest.fn().mockReturnValue({ intent: 'UNKNOWN', confidence: 0, entities: {} }),
+    } as any;
+    const planning = {
+      createPlan: overrides.createPlan ?? jest.fn().mockResolvedValue({ requiresClarification: false, reason: 'ok', clauses: [], intents: [], contradictions: [], confidence: 0.7 }),
+    } as any;
+    return new AssistantService(orchestrator, execution, contextual, conversation, localLanguageUnderstanding, planning);
   };
 
   it('returns the assistant status', async () => {
@@ -48,7 +58,7 @@ describe('AssistantService', () => {
     const service = makeService() as any;
     const result = service.resolveContextualExecution(
       { intent: 'conversation', nextAction: undefined, confidence: 0.9, message: 'ok' },
-      { referencesPrevious: true, operation: 'update', targetAction: 'create_workout', targetResourceType: 'workout', targetResourceId: 'w1' },
+      { referencesPrevious: true, operation: 'update', targetAction: 'create_workout', targetResourceType: 'workout', targetResourceId: 'w1', entities: {} },
       'همون تمرین رو 60 دقیقه کن',
     );
     expect(result).toMatchObject({ intent: 'workout', nextAction: 'update_workout' });
@@ -58,7 +68,7 @@ describe('AssistantService', () => {
     const service = makeService() as any;
     const result = service.resolveContextualExecution(
       { intent: 'conversation', nextAction: undefined, confidence: 0.9, message: 'ok' },
-      { referencesPrevious: true, operation: 'cancel', targetAction: 'create_habit', targetResourceType: 'habit', targetResourceId: 'h1' },
+      { referencesPrevious: true, operation: 'cancel', targetAction: 'create_habit', targetResourceType: 'habit', targetResourceId: 'h1', entities: {} },
       'همون عادت رو لغو کن',
     );
     expect(result).toMatchObject({ intent: 'habit', nextAction: 'delete_habit' });
@@ -68,7 +78,7 @@ describe('AssistantService', () => {
     const service = makeService() as any;
     const result = service.resolveContextualExecution(
       { intent: 'conversation', nextAction: undefined, confidence: 0.9, message: 'ok' },
-      { referencesPrevious: true, operation: 'update', targetAction: 'take_supplement', targetResourceType: 'supplement', targetResourceId: 's1' },
+      { referencesPrevious: true, operation: 'update', targetAction: 'take_supplement', targetResourceType: 'supplement', targetResourceId: 's1', entities: {} },
       'همون مکمل رو ساعت 21:00 بذار',
     );
     expect(result).toMatchObject({ intent: 'supplement', nextAction: 'update_supplement' });
@@ -79,7 +89,7 @@ describe('AssistantService', () => {
     const response = { intent: 'conversation', nextAction: 'create_reminder', confidence: 0.9, message: 'ok' };
     const result = service.resolveContextualExecution(
       response,
-      { referencesPrevious: false, operation: 'unknown' },
+      { referencesPrevious: false, operation: 'unknown', entities: {} },
       'یک یادآوری جدید بساز',
     );
     expect(result).toBe(response);
