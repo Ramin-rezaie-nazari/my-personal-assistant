@@ -7,7 +7,9 @@ describe('PrismaService', () => {
 
     const service = new PrismaService();
 
-    expect(service).toBeInstanceOf(PrismaService);
+    expect(service).toBeDefined();
+    expect(typeof service.$connect).toBe('function');
+    expect(typeof service.$disconnect).toBe('function');
 
     if (original === undefined) delete process.env.DATABASE_URL;
     else process.env.DATABASE_URL = original;
