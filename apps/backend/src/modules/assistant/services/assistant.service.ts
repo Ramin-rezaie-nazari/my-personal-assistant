@@ -13,7 +13,7 @@ export class AssistantService {
   constructor(
     private readonly brainOrchestratorService: BrainOrchestratorService,
     private readonly naturalActionExecutionService: NaturalActionExecutionService,
-    private readonly contextualCommandService: ConversationContextService extends never ? never : ContextualCommandService,
+    private readonly contextualCommandService: ContextualCommandService,
     private readonly conversationContextService: ConversationContextService,
     @Optional() private readonly localLanguageUnderstandingService?: LocalLanguageUnderstandingService,
     @Optional() private readonly planningService?: PlanningService,
@@ -34,7 +34,7 @@ export class AssistantService {
 
   async process(input: string, userId: string) {
     await this.conversationContextService.append({ userId, role: 'user', text: input });
-    const contextualCommand = this.contextualCommandService ? await this.contextualCommandService.resolve(userId, input) : ({ referencesPrevious: false, operation: 'unknown', clauses: [input], intents: ['unknown'], contradictions: [], confidence: 0.35, entities: {} } as any);
+    const contextualCommand = await this.contextualCommandService.resolve(userId, input);
     const local = this.localLanguageUnderstandingService?.understand(input);
     const plan = this.planningService
       ? await this.planningService.createPlan({ clauses: contextualCommand.clauses, intents: contextualCommand.intents, contradictions: contextualCommand.contradictions, confidence: contextualCommand.confidence })
@@ -94,7 +94,7 @@ export class AssistantService {
     return selected ? { ...selected, confidence: local.confidence, metadata: { local: true, entities: local.entities } } as BrainResponse : undefined;
   }
 
-  private resolveContextualExecution(response: BrainResponse, command: ReturnType<ContextualCommandService['resolve']> extends Promise<infer T> ? T : never, input: string): BrainResponse {
+  private resolveContextualExecution(response: BrainResponse, command: Awaited<ReturnType<ContextualCommandService['resolve']>>, input: string): BrainResponse {
     if (!command.referencesPrevious || !(command.targetResourceId || command.targetExecutionId)) return response;
     const entities = command.entities ?? {};
     const previousAction = (command.targetAction ?? '').toLowerCase();
