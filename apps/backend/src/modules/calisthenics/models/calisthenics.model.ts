@@ -1,5 +1,5 @@
 export type CalisthenicsLevel = 'beginner' | 'foundation' | 'intermediate' | 'advanced' | 'expert' | 'elite';
-export type CalisthenicsFocus = 'strength' | 'hypertrophy' | 'conditioning' | 'mobility' | 'skills' | 'full_body' | 'upper_body' | 'lower_body' | 'core';
+export type CalisthenicsFocus = 'strength' | 'hypertrophy' | 'conditioning' | 'mobility' | 'skills' | 'full_body' | 'upper_body' | 'lower_body' | 'core' | 'balance';
 export type Equipment = 'none' | 'pull_up_bar' | 'parallel_bars' | 'rings' | 'bench' | 'resistance_band' | 'dip_belt' | 'wall';
 
 export type CalisthenicsExercise = {
