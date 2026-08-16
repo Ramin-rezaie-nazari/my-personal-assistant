@@ -53,6 +53,15 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
   );
 }
 
+const stackScreens = {
+  '/': { animation: 'fade' as const },
+  '/assistant': { animation: 'slide_from_right' as const },
+  '/language': { animation: 'fade' as const },
+  '/auth': { animation: 'slide_from_right' as const },
+  '/onboarding': { animation: 'slide_from_right' as const },
+  default: { animation: 'fade' as const },
+} as const;
+
 export default function RootLayout() {
   const [bootReady, setBootReady] = useState(false);
   const [targetRoute, setTargetRoute] = useState<'/language' | '/auth' | '/onboarding' | '/'>('/language');
@@ -105,11 +114,22 @@ export default function RootLayout() {
 
   if (!bootReady) return <StartupScreen />;
 
-  const showAssistantBubble = currentSegment != null && !['assistant', 'language', 'auth', 'onboarding', 'command-center'].includes(currentSegment);
+  const showAssistantBubble = currentSegment != null && !['assistant', 'language', 'auth', 'onboarding'].includes(currentSegment);
+  const screenOptions = {
+    headerShown: false,
+    contentStyle: { backgroundColor: BRAND.colors.canvas },
+    animation: stackScreens.default.animation,
+  };
 
   return (
     <View style={styles.root}>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: BRAND.colors.canvas }, animation: 'fade' }} />
+      <Stack screenOptions={screenOptions}>
+        <Stack.Screen name="index" options={stackScreens['/']} />
+        <Stack.Screen name="assistant" options={stackScreens['/assistant']} />
+        <Stack.Screen name="language" options={stackScreens['/language']} />
+        <Stack.Screen name="auth" options={stackScreens['/auth']} />
+        <Stack.Screen name="onboarding" options={stackScreens['/onboarding']} />
+      </Stack>
       {showAssistantBubble ? (
         <Pressable
           onPress={() => router.push('/assistant')}
