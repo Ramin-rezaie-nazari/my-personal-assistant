@@ -78,7 +78,8 @@ export class ProductMatchingService {
     }
 
     const confidence = Math.min(1, Number(score.toFixed(4)));
-    const ambiguous = confidence >= 0.55 && confidence < 0.78;
+    const hasIdentifier = matchedBy.some((key) => ['gtin', 'ean', 'barcode', 'sku'].includes(key));
+    const ambiguous = !hasIdentifier && (matchedBy.includes('exact_title') || matchedBy.includes('title_overlap')) && matchedBy.includes('brand');
     return {
       canonical: {
         productKey: candidate.productKey,
