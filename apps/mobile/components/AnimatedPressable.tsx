@@ -1,25 +1,22 @@
-import React, { useRef } from 'react';
-import { Animated, Pressable, PressableProps, StyleProp, ViewStyle } from 'react-native';
-import { pressIn, pressOut } from '../lib/motion';
+import React from 'react';
+import {
+  type PressableProps,
+  type PressableStateCallbackType,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
+import { AnimatedPressable as MotionPressable } from '../lib/motion';
 
-type Props = PressableProps & { children: React.ReactNode; style?: StyleProp<ViewStyle> };
+type Props = Omit<PressableProps, 'children' | 'style'> & {
+  children: React.ReactNode;
+  style?: StyleProp<ViewStyle> | ((state: PressableStateCallbackType) => StyleProp<ViewStyle>);
+  scaleTo?: number;
+};
 
-export function AnimatedPressable({ children, style, onPressIn, onPressOut, ...props }: Props) {
-  const scale = useRef(new Animated.Value(1)).current;
-
+export function AnimatedPressable({ children, style, scaleTo = 0.97, ...props }: Props) {
   return (
-    <Pressable
-      {...props}
-      onPressIn={(event) => {
-        pressIn(scale);
-        onPressIn?.(event);
-      }}
-      onPressOut={(event) => {
-        pressOut(scale);
-        onPressOut?.(event);
-      }}
-    >
-      <Animated.View style={[style, { transform: [{ scale }] }]}>{children}</Animated.View>
-    </Pressable>
+    <MotionPressable {...props} scaleTo={scaleTo} style={style}>
+      {children}
+    </MotionPressable>
   );
 }

@@ -1,5 +1,13 @@
 import React, { useEffect, useRef } from 'react';
-import { Animated, Easing, Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
+import {
+  Animated,
+  Easing,
+  Pressable,
+  type PressableProps,
+  type PressableStateCallbackType,
+  type StyleProp,
+  type ViewStyle,
+} from 'react-native';
 
 export const motion = {
   fast: 180,
@@ -33,7 +41,11 @@ export function useEntrance(delay = 0, distance = 18) {
 export function usePulse(active = true, amount = 1.035) {
   const scale = useRef(new Animated.Value(1)).current;
   useEffect(() => {
-    if (!active) { scale.stopAnimation(); scale.setValue(1); return; }
+    if (!active) {
+      scale.stopAnimation();
+      scale.setValue(1);
+      return;
+    }
     const animation = Animated.loop(Animated.sequence([
       Animated.timing(scale, { toValue: amount, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
       Animated.timing(scale, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
@@ -55,7 +67,11 @@ export function useSuccessPop(active: boolean) {
   const scale = useRef(new Animated.Value(active ? 0.86 : 1)).current;
   const opacity = useRef(new Animated.Value(active ? 0 : 1)).current;
   useEffect(() => {
-    if (!active) { scale.setValue(1); opacity.setValue(1); return; }
+    if (!active) {
+      scale.setValue(1);
+      opacity.setValue(1);
+      return;
+    }
     Animated.parallel([
       Animated.spring(scale, { toValue: 1, tension: 75, friction: 7, useNativeDriver: true }),
       Animated.timing(opacity, { toValue: 1, duration: motion.fast, useNativeDriver: true }),
@@ -66,11 +82,16 @@ export function useSuccessPop(active: boolean) {
 
 type AnimatedPressableProps = Omit<PressableProps, 'children' | 'style'> & {
   children: React.ReactNode;
-  style?: StyleProp<ViewStyle> | ((state: { pressed: boolean }) => StyleProp<ViewStyle>);
+  style?: StyleProp<ViewStyle> | ((state: PressableStateCallbackType) => StyleProp<ViewStyle>);
   scaleTo?: number;
 };
 
-export function AnimatedSection({ children, delay = 0, distance = 18, style }: { children: React.ReactNode; delay?: number; distance?: number; style?: StyleProp<ViewStyle> }) {
+export function AnimatedSection({ children, delay = 0, distance = 18, style }: {
+  children: React.ReactNode;
+  delay?: number;
+  distance?: number;
+  style?: StyleProp<ViewStyle>;
+}) {
   const animatedStyle = useEntrance(delay, distance);
   return <Animated.View style={[style, animatedStyle]}>{children}</Animated.View>;
 }
@@ -78,9 +99,19 @@ export function AnimatedSection({ children, delay = 0, distance = 18, style }: {
 export function AnimatedPressable({ children, style, scaleTo = 0.97, ...props }: AnimatedPressableProps) {
   const { scale, onPressIn, onPressOut } = usePressScale(scaleTo);
   return (
-    <Pressable {...props} onPressIn={(event) => { onPressIn(); props.onPressIn?.(event); }} onPressOut={(event) => { onPressOut(); props.onPressOut?.(event); }}>
-      {({ pressed }) => {
-        const resolvedStyle = typeof style === 'function' ? style({ pressed }) : style;
+    <Pressable
+      {...props}
+      onPressIn={(event) => {
+        onPressIn();
+        props.onPressIn?.(event);
+      }}
+      onPressOut={(event) => {
+        onPressOut();
+        props.onPressOut?.(event);
+      }}
+    >
+      {(state) => {
+        const resolvedStyle = typeof style === 'function' ? style(state) : style;
         return <Animated.View style={[resolvedStyle, { transform: [{ scale }] }]}>{children}</Animated.View>;
       }}
     </Pressable>
