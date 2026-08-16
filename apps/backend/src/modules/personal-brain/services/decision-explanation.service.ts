@@ -1,14 +1,173 @@
 import { Injectable } from '@nestjs/common';
-import { ConflictResolution } from './preference-conflict-resolver.service';import { UnifiedDecision,DecisionCandidate } from './unified-decision-engine.service';import { BrainDecisionPipelineResult,BrainReasoningContext } from '../types';
-export type DecisionExplanation={summary:string;details:string;confidence:number|null;reasons:string[];rejectedReasons:string[];blockedReasons:string[];historicalReasons:string[];conflictReason?:string};
-@Injectable()export class DecisionExplanationService{
- explain(d:UnifiedDecision,c?:ConflictResolution):DecisionExplanation{const s=d.selected,r=[...(d.rationale??[]),...s.map(x=>this.candidateReason(x))].filter(Boolean),rej=d.rejected.map(x=>this.rejectionReason(x,s[0])),blk=d.blocked.map(x=>this.blockReason(x)),conf=s.length?Math.max(...s.map(x=>x.confidence)):null;return this.compose(s.length?`I chose ${this.actionLabel(s[0].action)} because it best matched your current priorities and constraints.`:'I did not choose an action because nothing was safe and appropriate to execute right now.',s.length?`I selected ${this.actionLabel(s[0].action)} in the ${s[0].domain} area.`:'No action was selected.',conf,r,rej,blk,[],c?.reason)}
- explainBrain(c:BrainReasoningContext,d:BrainDecisionPipelineResult){const f=c.state.lifeContext?.fitness,r:string[]=[];if(f?.primaryGoal?.active)r.push(`Your active goal is ${f.primaryGoal.title}.`);if(f?.targetAreas?.length)r.push(`You asked me to focus on ${f.targetAreas.join(', ')}.`);if(f?.equipment?.length)r.push(`I considered the equipment you currently have: ${f.equipment.join(', ')}.`);if(f?.primaryGoal?.avoidBulk)r.push('You asked to avoid excessive muscle bulk, so I treated that as a constraint.');const p=f?.performanceMemory??(f as any)?.performance;if(p?.formTrend!=null)r.push(`Your recent form trend is ${this.trendText(p.formTrend)}.`);if(p?.completionTrend!=null)r.push(`Your recent completion trend is ${this.trendText(p.completionTrend)}.`);if(p?.recoveryTrend!=null)r.push(`Your recovery trend is ${this.trendText(p.recoveryTrend)}.`);const sum=d.canDecide?`I chose ${this.actionLabel(d.recommendation??d.nextAction??'this option')} based on what I know about you right now.`:'I did not make a firm decision because I still need more information.',det=d.blockers.length?`I held back because ${d.blockers.slice(0,3).join(', ')}.`:d.message||'I used your current goals, preferences, history, and constraints.';return this.compose(sum,det,d.confidence,r,[],d.blockers.slice(0,5),d.historicalReasons??[])}
- fromCoachAction(t:string,m:string,p:string,e:string[]){const r=this.unique(e),pt=p==='critical'?'I treated this as urgent.':p==='high'?'I gave this higher priority.':'I kept this as a lower-pressure suggestion.';return this.compose(`${t}.`,m,null,[pt,...r],[],[],[])}
- private compose(s:string,b:string,c:number|null,r:string[],rej:string[],blk:string[],hist:string[],cr?:string){const ur=this.unique(r).slice(0,8),uh=this.unique(hist).slice(0,5),details=[b,ur.length?`Why: ${ur.slice(0,5).join(' ')}`:'',uh.length?`From your history: ${uh.slice(0,3).join(' ')}`:'',rej.length?`I did not prioritize: ${this.unique(rej).slice(0,3).join(' ')}`:'',blk.length?`Blocked: ${this.unique(blk).slice(0,3).join(' ')}`:'',cr?`Conflict handling: ${this.humanizeReason(cr)}.`:'',c!=null?`Confidence: ${Math.round(c*100)}%.`:'' ].filter(Boolean).join(' ');return{summary:s,details,confidence:c,reasons:ur,rejectedReasons:this.unique(rej).slice(0,8),blockedReasons:this.unique(blk).slice(0,8),historicalReasons:uh,conflictReason:cr}}
- private candidateReason(c:DecisionCandidate){const r:string[]=[];if(c.hardConstraint)r.push(`${this.actionLabel(c.action)} satisfied a required constraint.`);if((c.goalAlignment??0)>=.8)r.push(`${this.actionLabel(c.action)} strongly matched the active goal.`);if((c.goalDownside??0)>=.5)r.push(`${this.actionLabel(c.action)} had a meaningful downside for the longer-term goal.`);if(c.source)r.push(`The recommendation came from ${c.source}.`);return r.join(' ')}
- private rejectionReason(c:DecisionCandidate,s?:DecisionCandidate){if((c.goalDownside??0)>(s?.goalDownside??0))return`${this.actionLabel(c.action)} had a higher downside for the current goal.`;if((c.goalAlignment??0)<(s?.goalAlignment??0))return`${this.actionLabel(c.action)} matched the current goal less closely.`;if(c.confidence<(s?.confidence??1))return`${this.actionLabel(c.action)} had lower confidence.`;return`${this.actionLabel(c.action)} ranked below the selected option.`}
- private blockReason(c:DecisionCandidate){return`${this.actionLabel(c.action)} was blocked by ${c.blockedBy?.join(', ')||'a prerequisite or safety constraint'}.`}
- private trendText(v:number){const p=Math.round(Math.abs(v)*100);return v>0?`improving by about ${p}%`:v<0?`declining by about ${p}%`:'stable'}
- private actionLabel(a:string){return a.replace(/[_-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}private humanizeReason(r:string){return r.replace(/[_-]+/g,' ').replace(/\b\w/g,c=>c.toUpperCase())}private unique(a:string[]){return[...new Set(a.map(x=>x.trim()).filter(Boolean))]}
+import { ConflictResolution } from './preference-conflict-resolver.service';
+import {
+  UnifiedDecision,
+  DecisionCandidate,
+} from './unified-decision-engine.service';
+import { BrainDecisionPipelineResult, BrainReasoningContext } from '../types';
+export type DecisionExplanation = {
+  summary: string;
+  details: string;
+  confidence: number | null;
+  reasons: string[];
+  rejectedReasons: string[];
+  blockedReasons: string[];
+  historicalReasons: string[];
+  conflictReason?: string;
+};
+@Injectable()
+export class DecisionExplanationService {
+  explain(d: UnifiedDecision, c?: ConflictResolution): DecisionExplanation {
+    const s = d.selected,
+      r = [
+        ...(d.rationale ?? []),
+        ...s.map((x) => this.candidateReason(x)),
+      ].filter(Boolean),
+      rej = d.rejected.map((x) => this.rejectionReason(x, s[0])),
+      blk = d.blocked.map((x) => this.blockReason(x)),
+      conf = s.length ? Math.max(...s.map((x) => x.confidence)) : null;
+    return this.compose(
+      s.length
+        ? `I chose ${this.actionLabel(s[0].action)} because it best matched your current priorities and constraints.`
+        : 'I did not choose an action because nothing was safe and appropriate to execute right now.',
+      s.length
+        ? `I selected ${this.actionLabel(s[0].action)} in the ${s[0].domain} area.`
+        : 'No action was selected.',
+      conf,
+      r,
+      rej,
+      blk,
+      [],
+      c?.reason,
+    );
+  }
+  explainBrain(c: BrainReasoningContext, d: BrainDecisionPipelineResult) {
+    const f = c.state.lifeContext?.fitness,
+      r: string[] = [];
+    if (f?.primaryGoal?.active)
+      r.push(`Your active goal is ${f.primaryGoal.title}.`);
+    if (f?.targetAreas?.length)
+      r.push(`You asked me to focus on ${f.targetAreas.join(', ')}.`);
+    if (f?.equipment?.length)
+      r.push(
+        `I considered the equipment you currently have: ${f.equipment.join(', ')}.`,
+      );
+    if (f?.primaryGoal?.avoidBulk)
+      r.push(
+        'You asked to avoid excessive muscle bulk, so I treated that as a constraint.',
+      );
+    const p = f?.performanceMemory ?? (f as any)?.performance;
+    if (p?.formTrend != null)
+      r.push(`Your recent form trend is ${this.trendText(p.formTrend)}.`);
+    if (p?.completionTrend != null)
+      r.push(
+        `Your recent completion trend is ${this.trendText(p.completionTrend)}.`,
+      );
+    if (p?.recoveryTrend != null)
+      r.push(`Your recovery trend is ${this.trendText(p.recoveryTrend)}.`);
+    const sum = d.canDecide
+        ? `I chose ${this.actionLabel(d.recommendation ?? d.nextAction ?? 'this option')} based on what I know about you right now.`
+        : 'I did not make a firm decision because I still need more information.',
+      det = d.blockers.length
+        ? `I held back because ${d.blockers.slice(0, 3).join(', ')}.`
+        : d.message ||
+          'I used your current goals, preferences, history, and constraints.';
+    return this.compose(
+      sum,
+      det,
+      d.confidence,
+      r,
+      [],
+      d.blockers.slice(0, 5),
+      d.historicalReasons ?? [],
+    );
+  }
+  fromCoachAction(t: string, m: string, p: string, e: string[]) {
+    const r = this.unique(e),
+      pt =
+        p === 'critical'
+          ? 'I treated this as urgent.'
+          : p === 'high'
+            ? 'I gave this higher priority.'
+            : 'I kept this as a lower-pressure suggestion.';
+    return this.compose(`${t}.`, m, null, [pt, ...r], [], [], []);
+  }
+  private compose(
+    s: string,
+    b: string,
+    c: number | null,
+    r: string[],
+    rej: string[],
+    blk: string[],
+    hist: string[],
+    cr?: string,
+  ) {
+    const ur = this.unique(r).slice(0, 8),
+      uh = this.unique(hist).slice(0, 5),
+      details = [
+        b,
+        ur.length ? `Why: ${ur.slice(0, 5).join(' ')}` : '',
+        uh.length ? `From your history: ${uh.slice(0, 3).join(' ')}` : '',
+        rej.length
+          ? `I did not prioritize: ${this.unique(rej).slice(0, 3).join(' ')}`
+          : '',
+        blk.length ? `Blocked: ${this.unique(blk).slice(0, 3).join(' ')}` : '',
+        cr ? `Conflict handling: ${this.humanizeReason(cr)}.` : '',
+        c != null ? `Confidence: ${Math.round(c * 100)}%.` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+    return {
+      summary: s,
+      details,
+      confidence: c,
+      reasons: ur,
+      rejectedReasons: this.unique(rej).slice(0, 8),
+      blockedReasons: this.unique(blk).slice(0, 8),
+      historicalReasons: uh,
+      conflictReason: cr,
+    };
+  }
+  private candidateReason(c: DecisionCandidate) {
+    const r: string[] = [];
+    if (c.hardConstraint)
+      r.push(`${this.actionLabel(c.action)} satisfied a required constraint.`);
+    if ((c.goalAlignment ?? 0) >= 0.8)
+      r.push(`${this.actionLabel(c.action)} strongly matched the active goal.`);
+    if ((c.goalDownside ?? 0) >= 0.5)
+      r.push(
+        `${this.actionLabel(c.action)} had a meaningful downside for the longer-term goal.`,
+      );
+    if (c.source) r.push(`The recommendation came from ${c.source}.`);
+    return r.join(' ');
+  }
+  private rejectionReason(c: DecisionCandidate, s?: DecisionCandidate) {
+    if ((c.goalDownside ?? 0) > (s?.goalDownside ?? 0))
+      return `${this.actionLabel(c.action)} had a higher downside for the current goal.`;
+    if ((c.goalAlignment ?? 0) < (s?.goalAlignment ?? 0))
+      return `${this.actionLabel(c.action)} matched the current goal less closely.`;
+    if (c.confidence < (s?.confidence ?? 1))
+      return `${this.actionLabel(c.action)} had lower confidence.`;
+    return `${this.actionLabel(c.action)} ranked below the selected option.`;
+  }
+  private blockReason(c: DecisionCandidate) {
+    return `${this.actionLabel(c.action)} was blocked by ${c.blockedBy?.join(', ') || 'a prerequisite or safety constraint'}.`;
+  }
+  private trendText(v: number) {
+    const p = Math.round(Math.abs(v) * 100);
+    return v > 0
+      ? `improving by about ${p}%`
+      : v < 0
+        ? `declining by about ${p}%`
+        : 'stable';
+  }
+  private actionLabel(a: string) {
+    return a.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  private humanizeReason(r: string) {
+    return r.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  private unique(a: string[]) {
+    return [...new Set(a.map((x) => x.trim()).filter(Boolean))];
+  }
 }

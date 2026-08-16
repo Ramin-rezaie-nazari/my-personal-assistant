@@ -24,7 +24,10 @@ export type DecisionExplanationTrend = {
 export class DecisionExplanationMemoryService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async recent(userId: string, limit = 30): Promise<DecisionExplanationMemoryItem[]> {
+  async recent(
+    userId: string,
+    limit = 30,
+  ): Promise<DecisionExplanationMemoryItem[]> {
     const rows = await this.prisma.decisionAuditEntry.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
@@ -34,7 +37,10 @@ export class DecisionExplanationMemoryService {
     return rows.map((row) => this.map(row));
   }
 
-  async trend(userId: string, windowDays = 90): Promise<DecisionExplanationTrend> {
+  async trend(
+    userId: string,
+    windowDays = 90,
+  ): Promise<DecisionExplanationTrend> {
     const safeDays = Math.min(365, Math.max(7, Math.round(windowDays)));
     const since = new Date(Date.now() - safeDays * 86_400_000);
     const rows = await this.prisma.decisionAuditEntry.findMany({
@@ -47,7 +53,9 @@ export class DecisionExplanationMemoryService {
     const selected = new Map<string, number>();
     for (const row of rows) {
       reasons.set(row.reason, (reasons.get(row.reason) ?? 0) + 1);
-      const ids = Array.isArray(row.selectedIds) ? row.selectedIds.map(String) : [];
+      const ids = Array.isArray(row.selectedIds)
+        ? row.selectedIds.map(String)
+        : [];
       for (const id of ids) selected.set(id, (selected.get(id) ?? 0) + 1);
     }
 
@@ -62,9 +70,10 @@ export class DecisionExplanationMemoryService {
       .slice(0, 8)
       .map(([id, count]) => ({ id, count }));
 
-    const changeSignal = rows.length < 3
-      ? 'insufficient-data'
-      : this.detectChange(rows.map((row) => row.reason));
+    const changeSignal =
+      rows.length < 3
+        ? 'insufficient-data'
+        : this.detectChange(rows.map((row) => row.reason));
 
     return {
       windowDays: safeDays,
@@ -76,7 +85,9 @@ export class DecisionExplanationMemoryService {
     };
   }
 
-  private detectChange(reasons: string[]): DecisionExplanationTrend['changeSignal'] {
+  private detectChange(
+    reasons: string[],
+  ): DecisionExplanationTrend['changeSignal'] {
     if (reasons.length < 4) return 'insufficient-data';
     const recent = reasons.slice(0, Math.ceil(reasons.length / 3));
     const older = reasons.slice(-Math.ceil(reasons.length / 3));
@@ -101,9 +112,15 @@ export class DecisionExplanationMemoryService {
       id: row.id,
       decisionId: row.decisionId,
       reason: row.reason,
-      selectedIds: Array.isArray(row.selectedIds) ? row.selectedIds.map(String) : [],
-      rejectedIds: Array.isArray(row.rejectedIds) ? row.rejectedIds.map(String) : [],
-      blockedIds: Array.isArray(row.blockedIds) ? row.blockedIds.map(String) : [],
+      selectedIds: Array.isArray(row.selectedIds)
+        ? row.selectedIds.map(String)
+        : [],
+      rejectedIds: Array.isArray(row.rejectedIds)
+        ? row.rejectedIds.map(String)
+        : [],
+      blockedIds: Array.isArray(row.blockedIds)
+        ? row.blockedIds.map(String)
+        : [],
       createdAt: row.createdAt.toISOString(),
     };
   }

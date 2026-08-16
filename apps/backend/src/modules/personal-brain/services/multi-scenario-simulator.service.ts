@@ -31,9 +31,20 @@ export class MultiScenarioSimulatorService {
     const maxPlans = Math.max(1, Math.min(5, options.maxPlans ?? 3));
     const plans: ScenarioPlan[] = [];
 
-    const base = this.scenarioPlanner.compare({ candidates, context: options.context });
+    const base = this.scenarioPlanner.compare({
+      candidates,
+      context: options.context,
+    });
     if (base.best) {
-      plans.push(this.toPlan('plan-a', 'Best single-path plan', base.scenarios, [base.best.id], base.best.score));
+      plans.push(
+        this.toPlan(
+          'plan-a',
+          'Best single-path plan',
+          base.scenarios,
+          [base.best.id],
+          base.best.score,
+        ),
+      );
     }
 
     const reversed = [...candidates].reverse();
@@ -46,7 +57,15 @@ export class MultiScenarioSimulatorService {
       context: options.context,
     });
     if (conservative.best) {
-      plans.push(this.toPlan('plan-b', 'Conservative plan', conservative.scenarios, [conservative.best.id], conservative.best.score));
+      plans.push(
+        this.toPlan(
+          'plan-b',
+          'Conservative plan',
+          conservative.scenarios,
+          [conservative.best.id],
+          conservative.best.score,
+        ),
+      );
     }
 
     if (candidates.length > 1) {
@@ -59,18 +78,38 @@ export class MultiScenarioSimulatorService {
         context: options.context,
       });
       if (balanced.best) {
-        plans.push(this.toPlan('plan-c', 'Balanced plan', balanced.scenarios, balanced.scenarios.slice(0, 2).map((s) => s.id), balanced.best.score));
+        plans.push(
+          this.toPlan(
+            'plan-c',
+            'Balanced plan',
+            balanced.scenarios,
+            balanced.scenarios.slice(0, 2).map((s) => s.id),
+            balanced.best.score,
+          ),
+        );
       }
     }
 
     const unique = new Map(plans.map((plan) => [plan.id, plan]));
-    const ranked = [...unique.values()].sort((a, b) => b.totalScore - a.totalScore).slice(0, maxPlans);
+    const ranked = [...unique.values()]
+      .sort((a, b) => b.totalScore - a.totalScore)
+      .slice(0, maxPlans);
     return { plans: ranked, best: ranked[0] ?? null };
   }
 
-  private toPlan(id: string, title: string, scenarios: Scenario[], candidateIds: string[], totalScore: number): ScenarioPlan {
-    const selected = scenarios.filter((scenario) => candidateIds.includes(scenario.id));
-    const unsafe = selected.some((scenario) => scenario.recommendation === 'unsafe');
+  private toPlan(
+    id: string,
+    title: string,
+    scenarios: Scenario[],
+    candidateIds: string[],
+    totalScore: number,
+  ): ScenarioPlan {
+    const selected = scenarios.filter((scenario) =>
+      candidateIds.includes(scenario.id),
+    );
+    const unsafe = selected.some(
+      (scenario) => scenario.recommendation === 'unsafe',
+    );
     const recommendation: ScenarioPlan['recommendation'] = unsafe
       ? 'unsafe'
       : totalScore >= 0.7
@@ -78,7 +117,17 @@ export class MultiScenarioSimulatorService {
         : totalScore >= 0.5
           ? 'acceptable'
           : 'weak';
-    const rationale = selected.flatMap((scenario) => scenario.rationale).slice(0, 5);
-    return { id, title, candidateIds, scenarios: selected, totalScore, recommendation, rationale };
+    const rationale = selected
+      .flatMap((scenario) => scenario.rationale)
+      .slice(0, 5);
+    return {
+      id,
+      title,
+      candidateIds,
+      scenarios: selected,
+      totalScore,
+      recommendation,
+      rationale,
+    };
   }
 }

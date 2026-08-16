@@ -1,4 +1,9 @@
-import { MemoryLayer, MemoryRetention, MemorySource, MemoryVisibility } from './memory-governance.model';
+import {
+  MemoryLayer,
+  MemoryRetention,
+  MemorySource,
+  MemoryVisibility,
+} from './memory-governance.model';
 
 export enum MemoryType {
   PROFILE = 'profile',

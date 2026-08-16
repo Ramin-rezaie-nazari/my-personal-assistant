@@ -22,8 +22,16 @@ export class NotificationsService {
     });
   }
 
-  async createSystemNotification(userId: string, type: keyof typeof messages.en.notifications, body?: string, scheduledAt?: Date) {
-    const settings = await this.prisma.userSettings.findUnique({ where: { userId }, select: { language: true } });
+  async createSystemNotification(
+    userId: string,
+    type: keyof typeof messages.en.notifications,
+    body?: string,
+    scheduledAt?: Date,
+  ) {
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId },
+      select: { language: true },
+    });
     const locale = normalizeLocale(settings?.language);
     const title = messages[locale].notifications[type];
     return this.prisma.notification.create({
@@ -40,22 +48,37 @@ export class NotificationsService {
   }
 
   async getNotifications(userId: string, includeRead = false) {
-    return this.prisma.notification.findMany({ where: { userId, ...(includeRead ? {} : { readAt: null }) }, orderBy: [{ priority: 'asc' }, { readAt: 'asc' }, { createdAt: 'desc' }], take: 50 });
+    return this.prisma.notification.findMany({
+      where: { userId, ...(includeRead ? {} : { readAt: null }) },
+      orderBy: [{ priority: 'asc' }, { readAt: 'asc' }, { createdAt: 'desc' }],
+      take: 50,
+    });
   }
 
-  async getUnreadCount(userId: string) { return this.prisma.notification.count({ where: { userId, readAt: null } }); }
+  async getUnreadCount(userId: string) {
+    return this.prisma.notification.count({ where: { userId, readAt: null } });
+  }
 
   async markRead(userId: string, notificationId: string) {
-    const result = await this.prisma.notification.updateMany({ where: { id: notificationId, userId, readAt: null }, data: { readAt: new Date() } });
+    const result = await this.prisma.notification.updateMany({
+      where: { id: notificationId, userId, readAt: null },
+      data: { readAt: new Date() },
+    });
     if (result.count === 0) {
-      const exists = await this.prisma.notification.findFirst({ where: { id: notificationId, userId }, select: { id: true } });
+      const exists = await this.prisma.notification.findFirst({
+        where: { id: notificationId, userId },
+        select: { id: true },
+      });
       if (!exists) throw new NotFoundException('Notification not found');
     }
     return { id: notificationId, read: true };
   }
 
   async markAllRead(userId: string) {
-    const result = await this.prisma.notification.updateMany({ where: { userId, readAt: null }, data: { readAt: new Date() } });
+    const result = await this.prisma.notification.updateMany({
+      where: { userId, readAt: null },
+      data: { readAt: new Date() },
+    });
     return { updated: result.count };
   }
 }

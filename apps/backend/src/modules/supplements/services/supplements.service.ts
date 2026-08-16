@@ -1,6 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
-import { CreateSupplementDto, UpdateSupplementDto } from '../dto/supplement.dto';
+import {
+  CreateSupplementDto,
+  UpdateSupplementDto,
+} from '../dto/supplement.dto';
 
 @Injectable()
 export class SupplementsService {
@@ -28,22 +35,33 @@ export class SupplementsService {
   }
 
   async updateSupplement(userId: string, id: string, dto: UpdateSupplementDto) {
-    const existing = await this.prisma.supplement.findFirst({ where: { id, userId } });
+    const existing = await this.prisma.supplement.findFirst({
+      where: { id, userId },
+    });
     if (!existing) throw new NotFoundException('Supplement not found');
-    if (dto.name !== undefined && !dto.name.trim()) throw new BadRequestException('name is required');
-    if (dto.scheduledTime !== undefined) this.validate(existing.name, dto.scheduledTime);
-    return this.prisma.supplement.update({ where: { id }, data: { ...dto, name: dto.name?.trim(), dosage: dto.dosage?.trim() } });
+    if (dto.name !== undefined && !dto.name.trim())
+      throw new BadRequestException('name is required');
+    if (dto.scheduledTime !== undefined)
+      this.validate(existing.name, dto.scheduledTime);
+    return this.prisma.supplement.update({
+      where: { id },
+      data: { ...dto, name: dto.name?.trim(), dosage: dto.dosage?.trim() },
+    });
   }
 
   async deleteSupplement(userId: string, id: string) {
-    const existing = await this.prisma.supplement.findFirst({ where: { id, userId } });
+    const existing = await this.prisma.supplement.findFirst({
+      where: { id, userId },
+    });
     if (!existing) throw new NotFoundException('Supplement not found');
     await this.prisma.supplement.delete({ where: { id } });
     return { deleted: true };
   }
 
   async takeToday(userId: string, id: string, dateKey = this.todayKey()) {
-    const supplement = await this.prisma.supplement.findFirst({ where: { id, userId, active: true } });
+    const supplement = await this.prisma.supplement.findFirst({
+      where: { id, userId, active: true },
+    });
     if (!supplement) throw new NotFoundException('Supplement not found');
     const log = await this.prisma.supplementLog.upsert({
       where: { supplementId_dateKey: { supplementId: id, dateKey } },
@@ -60,13 +78,25 @@ export class SupplementsService {
       orderBy: { scheduledTime: 'asc' },
     });
     const taken = supplements.filter((item) => item.logs.length > 0).length;
-    return { dateKey, total: supplements.length, taken, remaining: Math.max(0, supplements.length - taken), completionPercent: supplements.length ? Math.round((taken / supplements.length) * 100) : 0, supplements };
+    return {
+      dateKey,
+      total: supplements.length,
+      taken,
+      remaining: Math.max(0, supplements.length - taken),
+      completionPercent: supplements.length
+        ? Math.round((taken / supplements.length) * 100)
+        : 0,
+      supplements,
+    };
   }
 
   private validate(name: string, time?: string) {
     if (!name?.trim()) throw new BadRequestException('name is required');
-    if (time !== undefined && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) throw new BadRequestException('scheduledTime must use HH:MM');
+    if (time !== undefined && !/^([01]\d|2[0-3]):[0-5]\d$/.test(time))
+      throw new BadRequestException('scheduledTime must use HH:MM');
   }
 
-  private todayKey() { return new Date().toISOString().slice(0, 10); }
+  private todayKey() {
+    return new Date().toISOString().slice(0, 10);
+  }
 }

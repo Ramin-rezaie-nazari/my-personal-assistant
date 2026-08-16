@@ -26,10 +26,13 @@ describe('Nutrition API (e2e)', () => {
   it('requires authentication for nutrition endpoints', async () => {
     await request(app.getHttpServer()).get('/nutrition').expect(401);
     await request(app.getHttpServer()).get('/nutrition/summary').expect(401);
-    await request(app.getHttpServer()).post('/nutrition').send({
-      mealType: 'lunch',
-      title: 'Rice',
-    }).expect(401);
+    await request(app.getHttpServer())
+      .post('/nutrition')
+      .send({
+        mealType: 'lunch',
+        title: 'Rice',
+      })
+      .expect(401);
   });
 
   it('creates and reads a nutrition log for the authenticated user', async () => {

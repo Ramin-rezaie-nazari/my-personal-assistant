@@ -34,7 +34,7 @@ function StartupScreen() {
   return (
     <View style={styles.startup} accessible accessibilityLabel="Starting My Personal Assistant">
       <Animated.View style={[styles.startupGlow, { opacity: glow, transform: [{ scale }] }]} />
-      <View style={styles.startupMark}><BrandMark size={104} dark /></View>
+      <View style={styles.startupMark}><BrandMark size={104} /></View>
       <BrandWordmark dark />
       <Text style={styles.startupSubtitle}>Your day, your goals, your assistant.</Text>
       <ActivityIndicator accessibilityLabel="Loading" color={BRAND.colors.violet} style={styles.startupSpinner} />
@@ -118,7 +118,7 @@ export default function RootLayout() {
           accessibilityLabel="Open assistant"
           accessibilityHint="Opens your personal assistant"
         >
-          <BrandMark size={58} dark />
+          <BrandMark size={58} />
         </Pressable>
       ) : null}
     </View>

@@ -4,12 +4,24 @@ import { BrainReasoningContext } from '../types';
 const createContext = (): BrainReasoningContext => ({
   input: 'How did I do this week?',
   userContext: {
+    profile: {},
+    lifeAreas: ['health'],
+    preferences: {},
+    constraints: [],
     goals: [],
-    memories: [],
   },
   state: {
-    userContext: { goals: [], memories: [] },
-    context: {},
+    userContext: {
+      profile: {},
+      lifeAreas: ['health'],
+      preferences: {},
+      constraints: [],
+      goals: [],
+    },
+    context: {
+      timestamp: '2026-08-12T00:00:00.000Z',
+      source: 'test',
+    },
     memories: [],
     goals: [],
     dailyStatus: {
@@ -38,13 +50,17 @@ const createContext = (): BrainReasoningContext => ({
     hasContext: true,
     hasMemories: false,
     hasGoals: false,
+    hasLifeContext: true,
     memoryCount: 0,
     goalCount: 0,
     contextSource: 'test',
+    lifeContextQuality: 1,
   },
   reasoning: {
     confidence: 1,
+    contextScore: 1,
     uncertainties: [],
+    factors: [],
     reasoningSummary: 'weekly context available',
   },
 });

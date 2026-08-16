@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 
-import { AdaptiveReplanResult, AdaptiveReplanningService } from './adaptive-replanning.service';
+import {
+  AdaptiveReplanResult,
+  AdaptiveReplanningService,
+} from './adaptive-replanning.service';
 import { PlanExecutionService } from './plan-execution.service';
 import { UnifiedDecision } from './unified-decision-engine.service';
 

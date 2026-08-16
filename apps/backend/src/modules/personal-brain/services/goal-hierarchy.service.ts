@@ -25,15 +25,20 @@ export class GoalHierarchyService {
         const urgency = this.urgency(goal.daysRemaining);
         const priority = this.clamp(goal.priority / 10);
         const progressPressure = this.clamp((100 - goal.progressPercent) / 100);
-        const weight = Number((priority * 0.45 + urgency * 0.35 + progressPressure * 0.20).toFixed(3));
+        const weight = Number(
+          (priority * 0.45 + urgency * 0.35 + progressPressure * 0.2).toFixed(
+            3,
+          ),
+        );
         const horizon = this.horizon(goal.daysRemaining);
-        const reason = goal.daysRemaining === null
-          ? 'no target date; weighted by goal priority and progress'
-          : goal.daysRemaining <= 7
-            ? 'target is within seven days'
-            : goal.daysRemaining <= 30
-              ? 'target is within thirty days'
-              : 'target is longer-term';
+        const reason =
+          goal.daysRemaining === null
+            ? 'no target date; weighted by goal priority and progress'
+            : goal.daysRemaining <= 7
+              ? 'target is within seven days'
+              : goal.daysRemaining <= 30
+                ? 'target is within thirty days'
+                : 'target is longer-term';
         return { ...goal, urgency, weight, horizon, reason };
       })
       .sort((a, b) => b.weight - a.weight);
@@ -42,7 +47,9 @@ export class GoalHierarchyService {
   impact(goal: GoalHierarchyItem, alignment = 0, downside = 0) {
     const normalizedAlignment = this.clamp(alignment);
     const normalizedDownside = this.clamp(downside);
-    return Number((goal.weight * normalizedAlignment - normalizedDownside * 0.5).toFixed(3));
+    return Number(
+      (goal.weight * normalizedAlignment - normalizedDownside * 0.5).toFixed(3),
+    );
   }
 
   private urgency(daysRemaining: number | null) {

@@ -52,7 +52,9 @@ describe('DashboardService', () => {
       },
     ]);
 
-    await expect(service.getToday('user-1', '2026-08-11')).resolves.toMatchObject({
+    await expect(
+      service.getToday('user-1', '2026-08-11'),
+    ).resolves.toMatchObject({
       dateKey: '2026-08-11',
       nutrition: {
         calories: 800,
@@ -84,7 +86,9 @@ describe('DashboardService', () => {
     prisma.dailyLog.findUnique.mockResolvedValue(null);
     prisma.meal.findMany.mockResolvedValue([]);
 
-    await expect(service.getToday('user-1', '2026-08-11')).resolves.toMatchObject({
+    await expect(
+      service.getToday('user-1', '2026-08-11'),
+    ).resolves.toMatchObject({
       nutrition: {
         calories: 0,
         calorieGoal: 0,
@@ -136,7 +140,9 @@ describe('DashboardService', () => {
       performedAt: new Date('2026-08-11T18:00:00.000Z'),
     });
 
-    await expect(service.getOverview('user-1', '2026-08-11')).resolves.toMatchObject({
+    await expect(
+      service.getOverview('user-1', '2026-08-11'),
+    ).resolves.toMatchObject({
       range: { startKey: '2026-08-05', endKey: '2026-08-11' },
       weekly: {
         loggedDays: 6,

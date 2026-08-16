@@ -14,7 +14,10 @@ describe('AssistantController history', () => {
     const service = { getHistory: jest.fn().mockResolvedValue([]) };
     const controller = new AssistantController(service as never);
 
-    await controller.getHistory({ user: { id: 'u1' } } as never, 'not-a-number');
+    await controller.getHistory(
+      { user: { id: 'u1' } } as never,
+      'not-a-number',
+    );
 
     expect(service.getHistory).toHaveBeenCalledWith('u1', 24);
   });

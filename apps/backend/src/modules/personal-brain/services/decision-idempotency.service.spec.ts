@@ -11,9 +11,11 @@ describe('DecisionIdempotencyService', () => {
   it('expires remembered results', () => {
     const service = new DecisionIdempotencyService();
     service.remember('d2', 'done', 1);
-    return new Promise<void>((resolve) => setTimeout(() => {
-      expect(service.has('d2')).toBe(false);
-      resolve();
-    }, 5));
+    return new Promise<void>((resolve) =>
+      setTimeout(() => {
+        expect(service.has('d2')).toBe(false);
+        resolve();
+      }, 5),
+    );
   });
 });

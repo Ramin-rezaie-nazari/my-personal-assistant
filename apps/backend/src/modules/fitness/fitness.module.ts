@@ -7,7 +7,13 @@ import { FitnessProfilePersistenceService } from './services/fitness-profile-per
 @Module({
   imports: [PrismaModule],
   controllers: [FitnessController],
-  providers: [FitnessProfilePersistenceService, { provide: FitnessProfileService, useExisting: FitnessProfilePersistenceService }],
+  providers: [
+    FitnessProfilePersistenceService,
+    {
+      provide: FitnessProfileService,
+      useExisting: FitnessProfilePersistenceService,
+    },
+  ],
   exports: [FitnessProfileService, FitnessProfilePersistenceService],
 })
 export class FitnessModule {}

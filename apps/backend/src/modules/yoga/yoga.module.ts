@@ -7,7 +7,17 @@ import { YogaMotionAnalysisService } from './services/yoga-motion-analysis.servi
 
 @Module({
   controllers: [YogaController],
-  providers: [YogaLibraryService, YogaSessionGeneratorService, YogaCoachService, YogaMotionAnalysisService],
-  exports: [YogaLibraryService, YogaSessionGeneratorService, YogaCoachService, YogaMotionAnalysisService],
+  providers: [
+    YogaLibraryService,
+    YogaSessionGeneratorService,
+    YogaCoachService,
+    YogaMotionAnalysisService,
+  ],
+  exports: [
+    YogaLibraryService,
+    YogaSessionGeneratorService,
+    YogaCoachService,
+    YogaMotionAnalysisService,
+  ],
 })
 export class YogaModule {}

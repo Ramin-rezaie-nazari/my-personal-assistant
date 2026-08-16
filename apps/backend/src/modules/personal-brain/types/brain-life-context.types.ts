@@ -26,7 +26,14 @@ export type BrainFitnessPerformanceMemory = {
   formTrend: number | null;
   completionTrend: number | null;
   recoveryTrend: number | null;
-  disciplineSummary: Record<string, { sessions: number; averageForm: number | null; averageDifficulty: number | null }>;
+  disciplineSummary: Record<
+    string,
+    {
+      sessions: number;
+      averageForm: number | null;
+      averageDifficulty: number | null;
+    }
+  >;
   exerciseTrends: Array<{
     exerciseId: string | null;
     exerciseName: string | null;
@@ -87,14 +94,24 @@ export type BrainLifeContext = {
   };
   reminders: {
     pending: number;
-    next: { id: string; title: string; type: string; scheduledAt: string } | null;
+    next: {
+      id: string;
+      title: string;
+      type: string;
+      scheduledAt: string;
+    } | null;
   };
   supplements: {
     total: number;
     taken: number;
     remaining: number;
     completionPercent: number;
-    next: { id: string; name: string; dosage: string | null; scheduledTime: string } | null;
+    next: {
+      id: string;
+      name: string;
+      dosage: string | null;
+      scheduledTime: string;
+    } | null;
   };
   goals: {
     active: number;

@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { BrainLifeContextService } from '../../personal-brain/services/brain-life-context.service';
-import { DecisionScoringService, ActionCandidate } from './decision-scoring.service';
+import {
+  DecisionScoringService,
+  ActionCandidate,
+} from './decision-scoring.service';
 import { RuleEvaluationService } from './rule-evaluation.service';
 
 @Injectable()

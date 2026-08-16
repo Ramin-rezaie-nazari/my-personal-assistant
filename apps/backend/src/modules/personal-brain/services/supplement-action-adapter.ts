@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { DecisionActionAdapter, DecisionActionAdapterService } from './decision-action-adapter.service';
+import {
+  DecisionActionAdapter,
+  DecisionActionAdapterService,
+} from './decision-action-adapter.service';
 import { DecisionCandidate } from './unified-decision-engine.service';
 import { SupplementsService } from '../../supplements/services/supplements.service';
 
@@ -13,14 +16,24 @@ export class SupplementActionAdapter implements DecisionActionAdapter {
   }
 
   supports(candidate: DecisionCandidate): boolean {
-    return ['take_supplement', 'update_supplement', 'delete_supplement'].includes(candidate.action);
+    return [
+      'take_supplement',
+      'update_supplement',
+      'delete_supplement',
+    ].includes(candidate.action);
   }
 
-  async execute(candidate: DecisionCandidate, context: Record<string, unknown>) {
+  async execute(
+    candidate: DecisionCandidate,
+    context: Record<string, unknown>,
+  ) {
     const userId = String(context.userId ?? '');
     if (!userId) throw new Error('Missing userId');
-    const state = (context.contextualState as Record<string, unknown> | undefined) ?? {};
-    const supplementId = String(state.targetResourceId ?? state.targetExecutionId ?? '');
+    const state =
+      (context.contextualState as Record<string, unknown> | undefined) ?? {};
+    const supplementId = String(
+      state.targetResourceId ?? state.targetExecutionId ?? '',
+    );
     if (!supplementId) throw new Error('Missing supplement target');
 
     if (candidate.action === 'take_supplement') {
@@ -32,8 +45,11 @@ export class SupplementActionAdapter implements DecisionActionAdapter {
 
     const input = String(context.input ?? '').trim();
     const time = this.extractTime(input);
-    if (!time) throw new Error('Please provide a valid supplement time in HH:MM format');
-    return this.supplements.updateSupplement(userId, supplementId, { scheduledTime: time });
+    if (!time)
+      throw new Error('Please provide a valid supplement time in HH:MM format');
+    return this.supplements.updateSupplement(userId, supplementId, {
+      scheduledTime: time,
+    });
   }
 
   private extractTime(input: string): string | null {

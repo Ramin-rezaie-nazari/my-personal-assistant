@@ -9,7 +9,17 @@ import { DecisionScoringService } from './services/decision-scoring.service';
 @Module({
   imports: [PersonalBrainModule],
   controllers: [DecisionEngineController],
-  providers: [DecisionEngineService, ActionDecisionService, RuleEvaluationService, DecisionScoringService],
-  exports: [DecisionEngineService, ActionDecisionService, RuleEvaluationService, DecisionScoringService],
+  providers: [
+    DecisionEngineService,
+    ActionDecisionService,
+    RuleEvaluationService,
+    DecisionScoringService,
+  ],
+  exports: [
+    DecisionEngineService,
+    ActionDecisionService,
+    RuleEvaluationService,
+    DecisionScoringService,
+  ],
 })
 export class DecisionEngineModule {}

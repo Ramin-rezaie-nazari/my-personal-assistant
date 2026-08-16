@@ -1,2 +1,49 @@
-import { Injectable } from '@nestjs/common';import { HouseholdConsumptionLearningService } from './household-consumption-learning.service';export type ReorderForecastInput={productKey:string;currentQuantity:number;safetyStockDays?:number;leadTimeDays?:number};export type ReorderForecast=ReorderForecastInput&{daysRemaining:number|null;reorderPoint:number;recommendedQuantity:number;urgency:'critical'|'soon'|'normal'|'unknown'};
-@Injectable()export class HouseholdReorderForecastService{constructor(private readonly consumption:HouseholdConsumptionLearningService){}forecast(i:ReorderForecastInput,now=new Date()):ReorderForecast{const m=this.consumption.forecast(i.productKey,now),r=m.dailyRate;if(r<=0)return{...i,daysRemaining:null,reorderPoint:0,recommendedQuantity:0,urgency:'unknown'};const lead=Math.max(0,i.leadTimeDays??2),safe=Math.max(0,i.safetyStockDays??2),days=i.currentQuantity/r,reorderPoint=r*(lead+safe),recommendedQuantity=Math.max(0,Math.ceil(m.next30DayNeed+r*(lead+safe)-i.currentQuantity)),urgency=days<=lead?'critical':days<=lead+safe?'soon':'normal';return{...i,daysRemaining:days,reorderPoint,recommendedQuantity,urgency}}}
+import { Injectable } from '@nestjs/common';
+import { HouseholdConsumptionLearningService } from './household-consumption-learning.service';
+export type ReorderForecastInput = {
+  productKey: string;
+  currentQuantity: number;
+  safetyStockDays?: number;
+  leadTimeDays?: number;
+};
+export type ReorderForecast = ReorderForecastInput & {
+  daysRemaining: number | null;
+  reorderPoint: number;
+  recommendedQuantity: number;
+  urgency: 'critical' | 'soon' | 'normal' | 'unknown';
+};
+@Injectable()
+export class HouseholdReorderForecastService {
+  constructor(
+    private readonly consumption: HouseholdConsumptionLearningService,
+  ) {}
+  forecast(i: ReorderForecastInput, now = new Date()): ReorderForecast {
+    const m = this.consumption.forecast(i.productKey, now),
+      r = m.dailyRate;
+    if (r <= 0)
+      return {
+        ...i,
+        daysRemaining: null,
+        reorderPoint: 0,
+        recommendedQuantity: 0,
+        urgency: 'unknown',
+      };
+    const lead = Math.max(0, i.leadTimeDays ?? 2),
+      safe = Math.max(0, i.safetyStockDays ?? 2),
+      days = i.currentQuantity / r,
+      reorderPoint = r * (lead + safe),
+      recommendedQuantity = Math.max(
+        0,
+        Math.ceil(m.next30DayNeed + r * (lead + safe) - i.currentQuantity),
+      ),
+      urgency =
+        days <= lead ? 'critical' : days <= lead + safe ? 'soon' : 'normal';
+    return {
+      ...i,
+      daysRemaining: days,
+      reorderPoint,
+      recommendedQuantity,
+      urgency,
+    };
+  }
+}

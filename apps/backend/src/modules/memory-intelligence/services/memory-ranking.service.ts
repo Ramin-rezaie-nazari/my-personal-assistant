@@ -53,18 +53,13 @@ export class MemoryRankingService {
       : 0;
 
     const score =
-      tokenMatch * 0.65 +
-      baseImportance * 0.2 +
-      exactPhraseBonus +
-      keyBonus;
+      tokenMatch * 0.65 + baseImportance * 0.2 + exactPhraseBonus + keyBonus;
 
     return Number(Math.min(score, 1).toFixed(2));
   }
 
   private tokens(value: string): string[] {
-    return value
-      .split(/[^\p{L}\p{N}]+/u)
-      .filter((token) => token.length >= 2);
+    return value.split(/[^\p{L}\p{N}]+/u).filter((token) => token.length >= 2);
   }
 
   private normalize(value: string): string {

@@ -66,7 +66,7 @@ export function useSuccessPop(active: boolean) {
 
 type AnimatedPressableProps = Omit<PressableProps, 'children' | 'style'> & {
   children: React.ReactNode;
-  style?: StyleProp<ViewStyle> | ((state: { pressed: boolean; hovered: boolean }) => StyleProp<ViewStyle>);
+  style?: StyleProp<ViewStyle> | ((state: { pressed: boolean }) => StyleProp<ViewStyle>);
   scaleTo?: number;
 };
 
@@ -79,8 +79,8 @@ export function AnimatedPressable({ children, style, scaleTo = 0.97, ...props }:
   const { scale, onPressIn, onPressOut } = usePressScale(scaleTo);
   return (
     <Pressable {...props} onPressIn={(event) => { onPressIn(); props.onPressIn?.(event); }} onPressOut={(event) => { onPressOut(); props.onPressOut?.(event); }}>
-      {({ pressed, hovered }) => {
-        const resolvedStyle = typeof style === 'function' ? style({ pressed, hovered }) : style;
+      {({ pressed }) => {
+        const resolvedStyle = typeof style === 'function' ? style({ pressed }) : style;
         return <Animated.View style={[resolvedStyle, { transform: [{ scale }] }]}>{children}</Animated.View>;
       }}
     </Pressable>

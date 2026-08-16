@@ -12,7 +12,11 @@ describe('ConversationHistoryService', () => {
     prisma.$executeRaw.mockResolvedValue(1);
     const service = new ConversationHistoryService(prisma);
 
-    const turn = await service.append({ userId: 'u1', role: 'user', text: '  Hello  ' });
+    const turn = await service.append({
+      userId: 'u1',
+      role: 'user',
+      text: '  Hello  ',
+    });
 
     expect(turn.userId).toBe('u1');
     expect(turn.text).toBe('Hello');
@@ -23,30 +27,75 @@ describe('ConversationHistoryService', () => {
     const older = new Date('2026-08-12T10:00:00Z');
     const newer = new Date('2026-08-12T10:01:00Z');
     prisma.$queryRaw.mockResolvedValue([
-      { id: '2', userId: 'u1', role: 'assistant', text: 'Done', intent: 'reminder', action: 'create_reminder', executionId: 'e1', resourceType: 'reminder', resourceId: 'r1', createdAt: newer },
-      { id: '1', userId: 'u1', role: 'user', text: 'Remind me', intent: null, action: null, executionId: null, resourceType: null, resourceId: null, createdAt: older },
+      {
+        id: '2',
+        userId: 'u1',
+        role: 'assistant',
+        text: 'Done',
+        intent: 'reminder',
+        action: 'create_reminder',
+        executionId: 'e1',
+        resourceType: 'reminder',
+        resourceId: 'r1',
+        createdAt: newer,
+      },
+      {
+        id: '1',
+        userId: 'u1',
+        role: 'user',
+        text: 'Remind me',
+        intent: null,
+        action: null,
+        executionId: null,
+        resourceType: null,
+        resourceId: null,
+        createdAt: older,
+      },
     ]);
     const service = new ConversationHistoryService(prisma);
 
     const result = await service.getRecent('u1', 24);
 
     expect(result.map((item) => item.id)).toEqual(['1', '2']);
-    expect(result[1]).toMatchObject({ resourceType: 'reminder', resourceId: 'r1' });
+    expect(result[1]).toMatchObject({
+      resourceType: 'reminder',
+      resourceId: 'r1',
+    });
     expect(prisma.$queryRaw).toHaveBeenCalled();
   });
 
   it('finds the latest action and its linked resource', async () => {
-    prisma.$queryRaw.mockResolvedValue([{ id: '2', userId: 'u1', role: 'assistant', text: 'Done', intent: 'reminder', action: 'create_reminder', executionId: 'e1', resourceType: 'reminder', resourceId: 'r1', createdAt: new Date() }]);
+    prisma.$queryRaw.mockResolvedValue([
+      {
+        id: '2',
+        userId: 'u1',
+        role: 'assistant',
+        text: 'Done',
+        intent: 'reminder',
+        action: 'create_reminder',
+        executionId: 'e1',
+        resourceType: 'reminder',
+        resourceId: 'r1',
+        createdAt: new Date(),
+      },
+    ]);
     const service = new ConversationHistoryService(prisma);
 
-    await expect(service.getLatestAction('u1')).resolves.toMatchObject({ action: 'create_reminder', executionId: 'e1', resourceType: 'reminder', resourceId: 'r1' });
+    await expect(service.getLatestAction('u1')).resolves.toMatchObject({
+      action: 'create_reminder',
+      executionId: 'e1',
+      resourceType: 'reminder',
+      resourceId: 'r1',
+    });
   });
 
   it('supports scoped deletion for privacy controls', async () => {
     prisma.$executeRaw.mockResolvedValue(7);
     const service = new ConversationHistoryService(prisma);
 
-    await expect(service.deleteSince('u1', new Date('2026-08-12T10:00:00Z'))).resolves.toEqual({ deleted: 7 });
+    await expect(
+      service.deleteSince('u1', new Date('2026-08-12T10:00:00Z')),
+    ).resolves.toEqual({ deleted: 7 });
     await expect(service.deleteAll('u1')).resolves.toEqual({ deleted: 7 });
     expect(prisma.$executeRaw).toHaveBeenCalledTimes(2);
   });

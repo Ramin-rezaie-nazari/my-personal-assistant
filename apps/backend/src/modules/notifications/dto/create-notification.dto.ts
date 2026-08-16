@@ -1,5 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsDate, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import {
+  IsDate,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  MinLength,
+} from 'class-validator';
 
 export class CreateNotificationDto {
   @IsString()

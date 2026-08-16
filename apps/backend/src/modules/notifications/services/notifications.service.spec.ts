@@ -69,7 +69,12 @@ describe('NotificationsService', () => {
     const service = new NotificationsService(prisma as never);
     const scheduledAt = new Date('2026-08-15T10:00:00.000Z');
 
-    await service.createSystemNotification('u1', 'hydration', '  Drink water.  ', scheduledAt);
+    await service.createSystemNotification(
+      'u1',
+      'reminder',
+      '  Drink water.  ',
+      scheduledAt,
+    );
 
     expect(prisma.userSettings.findUnique).toHaveBeenCalledWith({
       where: { userId: 'u1' },
@@ -78,10 +83,10 @@ describe('NotificationsService', () => {
     expect(prisma.notification.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
         userId: 'u1',
-        type: 'hydration',
+        type: 'reminder',
         body: 'Drink water.',
         scheduledAt,
-        dedupeKey: 'system:hydration:2026-08-15T10:00:00.000Z',
+        dedupeKey: 'system:reminder:2026-08-15T10:00:00.000Z',
         priority: 2,
       }),
     });
@@ -148,7 +153,10 @@ describe('NotificationsService', () => {
     prisma.notification.findFirst.mockResolvedValue({ id: 'n1' });
     const service = new NotificationsService(prisma as never);
 
-    await expect(service.markRead('u1', 'n1')).resolves.toEqual({ id: 'n1', read: true });
+    await expect(service.markRead('u1', 'n1')).resolves.toEqual({
+      id: 'n1',
+      read: true,
+    });
   });
 
   it('marks all unread notifications for only the authenticated owner', async () => {
@@ -170,9 +178,9 @@ describe('NotificationsService', () => {
     prisma.notification.findFirst.mockResolvedValue(null);
     const service = new NotificationsService(prisma as never);
 
-    await expect(service.markRead('u1', 'other-user-notification')).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      service.markRead('u1', 'other-user-notification'),
+    ).rejects.toBeInstanceOf(NotFoundException);
 
     expect(prisma.notification.findFirst).toHaveBeenCalledWith({
       where: { id: 'other-user-notification', userId: 'u1' },

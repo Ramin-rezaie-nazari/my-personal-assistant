@@ -21,6 +21,7 @@ describe('AdaptiveReplanningService', () => {
     });
 
     const result = await service.evaluate('user-1', {
+      planId: 'plan-failed',
       status: 'failed',
       steps: [],
       completed: ['a'],
@@ -44,6 +45,7 @@ describe('AdaptiveReplanningService', () => {
     });
 
     const result = await service.evaluate('user-1', {
+      planId: 'plan-completed',
       status: 'completed',
       steps: [],
       completed: ['a', 'b'],

@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { NightlyMarketIntelligenceService, NightlyRunResult } from './nightly-market-intelligence.service';
+import {
+  NightlyMarketIntelligenceService,
+  NightlyRunResult,
+} from './nightly-market-intelligence.service';
 
 export type PriceCollectionSchedule = {
   hour: number;
@@ -19,7 +22,9 @@ export class PriceCollectionSchedulerService {
 
   constructor(private readonly nightly: NightlyMarketIntelligenceService) {}
 
-  schedule(override: Partial<PriceCollectionSchedule> = {}): PriceCollectionSchedule {
+  schedule(
+    override: Partial<PriceCollectionSchedule> = {},
+  ): PriceCollectionSchedule {
     const merged = { ...this.defaults, ...override };
     return {
       ...merged,
@@ -28,7 +33,11 @@ export class PriceCollectionSchedulerService {
     };
   }
 
-  shouldRun(now = new Date(), lastSuccessfulRunAt?: Date, override: Partial<PriceCollectionSchedule> = {}) {
+  shouldRun(
+    now = new Date(),
+    lastSuccessfulRunAt?: Date,
+    override: Partial<PriceCollectionSchedule> = {},
+  ) {
     const schedule = this.schedule(override);
     if (!schedule.enabled) return { run: false, reason: 'disabled' } as const;
     if (this.nightly.shouldRun(now, lastSuccessfulRunAt, schedule).run) {
@@ -37,7 +46,11 @@ export class PriceCollectionSchedulerService {
     return { run: false, reason: 'outside_window' } as const;
   }
 
-  async collect(productKeys: string[], sourceIds?: string[], scheduledFor = new Date()): Promise<NightlyRunResult> {
+  async collect(
+    productKeys: string[],
+    sourceIds?: string[],
+    scheduledFor = new Date(),
+  ): Promise<NightlyRunResult> {
     return this.nightly.run(productKeys, sourceIds, scheduledFor);
   }
 }

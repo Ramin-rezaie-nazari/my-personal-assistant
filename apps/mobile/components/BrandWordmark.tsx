@@ -5,7 +5,7 @@ import { BrandMark } from './BrandMark';
 export function BrandWordmark({ dark = false, compact = false }: { dark?: boolean; compact?: boolean }) {
   return (
     <View style={[styles.row, compact && styles.compactRow]}>
-      <BrandMark size={compact ? 42 : 56} dark={dark} />
+      <BrandMark size={compact ? 42 : 56} />
       <View style={styles.copy}>
         <Text style={[styles.name, dark && styles.nameDark, compact && styles.nameCompact]}>{BRAND_NAME}</Text>
         {!compact ? <Text style={[styles.tagline, dark && styles.taglineDark]}>{BRAND_TAGLINE}</Text> : null}

@@ -16,7 +16,10 @@ describe('Backend API contract (e2e)', () => {
   });
 
   it('serves the public health endpoint', async () => {
-    await request(app.getHttpServer()).get('/').expect(200).expect('Hello World!');
+    await request(app.getHttpServer())
+      .get('/')
+      .expect(200)
+      .expect('Hello World!');
   });
 
   it.each([
@@ -33,14 +36,17 @@ describe('Backend API contract (e2e)', () => {
     ['POST', '/notifications'],
   ])('rejects unauthenticated %s %s', async (method, path) => {
     const req = request(app.getHttpServer());
-    const response = method === 'GET' ? await req.get(path) : await req.post(path).send({});
+    const response =
+      method === 'GET' ? await req.get(path) : await req.post(path).send({});
     expect(response.status).toBe(401);
   });
 
   it('keeps the assistant status endpoint public', async () => {
     const response = await request(app.getHttpServer()).get('/assistant');
     expect(response.status).toBe(200);
-    expect(response.body).toEqual(expect.objectContaining({ status: expect.any(String) }));
+    expect(response.body).toEqual(
+      expect.objectContaining({ status: expect.any(String) }),
+    );
   });
 
   it('rejects unknown DTO fields at the HTTP boundary', async () => {
@@ -54,6 +60,10 @@ describe('Backend API contract (e2e)', () => {
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toEqual(expect.arrayContaining([expect.stringContaining('property unexpected should not exist')]));
+    expect(response.body.message).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('property unexpected should not exist'),
+      ]),
+    );
   });
 });

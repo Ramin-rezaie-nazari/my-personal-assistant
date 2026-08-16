@@ -25,10 +25,7 @@ export class FoodsController {
   }
 
   @Post()
-  create(
-    @Request() req: { user: { id: string } },
-    @Body() dto: CreateFoodDto,
-  ) {
+  create(@Request() req: { user: { id: string } }, @Body() dto: CreateFoodDto) {
     return this.foodsService.create(req.user.id, dto);
   }
 }

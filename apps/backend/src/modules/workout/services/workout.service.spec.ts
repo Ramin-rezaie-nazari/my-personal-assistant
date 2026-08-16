@@ -28,9 +28,27 @@ describe('WorkoutService', () => {
 
   it('aggregates seven days and calculates a streak', async () => {
     const findMany = jest.fn().mockResolvedValue([
-      { name: 'Run', type: 'cardio', durationMinutes: 30, caloriesBurned: 300, performedAt: new Date('2026-08-12T08:00:00Z') },
-      { name: 'Lift', type: 'strength', durationMinutes: 45, caloriesBurned: 220, performedAt: new Date('2026-08-11T08:00:00Z') },
-      { name: 'Walk', type: 'cardio', durationMinutes: 25, caloriesBurned: 120, performedAt: new Date('2026-08-09T08:00:00Z') },
+      {
+        name: 'Run',
+        type: 'cardio',
+        durationMinutes: 30,
+        caloriesBurned: 300,
+        performedAt: new Date('2026-08-12T08:00:00Z'),
+      },
+      {
+        name: 'Lift',
+        type: 'strength',
+        durationMinutes: 45,
+        caloriesBurned: 220,
+        performedAt: new Date('2026-08-11T08:00:00Z'),
+      },
+      {
+        name: 'Walk',
+        type: 'cardio',
+        durationMinutes: 25,
+        caloriesBurned: 120,
+        performedAt: new Date('2026-08-09T08:00:00Z'),
+      },
     ]);
     const prisma = { workout: { findMany } } as unknown as PrismaService;
     const service = new WorkoutService(prisma);
@@ -47,17 +65,30 @@ describe('WorkoutService', () => {
   });
 
   it('keeps ownership on update and delete', async () => {
-    const findFirst = jest.fn().mockResolvedValue({ id: 'w1', userId: 'user-1', durationMinutes: 30, caloriesBurned: 200 });
+    const findFirst = jest.fn().mockResolvedValue({
+      id: 'w1',
+      userId: 'user-1',
+      durationMinutes: 30,
+      caloriesBurned: 200,
+    });
     const update = jest.fn().mockResolvedValue({ id: 'w1' });
     const deleteMany = jest.fn().mockResolvedValue({ count: 1 });
-    const prisma = { workout: { findFirst, update, deleteMany } } as unknown as PrismaService;
+    const prisma = {
+      workout: { findFirst, update, deleteMany },
+    } as unknown as PrismaService;
     const service = new WorkoutService(prisma);
 
     await service.updateWorkout('user-1', 'w1', { durationMinutes: 40 });
     await service.deleteWorkout('user-1', 'w1');
 
-    expect(findFirst).toHaveBeenCalledWith({ where: { id: 'w1', userId: 'user-1' } });
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({ where: { id: 'w1' } }));
-    expect(deleteMany).toHaveBeenCalledWith({ where: { id: 'w1', userId: 'user-1' } });
+    expect(findFirst).toHaveBeenCalledWith({
+      where: { id: 'w1', userId: 'user-1' },
+    });
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: 'w1' } }),
+    );
+    expect(deleteMany).toHaveBeenCalledWith({
+      where: { id: 'w1', userId: 'user-1' },
+    });
   });
 });

@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 import { ScheduleRecoveryService } from './schedule-recovery.service';
 import { ScheduleHealthService } from './schedule-health.service';
 import { SmartPlanningService } from './smart-planning.service';
-import { DecisionExplanationService, DecisionExplanation } from './decision-explanation.service';
+import {
+  DecisionExplanationService,
+  DecisionExplanation,
+} from './decision-explanation.service';
 
 export type CoachPriority = 'critical' | 'high' | 'normal' | 'low';
 export type CoachAction = {
@@ -32,11 +35,26 @@ export class ProactiveCoachService {
     ]);
     const actions: CoachAction[] = [];
 
-    const add = (input: Omit<CoachAction, 'explanation'> & { evidence?: string[] }) => {
+    const add = (
+      input: Omit<CoachAction, 'explanation'> & { evidence?: string[] },
+    ) => {
       const reasons = [input.reason, ...(input.evidence ?? [])];
       const explanation = this.explanation
-        ? this.explanation.fromCoachAction(input.title, input.message, input.priority, reasons)
-        : ({ summary: `${input.title}.`, details: input.message, confidence: null, reasons, rejectedReasons: [], blockedReasons: [], historicalReasons: [] } as DecisionExplanation);
+        ? this.explanation.fromCoachAction(
+            input.title,
+            input.message,
+            input.priority,
+            reasons,
+          )
+        : ({
+            summary: `${input.title}.`,
+            details: input.message,
+            confidence: null,
+            reasons,
+            rejectedReasons: [],
+            blockedReasons: [],
+            historicalReasons: [],
+          } as DecisionExplanation);
       actions.push({ ...input, explanation });
     };
 
@@ -46,20 +64,28 @@ export class ProactiveCoachService {
         type: 'start_task',
         priority: 'critical',
         title: `Focus on ${item.title}`,
-        message: 'This scheduled item has already passed. Starting it now is the fastest way to recover the day.',
+        message:
+          'This scheduled item has already passed. Starting it now is the fastest way to recover the day.',
         taskId: item.id,
         reason: 'overdue scheduled item',
         evidence: ['An overdue item is already affecting the schedule.'],
       });
     }
 
-    if (health.status === 'overloaded' || recovery.actions.some((action) => action.type === 'rebuild_schedule')) {
+    if (
+      health.status === 'overloaded' ||
+      recovery.actions.some((action) => action.type === 'rebuild_schedule')
+    ) {
       add({
         type: 'recover_schedule',
         priority: 'high',
         title: 'Rebuild the rest of today',
-        message: 'Your schedule is overloaded or conflicted. A recovery pass can protect the most important work.',
-        reason: health.status === 'overloaded' ? 'capacity exceeded' : 'schedule conflict',
+        message:
+          'Your schedule is overloaded or conflicted. A recovery pass can protect the most important work.',
+        reason:
+          health.status === 'overloaded'
+            ? 'capacity exceeded'
+            : 'schedule conflict',
         evidence: [
           health.status === 'overloaded'
             ? 'Remaining capacity is lower than the active workload.'
@@ -74,9 +100,12 @@ export class ProactiveCoachService {
         type: 'protect_capacity',
         priority: 'high',
         title: 'Protect your remaining focus',
-        message: 'There is very little usable focus capacity left today. Avoid adding another demanding task.',
+        message:
+          'There is very little usable focus capacity left today. Avoid adding another demanding task.',
         reason: 'low remaining capacity',
-        evidence: [`Only about ${Math.max(0, Math.round(health.capacity.remainingMinutes))} minutes of usable focus remain.`],
+        evidence: [
+          `Only about ${Math.max(0, Math.round(health.capacity.remainingMinutes))} minutes of usable focus remain.`,
+        ],
       });
     }
 
@@ -97,13 +126,21 @@ export class ProactiveCoachService {
         type: 'review_plan',
         priority: 'low',
         title: 'Your day is clear',
-        message: 'Nothing needs immediate intervention. Keep your current plan and check back when your next scheduled item approaches.',
+        message:
+          'Nothing needs immediate intervention. Keep your current plan and check back when your next scheduled item approaches.',
         reason: 'no urgent intervention required',
-        evidence: ['No overdue item, capacity warning, or higher-priority planner action is active.'],
+        evidence: [
+          'No overdue item, capacity warning, or higher-priority planner action is active.',
+        ],
       });
     }
 
-    const rank: Record<CoachPriority, number> = { critical: 0, high: 1, normal: 2, low: 3 };
+    const rank: Record<CoachPriority, number> = {
+      critical: 0,
+      high: 1,
+      normal: 2,
+      low: 3,
+    };
     actions.sort((a, b) => rank[a.priority] - rank[b.priority]);
     return {
       generatedAt: now.toISOString(),

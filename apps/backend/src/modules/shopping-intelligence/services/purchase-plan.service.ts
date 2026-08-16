@@ -31,8 +31,19 @@ export class PurchasePlanService {
   build(input: PurchasePlanInput): PurchasePlan {
     const budget = Math.max(0, input.budgetRemaining);
     const ranked = input.items
-      .map((item) => ({ ...item, quantity: Math.max(0, item.quantity), unitPrice: Math.max(0, item.unitPrice), urgency: Math.max(0, Math.min(1, item.urgency)), score: Math.max(0, Math.min(1, item.score)) }))
-      .sort((a, b) => (b.urgency * 0.55 + b.score * 0.45) - (a.urgency * 0.55 + a.score * 0.45));
+      .map((item) => ({
+        ...item,
+        quantity: Math.max(0, item.quantity),
+        unitPrice: Math.max(0, item.unitPrice),
+        urgency: Math.max(0, Math.min(1, item.urgency)),
+        score: Math.max(0, Math.min(1, item.score)),
+      }))
+      .sort(
+        (a, b) =>
+          b.urgency * 0.55 +
+          b.score * 0.45 -
+          (a.urgency * 0.55 + a.score * 0.45),
+      );
 
     const selected: PurchasePlanItem[] = [];
     const deferred: PurchasePlanItem[] = [];
@@ -43,7 +54,10 @@ export class PurchasePlanService {
     for (const item of ranked) {
       const total = item.quantity * item.unitPrice;
       if (item.decision === 'avoid') {
-        skipped.push({ ...item, reason: item.reason || 'avoid_recommendation' });
+        skipped.push({
+          ...item,
+          reason: item.reason || 'avoid_recommendation',
+        });
         continue;
       }
       if (item.decision === 'wait' || item.decision === 'compare_more') {
@@ -62,6 +76,13 @@ export class PurchasePlanService {
       }
     }
 
-    return { selected, deferred, skipped, selectedTotal, deferredTotal, withinBudget: selectedTotal <= budget };
+    return {
+      selected,
+      deferred,
+      skipped,
+      selectedTotal,
+      deferredTotal,
+      withinBudget: selectedTotal <= budget,
+    };
   }
 }

@@ -1,3 +1,58 @@
-import { Injectable } from '@nestjs/common';import { NormalizedPrice } from '../models/price-intelligence.model';import { HttpPriceSourceAdapter } from './http-price-source.adapter';import { PriceSourceRegistryService } from './price-source-registry.service';
-export type PriceSourceAdapter={id:string;kind:NormalizedPrice['sourceKind'];fetchPrices(productKeys:string[]):Promise<NormalizedPrice[]>};export type PriceCollectionResult={prices:NormalizedPrice[];failedSourceIds:string[];attemptedSourceIds:string[]};
-@Injectable()export class PriceSourceService{private readonly adapters=new Map<string,PriceSourceAdapter>();constructor(private readonly registry?:PriceSourceRegistryService){if(registry)for(const s of registry.list(true))this.register(new HttpPriceSourceAdapter(s))}register(a:PriceSourceAdapter){this.adapters.set(a.id,a);return this}async collect(keys:string[],ids?:string[]){return(await this.collectDetailed(keys,ids)).prices}async collectDetailed(keys:string[],sourceIds?:string[]):Promise<PriceCollectionResult>{const ids=sourceIds?.length?sourceIds:[...this.adapters.keys()],results=await Promise.allSettled(ids.map(async id=>{const a=this.adapters.get(id);if(!a)throw new Error(`price_source_adapter_not_registered:${id}`);return a.fetchPrices(keys)})),prices:NormalizedPrice[]=[],failed:string[]=[];results.forEach((r,i)=>r.status==='fulfilled'?prices.push(...(r.value??[])):failed.push(ids[i]));return{prices,failedSourceIds:failed,attemptedSourceIds:ids}}sources(){return this.registry?this.registry.list(true).map(({id,name,kind,baseUrl})=>({id,name,kind,baseUrl})):[]}}
+import { Injectable } from '@nestjs/common';
+import { NormalizedPrice } from '../models/price-intelligence.model';
+import { HttpPriceSourceAdapter } from './http-price-source.adapter';
+import { PriceSourceRegistryService } from './price-source-registry.service';
+export type PriceSourceAdapter = {
+  id: string;
+  kind: NormalizedPrice['sourceKind'];
+  fetchPrices(productKeys: string[]): Promise<NormalizedPrice[]>;
+};
+export type PriceCollectionResult = {
+  prices: NormalizedPrice[];
+  failedSourceIds: string[];
+  attemptedSourceIds: string[];
+};
+@Injectable()
+export class PriceSourceService {
+  private readonly adapters = new Map<string, PriceSourceAdapter>();
+  constructor(private readonly registry?: PriceSourceRegistryService) {
+    if (registry)
+      for (const s of registry.list(true))
+        this.register(new HttpPriceSourceAdapter(s));
+  }
+  register(a: PriceSourceAdapter) {
+    this.adapters.set(a.id, a);
+    return this;
+  }
+  async collect(keys: string[], ids?: string[]) {
+    return (await this.collectDetailed(keys, ids)).prices;
+  }
+  async collectDetailed(
+    keys: string[],
+    sourceIds?: string[],
+  ): Promise<PriceCollectionResult> {
+    const ids = sourceIds?.length ? sourceIds : [...this.adapters.keys()],
+      results = await Promise.allSettled(
+        ids.map(async (id) => {
+          const a = this.adapters.get(id);
+          if (!a) throw new Error(`price_source_adapter_not_registered:${id}`);
+          return a.fetchPrices(keys);
+        }),
+      ),
+      prices: NormalizedPrice[] = [],
+      failed: string[] = [];
+    results.forEach((r, i) =>
+      r.status === 'fulfilled'
+        ? prices.push(...(r.value ?? []))
+        : failed.push(ids[i]),
+    );
+    return { prices, failedSourceIds: failed, attemptedSourceIds: ids };
+  }
+  sources() {
+    return this.registry
+      ? this.registry
+          .list(true)
+          .map(({ id, name, kind, baseUrl }) => ({ id, name, kind, baseUrl }))
+      : [];
+  }
+}

@@ -36,14 +36,20 @@ export class DecisionOutcomeLearningService {
   async record(input: DecisionOutcomeInput) {
     const userId = input.userId.trim();
     const decisionId = input.decisionId.trim();
-    if (!userId || !decisionId) throw new BadRequestException('userId and decisionId are required');
+    if (!userId || !decisionId)
+      throw new BadRequestException('userId and decisionId are required');
     if (!['positive', 'neutral', 'negative'].includes(input.outcome)) {
       throw new BadRequestException('invalid outcome');
     }
 
     const score = input.score === undefined ? null : Number(input.score);
-    if (score !== null && (!Number.isFinite(score) || score < -1 || score > 1)) {
-      throw new BadRequestException('score must be a finite number between -1 and 1');
+    if (
+      score !== null &&
+      (!Number.isFinite(score) || score < -1 || score > 1)
+    ) {
+      throw new BadRequestException(
+        'score must be a finite number between -1 and 1',
+      );
     }
 
     const note = input.note?.trim().slice(0, 1000) || null;
@@ -53,11 +59,29 @@ export class DecisionOutcomeLearningService {
       INSERT INTO "DecisionOutcome" ("id", "userId", "decisionId", "outcome", "score", "note", "source")
       VALUES (${id}, ${userId}, ${decisionId}, ${input.outcome}, ${score}, ${note}, ${source})
     `;
-    return { id, userId, decisionId, outcome: input.outcome, score, note, source };
+    return {
+      id,
+      userId,
+      decisionId,
+      outcome: input.outcome,
+      score,
+      note,
+      source,
+    };
   }
 
-  async profile(userId: string, decisionId?: string): Promise<DecisionOutcomeProfile> {
-    const rows = await this.prisma.$queryRaw<Array<{ outcome: string; score: number | null; createdAt: Date; source: string }>>`
+  async profile(
+    userId: string,
+    decisionId?: string,
+  ): Promise<DecisionOutcomeProfile> {
+    const rows = await this.prisma.$queryRaw<
+      Array<{
+        outcome: string;
+        score: number | null;
+        createdAt: Date;
+        source: string;
+      }>
+    >`
       SELECT "outcome", "score", "createdAt", "source"
       FROM "DecisionOutcome"
       WHERE "userId" = ${userId}
@@ -69,7 +93,10 @@ export class DecisionOutcomeLearningService {
     return this.buildProfile(rows);
   }
 
-  async decisionAdjustments(userId: string, decisionIds: string[]): Promise<Record<string, number>> {
+  async decisionAdjustments(
+    userId: string,
+    decisionIds: string[],
+  ): Promise<Record<string, number>> {
     const ids = [...new Set(decisionIds.filter(Boolean))].slice(0, 100);
     if (!ids.length) return {};
 
@@ -90,10 +117,22 @@ export class DecisionOutcomeLearningService {
       grouped.set(row.decisionId, bucket);
     }
 
-    return Object.fromEntries(ids.map((id) => [id, this.buildProfile(grouped.get(id) ?? []).confidenceAdjustment]));
+    return Object.fromEntries(
+      ids.map((id) => [
+        id,
+        this.buildProfile(grouped.get(id) ?? []).confidenceAdjustment,
+      ]),
+    );
   }
 
-  private buildProfile(rows: Array<{ outcome: string; score: number | null; createdAt: Date; source: string }>): DecisionOutcomeProfile {
+  private buildProfile(
+    rows: Array<{
+      outcome: string;
+      score: number | null;
+      createdAt: Date;
+      source: string;
+    }>,
+  ): DecisionOutcomeProfile {
     if (rows.length < 3) {
       return {
         sampleSize: rows.length,
@@ -109,8 +148,10 @@ export class DecisionOutcomeLearningService {
     const older = rows.slice(-Math.ceil(rows.length / 3));
     const recentScore = this.average(recent);
     const olderScore = this.average(older);
-    const delta = recentScore != null && olderScore != null ? recentScore - olderScore : 0;
-    const trend = delta > 0.08 ? 'improving' : delta < -0.08 ? 'declining' : 'stable';
+    const delta =
+      recentScore != null && olderScore != null ? recentScore - olderScore : 0;
+    const trend =
+      delta > 0.08 ? 'improving' : delta < -0.08 ? 'declining' : 'stable';
     const qualityRows = rows.filter((row) => row.source !== 'system');
     const qualityPositiveRate = this.rate(qualityRows, 'positive');
     const qualityNegativeRate = this.rate(qualityRows, 'negative');
@@ -118,8 +159,18 @@ export class DecisionOutcomeLearningService {
     const negativeRate = this.rate(rows, 'negative');
 
     let confidenceAdjustment = 0;
-    if (qualityRows.length >= 5 && qualityPositiveRate >= 0.7 && trend !== 'declining') confidenceAdjustment = 0.04;
-    if (qualityRows.length >= 5 && qualityNegativeRate >= 0.7 && trend !== 'improving') confidenceAdjustment = -0.04;
+    if (
+      qualityRows.length >= 5 &&
+      qualityPositiveRate >= 0.7 &&
+      trend !== 'declining'
+    )
+      confidenceAdjustment = 0.04;
+    if (
+      qualityRows.length >= 5 &&
+      qualityNegativeRate >= 0.7 &&
+      trend !== 'improving'
+    )
+      confidenceAdjustment = -0.04;
 
     return {
       sampleSize: rows.length,
@@ -132,11 +183,20 @@ export class DecisionOutcomeLearningService {
   }
 
   private average(rows: Array<{ score: number | null }>) {
-    const scores = rows.map((row) => row.score).filter((score): score is number => typeof score === 'number' && Number.isFinite(score));
-    return scores.length ? scores.reduce((sum, score) => sum + score, 0) / scores.length : null;
+    const scores = rows
+      .map((row) => row.score)
+      .filter(
+        (score): score is number =>
+          typeof score === 'number' && Number.isFinite(score),
+      );
+    return scores.length
+      ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+      : null;
   }
 
   private rate(rows: Array<{ outcome: string }>, outcome: string) {
-    return rows.length ? rows.filter((row) => row.outcome === outcome).length / rows.length : 0;
+    return rows.length
+      ? rows.filter((row) => row.outcome === outcome).length / rows.length
+      : 0;
   }
 }

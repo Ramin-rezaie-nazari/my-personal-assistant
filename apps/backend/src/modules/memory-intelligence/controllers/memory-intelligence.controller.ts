@@ -60,10 +60,7 @@ export class MemoryIntelligenceController {
   }
 
   @Get('key/:key')
-  recallByKey(
-    @Req() req: AuthenticatedRequest,
-    @Param('key') key: string,
-  ) {
+  recallByKey(@Req() req: AuthenticatedRequest, @Param('key') key: string) {
     return this.memoryIntelligenceService.recallByKey(key, req.user.id);
   }
 

@@ -3,7 +3,11 @@ import { NotificationFeedbackService } from './notification-feedback.service';
 describe('NotificationFeedbackService', () => {
   it('aggregates resistance signals by event type', () => {
     const service = new NotificationFeedbackService();
-    const base = { userId: 'u1', dedupeKey: 'task:t1', eventType: 'next_action' };
+    const base = {
+      userId: 'u1',
+      dedupeKey: 'task:t1',
+      eventType: 'next_action',
+    };
     service.record({ ...base, action: 'snoozed' });
     service.record({ ...base, action: 'dismissed' });
     service.record({ ...base, action: 'completed' });

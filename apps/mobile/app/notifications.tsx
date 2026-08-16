@@ -43,7 +43,7 @@ const copy = {
   },
 } as const;
 
-function priorityLabel(priority: number, text: typeof copy.en) {
+function priorityLabel(priority: number, text: any) {
   return priority <= 1 ? text.important : priority === 2 ? text.helpful : text.nice;
 }
 

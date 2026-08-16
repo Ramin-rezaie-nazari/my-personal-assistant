@@ -21,7 +21,10 @@ export class RemindersController {
   constructor(private readonly remindersService: RemindersService) {}
 
   @Post()
-  create(@Request() req: { user: { id: string } }, @Body() dto: CreateReminderDto) {
+  create(
+    @Request() req: { user: { id: string } },
+    @Body() dto: CreateReminderDto,
+  ) {
     return this.remindersService.createReminder(req.user.id, dto);
   }
 
@@ -30,7 +33,10 @@ export class RemindersController {
     @Request() req: { user: { id: string } },
     @Query('includeCompleted') includeCompleted?: string,
   ) {
-    return this.remindersService.getReminders(req.user.id, includeCompleted === 'true');
+    return this.remindersService.getReminders(
+      req.user.id,
+      includeCompleted === 'true',
+    );
   }
 
   @Get('next')
@@ -48,17 +54,26 @@ export class RemindersController {
   }
 
   @Post(':id/complete')
-  complete(@Request() req: { user: { id: string } }, @Param('id') reminderId: string) {
+  complete(
+    @Request() req: { user: { id: string } },
+    @Param('id') reminderId: string,
+  ) {
     return this.remindersService.completeReminder(req.user.id, reminderId);
   }
 
   @Post(':id/reopen')
-  reopen(@Request() req: { user: { id: string } }, @Param('id') reminderId: string) {
+  reopen(
+    @Request() req: { user: { id: string } },
+    @Param('id') reminderId: string,
+  ) {
     return this.remindersService.reopenReminder(req.user.id, reminderId);
   }
 
   @Delete(':id')
-  delete(@Request() req: { user: { id: string } }, @Param('id') reminderId: string) {
+  delete(
+    @Request() req: { user: { id: string } },
+    @Param('id') reminderId: string,
+  ) {
     return this.remindersService.deleteReminder(req.user.id, reminderId);
   }
 }

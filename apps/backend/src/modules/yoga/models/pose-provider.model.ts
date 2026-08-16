@@ -1,4 +1,9 @@
-export type BodyLandmark = { x: number; y: number; z?: number; confidence: number };
+export type BodyLandmark = {
+  x: number;
+  y: number;
+  z?: number;
+  confidence: number;
+};
 
 export type PoseFrame = {
   capturedAt: number;
@@ -10,7 +15,11 @@ export type PoseAssessment = {
   poseId: string;
   score: number;
   confidence: number;
-  issues: Array<{ key: string; severity: 'info' | 'warning' | 'critical'; cue: string }>;
+  issues: Array<{
+    key: string;
+    severity: 'info' | 'warning' | 'critical';
+    cue: string;
+  }>;
   stable: boolean;
 };
 

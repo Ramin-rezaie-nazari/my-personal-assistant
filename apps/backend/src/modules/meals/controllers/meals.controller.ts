@@ -21,10 +21,7 @@ export class MealsController {
   }
 
   @Post()
-  create(
-    @Request() req: { user: { id: string } },
-    @Body() dto: CreateMealDto,
-  ) {
+  create(@Request() req: { user: { id: string } }, @Body() dto: CreateMealDto) {
     return this.mealsService.create(req.user.id, dto);
   }
 }

@@ -9,14 +9,26 @@ export class RuleEvaluationService {
 
     if (context.goals.next) {
       const goal = context.goals.next;
-      const dueBoost = goal.daysRemaining !== null && goal.daysRemaining <= 3 ? 30 : goal.daysRemaining !== null && goal.daysRemaining <= 7 ? 15 : 0;
+      const dueBoost =
+        goal.daysRemaining !== null && goal.daysRemaining <= 3
+          ? 30
+          : goal.daysRemaining !== null && goal.daysRemaining <= 7
+            ? 15
+            : 0;
       const progressBoost = Math.max(0, 25 - goal.progressPercent / 4);
       candidates.push({
         type: 'goal_action',
         title: `Move forward: ${goal.title}`,
-        reason: goal.daysRemaining !== null && goal.daysRemaining <= 7 ? `This goal is due in ${goal.daysRemaining} day${goal.daysRemaining === 1 ? '' : 's'}.` : `Your highest-priority active goal is at ${goal.progressPercent}% progress.`,
-        score: 45 + (3 - Math.min(goal.priority, 3)) * 10 + dueBoost + progressBoost,
-        urgency: goal.daysRemaining !== null && goal.daysRemaining <= 3 ? 'high' : 'medium',
+        reason:
+          goal.daysRemaining !== null && goal.daysRemaining <= 7
+            ? `This goal is due in ${goal.daysRemaining} day${goal.daysRemaining === 1 ? '' : 's'}.`
+            : `Your highest-priority active goal is at ${goal.progressPercent}% progress.`,
+        score:
+          45 + (3 - Math.min(goal.priority, 3)) * 10 + dueBoost + progressBoost,
+        urgency:
+          goal.daysRemaining !== null && goal.daysRemaining <= 3
+            ? 'high'
+            : 'medium',
         source: 'goals',
       });
     }
@@ -36,7 +48,9 @@ export class RuleEvaluationService {
       candidates.push({
         type: 'supplement_action',
         title: `Take ${context.supplements.next.name}`,
-        reason: context.supplements.next.dosage ? `Scheduled dose: ${context.supplements.next.dosage}.` : 'This supplement is still pending today.',
+        reason: context.supplements.next.dosage
+          ? `Scheduled dose: ${context.supplements.next.dosage}.`
+          : 'This supplement is still pending today.',
         score: 58,
         urgency: 'medium',
         source: 'supplements',

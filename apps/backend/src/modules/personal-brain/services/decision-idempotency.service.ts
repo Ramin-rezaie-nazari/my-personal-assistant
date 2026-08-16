@@ -2,7 +2,10 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class DecisionIdempotencyService {
-  private readonly executed = new Map<string, { result: unknown; expiresAt: number }>();
+  private readonly executed = new Map<
+    string,
+    { result: unknown; expiresAt: number }
+  >();
 
   has(key: string): boolean {
     const entry = this.executed.get(key);
@@ -19,6 +22,9 @@ export class DecisionIdempotencyService {
   }
 
   remember(key: string, result: unknown, ttlMs = 24 * 60 * 60 * 1000): void {
-    this.executed.set(key, { result, expiresAt: Date.now() + Math.max(1, ttlMs) });
+    this.executed.set(key, {
+      result,
+      expiresAt: Date.now() + Math.max(1, ttlMs),
+    });
   }
 }

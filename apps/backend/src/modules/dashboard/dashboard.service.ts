@@ -58,15 +58,18 @@ export class DashboardService {
         calories,
         calorieGoal,
         caloriesRemaining: Math.max(calorieGoal - calories, 0),
-        caloriesProgress: calorieGoal > 0 ? this.progress(calories, calorieGoal) : 0,
+        caloriesProgress:
+          calorieGoal > 0 ? this.progress(calories, calorieGoal) : 0,
         protein,
         proteinGoal,
         proteinRemaining: Math.max(proteinGoal - protein, 0),
-        proteinProgress: proteinGoal > 0 ? this.progress(protein, proteinGoal) : 0,
+        proteinProgress:
+          proteinGoal > 0 ? this.progress(protein, proteinGoal) : 0,
         waterMl,
         waterGoalMl,
         waterRemainingMl: Math.max(waterGoalMl - waterMl, 0),
-        waterProgress: waterGoalMl > 0 ? this.progress(waterMl, waterGoalMl) : 0,
+        waterProgress:
+          waterGoalMl > 0 ? this.progress(waterMl, waterGoalMl) : 0,
       },
       meals,
       mealCount: meals.length,
@@ -96,12 +99,23 @@ export class DashboardService {
     ]);
 
     const loggedDays = dailyLogs.length;
-    const totalCalories = dailyLogs.reduce((sum, item) => sum + item.calories, 0);
+    const totalCalories = dailyLogs.reduce(
+      (sum, item) => sum + item.calories,
+      0,
+    );
     const totalProtein = dailyLogs.reduce((sum, item) => sum + item.protein, 0);
     const totalWaterMl = dailyLogs.reduce((sum, item) => sum + item.waterMl, 0);
-    const workoutMinutes = workouts.reduce((sum, item) => sum + item.durationMinutes, 0);
-    const workoutCalories = workouts.reduce((sum, item) => sum + item.caloriesBurned, 0);
-    const workoutDays = new Set(workouts.map((item) => item.performedAt.toISOString().slice(0, 10))).size;
+    const workoutMinutes = workouts.reduce(
+      (sum, item) => sum + item.durationMinutes,
+      0,
+    );
+    const workoutCalories = workouts.reduce(
+      (sum, item) => sum + item.caloriesBurned,
+      0,
+    );
+    const workoutDays = new Set(
+      workouts.map((item) => item.performedAt.toISOString().slice(0, 10)),
+    ).size;
     const consistencyPercent = Math.round((loggedDays / 7) * 100);
 
     return {
@@ -114,9 +128,16 @@ export class DashboardService {
         totalCalories,
         totalProtein,
         totalWaterMl,
-        averageCalories: loggedDays ? Math.round(totalCalories / loggedDays) : 0,
-        averageProtein: loggedDays ? Math.round((totalProtein / loggedDays) * 10) / 10 : 0,
-        currentStreak: this.calculateStreak(dailyLogs.map((item) => item.dateKey), endKey),
+        averageCalories: loggedDays
+          ? Math.round(totalCalories / loggedDays)
+          : 0,
+        averageProtein: loggedDays
+          ? Math.round((totalProtein / loggedDays) * 10) / 10
+          : 0,
+        currentStreak: this.calculateStreak(
+          dailyLogs.map((item) => item.dateKey),
+          endKey,
+        ),
       },
       workouts: {
         count: workouts.length,
@@ -148,7 +169,10 @@ export class DashboardService {
     }
 
     const parsed = new Date(`${key}T00:00:00.000Z`);
-    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== key) {
+    if (
+      Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== key
+    ) {
       throw new Error('dateKey must be a valid calendar date');
     }
 

@@ -1,24 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import { ContextFreshness, LifeContext, LifeContextSourceInput } from '../types/life-context';
+import {
+  ContextFreshness,
+  LifeContext,
+  LifeContextSourceInput,
+} from '../types/life-context';
 
 @Injectable()
 export class LifeContextFusionService {
   private readonly maxFreshAgeMs = 60 * 60 * 1000;
   private readonly maxConfidence = 1;
 
-  build(userId: string, sources: Partial<Record<keyof Omit<LifeContext, 'userId' | 'generatedAt' | 'timezone'>, LifeContextSourceInput>>, now = new Date(), timezone?: string): LifeContext {
+  build(
+    userId: string,
+    sources: Partial<
+      Record<
+        keyof Omit<LifeContext, 'userId' | 'generatedAt' | 'timezone'>,
+        LifeContextSourceInput
+      >
+    >,
+    now = new Date(),
+    timezone?: string,
+  ): LifeContext {
     const make = (key: string): LifeContext['calendar'] => {
       const input = sources[key as keyof typeof sources];
-      if (!input) return { value: {}, source: 'missing', observedAt: null, freshness: 'missing', confidence: 0 };
+      if (!input)
+        return {
+          value: {},
+          source: 'missing',
+          observedAt: null,
+          freshness: 'missing',
+          confidence: 0,
+        };
       const observedAt = input.observedAt ? new Date(input.observedAt) : null;
-      const age = observedAt ? Math.max(0, now.getTime() - observedAt.getTime()) : Number.POSITIVE_INFINITY;
-      const freshness: ContextFreshness = age <= this.maxFreshAgeMs ? 'fresh' : 'stale';
+      const age = observedAt
+        ? Math.max(0, now.getTime() - observedAt.getTime())
+        : Number.POSITIVE_INFINITY;
+      const freshness: ContextFreshness =
+        age <= this.maxFreshAgeMs ? 'fresh' : 'stale';
       return {
         value: input.value,
         source: input.source,
         observedAt: observedAt?.toISOString() ?? null,
         freshness,
-        confidence: Math.max(0, Math.min(this.maxConfidence, input.confidence ?? 0.5)),
+        confidence: Math.max(
+          0,
+          Math.min(this.maxConfidence, input.confidence ?? 0.5),
+        ),
       };
     };
 

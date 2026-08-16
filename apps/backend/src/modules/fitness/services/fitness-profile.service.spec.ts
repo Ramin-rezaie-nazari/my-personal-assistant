@@ -3,7 +3,9 @@ import { FitnessProfileService } from './fitness-profile.service';
 describe('FitnessProfileService', () => {
   it('maps a natural body-sculpt goal to target areas and avoids bulk when requested', () => {
     const service = new FitnessProfileService();
-    const goal = service.parseNaturalGoal('می‌خوام ران‌هام لاغرتر و خوش‌فرم‌تر بشن و حجم زیادی عضله نگیرم');
+    const goal = service.parseNaturalGoal(
+      'می‌خوام ران‌هام لاغرتر و خوش‌فرم‌تر بشن و حجم زیادی عضله نگیرم',
+    );
 
     expect(goal.kind).toBe('fat_loss');
     expect(goal.targetAreas).toContain('thighs');

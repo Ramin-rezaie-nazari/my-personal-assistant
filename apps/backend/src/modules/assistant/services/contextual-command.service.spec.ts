@@ -17,7 +17,10 @@ describe('ContextualCommandService', () => {
   };
 
   it('resolves a follow-up update against the previous action', async () => {
-    const result = await makeService().resolve('u1', 'نه، همون رو ساعت ۸:۳۰ بذار');
+    const result = await makeService().resolve(
+      'u1',
+      'نه، همون رو ساعت ۸:۳۰ بذار',
+    );
     expect(result.referencesPrevious).toBe(true);
     expect(result.operation).toBe('update');
     expect(result.targetAction).toBe('create_reminder');
@@ -34,13 +37,19 @@ describe('ContextualCommandService', () => {
   });
 
   it('extracts duration from a natural follow-up', async () => {
-    const result = await makeService().resolve('u1', 'همون قبلی رو ۳۰ دقیقه کن');
+    const result = await makeService().resolve(
+      'u1',
+      'همون قبلی رو ۳۰ دقیقه کن',
+    );
     expect(result.referencesPrevious).toBe(true);
     expect(result.entities.durationMinutes).toBe(30);
   });
 
   it('does not attach a previous target to a standalone create command', async () => {
-    const result = await makeService().resolve('u1', 'برای فردا ساعت ۸ یادم بنداز ورزش کنم');
+    const result = await makeService().resolve(
+      'u1',
+      'برای فردا ساعت ۸ یادم بنداز ورزش کنم',
+    );
     expect(result.referencesPrevious).toBe(false);
     expect(result.operation).toBe('create');
     expect(result.targetAction).toBeUndefined();

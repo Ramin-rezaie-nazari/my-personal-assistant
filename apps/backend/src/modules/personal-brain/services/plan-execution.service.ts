@@ -1,15 +1,30 @@
 import { Injectable } from '@nestjs/common';
-import { DecisionExecutionCoordinatorService, DecisionExecutionReceipt } from './decision-execution-coordinator.service';
-import { DecisionExecutionPlannerService, ExecutionStep } from './decision-execution-planner.service';
+import {
+  DecisionExecutionCoordinatorService,
+  DecisionExecutionReceipt,
+} from './decision-execution-coordinator.service';
+import {
+  DecisionExecutionPlannerService,
+  ExecutionStep,
+} from './decision-execution-planner.service';
 import { DecisionExecutionStateService } from './decision-execution-state.service';
-import { PersistentPlanStateService, PersistedPlanState } from './persistent-plan-state.service';
+import {
+  PersistentPlanStateService,
+  PersistedPlanState,
+} from './persistent-plan-state.service';
 import { UnifiedDecision } from './unified-decision-engine.service';
 
-export type PlanExecutionStatus = 'completed' | 'partial' | 'blocked' | 'failed';
+export type PlanExecutionStatus =
+  'completed' | 'partial' | 'blocked' | 'failed';
 export type PlanExecutionResult = {
   planId: string;
   status: PlanExecutionStatus;
-  steps: Array<ExecutionStep & { status: DecisionExecutionReceipt['status']; receipt?: DecisionExecutionReceipt }>;
+  steps: Array<
+    ExecutionStep & {
+      status: DecisionExecutionReceipt['status'];
+      receipt?: DecisionExecutionReceipt;
+    }
+  >;
   completed: string[];
   blocked: string[];
   failed: string[];
@@ -26,26 +41,55 @@ export class PlanExecutionService {
     private readonly persistentState?: PersistentPlanStateService,
   ) {}
 
-  async execute(userId: string, decision: UnifiedDecision, context: Record<string, unknown> = {}): Promise<PlanExecutionResult> {
+  async execute(
+    userId: string,
+    decision: UnifiedDecision,
+    context: Record<string, unknown> = {},
+  ): Promise<PlanExecutionResult> {
     const plan = this.planner.plan(decision);
-    const planId = String(context.planId ?? `plan:${plan.map((item) => item.candidateId).join('|')}`);
-    const existing = this.persistentState ? await this.persistentState.resume(userId, planId) : undefined;
+    const planId = String(
+      context.planId ??
+        `plan:${plan.map((item) => item.candidateId).join('|')}`,
+    );
+    const existing = this.persistentState
+      ? await this.persistentState.resume(userId, planId)
+      : undefined;
     const results: PlanExecutionResult['steps'] = [];
     const completed = [...(existing?.completed ?? [])];
     const blocked = [...(existing?.blocked ?? [])];
     const failed = [...(existing?.failed ?? [])];
-    const save = async (status: PersistedPlanState['status'], currentStep: string | null) => {
+    const save = async (
+      status: PersistedPlanState['status'],
+      currentStep: string | null,
+    ) => {
       if (this.persistentState) {
-        await this.persistentState.save({ planId, userId, status, stepIds: plan.map((item) => item.candidateId), completed, blocked, failed, currentStep, updatedAt: new Date() });
+        await this.persistentState.save({
+          planId,
+          userId,
+          status,
+          stepIds: plan.map((item) => item.candidateId),
+          completed,
+          blocked,
+          failed,
+          currentStep,
+          updatedAt: new Date(),
+        });
       }
     };
 
-    await save(existing?.status === 'completed' ? 'completed' : 'running', existing?.currentStep ?? null);
+    await save(
+      existing?.status === 'completed' ? 'completed' : 'running',
+      existing?.currentStep ?? null,
+    );
 
     for (const step of plan) {
-      const candidate = decision.selected.find((item) => item.id === step.candidateId);
+      const candidate = decision.selected.find(
+        (item) => item.id === step.candidateId,
+      );
       if (!candidate || completed.includes(step.candidateId)) continue;
-      const dependenciesMet = step.dependsOn.every((dependency) => completed.includes(dependency));
+      const dependenciesMet = step.dependsOn.every((dependency) =>
+        completed.includes(dependency),
+      );
       if (!dependenciesMet) {
         if (!blocked.includes(step.candidateId)) blocked.push(step.candidateId);
         results.push({ ...step, status: 'blocked' });
@@ -55,13 +99,18 @@ export class PlanExecutionService {
 
       await save('running', step.candidateId);
       this.state.start(step.candidateId);
-      const receipt = await this.coordinator.execute(userId, candidate, context);
+      const receipt = await this.coordinator.execute(
+        userId,
+        candidate,
+        context,
+      );
       const status = receipt.status;
       results.push({ ...step, status, receipt });
 
       if (status === 'completed' || status === 'dry_run') {
         this.state.complete(step.candidateId);
-        if (!completed.includes(step.candidateId)) completed.push(step.candidateId);
+        if (!completed.includes(step.candidateId))
+          completed.push(step.candidateId);
         await save('running', null);
         continue;
       }
@@ -79,11 +128,22 @@ export class PlanExecutionService {
       break;
     }
 
-    const unfinished = plan.map((item) => item.candidateId).filter((id) => !completed.includes(id) && !blocked.includes(id) && !failed.includes(id));
+    const unfinished = plan
+      .map((item) => item.candidateId)
+      .filter(
+        (id) =>
+          !completed.includes(id) &&
+          !blocked.includes(id) &&
+          !failed.includes(id),
+      );
     const status: PlanExecutionStatus = failed.length
-      ? completed.length ? 'partial' : 'failed'
+      ? completed.length
+        ? 'partial'
+        : 'failed'
       : blocked.length || unfinished.length
-        ? completed.length ? 'partial' : 'blocked'
+        ? completed.length
+          ? 'partial'
+          : 'blocked'
         : 'completed';
     const reason = failed.length
       ? 'plan_stopped_after_step_failure'
@@ -94,6 +154,15 @@ export class PlanExecutionService {
           : 'plan_completed';
 
     await save(status, unfinished[0] ?? null);
-    return { planId, status, steps: results, completed, blocked, failed, nextStep: unfinished[0] ?? null, reason };
+    return {
+      planId,
+      status,
+      steps: results,
+      completed,
+      blocked,
+      failed,
+      nextStep: unfinished[0] ?? null,
+      reason,
+    };
   }
 }

@@ -1,7 +1,9 @@
-export type MemorySource = 'explicit_user' | 'conversation' | 'behavior' | 'decision' | 'system';
+export type MemorySource =
+  'explicit_user' | 'conversation' | 'behavior' | 'decision' | 'system';
 export type MemoryLayer = 'raw' | 'derived' | 'explicit';
 export type MemoryVisibility = 'internal' | 'user_visible';
-export type MemoryRetention = 'session' | '1_month' | '3_months' | '6_months' | '1_year' | 'unlimited';
+export type MemoryRetention =
+  'session' | '1_month' | '3_months' | '6_months' | '1_year' | 'unlimited';
 
 export type MemoryGoverned = {
   memoryId: string;

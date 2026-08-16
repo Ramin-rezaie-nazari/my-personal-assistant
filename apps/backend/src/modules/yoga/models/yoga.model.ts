@@ -1,6 +1,26 @@
-export type YogaLevel = 'beginner' | 'foundation' | 'intermediate' | 'advanced' | 'expert';
-export type YogaFocus = 'mobility' | 'flexibility' | 'balance' | 'strength' | 'recovery' | 'relaxation' | 'stress_relief' | 'morning' | 'evening' | 'breathing';
-export type YogaPoseKind = 'warmup' | 'standing' | 'balance' | 'seated' | 'prone' | 'supine' | 'transition' | 'breathing' | 'relaxation';
+export type YogaLevel =
+  'beginner' | 'foundation' | 'intermediate' | 'advanced' | 'expert';
+export type YogaFocus =
+  | 'mobility'
+  | 'flexibility'
+  | 'balance'
+  | 'strength'
+  | 'recovery'
+  | 'relaxation'
+  | 'stress_relief'
+  | 'morning'
+  | 'evening'
+  | 'breathing';
+export type YogaPoseKind =
+  | 'warmup'
+  | 'standing'
+  | 'balance'
+  | 'seated'
+  | 'prone'
+  | 'supine'
+  | 'transition'
+  | 'breathing'
+  | 'relaxation';
 export type YogaSafetyLevel = 'low' | 'moderate' | 'high';
 
 export type YogaCue = {

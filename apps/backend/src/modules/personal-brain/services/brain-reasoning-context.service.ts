@@ -44,7 +44,9 @@ export class BrainReasoningContextService {
     };
   }
 
-  private calculateLifeContextQuality(context: BrainReasoningContext['state']['lifeContext']): number {
+  private calculateLifeContextQuality(
+    context: BrainReasoningContext['state']['lifeContext'],
+  ): number {
     if (!context) return 0;
 
     const scores = [
@@ -54,6 +56,10 @@ export class BrainReasoningContextService {
       context.goals.active > 0 ? 1 : 0.5,
     ];
 
-    return Number((scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(3));
+    return Number(
+      (scores.reduce((sum, score) => sum + score, 0) / scores.length).toFixed(
+        3,
+      ),
+    );
   }
 }

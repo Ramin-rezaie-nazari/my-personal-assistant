@@ -7,7 +7,9 @@ describe('ConversationContextService', () => {
     role: 'user' as const,
     text: `message-${index}`,
     action,
-    createdAt: Date.parse(`2026-08-16T00:${String(index).padStart(2, '0')}:00.000Z`),
+    createdAt: Date.parse(
+      `2026-08-16T00:${String(index).padStart(2, '0')}:00.000Z`,
+    ),
   });
 
   it('keeps user-scoped turns bounded and resolves the latest action', async () => {
@@ -23,7 +25,12 @@ describe('ConversationContextService', () => {
     const service = new ConversationContextService(history as any);
 
     for (let index = 0; index < 30; index += 1) {
-      await service.append({ userId: 'u1', role: 'user', text: `message-${index}`, action: index === 29 ? 'reminder' : undefined });
+      await service.append({
+        userId: 'u1',
+        role: 'user',
+        text: `message-${index}`,
+        action: index === 29 ? 'reminder' : undefined,
+      });
     }
 
     const context = await service.get('u1');
@@ -36,7 +43,11 @@ describe('ConversationContextService', () => {
 
   it('can clear one user without affecting another', async () => {
     const history = {
-      append: jest.fn().mockImplementation(async (turn: any) => ({ ...turn, id: `${turn.userId}-1`, createdAt: Date.now() })),
+      append: jest.fn().mockImplementation(async (turn: any) => ({
+        ...turn,
+        id: `${turn.userId}-1`,
+        createdAt: Date.now(),
+      })),
       getRecent: jest.fn().mockResolvedValue([]),
       deleteAll: jest.fn().mockResolvedValue(undefined),
     };
@@ -53,7 +64,13 @@ describe('ConversationContextService', () => {
     const persisted = [
       makeTurn(1, 'u3'),
       { ...makeTurn(2, 'u3'), role: 'assistant' as const, action: undefined },
-      { ...makeTurn(3, 'u3'), action: 'workout', executionId: 'ex-1', resourceType: 'workout', resourceId: 'w-1' },
+      {
+        ...makeTurn(3, 'u3'),
+        action: 'workout',
+        executionId: 'ex-1',
+        resourceType: 'workout',
+        resourceId: 'w-1',
+      },
     ];
     const history = {
       append: jest.fn(),
@@ -66,6 +83,13 @@ describe('ConversationContextService', () => {
     expect(context.turns).toHaveLength(3);
     expect(context.lastUserMessage?.text).toBe('message-3');
     expect(context.lastAssistantMessage?.role).toBe('assistant');
-    expect(context.lastAction).toEqual(expect.objectContaining({ action: 'workout', executionId: 'ex-1', resourceType: 'workout', resourceId: 'w-1' }));
+    expect(context.lastAction).toEqual(
+      expect.objectContaining({
+        action: 'workout',
+        executionId: 'ex-1',
+        resourceType: 'workout',
+        resourceId: 'w-1',
+      }),
+    );
   });
 });

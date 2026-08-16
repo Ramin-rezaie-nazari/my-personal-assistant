@@ -8,6 +8,6 @@ export class BrainWorkoutStatusService {
   constructor(private readonly workoutService: WorkoutService) {}
 
   async getThisWeek(userId: string): Promise<BrainWorkoutStatus> {
-    return this.workoutService.getWeeklySummary(userId) as Promise<BrainWorkoutStatus>;
+    return this.workoutService.getWeeklySummary(userId);
   }
 }

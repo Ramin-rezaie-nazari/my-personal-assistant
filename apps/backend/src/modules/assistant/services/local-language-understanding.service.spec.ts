@@ -39,8 +39,12 @@ describe('LocalLanguageUnderstandingService', () => {
   });
 
   it('understands meal and nutrition requests', () => {
-    expect(service.understand('برای شام چی بخورم؟').intent).toBe('RECOMMEND_MEAL');
-    expect(service.understand('پروتئین و کالری امروزمو بگو').intent).toBe('GET_NUTRITION_SUMMARY');
+    expect(service.understand('برای شام چی بخورم؟').intent).toBe(
+      'RECOMMEND_MEAL',
+    );
+    expect(service.understand('پروتئین و کالری امروزمو بگو').intent).toBe(
+      'GET_NUTRITION_SUMMARY',
+    );
   });
 
   it('keeps ambiguous requests unknown instead of guessing', () => {

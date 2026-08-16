@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ProactiveEvent } from './proactive-event-engine.service';
 
-export type NotificationRecord = { dedupeKey: string; sentAt: string; eventType: string; taskId?: string };
+export type NotificationRecord = {
+  dedupeKey: string;
+  sentAt: string;
+  eventType: string;
+  taskId?: string;
+};
 
 @Injectable()
 export class NotificationDeduplicationService {
@@ -14,8 +19,16 @@ export class NotificationDeduplicationService {
   }
 
   markSent(event: ProactiveEvent, now = new Date()) {
-    this.recent.set(event.dedupeKey, { dedupeKey: event.dedupeKey, sentAt: now.toISOString(), eventType: event.type, taskId: event.taskId });
+    this.recent.set(event.dedupeKey, {
+      dedupeKey: event.dedupeKey,
+      sentAt: now.toISOString(),
+      eventType: event.type,
+      taskId: event.taskId,
+    });
   }
 
-  clear(dedupeKey?: string) { if (dedupeKey) this.recent.delete(dedupeKey); else this.recent.clear(); }
+  clear(dedupeKey?: string) {
+    if (dedupeKey) this.recent.delete(dedupeKey);
+    else this.recent.clear();
+  }
 }

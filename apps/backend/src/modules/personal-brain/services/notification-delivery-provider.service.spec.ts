@@ -1,4 +1,7 @@
-import { InAppNotificationDeliveryProvider, NotificationDeliveryProviderRegistry } from './notification-delivery-provider.service';
+import {
+  InAppNotificationDeliveryProvider,
+  NotificationDeliveryProviderRegistry,
+} from './notification-delivery-provider.service';
 
 describe('NotificationDeliveryProviderRegistry', () => {
   it('resolves the in-app provider without coupling callers to an implementation', () => {

@@ -4,7 +4,9 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { DecisionCandidate } from '../services/unified-decision-engine.service';
 import { DecisionFeedbackLoopService } from '../services/decision-feedback-loop.service';
 
-interface AuthenticatedRequest extends Request { user: { id: string } }
+interface AuthenticatedRequest extends Request {
+  user: { id: string };
+}
 
 type FeedbackBody = {
   candidate: DecisionCandidate;

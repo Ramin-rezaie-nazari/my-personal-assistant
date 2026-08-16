@@ -8,7 +8,17 @@ import { ContextPriorityResolverService } from './services/context-priority-reso
 
 @Module({
   controllers: [ContextEngineController],
-  providers: [ContextEngineService, ContextBuilderService, LifeContextFusionService, ContextPriorityResolverService],
-  exports: [ContextEngineService, ContextBuilderService, LifeContextFusionService, ContextPriorityResolverService],
+  providers: [
+    ContextEngineService,
+    ContextBuilderService,
+    LifeContextFusionService,
+    ContextPriorityResolverService,
+  ],
+  exports: [
+    ContextEngineService,
+    ContextBuilderService,
+    LifeContextFusionService,
+    ContextPriorityResolverService,
+  ],
 })
 export class ContextEngineModule {}

@@ -4,10 +4,27 @@ describe('NotificationChannelIntelligenceService', () => {
   const service = new NotificationChannelIntelligenceService();
 
   it('ranks channels by engagement quality', () => {
-    const result = service.choose([
-      { channel: 'push', delivered: 100, opened: 70, completed: 50, dismissed: 5, snoozed: 5 },
-      { channel: 'in_app', delivered: 100, opened: 30, completed: 10, dismissed: 20, snoozed: 10 },
-    ], ['push', 'in_app']);
+    const result = service.choose(
+      [
+        {
+          channel: 'push',
+          delivered: 100,
+          opened: 70,
+          completed: 50,
+          dismissed: 5,
+          snoozed: 5,
+        },
+        {
+          channel: 'in_app',
+          delivered: 100,
+          opened: 30,
+          completed: 10,
+          dismissed: 20,
+          snoozed: 10,
+        },
+      ],
+      ['push', 'in_app'],
+    );
     expect(result.primary).toBe('push');
   });
 

@@ -14,7 +14,9 @@ describe('AdaptiveLearningService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     service = new AdaptiveLearningService(prisma as never);
-    prisma.userProfile.findUnique.mockResolvedValue({ primaryGoal: 'fat loss' });
+    prisma.userProfile.findUnique.mockResolvedValue({
+      primaryGoal: 'fat loss',
+    });
     prisma.nutritionProfile.findUnique.mockResolvedValue({
       dailyCaloriesGoal: 2200,
       proteinGoalGrams: 180,
@@ -28,12 +30,29 @@ describe('AdaptiveLearningService', () => {
       { dateKey: '2026-08-10', calories: 2200, protein: 145, waterMl: 1700 },
     ]);
     prisma.workout.findMany.mockResolvedValue([
-      { performedAt: new Date('2026-08-11T08:00:00Z'), durationMinutes: 40, caloriesBurned: 280 },
-      { performedAt: new Date('2026-08-09T08:00:00Z'), durationMinutes: 30, caloriesBurned: 190 },
-      { performedAt: new Date('2026-08-07T08:00:00Z'), durationMinutes: 25, caloriesBurned: 160 },
+      {
+        performedAt: new Date('2026-08-11T08:00:00Z'),
+        durationMinutes: 40,
+        caloriesBurned: 280,
+      },
+      {
+        performedAt: new Date('2026-08-09T08:00:00Z'),
+        durationMinutes: 30,
+        caloriesBurned: 190,
+      },
+      {
+        performedAt: new Date('2026-08-07T08:00:00Z'),
+        durationMinutes: 25,
+        caloriesBurned: 160,
+      },
     ]);
     prisma.meal.findMany.mockResolvedValue([
-      { name: 'Chicken Bowl', calories: 620, protein: 42, eatenAt: new Date('2026-08-11T13:00:00Z') },
+      {
+        name: 'Chicken Bowl',
+        calories: 620,
+        protein: 42,
+        eatenAt: new Date('2026-08-11T13:00:00Z'),
+      },
     ]);
   });
 
@@ -43,16 +62,26 @@ describe('AdaptiveLearningService', () => {
     expect(result.profileGoal).toBe('fat loss');
     expect(result.insights.length).toBeGreaterThan(2);
     expect(result.insights[0].key).toBe('hydration-gap');
-    expect(result.insights.some((item) => item.key === 'protein-gap')).toBe(true);
-    expect(result.insights.some((item) => item.key === 'training-consistency')).toBe(true);
+    expect(result.insights.some((item) => item.key === 'protein-gap')).toBe(
+      true,
+    );
+    expect(
+      result.insights.some((item) => item.key === 'training-consistency'),
+    ).toBe(true);
     expect(prisma.dailyLog.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: 'user-1' }) }),
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: 'user-1' }),
+      }),
     );
     expect(prisma.workout.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: 'user-1' }) }),
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: 'user-1' }),
+      }),
     );
     expect(prisma.meal.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ userId: 'user-1' }) }),
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: 'user-1' }),
+      }),
     );
   });
 

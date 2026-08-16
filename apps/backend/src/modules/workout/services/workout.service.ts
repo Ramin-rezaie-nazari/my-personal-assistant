@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
 
 export type WorkoutWeeklySummary = {
@@ -112,7 +116,10 @@ export class WorkoutService {
     return { deleted: true };
   }
 
-  async getWeeklySummary(userId: string, dateKey = new Date().toISOString().slice(0, 10)) {
+  async getWeeklySummary(
+    userId: string,
+    dateKey = new Date().toISOString().slice(0, 10),
+  ) {
     this.assertDateKey(dateKey);
     const toDate = new Date(`${dateKey}T23:59:59.999Z`);
     const fromDate = new Date(toDate);
@@ -169,11 +176,15 @@ export class WorkoutService {
 
   private validateNumbers(durationMinutes: number, caloriesBurned: number) {
     if (!Number.isFinite(durationMinutes) || durationMinutes < 0) {
-      throw new BadRequestException('durationMinutes must be a non-negative number');
+      throw new BadRequestException(
+        'durationMinutes must be a non-negative number',
+      );
     }
 
     if (!Number.isFinite(caloriesBurned) || caloriesBurned < 0) {
-      throw new BadRequestException('caloriesBurned must be a non-negative number');
+      throw new BadRequestException(
+        'caloriesBurned must be a non-negative number',
+      );
     }
   }
 
@@ -183,7 +194,10 @@ export class WorkoutService {
     }
 
     const parsed = new Date(`${value}T00:00:00.000Z`);
-    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    if (
+      Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== value
+    ) {
       throw new BadRequestException('dateKey must be a valid calendar date');
     }
   }

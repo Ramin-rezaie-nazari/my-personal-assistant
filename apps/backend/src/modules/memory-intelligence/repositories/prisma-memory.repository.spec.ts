@@ -59,7 +59,9 @@ describe('PrismaMemoryRepository', () => {
     const prisma = createMockPrisma();
     const repository = new PrismaMemoryRepository(prisma as never);
 
-    await expect(repository.getAll()).rejects.toBeInstanceOf(BadRequestException);
+    await expect(repository.getAll()).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
     expect(prisma.userFact.findMany).not.toHaveBeenCalled();
   });
 
@@ -77,7 +79,9 @@ describe('PrismaMemoryRepository', () => {
     });
     const repository = new PrismaMemoryRepository(prisma as never);
 
-    await expect(repository.findByKey('favorite_food', 'user-1')).resolves.toEqual(
+    await expect(
+      repository.findByKey('favorite_food', 'user-1'),
+    ).resolves.toEqual(
       expect.objectContaining({
         id: 'memory-1',
         userId: 'user-1',

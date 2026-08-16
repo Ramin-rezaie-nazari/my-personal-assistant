@@ -20,19 +20,35 @@ export class BrainOrchestratorService {
   ) {}
 
   async processRequest(input: string, userId: string): Promise<BrainResponse> {
-    const reasoningContext = await this.brainReasoningContextService.build(input, userId);
+    const reasoningContext = await this.brainReasoningContextService.build(
+      input,
+      userId,
+    );
     const decision = this.brainDecisionPipelineService.run(reasoningContext);
     const scenarioIntent = this.scenarioIntentService.detect(input);
 
-    const responsePlan = this.responsePlanningService.createPlan({ decision, reasoningContext });
+    const responsePlan = this.responsePlanningService.createPlan({
+      decision,
+      reasoningContext,
+    });
 
     if (scenarioIntent.enabled && decision.nextAction) {
-      const candidates = this.buildScenarioCandidates(decision.nextAction, decision.confidence, reasoningContext);
+      const candidates = this.buildScenarioCandidates(
+        decision.nextAction,
+        decision.confidence,
+        reasoningContext,
+      );
       const comparison = this.scenarioPlanningService.compare({
         candidates,
         context: {
-          budgetPressure: Boolean(reasoningContext.state.lifeContext?.goals.dueSoon && reasoningContext.state.lifeContext.goals.dueSoon > 0),
-          capacityPressure: Boolean(reasoningContext.state.dailyStatus.hasLog && reasoningContext.state.dailyStatus.calories > 0),
+          budgetPressure: Boolean(
+            reasoningContext.state.lifeContext?.goals.dueSoon &&
+            reasoningContext.state.lifeContext.goals.dueSoon > 0,
+          ),
+          capacityPressure: Boolean(
+            reasoningContext.state.dailyStatus.hasLog &&
+            reasoningContext.state.dailyStatus.calories > 0,
+          ),
           healthConstraint: false,
         },
       });
@@ -69,7 +85,13 @@ export class BrainOrchestratorService {
     };
   }
 
-  private buildScenarioCandidates(nextAction: string, confidence: number, reasoningContext: Awaited<ReturnType<BrainReasoningContextService['build']>>): DecisionCandidate[] {
+  private buildScenarioCandidates(
+    nextAction: string,
+    confidence: number,
+    reasoningContext: Awaited<
+      ReturnType<BrainReasoningContextService['build']>
+    >,
+  ): DecisionCandidate[] {
     const domain = this.domainForAction(nextAction);
     const alignment = this.goalAlignment(reasoningContext);
     return [
@@ -96,22 +118,45 @@ export class BrainOrchestratorService {
     ];
   }
 
-  private goalAlignment(reasoningContext: Awaited<ReturnType<BrainReasoningContextService['build']>>): number {
+  private goalAlignment(
+    reasoningContext: Awaited<
+      ReturnType<BrainReasoningContextService['build']>
+    >,
+  ): number {
     const goal = reasoningContext.state.lifeContext?.goals.next;
     if (!goal) return 0.5;
-    const urgency = goal.daysRemaining !== null && goal.daysRemaining <= 7 ? 1 : 0.6;
+    const urgency =
+      goal.daysRemaining !== null && goal.daysRemaining <= 7 ? 1 : 0.6;
     const progress = Math.max(0, Math.min(1, goal.progressPercent / 100));
-    return Number(Math.max(0.1, Math.min(1, urgency * 0.6 + progress * 0.4)).toFixed(3));
+    return Number(
+      Math.max(0.1, Math.min(1, urgency * 0.6 + progress * 0.4)).toFixed(3),
+    );
   }
 
   private domainForAction(action: string): DecisionCandidate['domain'] {
     const value = action.toLowerCase();
-    if (value.includes('workout') || value.includes('exercise') || value.includes('training')) return 'workout';
+    if (
+      value.includes('workout') ||
+      value.includes('exercise') ||
+      value.includes('training')
+    )
+      return 'workout';
     if (value.includes('reminder')) return 'reminder';
-    if (value.includes('nutrition') || value.includes('meal') || value.includes('food')) return 'nutrition';
+    if (
+      value.includes('nutrition') ||
+      value.includes('meal') ||
+      value.includes('food')
+    )
+      return 'nutrition';
     if (value.includes('habit')) return 'habit';
-    if (value.includes('shop') || value.includes('buy') || value.includes('purchase')) return 'shopping';
-    if (value.includes('schedule') || value.includes('calendar')) return 'schedule';
+    if (
+      value.includes('shop') ||
+      value.includes('buy') ||
+      value.includes('purchase')
+    )
+      return 'shopping';
+    if (value.includes('schedule') || value.includes('calendar'))
+      return 'schedule';
     return 'conversation';
   }
 }

@@ -1,28 +1,47 @@
 import { DecisionExecutionController } from './decision-execution.controller';
 
 describe('DecisionExecutionController', () => {
-  it('re-resolves the authenticated user next action before execution', async () => {
-    const controller = Object.create(DecisionExecutionController.prototype) as DecisionExecutionController & Record<string, any>;
-    controller.nextBestAction = {
-      get: jest.fn().mockResolvedValue({
-        execution: {
-          candidate: {
-            id: 'task-1',
-            domain: 'schedule',
-            action: 'complete_life_task',
-            score: 0.8,
-            confidence: 1,
-          },
-        },
-      }),
-    };
-    controller.coordinator = { execute: jest.fn().mockResolvedValue({ status: 'completed' }) };
+  const nextBestAction = {
+    get: jest.fn(),
+  };
 
-    const result = await controller.executeNext({ user: { id: 'user-1' } } as any);
+  const coordinator = {
+    execute: jest.fn(),
+    confirmAndExecute: jest.fn(),
+  };
+
+  let controller: DecisionExecutionController;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    controller = new DecisionExecutionController(
+      nextBestAction as any,
+      coordinator as any,
+    );
+  });
+
+  it('re-resolves the authenticated user next action before execution', async () => {
+    nextBestAction.get.mockResolvedValue({
+      execution: {
+        candidate: {
+          id: 'task-1',
+          domain: 'schedule',
+          action: 'complete_life_task',
+          score: 0.8,
+          confidence: 1,
+        },
+      },
+    });
+
+    coordinator.execute.mockResolvedValue({ status: 'completed' });
+
+    const result = await controller.executeNext({
+      user: { id: 'user-1' },
+    } as any);
 
     expect(result).toEqual({ status: 'completed' });
-    expect(controller.nextBestAction.get).toHaveBeenCalledWith('user-1');
-    expect(controller.coordinator.execute).toHaveBeenCalledWith('user-1', {
+    expect(nextBestAction.get).toHaveBeenCalledWith('user-1');
+    expect(coordinator.execute).toHaveBeenCalledWith('user-1', {
       id: 'task-1',
       domain: 'schedule',
       action: 'complete_life_task',
@@ -32,23 +51,31 @@ describe('DecisionExecutionController', () => {
   });
 
   it('does not execute when the server has no current actionable candidate', async () => {
-    const controller = Object.create(DecisionExecutionController.prototype) as DecisionExecutionController & Record<string, any>;
-    controller.nextBestAction = { get: jest.fn().mockResolvedValue({ execution: undefined }) };
-    controller.coordinator = { execute: jest.fn() };
+    nextBestAction.get.mockResolvedValue({ execution: undefined });
 
-    const result = await controller.executeNext({ user: { id: 'user-1' } } as any);
+    const result = await controller.executeNext({
+      user: { id: 'user-1' },
+    } as any);
 
-    expect(result).toEqual({ status: 'unsupported', reason: 'no_actionable_next_action' });
-    expect(controller.coordinator.execute).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      status: 'unsupported',
+      reason: 'no_actionable_next_action',
+    });
+    expect(coordinator.execute).not.toHaveBeenCalled();
   });
 
   it('binds confirmation execution to the authenticated user', async () => {
-    const controller = Object.create(DecisionExecutionController.prototype) as DecisionExecutionController & Record<string, any>;
-    controller.coordinator = { confirmAndExecute: jest.fn().mockResolvedValue({ status: 'completed' }) };
+    coordinator.confirmAndExecute.mockResolvedValue({ status: 'completed' });
 
-    const result = await controller.confirm({ user: { id: 'user-1' }, body: { token: 'token-1' } } as any);
+    const result = await controller.confirm({
+      user: { id: 'user-1' },
+      body: { token: 'token-1' },
+    } as any);
 
     expect(result).toEqual({ status: 'completed' });
-    expect(controller.coordinator.confirmAndExecute).toHaveBeenCalledWith('user-1', 'token-1');
+    expect(coordinator.confirmAndExecute).toHaveBeenCalledWith(
+      'user-1',
+      'token-1',
+    );
   });
 });

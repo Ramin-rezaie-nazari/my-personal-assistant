@@ -15,13 +15,36 @@ describe('DailyCommandCenterService', () => {
   beforeEach(() => jest.clearAllMocks());
 
   it('builds one actionable cross-domain daily briefing for the user', async () => {
-    prisma.userProfile.findUnique.mockResolvedValue({ primaryGoal: 'Get healthier' });
-    prisma.dailyLog.findUnique.mockResolvedValue({ calories: 1200, protein: 80, waterMl: 800 });
-    prisma.reminder.findFirst.mockResolvedValue({ id: 'r1', title: 'Drink water', type: 'health', scheduledAt: new Date('2026-08-12T12:30:00Z') });
+    prisma.userProfile.findUnique.mockResolvedValue({
+      primaryGoal: 'Get healthier',
+    });
+    prisma.dailyLog.findUnique.mockResolvedValue({
+      calories: 1200,
+      protein: 80,
+      waterMl: 800,
+    });
+    prisma.reminder.findFirst.mockResolvedValue({
+      id: 'r1',
+      title: 'Drink water',
+      type: 'health',
+      scheduledAt: new Date('2026-08-12T12:30:00Z'),
+    });
     prisma.reminder.count.mockResolvedValue(2);
     prisma.reminder.findMany.mockResolvedValue([
-      { id: 'c1', title: 'Gym session', type: 'calendar', scheduledAt: new Date('2026-08-12T18:00:00Z'), completed: false },
-      { id: 'c2', title: 'Dinner', type: 'calendar', scheduledAt: new Date('2026-08-12T20:00:00Z'), completed: false },
+      {
+        id: 'c1',
+        title: 'Gym session',
+        type: 'calendar',
+        scheduledAt: new Date('2026-08-12T18:00:00Z'),
+        completed: false,
+      },
+      {
+        id: 'c2',
+        title: 'Dinner',
+        type: 'calendar',
+        scheduledAt: new Date('2026-08-12T20:00:00Z'),
+        completed: false,
+      },
     ]);
     prisma.habit.findMany.mockResolvedValue([
       { id: 'h1', logs: [{ id: 'l1' }] },
@@ -31,11 +54,20 @@ describe('DailyCommandCenterService', () => {
       { id: 's1', logs: [{ id: 'l1' }] },
       { id: 's2', logs: [] },
     ]);
-    prisma.workout.findMany.mockResolvedValue([{ name: 'Walk', type: 'cardio', durationMinutes: 30 }]);
-    prisma.nutritionProfile.findUnique.mockResolvedValue({ dailyCaloriesGoal: 2000, proteinGoalGrams: 140, waterGoalMl: 2400 });
+    prisma.workout.findMany.mockResolvedValue([
+      { name: 'Walk', type: 'cardio', durationMinutes: 30 },
+    ]);
+    prisma.nutritionProfile.findUnique.mockResolvedValue({
+      dailyCaloriesGoal: 2000,
+      proteinGoalGrams: 140,
+      waterGoalMl: 2400,
+    });
     notificationsService.getUnreadCount.mockResolvedValue(2);
 
-    const service = new DailyCommandCenterService(prisma as never, notificationsService as never);
+    const service = new DailyCommandCenterService(
+      prisma as never,
+      notificationsService as never,
+    );
     const result = await service.getToday('u1');
 
     expect(prisma.dailyLog.findUnique).toHaveBeenCalled();
@@ -46,7 +78,7 @@ describe('DailyCommandCenterService', () => {
     expect(result.notifications).toEqual({ unread: 2 });
     expect(result.workouts.countToday).toBe(1);
     expect(result.calendar.today).toHaveLength(2);
-    expect(result.calendar.next.title).toBe('Gym session');
+    expect(result.calendar.next?.title).toBe('Gym session');
     expect(result.priorities[0]).toContain('2 unread assistant notifications');
     expect(result.priorities).toContain('You have 2 scheduled events today');
     expect(result.priorities).toContain('Catch up on water');
@@ -64,7 +96,10 @@ describe('DailyCommandCenterService', () => {
     prisma.nutritionProfile.findUnique.mockResolvedValue(null);
     notificationsService.getUnreadCount.mockResolvedValue(0);
 
-    const service = new DailyCommandCenterService(prisma as never, notificationsService as never);
+    const service = new DailyCommandCenterService(
+      prisma as never,
+      notificationsService as never,
+    );
     const result = await service.getToday('new-user');
 
     expect(result.greeting).toBe('Let’s make today a good one.');

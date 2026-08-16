@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { LocalIntelligenceProvider } from '../providers/local-intelligence.provider';
-import { AiProvider, AiProviderRequest, AiProviderResponse } from './ai-provider.types';
+import {
+  AiProvider,
+  AiProviderRequest,
+  AiProviderResponse,
+} from './ai-provider.types';
 
 @Injectable()
 export class AiProviderRouterService {
@@ -12,7 +16,8 @@ export class AiProviderRouterService {
   }
 
   register(provider: AiProvider): void {
-    if (!this.providers.some((candidate) => candidate.id === provider.id)) this.providers.push(provider);
+    if (!this.providers.some((candidate) => candidate.id === provider.id))
+      this.providers.push(provider);
   }
 
   async generate(request: AiProviderRequest): Promise<AiProviderResponse> {
@@ -24,7 +29,10 @@ export class AiProviderRouterService {
         return await provider.generate(request);
       } catch (error) {
         lastError = error;
-        this.cooldownUntil.set(provider.id, Date.now() + this.cooldownFor(error));
+        this.cooldownUntil.set(
+          provider.id,
+          Date.now() + this.cooldownFor(error),
+        );
       }
     }
     if (lastError) throw lastError;
@@ -32,7 +40,10 @@ export class AiProviderRouterService {
   }
 
   private cooldownFor(error: unknown): number {
-    const status = typeof error === 'object' && error !== null && 'status' in error ? Number((error as { status?: unknown }).status) : 0;
+    const status =
+      typeof error === 'object' && error !== null && 'status' in error
+        ? Number((error as { status?: unknown }).status)
+        : 0;
     return status === 429 ? 60_000 : 5_000;
   }
 }

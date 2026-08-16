@@ -1,4 +1,5 @@
-export type PriceSourceKind = 'web_store' | 'marketplace' | 'retailer' | 'manual';
+export type PriceSourceKind =
+  'web_store' | 'marketplace' | 'retailer' | 'manual';
 export type PriceTrend = 'rising' | 'falling' | 'stable' | 'insufficient_data';
 
 export type NormalizedPrice = {

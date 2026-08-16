@@ -18,9 +18,18 @@ export type FitnessProgressionDecision = {
 
 @Injectable()
 export class FitnessProgressionService {
-  evaluate(performance?: FitnessPerformanceSnapshot): FitnessProgressionDecision {
+  evaluate(
+    performance?: FitnessPerformanceSnapshot,
+  ): FitnessProgressionDecision {
     if (!performance) {
-      return { action: 'stay', confidence: 0.45, reason: 'insufficient-performance-data', levelDelta: 0, volumeMultiplier: 1, intensityMultiplier: 1 };
+      return {
+        action: 'stay',
+        confidence: 0.45,
+        reason: 'insufficient-performance-data',
+        levelDelta: 0,
+        volumeMultiplier: 1,
+        intensityMultiplier: 1,
+      };
     }
 
     const form = performance.formScoreAvg ?? 0.75;
@@ -29,14 +38,50 @@ export class FitnessProgressionService {
     const recovery = performance.recoveryScore ?? 0.75;
 
     if (recovery < 0.45) {
-      return { action: 'deload', confidence: 0.92, reason: 'recovery-low', levelDelta: 0, volumeMultiplier: 0.65, intensityMultiplier: 0.8 };
+      return {
+        action: 'deload',
+        confidence: 0.92,
+        reason: 'recovery-low',
+        levelDelta: 0,
+        volumeMultiplier: 0.65,
+        intensityMultiplier: 0.8,
+      };
     }
     if (form < 0.65 || completion < 0.65) {
-      return { action: 'regress', confidence: 0.91, reason: form < 0.65 ? 'form-below-safe-progress-threshold' : 'completion-below-threshold', levelDelta: -1, volumeMultiplier: 0.85, intensityMultiplier: 0.85 };
+      return {
+        action: 'regress',
+        confidence: 0.91,
+        reason:
+          form < 0.65
+            ? 'form-below-safe-progress-threshold'
+            : 'completion-below-threshold',
+        levelDelta: -1,
+        volumeMultiplier: 0.85,
+        intensityMultiplier: 0.85,
+      };
     }
-    if (form >= 0.9 && completion >= 0.9 && difficulty < 0.7 && recovery >= 0.7) {
-      return { action: 'progress', confidence: 0.94, reason: 'strong-form-high-completion-low-perceived-difficulty', levelDelta: 1, volumeMultiplier: 1.08, intensityMultiplier: 1.08 };
+    if (
+      form >= 0.9 &&
+      completion >= 0.9 &&
+      difficulty < 0.7 &&
+      recovery >= 0.7
+    ) {
+      return {
+        action: 'progress',
+        confidence: 0.94,
+        reason: 'strong-form-high-completion-low-perceived-difficulty',
+        levelDelta: 1,
+        volumeMultiplier: 1.08,
+        intensityMultiplier: 1.08,
+      };
     }
-    return { action: 'stay', confidence: 0.82, reason: 'performance-within-adaptive-band', levelDelta: 0, volumeMultiplier: 1, intensityMultiplier: 1 };
+    return {
+      action: 'stay',
+      confidence: 0.82,
+      reason: 'performance-within-adaptive-band',
+      levelDelta: 0,
+      volumeMultiplier: 1,
+      intensityMultiplier: 1,
+    };
   }
 }

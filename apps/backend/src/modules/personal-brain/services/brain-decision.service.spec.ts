@@ -7,6 +7,10 @@ const createContext = (
 ): BrainReasoningContext => ({
   input,
   userContext: {
+    profile: {},
+    lifeAreas: ['health'],
+    preferences: {},
+    constraints: [],
     goals: [
       {
         id: 'goal-1',
@@ -15,10 +19,13 @@ const createContext = (
         priority: 1,
       },
     ],
-    memories: [],
   },
   state: {
     userContext: {
+      profile: {},
+      lifeAreas: ['health'],
+      preferences: {},
+      constraints: [],
       goals: [
         {
           id: 'goal-1',
@@ -27,9 +34,8 @@ const createContext = (
           priority: 1,
         },
       ],
-      memories: [],
     },
-    context: {},
+    context: { timestamp: '2026-08-12T00:00:00.000Z', source: 'test' },
     memories: [],
     goals: [],
     dailyStatus: {
@@ -60,13 +66,17 @@ const createContext = (
     hasContext: true,
     hasMemories: true,
     hasGoals: true,
+    hasLifeContext: true,
     memoryCount: 0,
     goalCount: 1,
     contextSource: 'test',
+    lifeContextQuality: 1,
   },
   reasoning: {
     confidence: 1,
+    contextScore: 1,
     uncertainties: [],
+    factors: [],
     reasoningSummary: 'complete',
   },
 });
@@ -90,7 +100,9 @@ describe('BrainDecisionService', () => {
   it('keeps the existing goal-guidance behavior for non-goal questions', () => {
     const service = new BrainDecisionService();
 
-    const result = service.evaluateDecision(createContext('help me plan today'));
+    const result = service.evaluateDecision(
+      createContext('help me plan today'),
+    );
 
     expect(result).toEqual(
       expect.objectContaining({
@@ -146,7 +158,9 @@ describe('BrainDecisionService', () => {
       expect.objectContaining({
         canDecide: true,
         intent: 'workout-status',
-        recommendation: expect.stringContaining('3 workouts across 2 active days'),
+        recommendation: expect.stringContaining(
+          '3 workouts across 2 active days',
+        ),
         nextAction: 'Keep training and continue logging workouts',
       }),
     );

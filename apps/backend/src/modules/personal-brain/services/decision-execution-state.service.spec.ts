@@ -10,7 +10,9 @@ describe('DecisionExecutionStateService', () => {
 
   it('records failures and cancellation', () => {
     const service = new DecisionExecutionStateService();
-    expect(service.fail('d2', 'provider unavailable').error).toBe('provider unavailable');
+    expect(service.fail('d2', 'provider unavailable').error).toBe(
+      'provider unavailable',
+    );
     expect(service.cancel('d3').state).toBe('cancelled');
   });
 });

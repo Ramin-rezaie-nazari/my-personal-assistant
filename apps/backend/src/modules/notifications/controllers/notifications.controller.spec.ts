@@ -20,9 +20,12 @@ describe('NotificationsController', () => {
     );
     const dto = { title: 'Water', type: 'hydration' };
 
-    await controller.create({ user: { id: 'u1' } }, dto as never);
+    await controller.create({ user: { id: 'u1' } }, dto);
 
-    expect(notificationsService.createNotification).toHaveBeenCalledWith('u1', dto);
+    expect(notificationsService.createNotification).toHaveBeenCalledWith(
+      'u1',
+      dto,
+    );
   });
 
   it('passes the authenticated owner and optional date to smart generation', async () => {
@@ -34,8 +37,16 @@ describe('NotificationsController', () => {
     await controller.generate({ user: { id: 'u1' } }, '2026-08-15');
     await controller.generate({ user: { id: 'u1' } });
 
-    expect(smartNotificationService.generateForUser).toHaveBeenNthCalledWith(1, 'u1', '2026-08-15');
-    expect(smartNotificationService.generateForUser).toHaveBeenNthCalledWith(2, 'u1', undefined);
+    expect(smartNotificationService.generateForUser).toHaveBeenNthCalledWith(
+      1,
+      'u1',
+      '2026-08-15',
+    );
+    expect(smartNotificationService.generateForUser).toHaveBeenNthCalledWith(
+      2,
+      'u1',
+      undefined,
+    );
   });
 
   it('parses includeRead explicitly', async () => {
@@ -48,9 +59,21 @@ describe('NotificationsController', () => {
     await controller.findAll({ user: { id: 'u1' } }, 'false');
     await controller.findAll({ user: { id: 'u1' } });
 
-    expect(notificationsService.getNotifications).toHaveBeenNthCalledWith(1, 'u1', true);
-    expect(notificationsService.getNotifications).toHaveBeenNthCalledWith(2, 'u1', false);
-    expect(notificationsService.getNotifications).toHaveBeenNthCalledWith(3, 'u1', false);
+    expect(notificationsService.getNotifications).toHaveBeenNthCalledWith(
+      1,
+      'u1',
+      true,
+    );
+    expect(notificationsService.getNotifications).toHaveBeenNthCalledWith(
+      2,
+      'u1',
+      false,
+    );
+    expect(notificationsService.getNotifications).toHaveBeenNthCalledWith(
+      3,
+      'u1',
+      false,
+    );
   });
 
   it('delegates mark-all-read and mark-read with the authenticated owner', async () => {

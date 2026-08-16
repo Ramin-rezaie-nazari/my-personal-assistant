@@ -5,8 +5,24 @@ describe('ProductMatchingService', () => {
 
   it('accepts a strong identifier match', () => {
     const result = service.match(
-      { productKey: 'milk', title: 'Low Fat Milk 1L', brand: 'X', quantityValue: 1, quantityUnit: 'l', identifiers: { gtin: '123' } },
-      [{ productKey: 'milk-x', title: 'Low Fat Milk 1L', brand: 'X', quantityValue: 1, quantityUnit: 'l', identifiers: { gtin: '123' } }],
+      {
+        productKey: 'milk',
+        title: 'Low Fat Milk 1L',
+        brand: 'X',
+        quantityValue: 1,
+        quantityUnit: 'l',
+        identifiers: { gtin: '123' },
+      },
+      [
+        {
+          productKey: 'milk-x',
+          title: 'Low Fat Milk 1L',
+          brand: 'X',
+          quantityValue: 1,
+          quantityUnit: 'l',
+          identifiers: { gtin: '123' },
+        },
+      ],
     )[0];
 
     expect(result.confidence).toBeGreaterThanOrEqual(0.78);
@@ -15,8 +31,22 @@ describe('ProductMatchingService', () => {
 
   it('marks a title-only near match as ambiguous', () => {
     const result = service.match(
-      { productKey: 'milk', title: 'Low Fat Milk', brand: 'X', quantityValue: 1, quantityUnit: 'l' },
-      [{ productKey: 'milk-y', title: 'Low Fat Milk', brand: 'X', quantityValue: 1.5, quantityUnit: 'l' }],
+      {
+        productKey: 'milk',
+        title: 'Low Fat Milk',
+        brand: 'X',
+        quantityValue: 1,
+        quantityUnit: 'l',
+      },
+      [
+        {
+          productKey: 'milk-y',
+          title: 'Low Fat Milk',
+          brand: 'X',
+          quantityValue: 1.5,
+          quantityUnit: 'l',
+        },
+      ],
     )[0];
 
     expect(result.ambiguous).toBe(true);

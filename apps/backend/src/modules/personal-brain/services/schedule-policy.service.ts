@@ -1,3 +1,27 @@
 import { Injectable } from '@nestjs/common';
-type Adaptive={bestHours?:number[];preferredTaskMinutes?:number|null;snoozeRate?:number};
-@Injectable() export class SchedulePolicyService{getPolicy(a:Adaptive={}){const h=(a.bestHours??[]).filter(x=>Number.isFinite(x)&&x>=0&&x<=23),s=Math.max(0,Math.min(1,a.snoozeRate??0)),p=Math.max(10,Math.min(180,a.preferredTaskMinutes??45));return{workingWindow:{startHour:7,endHour:22},focusWindow:h.length?{startHour:h[0],endHour:Math.min(22,h[0]+2)}:{startHour:9,endHour:11},preferredTaskMinutes:p,snoozeRate:s,maxFocusedMinutes:s>=.5?180:s>=.3?240:300,bufferMinutes:s>=.4?20:15,notificationLeadMinutes:s>=.5?5:10}}}
+type Adaptive = {
+  bestHours?: number[];
+  preferredTaskMinutes?: number | null;
+  snoozeRate?: number;
+};
+@Injectable()
+export class SchedulePolicyService {
+  getPolicy(a: Adaptive = {}) {
+    const h = (a.bestHours ?? []).filter(
+        (x) => Number.isFinite(x) && x >= 0 && x <= 23,
+      ),
+      s = Math.max(0, Math.min(1, a.snoozeRate ?? 0)),
+      p = Math.max(10, Math.min(180, a.preferredTaskMinutes ?? 45));
+    return {
+      workingWindow: { startHour: 7, endHour: 22 },
+      focusWindow: h.length
+        ? { startHour: h[0], endHour: Math.min(22, h[0] + 2) }
+        : { startHour: 9, endHour: 11 },
+      preferredTaskMinutes: p,
+      snoozeRate: s,
+      maxFocusedMinutes: s >= 0.5 ? 180 : s >= 0.3 ? 240 : 300,
+      bufferMinutes: s >= 0.4 ? 20 : 15,
+      notificationLeadMinutes: s >= 0.5 ? 5 : 10,
+    };
+  }
+}

@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { MemoryGoverned, MemoryRetention } from '../models/memory-governance.model';
+import {
+  MemoryGoverned,
+  MemoryRetention,
+} from '../models/memory-governance.model';
 
 @Injectable()
 export class MemoryGovernanceService {
@@ -16,7 +19,10 @@ export class MemoryGovernanceService {
     const duration = this.retentionMs[memory.retention];
     return duration === null
       ? { ...memory, expiresAt: undefined }
-      : { ...memory, expiresAt: new Date(memory.createdAt.getTime() + duration) };
+      : {
+          ...memory,
+          expiresAt: new Date(memory.createdAt.getTime() + duration),
+        };
   }
 
   isExpired(memory: MemoryGoverned, now = new Date()): boolean {
@@ -24,10 +30,18 @@ export class MemoryGovernanceService {
   }
 
   shouldReinforce(memory: MemoryGoverned): boolean {
-    return memory.source === 'explicit_user' || memory.confidence < 0.75 || memory.importance >= 0.8;
+    return (
+      memory.source === 'explicit_user' ||
+      memory.confidence < 0.75 ||
+      memory.importance >= 0.8
+    );
   }
 
   markConfirmed(memory: MemoryGoverned, at = new Date()): MemoryGoverned {
-    return { ...memory, lastConfirmedAt: at, confidence: Math.min(1, memory.confidence + 0.05) };
+    return {
+      ...memory,
+      lastConfirmedAt: at,
+      confidence: Math.min(1, memory.confidence + 0.05),
+    };
   }
 }

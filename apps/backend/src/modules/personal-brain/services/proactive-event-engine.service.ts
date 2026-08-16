@@ -2,7 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { ProactiveCoachService } from './proactive-coach.service';
 import { ProactiveDecisionQualityService } from './proactive-decision-quality.service';
 
-export type ProactiveEventType = 'task_due_soon' | 'overdue_task' | 'schedule_recovery' | 'capacity_warning' | 'next_action';
+export type ProactiveEventType =
+  | 'task_due_soon'
+  | 'overdue_task'
+  | 'schedule_recovery'
+  | 'capacity_warning'
+  | 'next_action';
 export type ProactiveEvent = {
   type: ProactiveEventType;
   priority: 'critical' | 'high' | 'normal';
@@ -23,13 +28,21 @@ export class ProactiveEventEngineService {
     private readonly quality: ProactiveDecisionQualityService,
   ) {}
 
-  async buildEvents(userId: string, now = new Date()): Promise<ProactiveEvent[]> {
+  async buildEvents(
+    userId: string,
+    now = new Date(),
+  ): Promise<ProactiveEvent[]> {
     const coach = await this.coach.getNextCoach(userId, now);
     const events: ProactiveEvent[] = [];
     const primary = coach.primary;
     const quality = this.quality.evaluate({
       relevance: primary.priority === 'low' ? 0.45 : 0.85,
-      urgency: primary.priority === 'critical' ? 1 : primary.priority === 'high' ? 0.8 : 0.55,
+      urgency:
+        primary.priority === 'critical'
+          ? 1
+          : primary.priority === 'high'
+            ? 0.8
+            : 0.55,
       userBenefit: primary.type === 'review_plan' ? 0.4 : 0.85,
       interruptionCost: primary.priority === 'critical' ? 0.05 : 0.25,
     });

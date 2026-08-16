@@ -21,6 +21,11 @@ describe('DecisionHistoryRetentionService', () => {
 
   it('clamps recent-delete hours to a safe range', () => {
     const service = new DecisionHistoryRetentionService();
-    expect(service.setPolicy('u1', { retention: '3_months', deleteRecentActivityHours: 99999 }).deleteRecentActivityHours).toBe(8760);
+    expect(
+      service.setPolicy('u1', {
+        retention: '3_months',
+        deleteRecentActivityHours: 99999,
+      }).deleteRecentActivityHours,
+    ).toBe(8760);
   });
 });

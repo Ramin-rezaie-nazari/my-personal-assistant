@@ -30,7 +30,10 @@ export class MemoryRetrievalService {
     });
   }
 
-  async retrieveByKey(key: string, userId: string): Promise<Memory | undefined> {
+  async retrieveByKey(
+    key: string,
+    userId: string,
+  ): Promise<Memory | undefined> {
     const memory = await this.memoryRepository.findByKey(key, userId);
 
     return memory ?? undefined;

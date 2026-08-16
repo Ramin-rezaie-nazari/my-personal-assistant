@@ -10,7 +10,10 @@ const normalize = (value: string) => value.trim().toLowerCase();
 
 const overlap = (values: string[], preferred: string[]) => {
   const set = new Set(preferred.map(normalize));
-  return values.reduce((count, value) => count + (set.has(normalize(value)) ? 1 : 0), 0);
+  return values.reduce(
+    (count, value) => count + (set.has(normalize(value)) ? 1 : 0),
+    0,
+  );
 };
 
 @Injectable()
@@ -36,18 +39,31 @@ export class ContentRecommendationService {
           score -= 18;
         }
 
-        const cuisineMatches = overlap(candidate.cuisines, signals.preferredCuisines ?? []);
+        const cuisineMatches = overlap(
+          candidate.cuisines,
+          signals.preferredCuisines ?? [],
+        );
         if (cuisineMatches > 0) {
           score += Math.min(30, cuisineMatches * 15);
           reasons.push('matches your food preferences');
         }
 
-        const cuisineDislikes = overlap(candidate.cuisines, signals.dislikedCuisines ?? []);
+        const cuisineDislikes = overlap(
+          candidate.cuisines,
+          signals.dislikedCuisines ?? [],
+        );
         score -= cuisineDislikes * 40;
 
-        const countrySignals = [signals.country, signals.originCountry].filter(Boolean) as string[];
-        const localMatch = candidate.countries.some((country) => countrySignals.includes(country));
-        const originMatch = Boolean(signals.originCountry && candidate.originCountry === signals.originCountry);
+        const countrySignals = [signals.country, signals.originCountry].filter(
+          Boolean,
+        ) as string[];
+        const localMatch = candidate.countries.some((country) =>
+          countrySignals.includes(country),
+        );
+        const originMatch = Boolean(
+          signals.originCountry &&
+          candidate.originCountry === signals.originCountry,
+        );
         if (originMatch) {
           score += 22;
           reasons.push('connected to your background');
@@ -56,7 +72,10 @@ export class ContentRecommendationService {
           reasons.push('fits your local food context');
         }
 
-        const ingredientMatches = overlap(candidate.ingredients, signals.availableIngredients ?? []);
+        const ingredientMatches = overlap(
+          candidate.ingredients,
+          signals.availableIngredients ?? [],
+        );
         if (ingredientMatches > 0) {
           score += Math.min(24, ingredientMatches * 6);
           reasons.push('uses ingredients you already have');
@@ -81,7 +100,11 @@ export class ContentRecommendationService {
         // behaviorally repetitive. It is intentionally capped so relevance wins.
         score += Math.min(8, candidate.cuisines.length);
 
-        return { ...candidate, recommendationScore: Math.round(score * 100) / 100, recommendationReasons: reasons };
+        return {
+          ...candidate,
+          recommendationScore: Math.round(score * 100) / 100,
+          recommendationReasons: reasons,
+        };
       })
       .filter((candidate) => candidate.recommendationScore > -20)
       .sort((a, b) => b.recommendationScore - a.recommendationScore)
@@ -105,8 +128,14 @@ export class ContentRecommendationService {
         if (signals.dislikedContentIds?.includes(candidate.id)) score -= 80;
         if (signals.recentContentIds?.includes(candidate.id)) score -= 18;
 
-        const equipmentMatches = overlap(candidate.equipment, signals.availableEquipment ?? []);
-        if (candidate.equipment.length === 0 || equipmentMatches === candidate.equipment.length) {
+        const equipmentMatches = overlap(
+          candidate.equipment,
+          signals.availableEquipment ?? [],
+        );
+        if (
+          candidate.equipment.length === 0 ||
+          equipmentMatches === candidate.equipment.length
+        ) {
           score += 18;
           reasons.push('works with your available equipment');
         } else if (equipmentMatches > 0) {
@@ -126,13 +155,21 @@ export class ContentRecommendationService {
           reasons.push('matches your current level');
         }
 
-        if (signals.preferredCuisines?.some((value) => normalize(value) === normalize(candidate.discipline))) {
+        if (
+          signals.preferredCuisines?.some(
+            (value) => normalize(value) === normalize(candidate.discipline),
+          )
+        ) {
           score += 4;
         }
 
         score += Math.min(10, candidate.popularityScore ?? 0);
 
-        return { ...candidate, recommendationScore: Math.round(score * 100) / 100, recommendationReasons: reasons };
+        return {
+          ...candidate,
+          recommendationScore: Math.round(score * 100) / 100,
+          recommendationReasons: reasons,
+        };
       })
       .filter((candidate) => candidate.recommendationScore > -20)
       .sort((a, b) => b.recommendationScore - a.recommendationScore)

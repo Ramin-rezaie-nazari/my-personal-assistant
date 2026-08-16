@@ -13,38 +13,64 @@ type PersonalInsight = {
 export class AdaptiveLearningService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getInsights(userId: string, dateKey = new Date().toISOString().slice(0, 10)) {
+  async getInsights(
+    userId: string,
+    dateKey = new Date().toISOString().slice(0, 10),
+  ) {
     this.assertDateKey(dateKey);
 
     const end = new Date(`${dateKey}T23:59:59.999Z`);
     const start = new Date(end);
     start.setUTCDate(start.getUTCDate() - 6);
 
-    const [profile, nutritionProfile, dailyLogs, workouts, meals] = await Promise.all([
-      this.prisma.userProfile.findUnique({ where: { userId } }),
-      this.prisma.nutritionProfile.findUnique({ where: { userId } }),
-      this.prisma.dailyLog.findMany({
-        where: { userId, dateKey: { gte: this.toDateKey(start), lte: dateKey } },
-        orderBy: { dateKey: 'asc' },
-      }),
-      this.prisma.workout.findMany({
-        where: { userId, performedAt: { gte: new Date(`${this.toDateKey(start)}T00:00:00.000Z`), lte: end } },
-        orderBy: { performedAt: 'desc' },
-      }),
-      this.prisma.meal.findMany({
-        where: { userId, eatenAt: { gte: new Date(`${this.toDateKey(start)}T00:00:00.000Z`), lte: end } },
-        select: { name: true, calories: true, protein: true, eatenAt: true },
-      }),
-    ]);
+    const [profile, nutritionProfile, dailyLogs, workouts, meals] =
+      await Promise.all([
+        this.prisma.userProfile.findUnique({ where: { userId } }),
+        this.prisma.nutritionProfile.findUnique({ where: { userId } }),
+        this.prisma.dailyLog.findMany({
+          where: {
+            userId,
+            dateKey: { gte: this.toDateKey(start), lte: dateKey },
+          },
+          orderBy: { dateKey: 'asc' },
+        }),
+        this.prisma.workout.findMany({
+          where: {
+            userId,
+            performedAt: {
+              gte: new Date(`${this.toDateKey(start)}T00:00:00.000Z`),
+              lte: end,
+            },
+          },
+          orderBy: { performedAt: 'desc' },
+        }),
+        this.prisma.meal.findMany({
+          where: {
+            userId,
+            eatenAt: {
+              gte: new Date(`${this.toDateKey(start)}T00:00:00.000Z`),
+              lte: end,
+            },
+          },
+          select: { name: true, calories: true, protein: true, eatenAt: true },
+        }),
+      ]);
 
     const loggedDays = dailyLogs.length;
-    const totalCalories = dailyLogs.reduce((sum, item) => sum + item.calories, 0);
+    const totalCalories = dailyLogs.reduce(
+      (sum, item) => sum + item.calories,
+      0,
+    );
     const totalProtein = dailyLogs.reduce((sum, item) => sum + item.protein, 0);
     const totalWater = dailyLogs.reduce((sum, item) => sum + item.waterMl, 0);
-    const averageCalories = loggedDays ? Math.round(totalCalories / loggedDays) : 0;
+    const averageCalories = loggedDays
+      ? Math.round(totalCalories / loggedDays)
+      : 0;
     const averageProtein = loggedDays ? totalProtein / loggedDays : 0;
     const averageWater = loggedDays ? totalWater / loggedDays : 0;
-    const workoutDays = new Set(workouts.map((item) => item.performedAt.toISOString().slice(0, 10))).size;
+    const workoutDays = new Set(
+      workouts.map((item) => item.performedAt.toISOString().slice(0, 10)),
+    ).size;
     const nutritionTarget = nutritionProfile?.dailyCaloriesGoal ?? 0;
     const proteinTarget = nutritionProfile?.proteinGoalGrams ?? 0;
     const waterTarget = nutritionProfile?.waterGoalMl ?? 0;
@@ -56,7 +82,8 @@ export class AdaptiveLearningService {
       insights.push({
         key: 'start-tracking',
         title: 'Start with consistency',
-        description: 'You have not logged any daily data in the last seven days. A few small check-ins will give your assistant enough history to personalize recommendations.',
+        description:
+          'You have not logged any daily data in the last seven days. A few small check-ins will give your assistant enough history to personalize recommendations.',
         score: 95,
         category: 'consistency',
       });
@@ -136,7 +163,8 @@ export class AdaptiveLearningService {
       insights.push({
         key: 'workout-gap',
         title: 'Training is the biggest missing signal',
-        description: 'No workouts were logged in the last seven days. Adding even two short sessions would give your assistant a much stronger view of your routine.',
+        description:
+          'No workouts were logged in the last seven days. Adding even two short sessions would give your assistant a much stronger view of your routine.',
         score: 84,
         category: 'fitness',
       });
@@ -151,7 +179,9 @@ export class AdaptiveLearningService {
     }
 
     if (meals.length > 0) {
-      const latestMeal = [...meals].sort((a, b) => b.eatenAt.getTime() - a.eatenAt.getTime())[0];
+      const latestMeal = [...meals].sort(
+        (a, b) => b.eatenAt.getTime() - a.eatenAt.getTime(),
+      )[0];
       if (latestMeal && latestMeal.protein >= 30) {
         insights.push({
           key: 'protein-meal-pattern',
@@ -186,8 +216,10 @@ export class AdaptiveLearningService {
   }
 
   private buildSummary(insights: PersonalInsight[], consistency: number) {
-    if (insights.length === 0) return 'Keep logging a little each day and I will learn your patterns.';
-    if (insights[0].key === 'strong-consistency') return `Your recent routine is ${consistency}% consistent. I can now make recommendations from real behavior instead of guesses.`;
+    if (insights.length === 0)
+      return 'Keep logging a little each day and I will learn your patterns.';
+    if (insights[0].key === 'strong-consistency')
+      return `Your recent routine is ${consistency}% consistent. I can now make recommendations from real behavior instead of guesses.`;
     return `I found ${insights.length} useful patterns from your recent activity and ranked the most actionable ones first.`;
   }
 
@@ -197,7 +229,10 @@ export class AdaptiveLearningService {
     }
 
     const parsed = new Date(`${value}T00:00:00.000Z`);
-    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    if (
+      Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== value
+    ) {
       throw new Error('dateKey must be a valid calendar date');
     }
   }

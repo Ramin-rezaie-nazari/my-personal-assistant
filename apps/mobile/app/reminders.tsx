@@ -146,8 +146,8 @@ export default function RemindersScreen() {
           <View style={[styles.sectionHeader, rtl && styles.rtl]}>
             <View><Text style={[styles.sectionTitle, rtl && styles.textRight]}>{text.upcoming}</Text><Text style={[styles.countText, rtl && styles.textRight]}>{showAll ? items.length : pendingCount} {locale === 'fa' ? 'مورد' : 'items'}</Text></View>
             <View style={styles.filters}>
-              <MotionPress onPress={() => { setShowAll(false); setLoading(true); void load(false); }} style={[styles.filter, !showAll && styles.filterActive]}><Text style={[styles.filterText, !showAll && styles.filterTextActive]}>{text.pending}</Text></MotionPress>
-              <MotionPress onPress={() => { setShowAll(true); setLoading(true); void load(true); }} style={[styles.filter, showAll && styles.filterActive]}><Text style={[styles.filterText, showAll && styles.filterTextActive]}>{text.all}</Text></MotionPress>
+              <MotionPress onPress={() => { setShowAll(false); setLoading(true); void load(false); }} style={[styles.filter, ...(showAll ? [] : [styles.filterActive])]}><Text style={[styles.filterText, ...(showAll ? [] : [styles.filterTextActive])]}>{text.pending}</Text></MotionPress>
+              <MotionPress onPress={() => { setShowAll(true); setLoading(true); void load(true); }} style={[styles.filter, ...(showAll ? [styles.filterActive] : [])]}><Text style={[styles.filterText, ...(showAll ? [styles.filterTextActive] : [])]}>{text.all}</Text></MotionPress>
               <MotionPress onPress={() => void load(showAll)}><Text style={styles.refresh}>{text.refresh}</Text></MotionPress>
             </View>
           </View>

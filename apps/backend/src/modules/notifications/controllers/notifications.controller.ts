@@ -22,12 +22,18 @@ export class NotificationsController {
   ) {}
 
   @Post()
-  create(@Request() req: { user: { id: string } }, @Body() dto: CreateNotificationDto) {
+  create(
+    @Request() req: { user: { id: string } },
+    @Body() dto: CreateNotificationDto,
+  ) {
     return this.notificationsService.createNotification(req.user.id, dto);
   }
 
   @Post('generate')
-  generate(@Request() req: { user: { id: string } }, @Query('dateKey') dateKey?: string) {
+  generate(
+    @Request() req: { user: { id: string } },
+    @Query('dateKey') dateKey?: string,
+  ) {
     return this.smartNotificationService.generateForUser(req.user.id, dateKey);
   }
 
@@ -36,7 +42,10 @@ export class NotificationsController {
     @Request() req: { user: { id: string } },
     @Query('includeRead') includeRead?: string,
   ) {
-    return this.notificationsService.getNotifications(req.user.id, includeRead === 'true');
+    return this.notificationsService.getNotifications(
+      req.user.id,
+      includeRead === 'true',
+    );
   }
 
   @Post('read-all')
@@ -45,7 +54,10 @@ export class NotificationsController {
   }
 
   @Post(':id/read')
-  markRead(@Request() req: { user: { id: string } }, @Param('id') notificationId: string) {
+  markRead(
+    @Request() req: { user: { id: string } },
+    @Param('id') notificationId: string,
+  ) {
     return this.notificationsService.markRead(req.user.id, notificationId);
   }
 }

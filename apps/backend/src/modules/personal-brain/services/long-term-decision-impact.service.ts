@@ -1,4 +1,73 @@
 import { Injectable } from '@nestjs/common';
 import { GoalHierarchyService, GoalLike } from './goal-hierarchy.service';
-export type GoalAwareCandidate={id:string;action:string;domain:string;goalAlignment?:number;goalDownside?:number};
-@Injectable()export class LongTermDecisionImpactService{constructor(private readonly hierarchy:GoalHierarchyService){}evaluate(goals:GoalLike[],c:GoalAwareCandidate){const ranked=this.hierarchy.rank(goals);if(!ranked.length)return{score:0,alignment:0,downside:0,rationale:'no active long-term goals available'};const alignment=this.clamp(c.goalAlignment??this.inferAlignment(c,ranked)),downside=this.clamp(c.goalDownside??0),impacts=ranked.map(g=>({goalId:g.id,title:g.title,impact:this.hierarchy.impact(g,alignment,downside)})),score=Number((impacts.reduce((s,x)=>s+x.impact,0)/Math.max(1,impacts.length)).toFixed(3)),strongest=[...impacts].sort((a,b)=>Math.abs(b.impact)-Math.abs(a.impact))[0];return{score,alignment,downside,strongestGoal:strongest,rationale:score>0?`supports long-term goal: ${strongest.title}`:score<0?`creates long-term trade-off against: ${strongest.title}`:'neutral long-term impact',impacts}}private inferAlignment(c:GoalAwareCandidate,g:Array<GoalLike&{category:string}>){const t=`${c.action} ${c.domain}`.toLowerCase();return g.some(x=>`${x.title} ${x.category}`.toLowerCase().split(/\s+/).some(v=>v.length>=4&&t.includes(v)))?.valueOf()?0.75:.35}private clamp(v:number){return Math.max(0,Math.min(1,Number.isFinite(v)?v:0))}}
+export type GoalAwareCandidate = {
+  id: string;
+  action: string;
+  domain: string;
+  goalAlignment?: number;
+  goalDownside?: number;
+};
+@Injectable()
+export class LongTermDecisionImpactService {
+  constructor(private readonly hierarchy: GoalHierarchyService) {}
+  evaluate(goals: GoalLike[], c: GoalAwareCandidate) {
+    const ranked = this.hierarchy.rank(goals);
+    if (!ranked.length)
+      return {
+        score: 0,
+        alignment: 0,
+        downside: 0,
+        rationale: 'no active long-term goals available',
+      };
+    const alignment = this.clamp(
+        c.goalAlignment ?? this.inferAlignment(c, ranked),
+      ),
+      downside = this.clamp(c.goalDownside ?? 0),
+      impacts = ranked.map((g) => ({
+        goalId: g.id,
+        title: g.title,
+        impact: this.hierarchy.impact(g, alignment, downside),
+      })),
+      score = Number(
+        (
+          impacts.reduce((s, x) => s + x.impact, 0) /
+          Math.max(1, impacts.length)
+        ).toFixed(3),
+      ),
+      strongest = [...impacts].sort(
+        (a, b) => Math.abs(b.impact) - Math.abs(a.impact),
+      )[0];
+    return {
+      score,
+      alignment,
+      downside,
+      strongestGoal: strongest,
+      rationale:
+        score > 0
+          ? `supports long-term goal: ${strongest.title}`
+          : score < 0
+            ? `creates long-term trade-off against: ${strongest.title}`
+            : 'neutral long-term impact',
+      impacts,
+    };
+  }
+  private inferAlignment(
+    c: GoalAwareCandidate,
+    g: Array<GoalLike & { category: string }>,
+  ) {
+    const t = `${c.action} ${c.domain}`.toLowerCase();
+    return g
+      .some((x) =>
+        `${x.title} ${x.category}`
+          .toLowerCase()
+          .split(/\s+/)
+          .some((v) => v.length >= 4 && t.includes(v)),
+      )
+      ?.valueOf()
+      ? 0.75
+      : 0.35;
+  }
+  private clamp(v: number) {
+    return Math.max(0, Math.min(1, Number.isFinite(v) ? v : 0));
+  }
+}

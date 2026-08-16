@@ -13,45 +13,101 @@ export class BrainReasoningEngineService {
     if (!signals.hasGoals) uncertainties.push('missing-goals');
     if (!signals.hasLifeContext) uncertainties.push('missing-life-context');
 
-    const availableSignals = [signals.hasContext, signals.hasMemories, signals.hasGoals, signals.hasLifeContext];
-    const baseConfidence = availableSignals.filter(Boolean).length / availableSignals.length;
+    const availableSignals = [
+      signals.hasContext,
+      signals.hasMemories,
+      signals.hasGoals,
+      signals.hasLifeContext,
+    ];
+    const baseConfidence =
+      availableSignals.filter(Boolean).length / availableSignals.length;
     let contextScore = signals.lifeContextQuality;
 
     if (lifeContext) {
-      if (lifeContext.habits.completionPercent <= 50 && lifeContext.habits.active > 0) {
+      if (
+        lifeContext.habits.completionPercent <= 50 &&
+        lifeContext.habits.active > 0
+      ) {
         contextScore -= 0.08;
-        factors.push({ name: 'habit_adherence', impact: -0.08, direction: 'negative', reason: 'Habit completion is currently at or below 50%.' });
-      } else if (lifeContext.habits.completionPercent >= 80 && lifeContext.habits.active > 0) {
+        factors.push({
+          name: 'habit_adherence',
+          impact: -0.08,
+          direction: 'negative',
+          reason: 'Habit completion is currently at or below 50%.',
+        });
+      } else if (
+        lifeContext.habits.completionPercent >= 80 &&
+        lifeContext.habits.active > 0
+      ) {
         contextScore += 0.06;
-        factors.push({ name: 'habit_adherence', impact: 0.06, direction: 'positive', reason: 'Habit completion is currently strong.' });
+        factors.push({
+          name: 'habit_adherence',
+          impact: 0.06,
+          direction: 'positive',
+          reason: 'Habit completion is currently strong.',
+        });
       } else if (lifeContext.habits.active > 0) {
-        factors.push({ name: 'habit_adherence', impact: 0, direction: 'neutral', reason: 'Habit activity is present but adherence is neither strong nor severely low.' });
+        factors.push({
+          name: 'habit_adherence',
+          impact: 0,
+          direction: 'neutral',
+          reason:
+            'Habit activity is present but adherence is neither strong nor severely low.',
+        });
       }
 
       if (lifeContext.supplements.remaining > 0) {
-        factors.push({ name: 'supplement_state', impact: 0.02, direction: 'positive', reason: 'Supplement schedule is available as additional context.' });
+        factors.push({
+          name: 'supplement_state',
+          impact: 0.02,
+          direction: 'positive',
+          reason: 'Supplement schedule is available as additional context.',
+        });
       }
       if (lifeContext.goals.dueSoon > 0) {
         contextScore += 0.07;
-        factors.push({ name: 'goal_urgency', impact: 0.07, direction: 'positive', reason: 'At least one active goal is due within seven days.' });
+        factors.push({
+          name: 'goal_urgency',
+          impact: 0.07,
+          direction: 'positive',
+          reason: 'At least one active goal is due within seven days.',
+        });
       }
       if (lifeContext.reminders.pending > 5) {
         contextScore -= 0.05;
-        factors.push({ name: 'reminder_load', impact: -0.05, direction: 'negative', reason: 'There are many pending reminders.' });
+        factors.push({
+          name: 'reminder_load',
+          impact: -0.05,
+          direction: 'negative',
+          reason: 'There are many pending reminders.',
+        });
       }
     }
 
     contextScore = Math.max(0, Math.min(1, Number(contextScore.toFixed(3))));
-    const confidence = Math.max(0, Math.min(1, Number(((baseConfidence * 0.65) + (contextScore * 0.35)).toFixed(3))));
+    const confidence = Math.max(
+      0,
+      Math.min(
+        1,
+        Number((baseConfidence * 0.65 + contextScore * 0.35).toFixed(3)),
+      ),
+    );
     const hasUserGoals = userContext.goals.length > 0;
-    const reasoningSummary = hasUserGoals && confidence >= 0.85
-      ? 'Brain has strong context, active goals, and enough life signals for a context-aware decision'
-      : hasUserGoals
-        ? 'Brain understands active user goals and is using available life context with some uncertainty'
-        : confidence >= 0.85
-          ? 'Brain has strong life context but no active user goals'
-          : 'Brain requires additional or fresher information before making a high-confidence decision';
+    const reasoningSummary =
+      hasUserGoals && confidence >= 0.85
+        ? 'Brain has strong context, active goals, and enough life signals for a context-aware decision'
+        : hasUserGoals
+          ? 'Brain understands active user goals and is using available life context with some uncertainty'
+          : confidence >= 0.85
+            ? 'Brain has strong life context but no active user goals'
+            : 'Brain requires additional or fresher information before making a high-confidence decision';
 
-    return { confidence, uncertainties, reasoningSummary, contextScore, factors };
+    return {
+      confidence,
+      uncertainties,
+      reasoningSummary,
+      contextScore,
+      factors,
+    };
   }
 }

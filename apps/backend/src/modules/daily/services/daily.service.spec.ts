@@ -66,9 +66,9 @@ describe('DailyService', () => {
     await expect(service.addWater('user-1', 0, '2026-08-11')).rejects.toThrow(
       'amountMl must be between 1 and 5000',
     );
-    await expect(service.addWater('user-1', 6000, '2026-08-11')).rejects.toThrow(
-      'amountMl must be between 1 and 5000',
-    );
+    await expect(
+      service.addWater('user-1', 6000, '2026-08-11'),
+    ).rejects.toThrow('amountMl must be between 1 and 5000');
   });
 
   it('rejects malformed date keys', async () => {

@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-export type HistoryRetention = '1_month' | '3_months' | '6_months' | '1_year' | 'unlimited';
-export type HistoryRetentionPolicy = { retention: HistoryRetention; deleteRecentActivityHours?: number };
+export type HistoryRetention =
+  '1_month' | '3_months' | '6_months' | '1_year' | 'unlimited';
+export type HistoryRetentionPolicy = {
+  retention: HistoryRetention;
+  deleteRecentActivityHours?: number;
+};
 
 @Injectable()
 export class DecisionHistoryRetentionService {
@@ -11,7 +15,10 @@ export class DecisionHistoryRetentionService {
   setPolicy(userId: string, policy: HistoryRetentionPolicy) {
     const normalized = { ...policy };
     if (normalized.deleteRecentActivityHours !== undefined) {
-      normalized.deleteRecentActivityHours = Math.min(Math.max(normalized.deleteRecentActivityHours, 0.25), 24 * 365);
+      normalized.deleteRecentActivityHours = Math.min(
+        Math.max(normalized.deleteRecentActivityHours, 0.25),
+        24 * 365,
+      );
     }
     this.policies.set(userId, normalized);
     return normalized;

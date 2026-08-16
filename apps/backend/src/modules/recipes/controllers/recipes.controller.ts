@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RecipesService } from '../services/recipes.service';
 import { RecipeInventoryMatcherService } from '../services/recipe-inventory-matcher.service';
@@ -13,7 +23,10 @@ export class RecipesController {
   ) {}
 
   @Post()
-  create(@Request() req: { user: { id: string } }, @Body() dto: CreateRecipeDto) {
+  create(
+    @Request() req: { user: { id: string } },
+    @Body() dto: CreateRecipeDto,
+  ) {
     return this.recipesService.createRecipe(req.user.id, dto);
   }
 
@@ -33,7 +46,11 @@ export class RecipesController {
   }
 
   @Patch(':id')
-  update(@Request() req: { user: { id: string } }, @Param('id') id: string, @Body() body: Partial<CreateRecipeDto>) {
+  update(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Body() body: Partial<CreateRecipeDto>,
+  ) {
     return this.recipesService.updateRecipe(req.user.id, id, body);
   }
 

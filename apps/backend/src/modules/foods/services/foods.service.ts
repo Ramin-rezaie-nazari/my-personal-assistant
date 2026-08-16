@@ -16,7 +16,12 @@ export class FoodsService {
             ? {
                 OR: [
                   { name: { contains: normalizedQuery, mode: 'insensitive' } },
-                  { category: { contains: normalizedQuery, mode: 'insensitive' } },
+                  {
+                    category: {
+                      contains: normalizedQuery,
+                      mode: 'insensitive',
+                    },
+                  },
                 ],
               }
             : {},
@@ -63,7 +68,9 @@ export class FoodsService {
 
   private assertNonNegative(value: number | undefined, field: string) {
     if (value !== undefined && (!Number.isFinite(value) || value < 0)) {
-      throw new BadRequestException(`${field} must be a finite non-negative number`);
+      throw new BadRequestException(
+        `${field} must be a finite non-negative number`,
+      );
     }
   }
 }

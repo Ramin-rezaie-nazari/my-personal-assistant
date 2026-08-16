@@ -26,8 +26,17 @@ describe('BrainLifeContextService', () => {
       targetAreas: [],
     });
     performanceMemory.get.mockResolvedValue([]);
-    decisionMemory.trend.mockResolvedValue({ decisions: 0, changeSignal: 'insufficient', selectedFrequency: [] });
-    outcomeMemory.profile.mockResolvedValue({ decisions: 0, positive: 0, negative: 0, averageScore: null });
+    decisionMemory.trend.mockResolvedValue({
+      decisions: 0,
+      changeSignal: 'insufficient',
+      selectedFrequency: [],
+    });
+    outcomeMemory.profile.mockResolvedValue({
+      decisions: 0,
+      positive: 0,
+      negative: 0,
+      averageScore: null,
+    });
     prisma.$queryRaw.mockResolvedValue([]);
     service = new BrainLifeContextService(
       prisma as never,
@@ -41,22 +50,48 @@ describe('BrainLifeContextService', () => {
 
   it('aggregates habits, reminders and supplements for one user', async () => {
     prisma.habit.findMany.mockResolvedValue([
-      { id: 'h1', name: 'Walk', targetPerWeek: 7, logs: [{ dateKey: '2026-08-12' }, { dateKey: '2026-08-11' }] },
+      {
+        id: 'h1',
+        name: 'Walk',
+        targetPerWeek: 7,
+        logs: [{ dateKey: '2026-08-12' }, { dateKey: '2026-08-11' }],
+      },
     ]);
     prisma.reminder.count.mockResolvedValue(2);
     prisma.reminder.findFirst.mockResolvedValue({
-      id: 'r1', title: 'Water', type: 'health', scheduledAt: new Date('2026-08-13T09:00:00Z'),
+      id: 'r1',
+      title: 'Water',
+      type: 'health',
+      scheduledAt: new Date('2026-08-13T09:00:00Z'),
     });
     prisma.supplement.findMany.mockResolvedValue([
-      { id: 's1', name: 'Vitamin D', dosage: '1000 IU', scheduledTime: '09:00', logs: [{ id: 'l1' }] },
-      { id: 's2', name: 'Magnesium', dosage: '200 mg', scheduledTime: '21:00', logs: [] },
+      {
+        id: 's1',
+        name: 'Vitamin D',
+        dosage: '1000 IU',
+        scheduledTime: '09:00',
+        logs: [{ id: 'l1' }],
+      },
+      {
+        id: 's2',
+        name: 'Magnesium',
+        dosage: '200 mg',
+        scheduledTime: '21:00',
+        logs: [],
+      },
     ]);
 
     const result = await service.getToday('u1', '2026-08-12');
 
-    expect(prisma.habit.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 'u1', active: true } }));
-    expect(prisma.reminder.count).toHaveBeenCalledWith({ where: { userId: 'u1', completed: false } });
-    expect(prisma.supplement.findMany).toHaveBeenCalledWith(expect.objectContaining({ where: { userId: 'u1', active: true } }));
+    expect(prisma.habit.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 'u1', active: true } }),
+    );
+    expect(prisma.reminder.count).toHaveBeenCalledWith({
+      where: { userId: 'u1', completed: false },
+    });
+    expect(prisma.supplement.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 'u1', active: true } }),
+    );
     expect(prisma.$queryRaw).toHaveBeenCalled();
     expect(result.habits.active).toBe(1);
     expect(result.habits.completedThisWeek).toBe(2);

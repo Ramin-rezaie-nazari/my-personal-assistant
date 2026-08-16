@@ -32,7 +32,11 @@ export class NutritionService {
       }),
       this.prisma.nutritionProfile.findUnique({
         where: { userId },
-        select: { dailyCaloriesGoal: true, proteinGoalGrams: true, waterGoalMl: true },
+        select: {
+          dailyCaloriesGoal: true,
+          proteinGoalGrams: true,
+          waterGoalMl: true,
+        },
       }),
       this.prisma.dailyLog.findUnique({
         where: { userId_dateKey: { userId, dateKey: key } },
@@ -71,7 +75,11 @@ export class NutritionService {
     return {
       dateKey: key,
       meals: { ...meals, calories, protein },
-      goals: { calories: caloriesGoal, protein: proteinGoal, waterMl: waterGoal },
+      goals: {
+        calories: caloriesGoal,
+        protein: proteinGoal,
+        waterMl: waterGoal,
+      },
       remaining: {
         calories: remaining(calories, caloriesGoal),
         protein: remaining(protein, proteinGoal),
@@ -150,7 +158,9 @@ export class NutritionService {
   private assertNonNegativeNumber(value: number | undefined, field: string) {
     if (value === undefined) return;
     if (!Number.isFinite(value) || value < 0) {
-      throw new BadRequestException(`${field} must be a finite non-negative number`);
+      throw new BadRequestException(
+        `${field} must be a finite non-negative number`,
+      );
     }
   }
 
@@ -162,7 +172,10 @@ export class NutritionService {
     }
 
     const parsed = new Date(`${value}T00:00:00.000Z`);
-    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    if (
+      Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== value
+    ) {
       throw new BadRequestException('dateKey must be a valid calendar date');
     }
 

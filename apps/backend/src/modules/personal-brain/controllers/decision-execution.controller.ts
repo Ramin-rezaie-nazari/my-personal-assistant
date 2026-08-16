@@ -4,7 +4,9 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { NextBestActionService } from '../services/next-best-action.service';
 import { DecisionExecutionCoordinatorService } from '../services/decision-execution-coordinator.service';
 
-interface AuthenticatedRequest extends Request { user: { id: string } }
+interface AuthenticatedRequest extends Request {
+  user: { id: string };
+}
 
 type ConfirmationBody = { token: string };
 

@@ -53,23 +53,73 @@ export class BrainStateService {
       this.brainLifeContextService.getToday(userId),
     ]);
 
-    const generatedContext = await this.contextEngineService.buildContext(userId);
+    const generatedContext =
+      await this.contextEngineService.buildContext(userId);
     const fusedLifeContext = this.lifeContextFusionService.build(userId, {
-      calendar: { value: lifeContext.reminders ?? {}, source: 'brain-life-context', observedAt: new Date(), confidence: 0.85 },
-      schedule: { value: { dailyStatus, weeklyStatus }, source: 'brain-schedule', observedAt: new Date(), confidence: 0.8 },
-      habits: { value: lifeContext.habits ?? {}, source: 'brain-life-context', observedAt: new Date(), confidence: 0.9 },
-      workout: { value: { workoutStatus }, source: 'brain-workout-status', observedAt: new Date(), confidence: 0.9 },
-      supplements: { value: lifeContext.supplements ?? {}, source: 'brain-life-context', observedAt: new Date(), confidence: 0.9 },
-      nutrition: { value: { nutritionTargets }, source: 'brain-nutrition-targets', observedAt: new Date(), confidence: 0.9 },
-      memory: { value: { memories: memoryContext.memories }, source: 'brain-memory-context', observedAt: new Date(), confidence: 0.95 },
-      shopping: { value: {}, source: 'shopping', observedAt: null, confidence: 0 },
+      calendar: {
+        value: lifeContext.reminders ?? {},
+        source: 'brain-life-context',
+        observedAt: new Date(),
+        confidence: 0.85,
+      },
+      schedule: {
+        value: { dailyStatus, weeklyStatus },
+        source: 'brain-schedule',
+        observedAt: new Date(),
+        confidence: 0.8,
+      },
+      habits: {
+        value: lifeContext.habits ?? {},
+        source: 'brain-life-context',
+        observedAt: new Date(),
+        confidence: 0.9,
+      },
+      workout: {
+        value: { workoutStatus },
+        source: 'brain-workout-status',
+        observedAt: new Date(),
+        confidence: 0.9,
+      },
+      supplements: {
+        value: lifeContext.supplements ?? {},
+        source: 'brain-life-context',
+        observedAt: new Date(),
+        confidence: 0.9,
+      },
+      nutrition: {
+        value: { nutritionTargets },
+        source: 'brain-nutrition-targets',
+        observedAt: new Date(),
+        confidence: 0.9,
+      },
+      memory: {
+        value: { memories: memoryContext.memories },
+        source: 'brain-memory-context',
+        observedAt: new Date(),
+        confidence: 0.95,
+      },
+      shopping: {
+        value: {},
+        source: 'shopping',
+        observedAt: null,
+        confidence: 0,
+      },
       budget: { value: {}, source: 'budget', observedAt: null, confidence: 0 },
-      wearable: { value: {}, source: 'wearable', observedAt: null, confidence: 0 },
+      wearable: {
+        value: {},
+        source: 'wearable',
+        observedAt: null,
+        confidence: 0,
+      },
     });
 
-    const brainContext: BrainContext = generatedContext && typeof generatedContext === 'object' && 'timestamp' in generatedContext && 'source' in generatedContext
-      ? generatedContext as unknown as BrainContext
-      : { timestamp: new Date().toISOString(), source: 'context-engine' };
+    const brainContext: BrainContext =
+      generatedContext &&
+      typeof generatedContext === 'object' &&
+      'timestamp' in generatedContext &&
+      'source' in generatedContext
+        ? (generatedContext as unknown as BrainContext)
+        : { timestamp: new Date().toISOString(), source: 'context-engine' };
 
     const userContext = this.userContextService.build({
       context: brainContext,

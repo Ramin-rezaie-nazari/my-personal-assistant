@@ -38,19 +38,24 @@ export class ReasoningService {
       };
     }
 
-    const steps = intents.map((intent, index) => ({
-      id: `step-${index + 1}`,
-      intent,
-      dependsOn: index === 0 ? [] : [`step-${index}`],
-      requiresConfirmation: intent === 'cancel',
-    })).filter((step) => step.intent !== 'unknown');
+    const steps = intents
+      .map((intent, index) => ({
+        id: `step-${index + 1}`,
+        intent,
+        dependsOn: index === 0 ? [] : [`step-${index}`],
+        requiresConfirmation: intent === 'cancel',
+      }))
+      .filter((step) => step.intent !== 'unknown');
 
-    const requiresClarification = steps.length === 0 || clauses.length !== steps.length;
+    const requiresClarification =
+      steps.length === 0 || clauses.length !== steps.length;
 
     return {
       steps,
       requiresClarification,
-      clarificationReason: requiresClarification ? 'I need a clearer description of the requested action.' : undefined,
+      clarificationReason: requiresClarification
+        ? 'I need a clearer description of the requested action.'
+        : undefined,
       confidence: Math.min(0.95, confidence + (steps.length ? 0.05 : 0)),
     };
   }

@@ -71,7 +71,10 @@ export class DailyService {
     }
 
     const parsed = new Date(`${value}T00:00:00.000Z`);
-    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    if (
+      Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== value
+    ) {
       throw new BadRequestException('dateKey must be a valid calendar date');
     }
 

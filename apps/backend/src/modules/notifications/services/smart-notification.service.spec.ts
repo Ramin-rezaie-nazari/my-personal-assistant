@@ -14,12 +14,22 @@ describe('SmartNotificationService', () => {
 
   it('creates actionable notifications and dedupes by user/date/rule', async () => {
     const prisma = makePrisma();
-    prisma.userPreference.findUnique.mockResolvedValue({ notificationsEnabled: true });
+    prisma.userPreference.findUnique.mockResolvedValue({
+      notificationsEnabled: true,
+    });
     prisma.userSettings.findUnique.mockResolvedValue({ language: 'en' });
     prisma.dailyLog.findUnique.mockResolvedValue({ waterMl: 400, protein: 20 });
-    prisma.nutritionProfile.findUnique.mockResolvedValue({ waterGoalMl: 2400, proteinGoalGrams: 140 });
-    prisma.habit.findMany.mockResolvedValue([{ name: 'Walk', logs: [] }, { name: 'Read', logs: [{ id: 'l1' }] }]);
-    prisma.supplement.findMany.mockResolvedValue([{ name: 'Vitamin D', logs: [] }]);
+    prisma.nutritionProfile.findUnique.mockResolvedValue({
+      waterGoalMl: 2400,
+      proteinGoalGrams: 140,
+    });
+    prisma.habit.findMany.mockResolvedValue([
+      { name: 'Walk', logs: [] },
+      { name: 'Read', logs: [{ id: 'l1' }] },
+    ]);
+    prisma.supplement.findMany.mockResolvedValue([
+      { name: 'Vitamin D', logs: [] },
+    ]);
     prisma.workout.findMany.mockResolvedValue([]);
     prisma.notification.createMany.mockResolvedValue({ count: 4 });
 
@@ -29,7 +39,13 @@ describe('SmartNotificationService', () => {
     expect(result).toEqual({
       enabled: true,
       created: 4,
-      rules: ['hydration-low', 'protein-low', 'habits-pending', 'supplements-pending', 'movement-missing'],
+      rules: [
+        'hydration-low',
+        'protein-low',
+        'habits-pending',
+        'supplements-pending',
+        'movement-missing',
+      ],
     });
     expect(prisma.notification.createMany).toHaveBeenCalledWith(
       expect.objectContaining({ skipDuplicates: true }),
@@ -38,10 +54,15 @@ describe('SmartNotificationService', () => {
 
   it('creates Persian smart notifications for Persian users', async () => {
     const prisma = makePrisma();
-    prisma.userPreference.findUnique.mockResolvedValue({ notificationsEnabled: true });
+    prisma.userPreference.findUnique.mockResolvedValue({
+      notificationsEnabled: true,
+    });
     prisma.userSettings.findUnique.mockResolvedValue({ language: 'fa' });
     prisma.dailyLog.findUnique.mockResolvedValue({ waterMl: 400, protein: 20 });
-    prisma.nutritionProfile.findUnique.mockResolvedValue({ waterGoalMl: 2400, proteinGoalGrams: 140 });
+    prisma.nutritionProfile.findUnique.mockResolvedValue({
+      waterGoalMl: 2400,
+      proteinGoalGrams: 140,
+    });
     prisma.habit.findMany.mockResolvedValue([]);
     prisma.supplement.findMany.mockResolvedValue([]);
     prisma.workout.findMany.mockResolvedValue([]);
@@ -58,7 +79,9 @@ describe('SmartNotificationService', () => {
 
   it('does nothing when notifications are disabled', async () => {
     const prisma = makePrisma();
-    prisma.userPreference.findUnique.mockResolvedValue({ notificationsEnabled: false });
+    prisma.userPreference.findUnique.mockResolvedValue({
+      notificationsEnabled: false,
+    });
 
     const service = new SmartNotificationService(prisma as never);
     await expect(service.generateForUser('u1', '2026-08-12')).resolves.toEqual({
@@ -71,12 +94,24 @@ describe('SmartNotificationService', () => {
 
   it('stays quiet when the user is on track', async () => {
     const prisma = makePrisma();
-    prisma.userPreference.findUnique.mockResolvedValue({ notificationsEnabled: true });
+    prisma.userPreference.findUnique.mockResolvedValue({
+      notificationsEnabled: true,
+    });
     prisma.userSettings.findUnique.mockResolvedValue({ language: 'en' });
-    prisma.dailyLog.findUnique.mockResolvedValue({ waterMl: 2200, protein: 130 });
-    prisma.nutritionProfile.findUnique.mockResolvedValue({ waterGoalMl: 2400, proteinGoalGrams: 140 });
-    prisma.habit.findMany.mockResolvedValue([{ name: 'Walk', logs: [{ id: 'l1' }] }]);
-    prisma.supplement.findMany.mockResolvedValue([{ name: 'Vitamin D', logs: [{ id: 'l1' }] }]);
+    prisma.dailyLog.findUnique.mockResolvedValue({
+      waterMl: 2200,
+      protein: 130,
+    });
+    prisma.nutritionProfile.findUnique.mockResolvedValue({
+      waterGoalMl: 2400,
+      proteinGoalGrams: 140,
+    });
+    prisma.habit.findMany.mockResolvedValue([
+      { name: 'Walk', logs: [{ id: 'l1' }] },
+    ]);
+    prisma.supplement.findMany.mockResolvedValue([
+      { name: 'Vitamin D', logs: [{ id: 'l1' }] },
+    ]);
     prisma.workout.findMany.mockResolvedValue([{ id: 'w1' }]);
 
     const service = new SmartNotificationService(prisma as never);

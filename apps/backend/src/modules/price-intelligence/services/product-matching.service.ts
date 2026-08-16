@@ -36,18 +36,30 @@ export class ProductMatchingService {
       .trim();
   }
 
-  match(reference: ProductCandidate, candidates: ProductCandidate[]): ProductMatch[] {
-    return candidates.map((candidate) => this.score(reference, candidate)).sort((a, b) => b.confidence - a.confidence);
+  match(
+    reference: ProductCandidate,
+    candidates: ProductCandidate[],
+  ): ProductMatch[] {
+    return candidates
+      .map((candidate) => this.score(reference, candidate))
+      .sort((a, b) => b.confidence - a.confidence);
   }
 
-  private score(reference: ProductCandidate, candidate: ProductCandidate): ProductMatch {
+  private score(
+    reference: ProductCandidate,
+    candidate: ProductCandidate,
+  ): ProductMatch {
     const matchedBy: string[] = [];
     let score = 0;
     const refIds = reference.identifiers ?? {};
     const candidateIds = candidate.identifiers ?? {};
 
     for (const key of ['gtin', 'ean', 'barcode', 'sku']) {
-      if (refIds[key] && candidateIds[key] && refIds[key] === candidateIds[key]) {
+      if (
+        refIds[key] &&
+        candidateIds[key] &&
+        refIds[key] === candidateIds[key]
+      ) {
         score += key === 'sku' ? 0.45 : 0.65;
         matchedBy.push(key);
       }
@@ -58,19 +70,38 @@ export class ProductMatchingService {
     if (refTitle === candidateTitle) {
       score += 0.2;
       matchedBy.push('exact_title');
-    } else if (refTitle && candidateTitle && (refTitle.includes(candidateTitle) || candidateTitle.includes(refTitle))) {
+    } else if (
+      refTitle &&
+      candidateTitle &&
+      (refTitle.includes(candidateTitle) || candidateTitle.includes(refTitle))
+    ) {
       score += 0.1;
       matchedBy.push('title_overlap');
     }
 
-    if (reference.brand && candidate.brand && this.normalizeTitle(reference.brand) === this.normalizeTitle(candidate.brand)) {
+    if (
+      reference.brand &&
+      candidate.brand &&
+      this.normalizeTitle(reference.brand) ===
+        this.normalizeTitle(candidate.brand)
+    ) {
       score += 0.08;
       matchedBy.push('brand');
     }
 
-    if (reference.quantityValue != null && candidate.quantityValue != null && reference.quantityUnit && candidate.quantityUnit) {
-      const sameUnit = this.normalizeTitle(reference.quantityUnit) === this.normalizeTitle(candidate.quantityUnit);
-      const closeValue = Math.abs(reference.quantityValue - candidate.quantityValue) / Math.max(reference.quantityValue, 1) <= 0.01;
+    if (
+      reference.quantityValue != null &&
+      candidate.quantityValue != null &&
+      reference.quantityUnit &&
+      candidate.quantityUnit
+    ) {
+      const sameUnit =
+        this.normalizeTitle(reference.quantityUnit) ===
+        this.normalizeTitle(candidate.quantityUnit);
+      const closeValue =
+        Math.abs(reference.quantityValue - candidate.quantityValue) /
+          Math.max(reference.quantityValue, 1) <=
+        0.01;
       if (sameUnit && closeValue) {
         score += 0.12;
         matchedBy.push('quantity');
@@ -78,8 +109,14 @@ export class ProductMatchingService {
     }
 
     const confidence = Math.min(1, Number(score.toFixed(4)));
-    const hasIdentifier = matchedBy.some((key) => ['gtin', 'ean', 'barcode', 'sku'].includes(key));
-    const ambiguous = !hasIdentifier && (matchedBy.includes('exact_title') || matchedBy.includes('title_overlap')) && matchedBy.includes('brand');
+    const hasIdentifier = matchedBy.some((key) =>
+      ['gtin', 'ean', 'barcode', 'sku'].includes(key),
+    );
+    const ambiguous =
+      !hasIdentifier &&
+      (matchedBy.includes('exact_title') ||
+        matchedBy.includes('title_overlap')) &&
+      matchedBy.includes('brand');
     return {
       canonical: {
         productKey: candidate.productKey,

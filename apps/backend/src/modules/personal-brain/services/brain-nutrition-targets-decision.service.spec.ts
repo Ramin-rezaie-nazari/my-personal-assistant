@@ -1,25 +1,64 @@
 import { BrainDecisionService } from './brain-decision.service';
 import { BrainReasoningContext } from '../types';
 
+const baseContext = {
+  userContext: {
+    profile: {},
+    lifeAreas: ['health'],
+    preferences: {},
+    constraints: [],
+    goals: [],
+  },
+  state: {
+    userContext: {
+      profile: {},
+      lifeAreas: ['health'],
+      preferences: {},
+      constraints: [],
+      goals: [],
+    },
+    context: {
+      timestamp: '2026-08-12T00:00:00.000Z',
+      source: 'test',
+    },
+    memories: [],
+    goals: [],
+    dailyStatus: {
+      dateKey: '2026-08-12',
+      hasLog: true,
+      waterMl: 1800,
+      calories: 1450,
+      protein: 95,
+    },
+  },
+  signals: {
+    hasContext: true,
+    hasMemories: false,
+    hasGoals: false,
+    hasLifeContext: false,
+    memoryCount: 0,
+    goalCount: 0,
+    contextSource: 'test',
+    lifeContextQuality: 0,
+  },
+  reasoning: {
+    confidence: 1,
+    contextScore: 1,
+    uncertainties: [],
+    factors: [],
+    reasoningSummary: 'test',
+  },
+} satisfies Omit<BrainReasoningContext, 'input'>;
+
 describe('BrainDecisionService nutrition target intent', () => {
   it('reports remaining daily nutrition targets', () => {
     const service = new BrainDecisionService();
-    const context = {
+
+    const context: BrainReasoningContext = {
       input: 'Am I on track today?',
-      userContext: { goals: [], memories: [] },
+      ...baseContext,
       state: {
-        userContext: { goals: [], memories: [] },
-        context: {},
-        memories: [],
-        goals: [],
-        dailyStatus: {
-          dateKey: '2026-08-12',
-          hasLog: true,
-          waterMl: 1800,
-          calories: 1450,
-          protein: 95,
-        },
-        weeklyStatus: undefined,
+        ...baseContext.state,
         nutritionTargets: {
           hasTargets: true,
           dailyCaloriesGoal: 2000,
@@ -27,20 +66,7 @@ describe('BrainDecisionService nutrition target intent', () => {
           waterGoalMl: 2500,
         },
       },
-      signals: {
-        hasContext: true,
-        hasMemories: false,
-        hasGoals: false,
-        memoryCount: 0,
-        goalCount: 0,
-        contextSource: 'test',
-      },
-      reasoning: {
-        confidence: 1,
-        uncertainties: [],
-        reasoningSummary: 'targets available',
-      },
-    } as BrainReasoningContext;
+    };
 
     const result = service.evaluateDecision(context);
 
@@ -57,37 +83,15 @@ describe('BrainDecisionService nutrition target intent', () => {
 
   it('asks the user to set targets when no nutrition targets exist', () => {
     const service = new BrainDecisionService();
-    const context = {
+
+    const context: BrainReasoningContext = {
       input: 'How am I doing with my nutrition?',
-      userContext: { goals: [], memories: [] },
+      ...baseContext,
       state: {
-        userContext: { goals: [], memories: [] },
-        context: {},
-        memories: [],
-        goals: [],
-        dailyStatus: {
-          dateKey: '2026-08-12',
-          hasLog: true,
-          waterMl: 1800,
-          calories: 1450,
-          protein: 95,
-        },
+        ...baseContext.state,
         nutritionTargets: { hasTargets: false },
       },
-      signals: {
-        hasContext: true,
-        hasMemories: false,
-        hasGoals: false,
-        memoryCount: 0,
-        goalCount: 0,
-        contextSource: 'test',
-      },
-      reasoning: {
-        confidence: 1,
-        uncertainties: [],
-        reasoningSummary: 'missing targets',
-      },
-    } as BrainReasoningContext;
+    };
 
     const result = service.evaluateDecision(context);
 

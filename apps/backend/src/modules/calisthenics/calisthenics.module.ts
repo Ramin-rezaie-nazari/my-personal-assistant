@@ -6,7 +6,15 @@ import { CalisthenicsCoachService } from './services/calisthenics-coach.service'
 
 @Module({
   controllers: [CalisthenicsController],
-  providers: [CalisthenicsLibraryService, CalisthenicsSessionGeneratorService, CalisthenicsCoachService],
-  exports: [CalisthenicsLibraryService, CalisthenicsSessionGeneratorService, CalisthenicsCoachService],
+  providers: [
+    CalisthenicsLibraryService,
+    CalisthenicsSessionGeneratorService,
+    CalisthenicsCoachService,
+  ],
+  exports: [
+    CalisthenicsLibraryService,
+    CalisthenicsSessionGeneratorService,
+    CalisthenicsCoachService,
+  ],
 })
 export class CalisthenicsModule {}

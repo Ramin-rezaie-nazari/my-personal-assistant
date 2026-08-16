@@ -1,3 +1,70 @@
-import { Injectable } from '@nestjs/common';import { ProactiveEvent } from './proactive-event-engine.service';import { NotificationDecision } from './notification-orchestrator.service';
-export type DeliveryStatus='queued'|'delivered'|'failed'|'expired'|'cancelled';export type DeliveryJob={id:string;event:ProactiveEvent;decision:NotificationDecision;status:DeliveryStatus;attempts:number;maxAttempts:number;expiresAt:string;createdAt:string;deliveredAt?:string;lastError?:string};
-@Injectable()export class NotificationDeliveryQueueService{private readonly jobs=new Map<string,DeliveryJob>();private sequence=0;enqueue(e:ProactiveEvent,d:NotificationDecision,now=new Date(),ttlMinutes=30){if(!d.send)return null;const id=`notification-${++this.sequence}`,job:DeliveryJob={id,event:e,decision:d,status:'queued',attempts:0,maxAttempts:3,expiresAt:new Date(now.getTime()+ttlMinutes*60000).toISOString(),createdAt:now.toISOString()};this.jobs.set(id,job);return job}markDelivered(id:string,now=new Date()){const j=this.jobs.get(id);if(!j)return null;j.status='delivered';j.deliveredAt=now.toISOString();return j}markFailed(id:string,error:string,_now=new Date()){const j=this.jobs.get(id);if(!j)return null;j.attempts++;j.lastError=error;j.status=j.attempts>=j.maxAttempts?'failed':'queued';return j}expire(now=new Date()){for(const j of this.jobs.values())if(j.status==='queued'&&now>=new Date(j.expiresAt))j.status='expired';return[...this.jobs.values()].filter(j=>j.status==='expired')}get(id:string){return this.jobs.get(id)}listPending(){return[...this.jobs.values()].filter(j=>j.status==='queued')}}
+import { Injectable } from '@nestjs/common';
+import { ProactiveEvent } from './proactive-event-engine.service';
+import { NotificationDecision } from './notification-orchestrator.service';
+export type DeliveryStatus =
+  'queued' | 'delivered' | 'failed' | 'expired' | 'cancelled';
+export type DeliveryJob = {
+  id: string;
+  event: ProactiveEvent;
+  decision: NotificationDecision;
+  status: DeliveryStatus;
+  attempts: number;
+  maxAttempts: number;
+  expiresAt: string;
+  createdAt: string;
+  deliveredAt?: string;
+  lastError?: string;
+};
+@Injectable()
+export class NotificationDeliveryQueueService {
+  private readonly jobs = new Map<string, DeliveryJob>();
+  private sequence = 0;
+  enqueue(
+    e: ProactiveEvent,
+    d: NotificationDecision,
+    now = new Date(),
+    ttlMinutes = 30,
+  ) {
+    if (!d.send) return null;
+    const id = `notification-${++this.sequence}`,
+      job: DeliveryJob = {
+        id,
+        event: e,
+        decision: d,
+        status: 'queued',
+        attempts: 0,
+        maxAttempts: 3,
+        expiresAt: new Date(now.getTime() + ttlMinutes * 60000).toISOString(),
+        createdAt: now.toISOString(),
+      };
+    this.jobs.set(id, job);
+    return job;
+  }
+  markDelivered(id: string, now = new Date()) {
+    const j = this.jobs.get(id);
+    if (!j) return null;
+    j.status = 'delivered';
+    j.deliveredAt = now.toISOString();
+    return j;
+  }
+  markFailed(id: string, error: string, _now = new Date()) {
+    const j = this.jobs.get(id);
+    if (!j) return null;
+    j.attempts++;
+    j.lastError = error;
+    j.status = j.attempts >= j.maxAttempts ? 'failed' : 'queued';
+    return j;
+  }
+  expire(now = new Date()) {
+    for (const j of this.jobs.values())
+      if (j.status === 'queued' && now >= new Date(j.expiresAt))
+        j.status = 'expired';
+    return [...this.jobs.values()].filter((j) => j.status === 'expired');
+  }
+  get(id: string) {
+    return this.jobs.get(id);
+  }
+  listPending() {
+    return [...this.jobs.values()].filter((j) => j.status === 'queued');
+  }
+}

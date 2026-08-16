@@ -22,7 +22,10 @@ export class AdaptiveReplanningService {
     execution: PlanExecutionResult,
     now = new Date(),
   ): Promise<AdaptiveReplanResult> {
-    const schedule = await this.dynamicReplanning.replanRemainingDay(userId, now);
+    const schedule = await this.dynamicReplanning.replanRemainingDay(
+      userId,
+      now,
+    );
 
     const shouldReplan =
       execution.failed.length > 0 ||
@@ -34,10 +37,13 @@ export class AdaptiveReplanningService {
 
     let reason = 'current-plan-still-valid';
     if (execution.failed.length > 0) reason = 'execution-failure-changed-plan';
-    else if (execution.blocked.length > 0) reason = 'execution-blocked-needs-new-plan';
+    else if (execution.blocked.length > 0)
+      reason = 'execution-blocked-needs-new-plan';
     else if (schedule.conflicts > 0) reason = 'schedule-conflict-detected';
-    else if (schedule.overdue.length > 0) reason = 'overdue-items-require-replan';
-    else if (schedule.unscheduled.length > 0) reason = 'unscheduled-work-requires-replan';
+    else if (schedule.overdue.length > 0)
+      reason = 'overdue-items-require-replan';
+    else if (schedule.unscheduled.length > 0)
+      reason = 'unscheduled-work-requires-replan';
 
     return {
       shouldReplan,

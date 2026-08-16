@@ -1,2 +1,42 @@
-import { Injectable } from '@nestjs/common';import { DecisionCandidate } from './unified-decision-engine.service';export type ReplanTrigger='constraint_changed'|'candidate_expired'|'user_feedback'|'higher_priority_action'|'context_changed';
-@Injectable()export class DecisionReplanPolicyService{shouldReplan(t:ReplanTrigger,c:DecisionCandidate|null,r:DecisionCandidate|null){if(!c)return!!r;if(!r)return t==='constraint_changed'||t==='candidate_expired'||t==='context_changed';if(t==='user_feedback'||t==='constraint_changed'||t==='candidate_expired')return true;const cw=this.w(c),rw=this.w(r);return t==='higher_priority_action'?rw>cw:rw>cw+.15||(r.score-c.score>=.2)}private w(c:DecisionCandidate){return Math.max(0,Math.min(1,c.priority??.5))*.4+Math.max(0,Math.min(1,c.confidence))*.3+Math.max(0,Math.min(1,c.score))*.3}}
+import { Injectable } from '@nestjs/common';
+import { DecisionCandidate } from './unified-decision-engine.service';
+export type ReplanTrigger =
+  | 'constraint_changed'
+  | 'candidate_expired'
+  | 'user_feedback'
+  | 'higher_priority_action'
+  | 'context_changed';
+@Injectable()
+export class DecisionReplanPolicyService {
+  shouldReplan(
+    t: ReplanTrigger,
+    c: DecisionCandidate | null,
+    r: DecisionCandidate | null,
+  ) {
+    if (!c) return !!r;
+    if (!r)
+      return (
+        t === 'constraint_changed' ||
+        t === 'candidate_expired' ||
+        t === 'context_changed'
+      );
+    if (
+      t === 'user_feedback' ||
+      t === 'constraint_changed' ||
+      t === 'candidate_expired'
+    )
+      return true;
+    const cw = this.w(c),
+      rw = this.w(r);
+    return t === 'higher_priority_action'
+      ? rw > cw
+      : rw > cw + 0.15 || r.score - c.score >= 0.2;
+  }
+  private w(c: DecisionCandidate) {
+    return (
+      Math.max(0, Math.min(1, c.priority ?? 0.5)) * 0.4 +
+      Math.max(0, Math.min(1, c.confidence)) * 0.3 +
+      Math.max(0, Math.min(1, c.score)) * 0.3
+    );
+  }
+}

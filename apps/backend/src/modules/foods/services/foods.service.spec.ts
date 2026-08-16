@@ -20,38 +20,46 @@ describe('FoodsService', () => {
   it('normalizes search text before filtering', async () => {
     await service.findAll('user-1', '  chicken  ');
 
-    expect(prisma.foodItem.findMany).toHaveBeenCalledWith(expect.objectContaining({
-      where: {
-        AND: [
-          { OR: [{ userId: null }, { userId: 'user-1' }] },
-          {
-            OR: [
-              { name: { contains: 'chicken', mode: 'insensitive' } },
-              { category: { contains: 'chicken', mode: 'insensitive' } },
-            ],
-          },
-        ],
-      },
-      orderBy: { name: 'asc' },
-    }));
+    expect(prisma.foodItem.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          AND: [
+            { OR: [{ userId: null }, { userId: 'user-1' }] },
+            {
+              OR: [
+                { name: { contains: 'chicken', mode: 'insensitive' } },
+                { category: { contains: 'chicken', mode: 'insensitive' } },
+              ],
+            },
+          ],
+        },
+        orderBy: { name: 'asc' },
+      }),
+    );
   });
 
   it('rejects blank names/categories and invalid nutrition values', async () => {
-    await expect(service.create('user-1', {
-      name: ' ',
-      category: 'protein',
-    })).rejects.toThrow('name must not be empty');
+    await expect(
+      service.create('user-1', {
+        name: ' ',
+        category: 'protein',
+      }),
+    ).rejects.toThrow('name must not be empty');
 
-    await expect(service.create('user-1', {
-      name: 'Chicken',
-      category: ' ',
-    })).rejects.toThrow('category must not be empty');
+    await expect(
+      service.create('user-1', {
+        name: 'Chicken',
+        category: ' ',
+      }),
+    ).rejects.toThrow('category must not be empty');
 
-    await expect(service.create('user-1', {
-      name: 'Chicken',
-      category: 'protein',
-      calories: -1,
-    })).rejects.toThrow('calories must be a finite non-negative number');
+    await expect(
+      service.create('user-1', {
+        name: 'Chicken',
+        category: 'protein',
+        calories: -1,
+      }),
+    ).rejects.toThrow('calories must be a finite non-negative number');
 
     expect(prisma.foodItem.create).not.toHaveBeenCalled();
   });

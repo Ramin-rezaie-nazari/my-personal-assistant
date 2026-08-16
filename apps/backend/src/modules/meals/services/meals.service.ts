@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
 
 @Injectable()
@@ -29,16 +33,22 @@ export class MealsService {
       throw new BadRequestException('eatenAt must be a valid date-time');
     }
     if (data.items.length === 0) {
-      throw new BadRequestException('A meal must contain at least one food item');
+      throw new BadRequestException(
+        'A meal must contain at least one food item',
+      );
     }
     for (const item of data.items) {
       this.assertText(item.foodId, 'foodId');
       if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
-        throw new BadRequestException('quantity must be a finite number greater than zero');
+        throw new BadRequestException(
+          'quantity must be a finite number greater than zero',
+        );
       }
     }
 
-    const dateKey = this.normalizeDateKey(data.dateKey ?? data.eatenAt.slice(0, 10));
+    const dateKey = this.normalizeDateKey(
+      data.dateKey ?? data.eatenAt.slice(0, 10),
+    );
     const foodIds = [...new Set(data.items.map((item) => item.foodId))];
 
     return this.prisma.$transaction(async (tx) => {
@@ -118,7 +128,10 @@ export class MealsService {
     }
 
     const parsed = new Date(`${value}T00:00:00.000Z`);
-    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
+    if (
+      Number.isNaN(parsed.getTime()) ||
+      parsed.toISOString().slice(0, 10) !== value
+    ) {
       throw new BadRequestException('dateKey must be a valid calendar date');
     }
 

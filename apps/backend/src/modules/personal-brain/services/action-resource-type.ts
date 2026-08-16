@@ -1,1 +1,8 @@
-export type ActionResourceType = 'reminder' | 'calendar' | 'workout' | 'habit' | 'supplement' | 'notification' | 'nutrition';
+export type ActionResourceType =
+  | 'reminder'
+  | 'calendar'
+  | 'workout'
+  | 'habit'
+  | 'supplement'
+  | 'notification'
+  | 'nutrition';

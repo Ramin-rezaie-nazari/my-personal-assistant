@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
 
 export type ReminderSummary = {
@@ -15,13 +19,18 @@ type ReminderPatch = { title?: string; time?: string };
 export class RemindersService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createReminder(userId: string, dto: { title: string; type: string; time: string }) {
+  async createReminder(
+    userId: string,
+    dto: { title: string; type: string; time: string },
+  ) {
     const title = dto.title.trim();
     if (!title) throw new BadRequestException('title is required');
     const type = dto.type.trim() || 'general';
     const timezone = await this.getUserTimezone(userId);
     const scheduledAt = this.parseTime(dto.time, timezone);
-    return this.prisma.reminder.create({ data: { userId, title, type, scheduledAt } }).then((item) => this.toSummary(item));
+    return this.prisma.reminder
+      .create({ data: { userId, title, type, scheduledAt } })
+      .then((item) => this.toSummary(item));
   }
 
   async getReminders(userId: string, includeCompleted = false) {
@@ -38,7 +47,10 @@ export class RemindersService {
       data: { completed: true },
     });
     if (result.count === 0) {
-      const exists = await this.prisma.reminder.findFirst({ where: { id: reminderId, userId }, select: { id: true } });
+      const exists = await this.prisma.reminder.findFirst({
+        where: { id: reminderId, userId },
+        select: { id: true },
+      });
       if (!exists) throw new NotFoundException('Reminder not found');
     }
     return { id: reminderId, completed: true };
@@ -50,18 +62,29 @@ export class RemindersService {
       data: { completed: false },
     });
     if (result.count === 0) {
-      const exists = await this.prisma.reminder.findFirst({ where: { id: reminderId, userId }, select: { id: true } });
+      const exists = await this.prisma.reminder.findFirst({
+        where: { id: reminderId, userId },
+        select: { id: true },
+      });
       if (!exists) throw new NotFoundException('Reminder not found');
     }
     return { id: reminderId, completed: false };
   }
 
-  async updateReminder(userId: string, reminderId: string, patch: ReminderPatch) {
-    if (patch.title === undefined && patch.time === undefined) throw new BadRequestException('at least one field is required');
+  async updateReminder(
+    userId: string,
+    reminderId: string,
+    patch: ReminderPatch,
+  ) {
+    if (patch.title === undefined && patch.time === undefined)
+      throw new BadRequestException('at least one field is required');
     const title = patch.title?.trim();
-    if (patch.title !== undefined && !title) throw new BadRequestException('title cannot be empty');
+    if (patch.title !== undefined && !title)
+      throw new BadRequestException('title cannot be empty');
     const timezone = await this.getUserTimezone(userId);
-    const scheduledAt = patch.time ? this.parseTime(patch.time, timezone) : undefined;
+    const scheduledAt = patch.time
+      ? this.parseTime(patch.time, timezone)
+      : undefined;
     const result = await this.prisma.reminder.updateMany({
       where: { id: reminderId, userId },
       data: {
@@ -70,11 +93,15 @@ export class RemindersService {
       },
     });
     if (result.count === 0) throw new NotFoundException('Reminder not found');
-    return this.prisma.reminder.findFirstOrThrow({ where: { id: reminderId, userId } }).then((item) => this.toSummary(item));
+    return this.prisma.reminder
+      .findFirstOrThrow({ where: { id: reminderId, userId } })
+      .then((item) => this.toSummary(item));
   }
 
   async deleteReminder(userId: string, reminderId: string) {
-    const result = await this.prisma.reminder.deleteMany({ where: { id: reminderId, userId } });
+    const result = await this.prisma.reminder.deleteMany({
+      where: { id: reminderId, userId },
+    });
     if (result.count === 0) throw new NotFoundException('Reminder not found');
     return { id: reminderId, deleted: true };
   }
@@ -88,37 +115,101 @@ export class RemindersService {
   }
 
   private async getUserTimezone(userId: string) {
-    const settings = await this.prisma.userSettings.findUnique({ where: { userId }, select: { timezone: true } });
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId },
+      select: { timezone: true },
+    });
     return settings?.timezone || 'UTC';
   }
 
   private parseTime(value: string, timezone: string): Date {
-    if (!/^\d{2}:\d{2}$/.test(value)) throw new BadRequestException('time must use HH:MM format');
+    if (!/^\d{2}:\d{2}$/.test(value))
+      throw new BadRequestException('time must use HH:MM format');
     const [hours, minutes] = value.split(':').map(Number);
-    if (hours > 23 || minutes > 59) throw new BadRequestException('time must be a valid time');
-    let candidate = this.zonedDateForLocalTime(new Date(), hours, minutes, timezone);
+    if (hours > 23 || minutes > 59)
+      throw new BadRequestException('time must be a valid time');
+    let candidate = this.zonedDateForLocalTime(
+      new Date(),
+      hours,
+      minutes,
+      timezone,
+    );
     if (candidate.getTime() < Date.now()) {
       const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      candidate = this.zonedDateForLocalTime(tomorrow, hours, minutes, timezone);
+      candidate = this.zonedDateForLocalTime(
+        tomorrow,
+        hours,
+        minutes,
+        timezone,
+      );
     }
     return candidate;
   }
 
-  private zonedDateForLocalTime(reference: Date, hours: number, minutes: number, timezone: string) {
+  private zonedDateForLocalTime(
+    reference: Date,
+    hours: number,
+    minutes: number,
+    timezone: string,
+  ) {
     try {
-      const dateParts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(reference);
-      const values = Object.fromEntries(dateParts.filter((part) => part.type !== 'literal').map((part) => [part.type, Number(part.value)]));
-      const wall = Date.UTC(values.year, values.month - 1, values.day, hours, minutes, 0, 0);
-      const renderedParts = new Intl.DateTimeFormat('en-US', { timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(wall));
-      const rendered = Object.fromEntries(renderedParts.filter((part) => part.type !== 'literal').map((part) => [part.type, Number(part.value)]));
-      const renderedAsUtc = Date.UTC(rendered.year, rendered.month - 1, rendered.day, rendered.hour, rendered.minute, rendered.second, 0);
+      const dateParts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).formatToParts(reference);
+      const values = Object.fromEntries(
+        dateParts
+          .filter((part) => part.type !== 'literal')
+          .map((part) => [part.type, Number(part.value)]),
+      );
+      const wall = Date.UTC(
+        values.year,
+        values.month - 1,
+        values.day,
+        hours,
+        minutes,
+        0,
+        0,
+      );
+      const renderedParts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hourCycle: 'h23',
+      }).formatToParts(new Date(wall));
+      const rendered = Object.fromEntries(
+        renderedParts
+          .filter((part) => part.type !== 'literal')
+          .map((part) => [part.type, Number(part.value)]),
+      );
+      const renderedAsUtc = Date.UTC(
+        rendered.year,
+        rendered.month - 1,
+        rendered.day,
+        rendered.hour,
+        rendered.minute,
+        rendered.second,
+        0,
+      );
       return new Date(wall - (renderedAsUtc - wall));
     } catch {
       throw new BadRequestException('invalid user timezone');
     }
   }
 
-  private toSummary(reminder: { id: string; title: string; type: string; scheduledAt: Date; completed: boolean }): ReminderSummary {
+  private toSummary(reminder: {
+    id: string;
+    title: string;
+    type: string;
+    scheduledAt: Date;
+    completed: boolean;
+  }): ReminderSummary {
     return {
       id: reminder.id,
       title: reminder.title,

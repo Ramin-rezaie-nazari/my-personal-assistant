@@ -1,4 +1,5 @@
-export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled' | 'snoozed';
+export type TaskStatus =
+  'pending' | 'in_progress' | 'completed' | 'cancelled' | 'snoozed';
 export type TaskEnergy = 'low' | 'medium' | 'high';
 
 export class CreateTaskDto {

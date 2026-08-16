@@ -58,7 +58,10 @@ describe('MemoryIntelligenceController', () => {
     await controller.recallByKey({ user: { id: 'user-123' } }, 'favorite_food');
     await controller.forget({ user: { id: 'user-123' } }, 'memory-1');
 
-    expect(service.recallByKey).toHaveBeenCalledWith('favorite_food', 'user-123');
+    expect(service.recallByKey).toHaveBeenCalledWith(
+      'favorite_food',
+      'user-123',
+    );
     expect(service.forget).toHaveBeenCalledWith('memory-1', 'user-123');
   });
 });

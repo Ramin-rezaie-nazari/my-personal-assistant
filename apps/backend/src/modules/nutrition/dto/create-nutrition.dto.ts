@@ -1,4 +1,11 @@
-import { IsNumber, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
+import {
+  IsNumber,
+  IsOptional,
+  IsString,
+  Matches,
+  Min,
+  MinLength,
+} from 'class-validator';
 
 export class CreateNutritionDto {
   @IsOptional()

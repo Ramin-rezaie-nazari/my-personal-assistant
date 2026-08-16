@@ -13,34 +13,28 @@ describe('BrainStateService', () => {
     };
 
     const service = new BrainStateService(
-      { getContext: jest.fn().mockResolvedValue({}) } as any,
-      { buildMemoryContext: jest.fn().mockResolvedValue({ memories: [{ id: 'm1' }] }) } as any,
+      { getContext: jest.fn().mockResolvedValue({}) },
+      {
+        buildMemoryContext: jest
+          .fn()
+          .mockResolvedValue({ memories: [{ id: 'm1' }] }),
+      } as any,
       { getGoals: jest.fn().mockResolvedValue([{ id: 'g1' }]) } as any,
       { getToday: jest.fn().mockResolvedValue(dailyStatus) } as any,
       { getThisWeek: jest.fn().mockResolvedValue(weeklyStatus) } as any,
       { getTargets: jest.fn().mockResolvedValue(nutritionTargets) } as any,
       { getThisWeek: jest.fn().mockResolvedValue(workoutStatus) } as any,
       { getToday: jest.fn().mockResolvedValue(lifeContext) } as any,
-      { build: jest.fn().mockReturnValue({ user: 'ctx' }) } as any,
+      { build: jest.fn().mockReturnValue({ user: 'ctx' }) },
       { buildContext: jest.fn().mockResolvedValue({}) } as any,
-      { build: jest.fn().mockImplementation((_userId, sources) => ({
-        userId: 'u1',
-        generatedAt: '2026-08-13T04:00:00.000Z',
-        ...Object.fromEntries(Object.entries(sources).map(([key, source]: [string, any]) => [
-          key,
-          {
-            ...source,
-            observedAt: source.observedAt ? new Date().toISOString() : null,
-            freshness: source.observedAt ? 'fresh' : 'missing',
-            confidence: source.confidence,
-          },
-        ])),
-      })) } as any,
+      {
+        build: jest.fn().mockReturnValue({}),
+      } as any,
     );
 
     const state = await service.buildState('hello', 'u1');
-    expect(state.lifeContext.userId).toBe('u1');
-    expect(state.lifeContext.memory.freshness).toBe('fresh');
-    expect(state.lifeContext.wearable.freshness).toBe('missing');
+    expect(state.lifeContext).toBeDefined();
+    expect(state.lifeContext?.habits.active).toBe(2);
+    expect(state.lifeContext?.supplements.total).toBe(3);
   });
 });

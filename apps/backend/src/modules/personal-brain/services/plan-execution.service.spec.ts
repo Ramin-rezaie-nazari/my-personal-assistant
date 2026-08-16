@@ -23,13 +23,37 @@ describe('PlanExecutionService', () => {
 
   it('executes ordered steps to completion', async () => {
     planner.plan.mockReturnValue([
-      { order: 1, candidateId: 'a', domain: 'conversation', action: 'a', dependsOn: [] },
-      { order: 2, candidateId: 'b', domain: 'conversation', action: 'b', dependsOn: ['a'] },
+      {
+        order: 1,
+        candidateId: 'a',
+        domain: 'conversation',
+        action: 'a',
+        dependsOn: [],
+      },
+      {
+        order: 2,
+        candidateId: 'b',
+        domain: 'conversation',
+        action: 'b',
+        dependsOn: ['a'],
+      },
     ]);
-    coordinator.execute.mockResolvedValue({ status: 'completed', reason: 'action_executed' });
-    const service = new PlanExecutionService(planner as never, coordinator as never, state as never);
+    coordinator.execute.mockResolvedValue({
+      status: 'completed',
+      reason: 'action_executed',
+    });
+    const service = new PlanExecutionService(
+      planner,
+      coordinator as never,
+      state as never,
+    );
 
-    const result = await service.execute('u1', { selected: [candidate('a'), candidate('b')], rejected: [], blocked: [], reason: 'test' });
+    const result = await service.execute('u1', {
+      selected: [candidate('a'), candidate('b')],
+      rejected: [],
+      blocked: [],
+      reason: 'test',
+    });
 
     expect(result.status).toBe('completed');
     expect(result.completed).toEqual(['a', 'b']);
@@ -38,13 +62,37 @@ describe('PlanExecutionService', () => {
 
   it('stops after a failed step', async () => {
     planner.plan.mockReturnValue([
-      { order: 1, candidateId: 'a', domain: 'conversation', action: 'a', dependsOn: [] },
-      { order: 2, candidateId: 'b', domain: 'conversation', action: 'b', dependsOn: ['a'] },
+      {
+        order: 1,
+        candidateId: 'a',
+        domain: 'conversation',
+        action: 'a',
+        dependsOn: [],
+      },
+      {
+        order: 2,
+        candidateId: 'b',
+        domain: 'conversation',
+        action: 'b',
+        dependsOn: ['a'],
+      },
     ]);
-    coordinator.execute.mockResolvedValueOnce({ status: 'failed', reason: 'boom' });
-    const service = new PlanExecutionService(planner as never, coordinator as never, state as never);
+    coordinator.execute.mockResolvedValueOnce({
+      status: 'failed',
+      reason: 'boom',
+    });
+    const service = new PlanExecutionService(
+      planner,
+      coordinator as never,
+      state as never,
+    );
 
-    const result = await service.execute('u1', { selected: [candidate('a'), candidate('b')], rejected: [], blocked: [], reason: 'test' });
+    const result = await service.execute('u1', {
+      selected: [candidate('a'), candidate('b')],
+      rejected: [],
+      blocked: [],
+      reason: 'test',
+    });
 
     expect(result.status).toBe('failed');
     expect(result.failed).toEqual(['a']);
@@ -53,13 +101,37 @@ describe('PlanExecutionService', () => {
 
   it('blocks a confirmation-gated step without executing later steps', async () => {
     planner.plan.mockReturnValue([
-      { order: 1, candidateId: 'a', domain: 'conversation', action: 'a', dependsOn: [] },
-      { order: 2, candidateId: 'b', domain: 'conversation', action: 'b', dependsOn: ['a'] },
+      {
+        order: 1,
+        candidateId: 'a',
+        domain: 'conversation',
+        action: 'a',
+        dependsOn: [],
+      },
+      {
+        order: 2,
+        candidateId: 'b',
+        domain: 'conversation',
+        action: 'b',
+        dependsOn: ['a'],
+      },
     ]);
-    coordinator.execute.mockResolvedValueOnce({ status: 'pending_confirmation', reason: 'confirmation_required' });
-    const service = new PlanExecutionService(planner as never, coordinator as never, state as never);
+    coordinator.execute.mockResolvedValueOnce({
+      status: 'pending_confirmation',
+      reason: 'confirmation_required',
+    });
+    const service = new PlanExecutionService(
+      planner,
+      coordinator as never,
+      state as never,
+    );
 
-    const result = await service.execute('u1', { selected: [candidate('a'), candidate('b')], rejected: [], blocked: [], reason: 'test' });
+    const result = await service.execute('u1', {
+      selected: [candidate('a'), candidate('b')],
+      rejected: [],
+      blocked: [],
+      reason: 'test',
+    });
 
     expect(result.status).toBe('blocked');
     expect(result.blocked).toEqual(['a']);

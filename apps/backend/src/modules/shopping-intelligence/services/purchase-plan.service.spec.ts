@@ -8,8 +8,26 @@ describe('PurchasePlanService', () => {
       budgetRemaining: 100,
       currency: 'IRR',
       items: [
-        { productKey: 'urgent', quantity: 1, unitPrice: 70, currency: 'IRR', urgency: 0.95, decision: 'buy_now', score: 0.9, reason: 'needed' },
-        { productKey: 'nice-to-have', quantity: 1, unitPrice: 50, currency: 'IRR', urgency: 0.3, decision: 'buy_now', score: 0.9, reason: 'optional' },
+        {
+          productKey: 'urgent',
+          quantity: 1,
+          unitPrice: 70,
+          currency: 'IRR',
+          urgency: 0.95,
+          decision: 'buy_now',
+          score: 0.9,
+          reason: 'needed',
+        },
+        {
+          productKey: 'nice-to-have',
+          quantity: 1,
+          unitPrice: 50,
+          currency: 'IRR',
+          urgency: 0.3,
+          decision: 'buy_now',
+          score: 0.9,
+          reason: 'optional',
+        },
       ],
     });
     expect(plan.selected.map((item) => item.productKey)).toEqual(['urgent']);
@@ -22,12 +40,33 @@ describe('PurchasePlanService', () => {
       budgetRemaining: 100,
       currency: 'IRR',
       items: [
-        { productKey: 'wait', quantity: 1, unitPrice: 30, currency: 'IRR', urgency: 0.9, decision: 'wait', score: 0.8, reason: 'falling_price' },
-        { productKey: 'compare', quantity: 1, unitPrice: 20, currency: 'IRR', urgency: 0.2, decision: 'compare_more', score: 0.4, reason: 'uncertain' },
+        {
+          productKey: 'wait',
+          quantity: 1,
+          unitPrice: 30,
+          currency: 'IRR',
+          urgency: 0.9,
+          decision: 'wait',
+          score: 0.8,
+          reason: 'falling_price',
+        },
+        {
+          productKey: 'compare',
+          quantity: 1,
+          unitPrice: 20,
+          currency: 'IRR',
+          urgency: 0.2,
+          decision: 'compare_more',
+          score: 0.4,
+          reason: 'uncertain',
+        },
       ],
     });
     expect(plan.selected).toHaveLength(0);
-    expect(plan.deferred.map((item) => item.productKey)).toEqual(['wait', 'compare']);
+    expect(plan.deferred.map((item) => item.productKey)).toEqual([
+      'wait',
+      'compare',
+    ]);
     expect(plan.selectedTotal).toBe(0);
   });
 
@@ -35,7 +74,18 @@ describe('PurchasePlanService', () => {
     const plan = service.build({
       budgetRemaining: 100,
       currency: 'IRR',
-      items: [{ productKey: 'big', quantity: 2, unitPrice: 80, currency: 'IRR', urgency: 0.2, decision: 'buy_now', score: 0.9, reason: 'sale' }],
+      items: [
+        {
+          productKey: 'big',
+          quantity: 2,
+          unitPrice: 80,
+          currency: 'IRR',
+          urgency: 0.2,
+          decision: 'buy_now',
+          score: 0.9,
+          reason: 'sale',
+        },
+      ],
     });
     expect(plan.withinBudget).toBe(true);
     expect(plan.selectedTotal).toBeLessThanOrEqual(100);

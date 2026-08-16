@@ -17,9 +17,7 @@ export class BrainNutritionTargetsService {
     const waterGoalMl = profile?.waterGoalMl ?? undefined;
 
     return {
-      hasTargets: Boolean(
-        dailyCaloriesGoal ?? proteinGoalGrams ?? waterGoalMl,
-      ),
+      hasTargets: Boolean(dailyCaloriesGoal ?? proteinGoalGrams ?? waterGoalMl),
       dailyCaloriesGoal,
       proteinGoalGrams,
       waterGoalMl,

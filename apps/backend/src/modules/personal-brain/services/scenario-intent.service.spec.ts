@@ -4,7 +4,9 @@ describe('ScenarioIntentService', () => {
   const service = new ScenarioIntentService();
 
   it('detects Persian what-if questions', () => {
-    expect(service.detect('اگه امروز ورزش کنم بهتره یا فردا؟').enabled).toBe(true);
+    expect(service.detect('اگه امروز ورزش کنم بهتره یا فردا؟').enabled).toBe(
+      true,
+    );
   });
 
   it('detects English comparison questions', () => {

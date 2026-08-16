@@ -8,7 +8,10 @@ export class DecisionEngineController {
   constructor(private readonly actionDecision: ActionDecisionService) {}
 
   @Get()
-  evaluate(@Request() req: { user: { id: string } }, @Query('dateKey') dateKey?: string) {
+  evaluate(
+    @Request() req: { user: { id: string } },
+    @Query('dateKey') dateKey?: string,
+  ) {
     return this.actionDecision.generate(req.user.id, dateKey);
   }
 }
