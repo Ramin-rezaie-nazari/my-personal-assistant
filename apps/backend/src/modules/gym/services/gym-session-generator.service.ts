@@ -1,8 +1,6 @@
-import { Injectable } from '@nestjs/common';
 import { GymEquipment, GymFocus, GymLevel, GymProgress, GymSession } from '../models/gym.model';
 import { GymLibraryService } from './gym-library.service';
 
-@Injectable()
 export class GymSessionGeneratorService {
   constructor(private readonly library: GymLibraryService) {}
 
@@ -15,7 +13,7 @@ export class GymSessionGeneratorService {
     avoidBulk?: boolean;
   }): GymSession {
     const durationMin = Math.min(120, Math.max(10, Math.round(input.durationMin)));
-    const equipment = input.equipment?.length ? input.equipment : ['none'];
+    const equipment: GymEquipment[] = input.equipment?.length ? input.equipment : ['none'];
     const level = this.adaptLevel(input.level ?? input.progress?.currentLevel ?? 'beginner', input.progress);
     const pool = this.library.list(level, input.focus, equipment);
     const ordered = [...pool].sort((a, b) => Number(b.compound) - Number(a.compound));
