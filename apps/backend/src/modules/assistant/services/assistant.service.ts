@@ -38,7 +38,15 @@ export class AssistantService {
     const local = this.localLanguageUnderstandingService.understand(input);
     const plan = await this.planningService.createPlan({ clauses: contextualCommand.clauses, intents: contextualCommand.intents, contradictions: contextualCommand.contradictions, confidence: contextualCommand.confidence });
     const response = plan.requiresClarification
-      ? ({ intent: 'assistant', nextAction: undefined, message: plan.reason === 'conflicting_request' ? 'یه بخش از درخواستت با بخش دیگه تناقض داره؛ قبل از انجامش باید مشخص کنی دقیقاً کدوم رو می‌خوای.', confidence: contextualCommand.confidence, metadata: { local: true, clarification: true } } as BrainResponse)
+      ? ({
+          intent: 'assistant',
+          nextAction: undefined,
+          message: plan.reason === 'conflicting_request'
+            ? 'یه بخش از درخواستت با بخش دیگه تناقض داره؛ قبل از انجامش باید مشخص کنی دقیقاً کدوم رو می‌خوای.'
+            : 'برای اینکه درست انجامش بدم، یه بخش از درخواستت نیاز به توضیح بیشتر داره.',
+          confidence: contextualCommand.confidence,
+          metadata: { local: true, clarification: true },
+        } as BrainResponse)
       : this.responseForLocalIntent(local) ?? await this.brainOrchestratorService.processRequest(input, userId);
     const executionResponse = this.resolveContextualExecution(response, contextualCommand, input);
     const execution = executionResponse.nextAction
