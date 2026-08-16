@@ -51,8 +51,9 @@ export class FitnessDecisionPolicyService {
     }
 
     const memory = fitness.decisionMemory ?? context.state.lifeContext?.decisionMemory;
+    const hasStableHistory = Boolean(memory && memory.decisions !== undefined && memory.decisions >= 5 && memory.changeSignal === 'stable');
     let priorChoicePattern: string | undefined;
-    if (memory?.decisions >= 5 && memory.changeSignal === 'stable' && memory.selectedFrequency?.length) {
+    if (hasStableHistory && memory?.selectedFrequency?.length) {
       const prior = memory.selectedFrequency[0];
       const priorCandidate = candidates.find((c) => c.discipline === prior.id);
       if (priorCandidate && prior.count >= 3) {
@@ -70,7 +71,7 @@ export class FitnessDecisionPolicyService {
       `target:${targets.join(',') || 'general'}`,
       `equipment:${[...equipment].join(',') || 'none'}`,
     ];
-    if (memory?.decisions >= 5 && memory.changeSignal === 'stable') reasons.push('decision-history:stable');
+    if (hasStableHistory) reasons.push('decision-history:stable');
     if (priorChoicePattern && !reasons.includes(priorChoicePattern)) reasons.push(priorChoicePattern);
 
     return {
