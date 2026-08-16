@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 export type NotificationAction = 'delivered' | 'opened' | 'completed' | 'snoozed' | 'dismissed' | 'ignored';
 export type NotificationFeedback = { userId: string; dedupeKey: string; eventType: string; action: NotificationAction; at: string; snoozeUntil?: string };
+export type NotificationSignal = { sampleSize: number; snoozed: number; dismissed: number; ignored: number; engaged: number; resistanceScore: number };
 
 @Injectable()
 export class NotificationFeedbackService {
@@ -20,7 +21,7 @@ export class NotificationFeedbackService {
     return (this.feedback.get(userId) ?? []).slice(-Math.max(1, Math.min(limit, 100))).reverse();
   }
 
-  getSignal(userId: string, eventType: string) {
+  getSignal(userId: string, eventType: string): NotificationSignal {
     const items = (this.feedback.get(userId) ?? []).filter(x => x.eventType === eventType);
     const snoozed = items.filter(x => x.action === 'snoozed').length;
     const dismissed = items.filter(x => x.action === 'dismissed').length;
