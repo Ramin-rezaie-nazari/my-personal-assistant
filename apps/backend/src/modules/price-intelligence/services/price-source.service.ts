@@ -19,7 +19,7 @@ export type PriceCollectionResult = {
 export class PriceSourceService {
   private readonly adapters = new Map<string, PriceSourceAdapter>();
 
-  constructor(private readonly registry: PriceSourceRegistryService) {
+  constructor(private readonly registry: PriceSourceRegistryService = new PriceSourceRegistryService()) {
     for (const source of registry.list(true)) {
       this.register(new HttpPriceSourceAdapter(source));
     }
