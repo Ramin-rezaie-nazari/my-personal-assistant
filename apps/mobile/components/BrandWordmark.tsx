@@ -2,11 +2,17 @@ import { StyleSheet, Text, View } from 'react-native';
 import { BRAND, BRAND_NAME, BRAND_TAGLINE } from '../lib/branding';
 import { BrandMark } from './BrandMark';
 
-export function BrandWordmark({ dark = false, compact = false }: { dark?: boolean; compact?: boolean }) {
+type BrandWordmarkProps = {
+  dark?: boolean;
+  compact?: boolean;
+  accessibilityLabel?: string;
+};
+
+export function BrandWordmark({ dark = false, compact = false, accessibilityLabel = BRAND_NAME }: BrandWordmarkProps) {
   return (
-    <View style={[styles.row, compact && styles.compactRow]}>
+    <View accessible accessibilityRole="image" accessibilityLabel={accessibilityLabel} style={[styles.row, compact && styles.compactRow]}>
       <BrandMark size={compact ? 42 : 56} />
-      <View style={styles.copy}>
+      <View style={styles.copy} accessible={false}>
         <Text style={[styles.name, dark && styles.nameDark, compact && styles.nameCompact]}>{BRAND_NAME}</Text>
         {!compact ? <Text style={[styles.tagline, dark && styles.taglineDark]}>{BRAND_TAGLINE}</Text> : null}
       </View>
