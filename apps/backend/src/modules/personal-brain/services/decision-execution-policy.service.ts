@@ -5,7 +5,7 @@ export type ExecutionPolicy = {
   timeoutMs: number;
   maxAttempts: number;
   retryDelayMs: number;
-  dryRun?: boolean;
+  dryRun: boolean;
 };
 
 export type ExecutionAttempt = {
