@@ -8,9 +8,19 @@ describe('NightlyMarketIntelligenceService', () => {
   });
 
   it('runs without fabricating source data', async () => {
-    const service = new NightlyMarketIntelligenceService({ collect: async () => [] } as any, { record: jest.fn() } as any);
+    const sources = { collectDetailed: jest.fn().mockResolvedValue({ prices: [], failedSourceIds: [], attemptedSourceIds: ['source-1'] }) };
+    const persistence = {
+      createRun: jest.fn().mockResolvedValue({ acquired: true, id: 'run-1' }),
+      trackedProductKeys: jest.fn().mockResolvedValue(['ssd']),
+      record: jest.fn().mockResolvedValue(undefined),
+      finishRun: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = new NightlyMarketIntelligenceService(sources as any, persistence as any);
     const result = await service.run(['ssd']);
+    expect(sources.collectDetailed).toHaveBeenCalledWith(['ssd'], undefined);
     expect(result.status).toBe('failed');
     expect(result.collected).toBe(0);
+    expect(persistence.createRun).toHaveBeenCalled();
+    expect(persistence.finishRun).toHaveBeenCalledWith('run-1', expect.objectContaining({ status: 'failed', collected: 0 }));
   });
 });
