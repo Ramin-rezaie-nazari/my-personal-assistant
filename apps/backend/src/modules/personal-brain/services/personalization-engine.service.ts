@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-export type PersonalizationDomain = 'notification' | 'workout' | 'nutrition' | 'reminder' | 'habit' | 'schedule' | 'conversation';
+export type PersonalizationDomain = 'notification' | 'workout' | 'nutrition' | 'reminder' | 'habit' | 'schedule' | 'conversation' | 'shopping';
 export type PreferenceSignal = { key: string; value: string; score: number; confidence?: number; source?: string };
 export type PersonalizationProfile = { userId: string; updatedAt: Date; signals: Record<string, PreferenceSignal>; };
 
