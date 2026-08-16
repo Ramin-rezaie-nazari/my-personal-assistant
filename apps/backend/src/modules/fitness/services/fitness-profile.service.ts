@@ -1,4 +1,4 @@
-import { FitnessEquipment, FitnessGoal, FitnessRecommendationContext, FitnessProfile, TrainingConstraint, BodyTarget } from '../models/fitness.model';
+import { FitnessEquipment, FitnessGoal, FitnessRecommendationContext, FitnessProfile, BodyTarget } from '../models/fitness.model';
 
 export class FitnessProfileService {
   private readonly profiles = new Map<string, FitnessProfile>();
@@ -51,7 +51,12 @@ export class FitnessProfileService {
   }
 
   parseNaturalGoal(text: string): FitnessGoal {
-    const normalized = text.toLowerCase();
+    const normalized = text.toLowerCase()
+      .replace(/[يى]/g, 'ی')
+      .replace(/[ك]/g, 'ک')
+      .replace(/‌/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     const targetAreas: BodyTarget[] = [];
     const pushTarget = (value: BodyTarget, ...keywords: string[]) => { if (keywords.some((keyword) => normalized.includes(keyword))) targetAreas.push(value); };
     pushTarget('thighs', 'ران', 'thigh');
@@ -60,7 +65,7 @@ export class FitnessProfileService {
     pushTarget('waist', 'کمر', 'waist');
     pushTarget('core', 'شکم', 'core', 'abs');
     pushTarget('back', 'پشت', 'back');
-    const avoidBulk = normalized.includes('حجم') && (normalized.includes('نمی') || normalized.includes('نه'));
+    const avoidBulk = normalized.includes('حجم') && /(?:نمی\s*خوام|نمی\s*گیرم|نگیرم|بدون|نه|نخوام)/.test(normalized);
     const fatLoss = normalized.includes('لاغر') || normalized.includes('چربی') || normalized.includes('fat loss');
     const bodySculpt = normalized.includes('خوش فرم') || normalized.includes('خوش‌فرم') || normalized.includes('tone') || normalized.includes('sculpt');
     const strength = normalized.includes('قوی') || normalized.includes('قدرت') || normalized.includes('strength');
