@@ -83,13 +83,13 @@ export class ContextualCommandService {
 
   private extractEntities(text: string): ContextualCommand['entities'] {
     const entities: ContextualCommand['entities'] = {};
-    const quantity = text.match(/\b(\d+(?:\.\d+)?)\s*(?:تا|عدد|مورد|بار|x)?\b/);
+    const quantity = text.match(/(?:^|\s)(\d+(?:\.\d+)?)(?=\s*(?:تا|عدد|مورد|بار|x)?(?:\s|$))/i);
     if (quantity) entities.quantity = Number(quantity[1]);
     const time = text.match(/\b([01]?\d|2[0-3])\s*(?::|\.)([0-5]\d)\b/);
     if (time) entities.time = `${time[1].padStart(2, '0')}:${time[2]}`;
-    const duration = text.match(/\b(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\b/i);
+    const duration = text.match(/(?:^|\s)(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)(?=\s|$)/i);
     if (duration) entities.durationMinutes = Number(duration[1]);
-    const relative = text.match(/\b(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\s*(?:بعد|دیگه|later|from now)\b/i);
+    const relative = text.match(/(?:^|\s)(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\s*(?:بعد|دیگه|later|from now)(?=\s|$)/i);
     if (relative) entities.relativeMinutes = Number(relative[1]);
     if (this.matches(text, ['اول', 'اولی', 'first'])) entities.ordinal = 1;
     else if (this.matches(text, ['دوم', 'دومی', 'second'])) entities.ordinal = 2;
