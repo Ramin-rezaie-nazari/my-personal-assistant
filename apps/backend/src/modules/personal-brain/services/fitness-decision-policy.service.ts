@@ -12,7 +12,6 @@ export class FitnessDecisionPolicyService {
   evaluate(context: BrainReasoningContext): BrainDecisionResult | null {
     const fitness = context.state.lifeContext?.fitness;
     if (!fitness) return null;
-
     const input = context.input.trim().toLowerCase();
     const exerciseRequest = /\b(workout|exercise|training|gym|fitness|yoga|calisthenics|train|work out)\b|تمرین|ورزش|بدنسازی|یوگا|کالیستنیکس/.test(input);
     if (!exerciseRequest) return null;
@@ -22,9 +21,10 @@ export class FitnessDecisionPolicyService {
       { discipline: 'calisthenics', score: 0.35, reasons: ['bodyweight-friendly'] },
       { discipline: 'gym', score: 0.30, reasons: ['equipment-flexible'] },
     ];
-
     const goal = fitness.primaryGoal;
-    const equipment = new Set(fitness.equipment);
+    const equipment = new Set(fitness.equipment ?? []);
+    const targetAreas = fitness.targetAreas ?? [];
+    const constraints = fitness.constraints ?? [];
     if (goal) {
       if (goal.kind === 'body_sculpt') {
         candidates.find(c => c.discipline === 'calisthenics')!.score += 0.15;
@@ -43,19 +43,15 @@ export class FitnessDecisionPolicyService {
         candidates.find(c => c.discipline === 'calisthenics')!.score += 0.04;
       }
     }
-
     if (equipment.has('none') && equipment.size === 1) {
       candidates.find(c => c.discipline === 'calisthenics')!.score += 0.20;
       candidates.find(c => c.discipline === 'gym')!.score -= 0.12;
     }
-    if (equipment.has('dumbbells') || equipment.has('barbell') || equipment.has('cable_machine')) {
-      candidates.find(c => c.discipline === 'gym')!.score += 0.20;
-    }
-    if (fitness.constraints.some(c => c.key === 'low_impact' && c.enabled)) {
+    if (equipment.has('dumbbells') || equipment.has('barbell') || equipment.has('cable_machine')) candidates.find(c => c.discipline === 'gym')!.score += 0.20;
+    if (constraints.some(c => c.key === 'low_impact' && c.enabled)) {
       candidates.find(c => c.discipline === 'yoga')!.score += 0.15;
       candidates.find(c => c.discipline === 'calisthenics')!.score -= 0.04;
     }
-
     const memory = context.state.lifeContext?.decisionMemory;
     if (memory?.decisions >= 5 && memory.changeSignal === 'stable' && memory.selectedFrequency.length) {
       const prior = memory.selectedFrequency[0];
@@ -65,17 +61,10 @@ export class FitnessDecisionPolicyService {
         priorCandidate.reasons.push(`prior-choice-pattern:${prior.count}`);
       }
     }
-
     candidates.sort((a, b) => b.score - a.score);
     const best = candidates[0];
-    const reasons = [
-      ...best.reasons,
-      goal ? `primary-goal:${goal.kind}` : 'no-primary-goal',
-      `target:${fitness.targetAreas.join(',')}`,
-      `equipment:${[...equipment].join(',')}`,
-    ];
+    const reasons = [...best.reasons, goal ? `primary-goal:${goal.kind}` : 'no-primary-goal', `target:${targetAreas.join(',') || 'general'}`, `equipment:${[...equipment].join(',') || 'none'}`];
     if (memory?.decisions >= 5) reasons.push(`decision-history:${memory.changeSignal}`);
-
     return {
       canDecide: context.reasoning.uncertainties.length === 0,
       confidence: Math.min(0.98, Math.max(0.35, best.score)),
