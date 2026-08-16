@@ -46,7 +46,9 @@ export class ActionConfirmationIntelligenceService {
 
   consume(userId: string, token: string, now = Date.now()): PendingAction | undefined {
     const pending = this.pending.get(token);
-    if (!pending || pending.userId !== userId || pending.expiresAt < now) {
+    if (!pending) return undefined;
+    if (pending.userId !== userId) return undefined;
+    if (pending.expiresAt < now) {
       this.pending.delete(token);
       return undefined;
     }
