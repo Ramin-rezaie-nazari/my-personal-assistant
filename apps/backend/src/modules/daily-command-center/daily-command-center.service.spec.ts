@@ -71,6 +71,17 @@ describe('DailyCommandCenterService', () => {
     const result = await service.getToday('u1');
 
     expect(prisma.dailyLog.findUnique).toHaveBeenCalled();
+    expect(prisma.workout.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          userId: 'u1',
+          performedAt: expect.objectContaining({
+            gte: expect.any(Date),
+            lt: expect.any(Date),
+          }),
+        }),
+      }),
+    );
     expect(result.greeting).toContain('Get healthier');
     expect(result.habits).toEqual({ total: 2, completed: 1 });
     expect(result.supplements).toEqual({ total: 2, taken: 1 });
