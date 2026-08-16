@@ -46,7 +46,7 @@ export class HttpPriceSourceAdapter {
       const cleanTitle = title.trim() || productKey.replace(/-/g, ' ');
       if (!this.isRelevant(cleanTitle, productKey)) return;
       const normalized = this.normalize(productKey, cleanTitle, amount, currency, availability, url);
-      const fingerprint = `${normalized.sourceId}|${normalized.url}|${normalized.amount}|${normalized.title}`;
+      const fingerprint = `${normalized.sourceId}|${normalized.url}|${normalized.amount}|${this.normalizeText(normalized.title)}`;
       if (!seen.has(fingerprint)) {
         seen.add(fingerprint);
         prices.push(normalized);
@@ -126,7 +126,7 @@ export class HttpPriceSourceAdapter {
   }
 
   private normalizeText(value: string) {
-    return value.toLocaleLowerCase('fa-IR').replace(/[يى]/g, 'ی').replace(/[ك]/g, 'ک').replace(/\u200c/g, ' ').replace(/\s+/g, ' ').trim();
+    return value.toLocaleLowerCase('fa-IR').replace(/[يى]/g, 'ی').replace(/[ك]/g, 'ک').replace(/\u200c/g, ' ').replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
   }
 
   private currencyNear(html: string, value: unknown) {
