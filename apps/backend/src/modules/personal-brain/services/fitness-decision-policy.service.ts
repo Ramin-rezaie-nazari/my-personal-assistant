@@ -51,12 +51,14 @@ export class FitnessDecisionPolicyService {
     }
 
     const memory = fitness.decisionMemory ?? context.state.lifeContext?.decisionMemory;
+    let priorChoicePattern: string | undefined;
     if (memory?.decisions >= 5 && memory.changeSignal === 'stable' && memory.selectedFrequency?.length) {
       const prior = memory.selectedFrequency[0];
       const priorCandidate = candidates.find((c) => c.discipline === prior.id);
       if (priorCandidate && prior.count >= 3) {
         priorCandidate.score += 0.04;
-        priorCandidate.reasons.push(`prior-choice-pattern:${prior.count}`);
+        priorChoicePattern = `prior-choice-pattern:${prior.count}`;
+        priorCandidate.reasons.push(priorChoicePattern);
       }
     }
 
@@ -69,6 +71,7 @@ export class FitnessDecisionPolicyService {
       `equipment:${[...equipment].join(',') || 'none'}`,
     ];
     if (memory?.decisions >= 5 && memory.changeSignal === 'stable') reasons.push('decision-history:stable');
+    if (priorChoicePattern && !reasons.includes(priorChoicePattern)) reasons.push(priorChoicePattern);
 
     return {
       canDecide: context.reasoning.uncertainties.length === 0,
