@@ -99,10 +99,11 @@ export class AssistantService {
     const entities = command.entities ?? {};
     const previousAction = (command.targetAction ?? '').toLowerCase();
     const previousResource = (command.targetResourceType ?? '').toLowerCase();
-    const hasTime = Boolean(entities.time) || /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
-    const hasDuration = Boolean(entities.durationMinutes) || /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)\b/i.test(input);
-    const hasCalories = /\b\d{2,5}\s*(?:cal|calories|کالری)\b/i.test(input);
-    const hasWeekTarget = /\b[1-7]\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?\b/i.test(input);
+    const normalizedInput = input.trim().toLowerCase().replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
+    const hasTime = Boolean(entities.time) || /\b(?:[01]?\d|2[0-3])\s*(?::|\.)\s*[0-5]\d\b/.test(normalizedInput);
+    const hasDuration = Boolean(entities.durationMinutes) || /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)(?=\s|$)/i.test(normalizedInput);
+    const hasCalories = /\b\d{2,5}\s*(?:cal|calories|کالری)\b/i.test(normalizedInput);
+    const hasWeekTarget = /\b[1-7]\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?\b/i.test(normalizedInput);
     if (command.operation === 'update' && previousResource === 'calendar' && hasTime) return { ...response, intent: 'calendar', nextAction: 'update_calendar_event' };
     if (command.operation === 'cancel' && previousResource === 'calendar') return { ...response, intent: 'calendar', nextAction: 'cancel_calendar_event' };
     if (command.operation === 'update' && previousAction.includes('reminder') && hasTime) return { ...response, intent: 'reminder', nextAction: 'update_reminder' };
