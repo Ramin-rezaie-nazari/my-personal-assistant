@@ -45,7 +45,7 @@ export class FitnessDecisionPolicyService {
       candidates.find((c) => c.discipline === 'gym')!.score -= 0.12;
     }
     if (equipment.has('dumbbells') || equipment.has('barbell') || equipment.has('cable_machine')) candidates.find((c) => c.discipline === 'gym')!.score += 0.20;
-    if (constraints.some((c) => c.key === 'low_impact' && c.enabled)) {
+    if (constraints.some((c) => typeof c !== 'string' && c.key === 'low_impact' && c.enabled)) {
       candidates.find((c) => c.discipline === 'yoga')!.score += 0.15;
       candidates.find((c) => c.discipline === 'calisthenics')!.score -= 0.04;
     }
