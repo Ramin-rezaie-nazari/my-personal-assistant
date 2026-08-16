@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 
 import { BrainOrchestratorService } from '../../personal-brain/services/brain-orchestrator.service';
 import { NaturalActionExecutionService } from './natural-action-execution.service';
@@ -13,10 +13,10 @@ export class AssistantService {
   constructor(
     private readonly brainOrchestratorService: BrainOrchestratorService,
     private readonly naturalActionExecutionService: NaturalActionExecutionService,
-    private readonly contextualCommandService: ContextualCommandService,
+    private readonly contextualCommandService: ConversationContextService extends never ? never : ContextualCommandService,
     private readonly conversationContextService: ConversationContextService,
-    private readonly localLanguageUnderstandingService: LocalLanguageUnderstandingService,
-    private readonly planningService: PlanningService,
+    @Optional() private readonly localLanguageUnderstandingService?: LocalLanguageUnderstandingService,
+    @Optional() private readonly planningService?: PlanningService,
   ) {}
 
   async getStatus() { return { name: 'My Personal Assistant', status: 'brain foundation active' }; }
@@ -34,9 +34,11 @@ export class AssistantService {
 
   async process(input: string, userId: string) {
     await this.conversationContextService.append({ userId, role: 'user', text: input });
-    const contextualCommand = await this.contextualCommandService.resolve(userId, input);
-    const local = this.localLanguageUnderstandingService.understand(input);
-    const plan = await this.planningService.createPlan({ clauses: contextualCommand.clauses, intents: contextualCommand.intents, contradictions: contextualCommand.contradictions, confidence: contextualCommand.confidence });
+    const contextualCommand = this.contextualCommandService ? await this.contextualCommandService.resolve(userId, input) : ({ referencesPrevious: false, operation: 'unknown', clauses: [input], intents: ['unknown'], contradictions: [], confidence: 0.35, entities: {} } as any);
+    const local = this.localLanguageUnderstandingService?.understand(input);
+    const plan = this.planningService
+      ? await this.planningService.createPlan({ clauses: contextualCommand.clauses, intents: contextualCommand.intents, contradictions: contextualCommand.contradictions, confidence: contextualCommand.confidence })
+      : { requiresClarification: false, reason: 'not_available' } as any;
     const response = plan.requiresClarification
       ? ({
           intent: 'assistant',
@@ -47,7 +49,7 @@ export class AssistantService {
           confidence: contextualCommand.confidence,
           metadata: { local: true, clarification: true },
         } as BrainResponse)
-      : this.responseForLocalIntent(local) ?? await this.brainOrchestratorService.processRequest(input, userId);
+      : (local ? this.responseForLocalIntent(local) : undefined) ?? await this.brainOrchestratorService.processRequest(input, userId);
     const executionResponse = this.resolveContextualExecution(response, contextualCommand, input);
     const execution = executionResponse.nextAction
       ? await this.naturalActionExecutionService.execute(input, userId, executionResponse, {
@@ -94,10 +96,11 @@ export class AssistantService {
 
   private resolveContextualExecution(response: BrainResponse, command: ReturnType<ContextualCommandService['resolve']> extends Promise<infer T> ? T : never, input: string): BrainResponse {
     if (!command.referencesPrevious || !(command.targetResourceId || command.targetExecutionId)) return response;
+    const entities = command.entities ?? {};
     const previousAction = (command.targetAction ?? '').toLowerCase();
     const previousResource = (command.targetResourceType ?? '').toLowerCase();
-    const hasTime = Boolean(command.entities.time) || /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
-    const hasDuration = Boolean(command.entities.durationMinutes) || /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)\b/i.test(input);
+    const hasTime = Boolean(entities.time) || /\b(?:[01]?\d|2[0-3]):[0-5]\d\b/.test(input);
+    const hasDuration = Boolean(entities.durationMinutes) || /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)\b/i.test(input);
     const hasCalories = /\b\d{2,5}\s*(?:cal|calories|کالری)\b/i.test(input);
     const hasWeekTarget = /\b[1-7]\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?\b/i.test(input);
     if (command.operation === 'update' && previousResource === 'calendar' && hasTime) return { ...response, intent: 'calendar', nextAction: 'update_calendar_event' };
