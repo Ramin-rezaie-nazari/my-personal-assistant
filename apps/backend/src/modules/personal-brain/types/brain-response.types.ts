@@ -9,7 +9,7 @@ export type BrainResponse = {
 
   nextAction?: string;
 
-  responsePlan: ResponsePlan;
+  responsePlan?: ResponsePlan;
 
   metadata?: Record<string, unknown>;
 };
