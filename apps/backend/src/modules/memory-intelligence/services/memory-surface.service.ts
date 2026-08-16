@@ -14,7 +14,12 @@ export class MemorySurfaceService {
     return memories
       .filter((memory) => !memory.expiresAt || memory.expiresAt > now)
       .filter((memory) => (memory.confidence ?? 0) >= 0.35 || memory.source === 'explicit_user')
-      .sort((a, b) => ((b.importance * (b.confidence ?? 0)) - (a.importance * (a.confidence ?? 0))))
+      .sort((a, b) => {
+        const visibilityPriority = (visibility: Memory['visibility']) => visibility === 'internal' ? 1 : 0;
+        const visibilityDelta = visibilityPriority(b.visibility) - visibilityPriority(a.visibility);
+        if (visibilityDelta !== 0) return visibilityDelta;
+        return (b.importance * (b.confidence ?? 0)) - (a.importance * (a.confidence ?? 0));
+      })
       .slice(0, Math.max(1, Math.min(limit, 500)));
   }
 }
