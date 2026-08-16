@@ -16,7 +16,7 @@ describe('DecisionHistoryRetentionService', () => {
     const one = service.cutoff('u1', now)!;
     service.setPolicy('u1', { retention: '3_months' });
     const three = service.cutoff('u1', now)!;
-    expect(now - one).toBeGreaterThan(now - three);
+    expect(now - one).toBeLessThan(now - three);
   });
 
   it('clamps recent-delete hours to a safe range', () => {
