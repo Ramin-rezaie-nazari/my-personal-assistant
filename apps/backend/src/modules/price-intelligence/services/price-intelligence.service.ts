@@ -17,13 +17,13 @@ export class PriceIntelligenceService {
   }
 
   async analyze(productKey: string) {
-    const rows = await this.persistence.history(productKey, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
-    const prices = (rows as Array<{ amount: number; observedAt: Date }>).map((row) => Number(row.amount)).filter((value) => Number.isFinite(value) && value > 0);
+    const rows = (await this.persistence.history(productKey, new Date(Date.now() - 30 * 24 * 60 * 60 * 1000))) as Array<{ amount: number; observedAt: Date }>;
+    const prices = rows.map((row) => Number(row.amount)).filter((value) => Number.isFinite(value) && value > 0);
     if (!prices.length) return { productKey, current: null, average7d: null, average30d: null, min30d: null, max30d: null, changeVs7d: null, changeVs30d: null, trend: 'insufficient_data', buyScore: 0, recommendation: 'unavailable' };
     const current = prices[prices.length - 1];
     const average = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;
     const avg30 = average(prices);
-    const weekRows = rows.filter((row: any) => new Date(row.observedAt).getTime() >= Date.now() - 7 * 24 * 60 * 60 * 1000) as Array<{ amount: number }>;
+    const weekRows = rows.filter((row) => new Date(row.observedAt).getTime() >= Date.now() - 7 * 24 * 60 * 60 * 1000);
     const avg7 = average(weekRows.map((row) => Number(row.amount)).filter(Number.isFinite));
     const previous7 = prices.length > 7 ? average(prices.slice(0, -Math.min(7, prices.length))) : null;
     const previous30 = prices.length > 30 ? average(prices.slice(0, -30)) : null;
