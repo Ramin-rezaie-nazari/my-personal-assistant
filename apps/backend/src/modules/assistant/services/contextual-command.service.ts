@@ -12,6 +12,7 @@ export type ContextualCommand = {
   entities: {
     quantity?: number;
     time?: string;
+    durationMinutes?: number;
     relativeMinutes?: number;
     ordinal?: number;
     date?: string;
@@ -86,6 +87,8 @@ export class ContextualCommandService {
     if (quantity) entities.quantity = Number(quantity[1]);
     const time = text.match(/\b([01]?\d|2[0-3])\s*(?::|\.)([0-5]\d)\b/);
     if (time) entities.time = `${time[1].padStart(2, '0')}:${time[2]}`;
+    const duration = text.match(/\b(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\b/i);
+    if (duration) entities.durationMinutes = Number(duration[1]);
     const relative = text.match(/\b(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\s*(?:بعد|دیگه|later|from now)\b/i);
     if (relative) entities.relativeMinutes = Number(relative[1]);
     if (this.matches(text, ['اول', 'اولی', 'first'])) entities.ordinal = 1;
@@ -107,7 +110,6 @@ export class ContextualCommandService {
   private detectContradictions(text: string, intents: ContextualCommand['operation'][], entities: ContextualCommand['entities']): string[] {
     const issues: string[] = [];
     if (intents.includes('cancel') && intents.includes('create')) issues.push('create_and_cancel_same_turn');
-    if (entities.confirmation === 'no' && entities.confirmation === 'yes') issues.push('conflicting_confirmation');
     if (entities.negated && intents.includes('create') && !this.matches(text, ['بدون', 'نذار', 'نمیخوام'])) issues.push('negation_create_ambiguity');
     return issues;
   }
