@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
-import { CreateTaskDto, TaskEventDto, UpdateTaskDto } from '../dto/task.dto';
+import { CreateTaskDto, TaskDependencyDto, TaskEventDto, UpdateTaskDto } from '../dto/task.dto';
 
 type TaskRow = { id: string; userId: string; title: string; description: string | null; source: string; goalId: string | null; status: string; priority: number; energy: string; scheduledAt: Date | null; dueAt: Date | null; estimatedMinutes: number | null; completedAt: Date | null; createdAt: Date; updatedAt: Date };
 
@@ -46,6 +46,16 @@ export class LifeExecutionService {
     await this.prisma.$executeRaw`UPDATE "LifeTask" SET "title"=${dto.title?.trim() ?? existing.title},"description"=${dto.description === undefined ? existing.description : dto.description?.trim() || null},"status"=${status},"priority"=${dto.priority ?? existing.priority},"energy"=${dto.energy ?? existing.energy},"scheduledAt"=${dto.scheduledAt === undefined ? existing.scheduledAt : this.date(dto.scheduledAt)},"dueAt"=${dto.dueAt === undefined ? existing.dueAt : this.date(dto.dueAt)},"estimatedMinutes"=${dto.estimatedMinutes === undefined ? existing.estimatedMinutes : dto.estimatedMinutes},"completedAt"=${completedAt},"updatedAt"=CURRENT_TIMESTAMP WHERE "id"=${id} AND "userId"=${userId}`;
     if (dto.status) await this.event(userId, id, dto.status, 'status_changed');
     return this.one(userId, id);
+  }
+
+  async addDependency(userId: string, taskId: string, dto: TaskDependencyDto) {
+    const task = await this.raw(userId, taskId);
+    if (!task) throw new NotFoundException('Task not found');
+    const dependency = await this.raw(userId, dto.dependsOnTaskId);
+    if (!dependency) throw new NotFoundException('Dependency task not found');
+    if (taskId === dto.dependsOnTaskId) throw new BadRequestException('A task cannot depend on itself');
+    await this.prisma.$executeRaw`INSERT INTO "TaskDependency" ("id","taskId","dependsOnTaskId") VALUES (${randomUUID()},${taskId},${dto.dependsOnTaskId}) ON CONFLICT ("taskId","dependsOnTaskId") DO NOTHING`;
+    return { taskId, dependsOnTaskId: dto.dependsOnTaskId };
   }
 
   async recordEvent(userId: string, id: string, dto: TaskEventDto) {
