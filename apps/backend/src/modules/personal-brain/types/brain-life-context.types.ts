@@ -56,6 +56,8 @@ export type BrainDecisionOutcomeMemory = {
   confidenceAdjustment: number;
 };
 
+export type BrainFitnessConstraint = string | { key: string; enabled: boolean };
+
 export type BrainFitnessContext = {
   disciplines: string[];
   primaryGoal: {
@@ -69,9 +71,10 @@ export type BrainFitnessContext = {
     active: boolean;
   } | null;
   equipment: string[];
-  constraints: string[];
+  constraints: BrainFitnessConstraint[];
   targetAreas: string[];
   performanceMemory?: BrainFitnessPerformanceMemory;
+  decisionMemory?: BrainDecisionExplanationMemory;
 };
 
 export type BrainLifeContext = {
