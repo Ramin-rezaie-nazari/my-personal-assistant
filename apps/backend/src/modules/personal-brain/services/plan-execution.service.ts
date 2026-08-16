@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { DecisionExecutionCoordinatorService, DecisionExecutionReceipt } from './decision-execution-coordinator.service';
 import { DecisionExecutionPlannerService, ExecutionStep } from './decision-execution-planner.service';
 import { DecisionExecutionStateService } from './decision-execution-state.service';
-import { PersistentPlanStateService } from './persistent-plan-state.service';
+import { PersistentPlanStateService, PersistedPlanState } from './persistent-plan-state.service';
 import { UnifiedDecision } from './unified-decision-engine.service';
 
 export type PlanExecutionStatus = 'completed' | 'partial' | 'blocked' | 'failed';
@@ -34,7 +34,7 @@ export class PlanExecutionService {
     const completed = [...(existing?.completed ?? [])];
     const blocked = [...(existing?.blocked ?? [])];
     const failed = [...(existing?.failed ?? [])];
-    const save = async (status: string, currentStep: string | null) => {
+    const save = async (status: PersistedPlanState['status'], currentStep: string | null) => {
       if (this.persistentState) {
         await this.persistentState.save({ planId, userId, status, stepIds: plan.map((item) => item.candidateId), completed, blocked, failed, currentStep, updatedAt: new Date() });
       }
