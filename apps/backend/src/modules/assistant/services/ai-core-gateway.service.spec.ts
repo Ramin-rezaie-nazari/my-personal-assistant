@@ -6,10 +6,18 @@ describe('AiCoreGatewayService', () => {
   const makeGateway = (
     generate = jest.fn(),
     build = jest.fn(),
+    profile = jest.fn().mockReturnValue({
+      tier: 'standard',
+      maxContextTokens: 3072,
+      preferredModelClass: 'small-local',
+      allowVision: true,
+      allowVoice: true,
+    }),
   ) =>
     new AiCoreGatewayService(
       { generate } as unknown as AiProviderRouterService,
       { build } as any,
+      { profile } as any,
     );
 
   it('routes generic runs through the provider router and preserves the task', async () => {
@@ -29,12 +37,26 @@ describe('AiCoreGatewayService', () => {
       providerId: 'local-core',
       text: 'ok',
       task: 'text-generation',
+      runtime: {
+        tier: 'standard',
+        modelClass: 'small-local',
+        maxContextTokens: 3072,
+      },
     });
 
     expect(generate).toHaveBeenCalledWith({
       input: 'سلام',
       task: 'text-generation',
-      context: { userId: 'u1' },
+      context: {
+        userId: 'u1',
+        runtime: {
+          tier: 'standard',
+          modelClass: 'small-local',
+          maxContextTokens: 3072,
+          allowVision: true,
+          allowVoice: true,
+        },
+      },
     });
   });
 
@@ -70,6 +92,11 @@ describe('AiCoreGatewayService', () => {
       providerId: 'local-core',
       text: 'با توجه به وضعیت امروزت...',
       task: 'text-generation',
+      runtime: {
+        tier: 'standard',
+        modelClass: 'small-local',
+        maxContextTokens: 3072,
+      },
       context,
     });
 
@@ -88,8 +115,53 @@ describe('AiCoreGatewayService', () => {
         conversation: context.conversation,
         nutrition: context.nutrition,
         life: context.life,
+        runtime: {
+          tier: 'standard',
+          modelClass: 'small-local',
+          maxContextTokens: 3072,
+          allowVision: true,
+          allowVoice: true,
+        },
       },
     });
+  });
+
+  it('uses the weakest runtime profile when device signals are weak', async () => {
+    const generate = jest.fn().mockResolvedValue({
+      providerId: 'local-core',
+      text: 'ok',
+    });
+    const profile = jest.fn().mockReturnValue({
+      tier: 'tiny',
+      maxContextTokens: 768,
+      preferredModelClass: 'deterministic',
+      allowVision: false,
+      allowVoice: false,
+    });
+    const gateway = makeGateway(generate, jest.fn(), profile);
+
+    const result = await gateway.run({
+      input: 'یه جواب بده',
+      task: 'text-generation',
+      device: { totalMemoryMb: 2048, cpuCores: 2, batterySaver: true },
+    });
+
+    expect(result.runtime).toEqual({
+      tier: 'tiny',
+      modelClass: 'deterministic',
+      maxContextTokens: 768,
+    });
+    expect(generate).toHaveBeenCalledWith(expect.objectContaining({
+      context: expect.objectContaining({
+        runtime: {
+          tier: 'tiny',
+          modelClass: 'deterministic',
+          maxContextTokens: 768,
+          allowVision: false,
+          allowVoice: false,
+        },
+      }),
+    }));
   });
 
   it('exposes stable task-specific entry points without exposing providers', async () => {
