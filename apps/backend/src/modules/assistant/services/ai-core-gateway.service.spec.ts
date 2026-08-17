@@ -20,6 +20,23 @@ describe('AiCoreGatewayService', () => {
       { profile } as any,
     );
 
+  const makePersonalContext = (): PersonalContext => ({
+    user: {
+      id: 'u1',
+      name: 'Ramin',
+      timezone: 'Asia/Tehran',
+      language: 'fa',
+    },
+    globalization: {} as PersonalContext['globalization'],
+    voice: {} as PersonalContext['voice'],
+    globalSettings: {} as PersonalContext['globalSettings'],
+    dateKey: '2026-08-17',
+    request: { input: 'امروز چی بخورم؟' },
+    conversation: { turns: [] } as PersonalContext['conversation'],
+    nutrition: {} as PersonalContext['nutrition'],
+    life: {} as PersonalContext['life'],
+  });
+
   it('routes generic runs through the provider router and preserves the task', async () => {
     const generate = jest.fn().mockResolvedValue({
       providerId: 'local-core',
@@ -65,19 +82,7 @@ describe('AiCoreGatewayService', () => {
       providerId: 'local-core',
       text: 'با توجه به وضعیت امروزت...',
     });
-    const context = {
-      user: {
-        id: 'u1',
-        name: 'Ramin',
-        timezone: 'Asia/Tehran',
-        language: 'fa',
-      },
-      dateKey: '2026-08-17',
-      request: { input: 'امروز چی بخورم؟' },
-      conversation: { turns: [] },
-      nutrition: {} as PersonalContext['nutrition'],
-      life: {} as PersonalContext['life'],
-    } as PersonalContext;
+    const context = makePersonalContext();
     const build = jest.fn().mockResolvedValue(context);
     const gateway = makeGateway(generate, build);
 
@@ -112,6 +117,9 @@ describe('AiCoreGatewayService', () => {
         dateKey: '2026-08-17',
         request: { input: 'امروز چی بخورم؟' },
         user: context.user,
+        globalization: context.globalization,
+        voice: context.voice,
+        globalSettings: context.globalSettings,
         conversation: context.conversation,
         nutrition: context.nutrition,
         life: context.life,
