@@ -14,14 +14,21 @@ export class LocalNutritionActionAdapter implements OnModuleInit {
   ) {}
 
   onModuleInit() {
-    this.adapters.register({
-      actions: this.actions,
-      supports: (candidate) => candidate.action === 'get_nutrition_summary',
-      execute: (candidate, context) => this.execute(candidate, context),
-    });
+    this.adapters.register(this);
   }
 
-  private async execute(
+  supports(candidate: DecisionCandidate): boolean {
+    return candidate.action === 'get_nutrition_summary';
+  }
+
+  execute(
+    candidate: DecisionCandidate,
+    context: Record<string, unknown>,
+  ) {
+    return this.executeNutritionSummary(candidate, context);
+  }
+
+  private async executeNutritionSummary(
     _candidate: DecisionCandidate,
     context: Record<string, unknown>,
   ) {
