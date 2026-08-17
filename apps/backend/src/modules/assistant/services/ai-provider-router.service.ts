@@ -52,7 +52,9 @@ export class AiProviderRouterService {
 
       try {
         if (!(await provider.isAvailable())) continue;
-        return await provider.generate(request);
+        const response = await provider.generate(request);
+        this.consumeQuota(provider.id);
+        return response;
       } catch (error) {
         lastError = error;
         this.cooldown(provider.id, error);
@@ -79,6 +81,19 @@ export class AiProviderRouterService {
     }
 
     return state.quota?.remaining === undefined || state.quota.remaining > 0;
+  }
+
+  private consumeQuota(providerId: AiProviderId): void {
+    const state = this.state.get(providerId);
+    if (state?.quota?.remaining === undefined) return;
+
+    this.state.set(providerId, {
+      ...state,
+      quota: {
+        ...state.quota,
+        remaining: Math.max(0, state.quota.remaining - 1),
+      },
+    });
   }
 
   private cooldown(providerId: AiProviderId, error: unknown): void {
