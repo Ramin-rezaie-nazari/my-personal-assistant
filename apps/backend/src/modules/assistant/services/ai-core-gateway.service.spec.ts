@@ -53,9 +53,9 @@ describe('AiCoreGatewayService', () => {
       dateKey: '2026-08-17',
       request: { input: 'امروز چی بخورم؟' },
       conversation: { turns: [] },
-      nutrition: { meals: { calories: 1200, protein: 60 } },
-      life: { goals: { active: 1 }, fitness: { disciplines: ['gym'] } },
-    } satisfies PersonalContext;
+      nutrition: {} as PersonalContext['nutrition'],
+      life: {} as PersonalContext['life'],
+    } as PersonalContext;
     const build = jest.fn().mockResolvedValue(context);
     const gateway = makeGateway(generate, build);
 
