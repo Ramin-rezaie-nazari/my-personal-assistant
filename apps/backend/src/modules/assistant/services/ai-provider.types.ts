@@ -33,6 +33,11 @@ export type AiProviderMetadata = {
   local: boolean;
 };
 
+export type AiProviderQuota = {
+  remaining?: number;
+  resetAt?: number;
+};
+
 export interface AiProvider {
   readonly id: AiProviderId;
   readonly metadata?: AiProviderMetadata;
