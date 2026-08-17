@@ -36,7 +36,26 @@ describe('LocalIntelligenceCoreService', () => {
         };
       }),
     } as any;
-    return { service: new LocalIntelligenceCoreService(language), language };
+    const runtime = {
+      profile: jest.fn((signals?: { totalMemoryMb?: number; cpuCores?: number }) =>
+        signals?.totalMemoryMb && signals.totalMemoryMb <= 2048
+          ? {
+              tier: 'tiny',
+              maxContextTokens: 768,
+              preferredModelClass: 'deterministic',
+              allowVision: false,
+              allowVoice: false,
+            }
+          : {
+              tier: 'standard',
+              maxContextTokens: 3072,
+              preferredModelClass: 'small-local',
+              allowVision: true,
+              allowVoice: true,
+            },
+      ),
+    } as any;
+    return { service: new LocalIntelligenceCoreService(language, runtime), language, runtime };
   };
 
   it('builds a nutrition response from compact user context', async () => {
@@ -57,6 +76,8 @@ describe('LocalIntelligenceCoreService', () => {
       task: 'text-generation',
       text: 'تا اینجای امروز حدود 1800 کالری و 112 گرم پروتئین ثبت کردی.',
       source: 'contextual-template',
+      runtimeTier: 'standard',
+      modelClass: 'small-local',
     });
   });
 
@@ -73,6 +94,7 @@ describe('LocalIntelligenceCoreService', () => {
     ).resolves.toMatchObject({
       text: expect.stringContaining('620 کالری'),
       source: 'contextual-template',
+      runtimeTier: 'standard',
     });
   });
 
@@ -103,5 +125,19 @@ describe('LocalIntelligenceCoreService', () => {
       text: expect.stringContaining('هدف‌های فعلیت'),
       confidence: 0.55,
     });
+  });
+
+  it('uses the device runtime signals to select a tiny tier on weak devices', async () => {
+    const { service } = makeService();
+    const result = await service.generate({
+      input: 'یه پیشنهاد برای امروز بده',
+      task: 'text-generation',
+      context: {
+        deviceRuntime: { totalMemoryMb: 2048, cpuCores: 2 },
+      },
+    });
+
+    expect(result.runtimeTier).toBe('tiny');
+    expect(result.modelClass).toBe('deterministic');
   });
 });
