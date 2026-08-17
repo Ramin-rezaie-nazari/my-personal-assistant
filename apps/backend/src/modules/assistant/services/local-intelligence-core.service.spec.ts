@@ -20,6 +20,14 @@ describe('LocalIntelligenceCoreService', () => {
             normalizedText: input,
           };
         }
+        if (input.includes('آب') || input.includes('لیتر')) {
+          return {
+            intent: 'ADD_WATER',
+            entities: { waterAmountMl: 500 },
+            confidence: 0.97,
+            normalizedText: input,
+          };
+        }
         return {
           intent: 'UNKNOWN',
           entities: {},
@@ -28,11 +36,11 @@ describe('LocalIntelligenceCoreService', () => {
         };
       }),
     } as any;
-    return new LocalIntelligenceCoreService(language), language;
+    return { service: new LocalIntelligenceCoreService(language), language };
   };
 
   it('builds a nutrition response from compact user context', async () => {
-    const [service] = [makeService()[0]];
+    const { service } = makeService();
     await expect(
       service.generate({
         input: 'پروتئین امروزمو بگو',
@@ -53,7 +61,7 @@ describe('LocalIntelligenceCoreService', () => {
   });
 
   it('uses remaining calories for meal recommendations when available', async () => {
-    const [service] = [makeService()[0]];
+    const { service } = makeService();
     await expect(
       service.generate({
         input: 'برای شام چی بخورم؟',
@@ -69,7 +77,7 @@ describe('LocalIntelligenceCoreService', () => {
   });
 
   it('builds a deterministic lightweight plan without an LLM', async () => {
-    const [service] = [makeService()[0]];
+    const { service } = makeService();
     await expect(
       service.generate({
         input: '۵۰۰ میلی‌لیتر آب خوردم',
@@ -84,7 +92,7 @@ describe('LocalIntelligenceCoreService', () => {
   });
 
   it('keeps unknown requests lightweight and contextual instead of pretending to know', async () => {
-    const [service] = [makeService()[0]];
+    const { service } = makeService();
     await expect(
       service.generate({
         input: 'یه پیشنهاد برای امروز بده',
