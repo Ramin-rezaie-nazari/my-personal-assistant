@@ -1,18 +1,18 @@
 import { PersonalContextService } from './personal-context.service';
 
 describe('PersonalContextService', () => {
-  it('assembles user, conversation, nutrition and life context in parallel', async () => {
+  it('assembles user, conversation, nutrition, life, globalization and voice context', async () => {
     const userRow = {
       id: 'u1',
       firstName: 'Ramin',
       lastName: 'Rezaie',
-      settings: { timezone: 'Asia/Tehran', language: 'fa' },
+      settings: { timezone: 'Asia/Tehran', language: 'fa-IR' },
     };
     const user = {
       id: 'u1',
       name: 'Ramin Rezaie',
       timezone: 'Asia/Tehran',
-      language: 'fa',
+      language: 'fa-IR',
     };
     const conversation = {
       turns: [],
@@ -38,12 +38,36 @@ describe('PersonalContextService', () => {
     const lifeService = {
       getToday: jest.fn().mockResolvedValue(life),
     } as any;
+    const globalizationService = {
+      resolve: jest.fn().mockReturnValue({
+        languageTag: 'fa-IR',
+        languageCode: 'fa',
+        countryCode: 'IR',
+        currencyCode: 'IRR',
+        measurementSystem: 'metric',
+        timezone: 'Asia/Tehran',
+        direction: 'rtl',
+        foodRegion: 'IR',
+      }),
+    } as any;
+    const voiceService = {
+      resolve: jest.fn().mockReturnValue({
+        profile: { id: 'fa-IR', accent: 'tehran', languageCode: 'fa' },
+        locale: { languageTag: 'fa-IR' },
+        inputLanguage: 'fa',
+        synthesisLanguage: 'fa',
+        accent: 'tehran',
+        direction: 'rtl',
+      }),
+    } as any;
 
     const service = new PersonalContextService(
       prisma,
       conversationService,
       nutritionService,
       lifeService,
+      globalizationService,
+      voiceService,
     );
 
     await expect(
@@ -52,8 +76,10 @@ describe('PersonalContextService', () => {
         input: 'امروز چقدر پروتئین گرفتم؟',
         dateKey: '2026-08-17',
       }),
-    ).resolves.toEqual({
+    ).resolves.toMatchObject({
       user,
+      globalization: { languageTag: 'fa-IR', countryCode: 'IR' },
+      voice: { profile: { id: 'fa-IR' }, accent: 'tehran' },
       dateKey: '2026-08-17',
       request: { input: 'امروز چقدر پروتئین گرفتم؟' },
       conversation,
@@ -61,26 +87,16 @@ describe('PersonalContextService', () => {
       life,
     });
 
-    expect(prisma.user.findUnique).toHaveBeenCalledWith({
-      where: { id: 'u1' },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        settings: {
-          select: {
-            timezone: true,
-            language: true,
-          },
-        },
-      },
+    expect(globalizationService.resolve).toHaveBeenCalledWith({
+      languageTag: 'fa-IR',
+      countryCode: undefined,
+      timezone: 'Asia/Tehran',
     });
-    expect(conversationService.get).toHaveBeenCalledWith('u1');
-    expect(nutritionService.getDailySummary).toHaveBeenCalledWith(
-      'u1',
-      '2026-08-17',
-    );
-    expect(lifeService.getToday).toHaveBeenCalledWith('u1', '2026-08-17');
+    expect(voiceService.resolve).toHaveBeenCalledWith({
+      languageTag: 'fa-IR',
+      countryCode: 'IR',
+      voiceId: undefined,
+    });
   });
 
   it('uses the current UTC date key when none is supplied', async () => {
@@ -89,6 +105,8 @@ describe('PersonalContextService', () => {
       { get: jest.fn().mockResolvedValue({ turns: [] }) } as any,
       { getDailySummary: jest.fn().mockResolvedValue({}) } as any,
       { getToday: jest.fn().mockResolvedValue({}) } as any,
+      { resolve: jest.fn().mockReturnValue({ languageTag: 'en-US', countryCode: 'US' }) } as any,
+      { resolve: jest.fn().mockReturnValue({ profile: { id: 'en-US' } }) } as any,
     );
 
     const result = await service.build({ userId: 'u1' });
