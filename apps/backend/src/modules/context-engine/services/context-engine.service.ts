@@ -6,7 +6,7 @@ import { LifeContextFusionService } from './life-context-fusion.service';
 export class ContextEngineService {
   constructor(private readonly fusion: LifeContextFusionService) {}
 
-  async buildContext(
+  buildContext(
     userId: string,
     sources: Partial<
       Record<
