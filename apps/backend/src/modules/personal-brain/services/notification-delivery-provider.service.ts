@@ -20,22 +20,19 @@ export interface NotificationDeliveryProvider {
 export class InAppNotificationDeliveryProvider implements NotificationDeliveryProvider {
   readonly name = 'in-app';
   readonly channel = 'in_app' as const;
-  async deliver(
-    job: DeliveryJob,
-    destination: string,
-  ): Promise<ProviderResult> {
+  deliver(job: DeliveryJob, destination: string): Promise<ProviderResult> {
     if (!destination)
-      return {
+      return Promise.resolve({
         accepted: false,
         provider: this.name,
         retryable: false,
         error: 'Missing in-app destination.',
-      };
-    return {
+      });
+    return Promise.resolve({
       accepted: true,
       provider: this.name,
       providerMessageId: `${job.id}:${destination}`,
-    };
+    });
   }
 }
 
