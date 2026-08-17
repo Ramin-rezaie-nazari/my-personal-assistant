@@ -38,20 +38,36 @@ export class PersonalContextService {
 
   async build(request: PersonalContextRequest): Promise<PersonalContext> {
     const dateKey = request.dateKey ?? new Date().toISOString().slice(0, 10);
-    const [user, conversation, nutrition, life] = await Promise.all([
+    const [userRow, conversation, nutrition, life] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: request.userId },
         select: {
           id: true,
-          name: true,
-          timezone: true,
-          language: true,
+          firstName: true,
+          lastName: true,
+          settings: {
+            select: {
+              timezone: true,
+              language: true,
+            },
+          },
         },
       }),
       this.conversation.get(request.userId),
       this.nutrition.getDailySummary(request.userId, dateKey),
       this.life.getToday(request.userId, dateKey),
     ]);
+
+    const user = userRow
+      ? {
+          id: userRow.id,
+          name: [userRow.firstName, userRow.lastName]
+            .filter(Boolean)
+            .join(' ') || null,
+          timezone: userRow.settings?.timezone ?? null,
+          language: userRow.settings?.language ?? null,
+        }
+      : null;
 
     return {
       user,
