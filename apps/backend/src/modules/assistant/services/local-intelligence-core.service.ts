@@ -5,26 +5,34 @@ import {
   AiProviderResponse,
   AiTask,
 } from './ai-provider.types';
+import { DeviceAwareLocalRuntimeService, DeviceRuntimeSignals } from './device-aware-local-runtime.service';
 import { LocalLanguageUnderstandingService } from './local-language-understanding.service';
 
 export type LocalIntelligenceResult = AiProviderResponse & {
   task: AiTask;
   confidence: number;
   source: 'deterministic' | 'contextual-template';
+  runtimeTier: 'tiny' | 'light' | 'standard' | 'full';
+  modelClass: 'deterministic' | 'tiny-local' | 'small-local' | 'medium-local';
 };
 
 @Injectable()
 export class LocalIntelligenceCoreService {
-  constructor(private readonly language: LocalLanguageUnderstandingService) {}
+  constructor(
+    private readonly language: LocalLanguageUnderstandingService,
+    private readonly runtime: DeviceAwareLocalRuntimeService,
+  ) {}
 
   async generate(request: AiProviderRequest): Promise<LocalIntelligenceResult> {
+    const runtimeProfile = this.runtime.profile(this.deviceSignals(request.context));
+
     switch (request.task ?? 'intent-understanding') {
       case 'intent-understanding':
-        return this.intentResult(request);
+        return this.withRuntime(this.intentResult(request), runtimeProfile);
       case 'planning':
-        return this.planResult(request);
+        return this.withRuntime(this.planResult(request), runtimeProfile);
       case 'text-generation':
-        return this.textResult(request);
+        return this.withRuntime(this.textResult(request), runtimeProfile);
       default:
         return {
           providerId: 'local-core',
@@ -32,22 +40,24 @@ export class LocalIntelligenceCoreService {
           text: 'برای این نوع درخواست، هنوز قابلیت محلی مناسب فعال نشده است.',
           confidence: 0.2,
           source: 'deterministic',
+          runtimeTier: runtimeProfile.tier,
+          modelClass: runtimeProfile.preferredModelClass,
         };
     }
   }
 
-  private intentResult(request: AiProviderRequest): LocalIntelligenceResult {
+  private intentResult(request: AiProviderRequest): Promise<LocalIntelligenceResultBase> {
     const understanding = this.language.understand(request.input);
-    return {
+    return Promise.resolve({
       providerId: 'local-core',
       task: 'intent-understanding',
       text: JSON.stringify(understanding),
       confidence: understanding.confidence,
       source: 'deterministic',
-    };
+    });
   }
 
-  private planResult(request: AiProviderRequest): LocalIntelligenceResult {
+  private planResult(request: AiProviderRequest): Promise<LocalIntelligenceResultBase> {
     const understanding = this.language.understand(request.input);
     const entities = understanding.entities;
     const steps: string[] = [];
@@ -61,27 +71,43 @@ export class LocalIntelligenceCoreService {
 
     if (!steps.length) steps.push('درک درخواست', 'بررسی context کاربر', 'انتخاب اقدام مناسب');
 
-    return {
+    return Promise.resolve({
       providerId: 'local-core',
       task: 'planning',
       text: JSON.stringify({ intent: understanding.intent, steps }),
       confidence: understanding.confidence,
       source: 'deterministic',
-    };
+    });
   }
 
-  private textResult(request: AiProviderRequest): LocalIntelligenceResult {
+  private textResult(request: AiProviderRequest): Promise<LocalIntelligenceResultBase> {
     const understanding = this.language.understand(request.input);
     const context = this.readContext(request.context);
     const text = this.compose(understanding.intent, request.input, context);
 
-    return {
+    return Promise.resolve({
       providerId: 'local-core',
       task: 'text-generation',
       text,
       confidence: understanding.confidence > 0 ? understanding.confidence : 0.55,
       source: context ? 'contextual-template' : 'deterministic',
-    };
+    });
+  }
+
+  private withRuntime(
+    result: Promise<LocalIntelligenceResultBase>,
+    profile: ReturnType<DeviceAwareLocalRuntimeService['profile']>,
+  ): Promise<LocalIntelligenceResult> {
+    return result.then((value) => ({
+      ...value,
+      runtimeTier: profile.tier,
+      modelClass: profile.preferredModelClass,
+    }));
+  }
+
+  private deviceSignals(context?: Record<string, unknown>): DeviceRuntimeSignals {
+    const signals = context?.deviceRuntime;
+    return signals && typeof signals === 'object' ? (signals as DeviceRuntimeSignals) : {};
   }
 
   private compose(intent: string, input: string, context?: LocalContext): string {
@@ -145,6 +171,8 @@ export class LocalIntelligenceCoreService {
     return value && typeof value === 'object' ? (value as Record<string, any>) : undefined;
   }
 }
+
+type LocalIntelligenceResultBase = Omit<LocalIntelligenceResult, 'runtimeTier' | 'modelClass'>;
 
 type LocalContext = {
   nutrition?: Record<string, any>;
