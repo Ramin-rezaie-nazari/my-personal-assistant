@@ -42,7 +42,6 @@ import { LocalWaterActionAdapter } from './adapters/local-water-action.adapter';
     ContextService,
     ReasoningService,
     RecommendationService,
-    PlanningService,
     NaturalActionExecutionService,
     ConversationHistoryService,
     ConversationContextService,
