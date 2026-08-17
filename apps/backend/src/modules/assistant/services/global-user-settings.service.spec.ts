@@ -4,10 +4,12 @@ describe('GlobalUserSettingsService', () => {
   const voiceProfile = {
     id: 'fa-IR',
     languageCode: 'fa',
-    languageName: 'Persian',
-    accent: 'Tehran',
+    languageTag: 'fa-IR',
+    countryCode: 'IR',
+    accent: 'tehran',
     direction: 'rtl' as const,
-    offlineCapable: true,
+    offlineVoice: true,
+    fallbackLanguage: 'fa',
   };
 
   it('reads persistent globalization facts and resolves a stable voice profile', async () => {
@@ -50,7 +52,7 @@ describe('GlobalUserSettingsService', () => {
       currencyCode: 'IRR',
       measurementSystem: 'metric',
       timezone: 'Asia/Tehran',
-      voiceProfile: { id: 'fa-IR' },
+      voiceProfile: { id: 'fa-IR', offlineVoice: true },
     });
   });
 
@@ -85,7 +87,9 @@ describe('GlobalUserSettingsService', () => {
       }),
     };
     const voice = {
-      resolve: jest.fn().mockReturnValue({ profile: { ...voiceProfile, id: 'es-ES' } }),
+      resolve: jest.fn().mockReturnValue({
+        profile: { ...voiceProfile, id: 'es-MX', languageCode: 'es', languageTag: 'es-MX', countryCode: 'MX', accent: 'mexican' },
+      }),
     };
     const service = new GlobalUserSettingsService(prisma as any, globalization as any, voice as any);
 
@@ -95,13 +99,13 @@ describe('GlobalUserSettingsService', () => {
       currencyCode: 'EUR',
       measurementSystem: 'metric',
       timezone: 'Europe/Madrid',
-      voiceProfile: 'es-ES',
+      voiceProfile: 'es-MX',
     });
 
     expect(tx).toHaveBeenCalledTimes(1);
     expect(prisma.userSettings.upsert).toHaveBeenCalled();
     expect(result.globalization.countryCode).toBe('ES');
-    expect(result.voiceProfile.id).toBe('es-ES');
+    expect(result.voiceProfile.id).toBe('es-MX');
   });
 
   it('rejects an explicitly unsupported voice profile', async () => {
