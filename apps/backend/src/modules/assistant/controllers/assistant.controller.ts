@@ -13,10 +13,8 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ProcessAssistantRequestDto } from '../dto/process-assistant-request.dto';
 import { AssistantService } from '../services/assistant.service';
-import {
-  GlobalUserSettingsService,
-  UpdateGlobalUserSettings,
-} from '../services/global-user-settings.service';
+import { GlobalUserSettingsService } from '../services/global-user-settings.service';
+import type { UpdateGlobalUserSettings } from '../services/global-user-settings.service';
 
 interface AuthenticatedRequest extends Request {
   user: {
