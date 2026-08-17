@@ -2,18 +2,32 @@ import { PersonalContextService } from './personal-context.service';
 
 describe('PersonalContextService', () => {
   it('assembles user, conversation, nutrition and life context in parallel', async () => {
-    const user = { id: 'u1', name: 'Ramin', timezone: 'Asia/Tehran', language: 'fa' };
+    const userRow = {
+      id: 'u1',
+      firstName: 'Ramin',
+      lastName: 'Rezaie',
+      settings: { timezone: 'Asia/Tehran', language: 'fa' },
+    };
+    const user = {
+      id: 'u1',
+      name: 'Ramin Rezaie',
+      timezone: 'Asia/Tehran',
+      language: 'fa',
+    };
     const conversation = {
       turns: [],
       lastUserMessage: undefined,
       lastAssistantMessage: undefined,
       lastAction: undefined,
     };
-    const nutrition = { dateKey: '2026-08-17', meals: { calories: 1800, protein: 120 } };
+    const nutrition = {
+      dateKey: '2026-08-17',
+      meals: { calories: 1800, protein: 120 },
+    };
     const life = { goals: { active: 1 }, fitness: { disciplines: ['gym'] } };
 
     const prisma = {
-      user: { findUnique: jest.fn().mockResolvedValue(user) },
+      user: { findUnique: jest.fn().mockResolvedValue(userRow) },
     } as any;
     const conversationService = {
       get: jest.fn().mockResolvedValue(conversation),
@@ -49,7 +63,17 @@ describe('PersonalContextService', () => {
 
     expect(prisma.user.findUnique).toHaveBeenCalledWith({
       where: { id: 'u1' },
-      select: { id: true, name: true, timezone: true, language: true },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        settings: {
+          select: {
+            timezone: true,
+            language: true,
+          },
+        },
+      },
     });
     expect(conversationService.get).toHaveBeenCalledWith('u1');
     expect(nutritionService.getDailySummary).toHaveBeenCalledWith(
