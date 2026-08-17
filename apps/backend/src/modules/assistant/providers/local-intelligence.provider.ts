@@ -14,12 +14,13 @@ export class LocalIntelligenceProvider implements AiProvider {
   constructor(private readonly language: LocalLanguageUnderstandingService) {}
 
   async isAvailable(): Promise<boolean> {
+    await Promise.resolve();
     return true;
   }
 
   async generate(request: AiProviderRequest): Promise<AiProviderResponse> {
     const understanding = this.language.understand(request.input);
-    const food = understanding.entities.food;
+    const food = this.formatFood(understanding.entities.food);
 
     switch (understanding.intent) {
       case 'ADD_TO_BASKET':
@@ -57,5 +58,17 @@ export class LocalIntelligenceProvider implements AiProvider {
           text: 'درخواستت رو متوجه شدم، اما برای انجام دقیقش به اطلاعات بیشتری نیاز دارم.',
         };
     }
+  }
+
+  private formatFood(value: unknown): string | undefined {
+    if (typeof value === 'string') return value;
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return value ? `${value}` : undefined;
+    }
+    if (Array.isArray(value)) {
+      const items = value.filter((item): item is string => typeof item === 'string');
+      return items.length ? items.join(', ') : undefined;
+    }
+    return undefined;
   }
 }
