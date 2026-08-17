@@ -22,6 +22,7 @@ import { AiCoreGatewayService } from './services/ai-core-gateway.service';
 import { PersonalContextService } from './services/personal-context.service';
 import { LocalIntelligenceCoreService } from './services/local-intelligence-core.service';
 import { LocalLanguageUnderstandingService } from './services/local-language-understanding.service';
+import { DeviceAwareLocalRuntimeService } from './services/device-aware-local-runtime.service';
 import { LocalIntelligenceProvider } from './providers/local-intelligence.provider';
 import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter';
 import { LocalNutritionActionAdapter } from './adapters/local-nutrition-action.adapter';
@@ -48,6 +49,7 @@ import { LocalWaterActionAdapter } from './adapters/local-water-action.adapter';
     PersonalContextService,
     LocalIntelligenceCoreService,
     LocalLanguageUnderstandingService,
+    DeviceAwareLocalRuntimeService,
     LocalIntelligenceProvider,
     LocalBasketActionAdapter,
     LocalNutritionActionAdapter,
@@ -68,6 +70,7 @@ import { LocalWaterActionAdapter } from './adapters/local-water-action.adapter';
     PersonalContextService,
     LocalIntelligenceCoreService,
     LocalLanguageUnderstandingService,
+    DeviceAwareLocalRuntimeService,
   ],
 })
 export class AssistantModule {}
