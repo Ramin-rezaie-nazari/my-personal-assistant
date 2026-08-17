@@ -5,6 +5,11 @@ import {
   AiTask,
 } from './ai-provider.types';
 import { AiProviderRouterService } from './ai-provider-router.service';
+import {
+  PersonalContext,
+  PersonalContextRequest,
+  PersonalContextService,
+} from './personal-context.service';
 
 export type AiCoreRequest = {
   input: string;
@@ -18,7 +23,10 @@ export type AiCoreResponse = AiProviderResponse & {
 
 @Injectable()
 export class AiCoreGatewayService {
-  constructor(private readonly router: AiProviderRouterService) {}
+  constructor(
+    private readonly router: AiProviderRouterService,
+    private readonly personalContext: PersonalContextService,
+  ) {}
 
   async run(request: AiCoreRequest): Promise<AiCoreResponse> {
     const response = await this.router.generate({
@@ -31,6 +39,25 @@ export class AiCoreGatewayService {
       ...response,
       task: request.task,
     };
+  }
+
+  async runForUser(
+    request: Omit<AiCoreRequest, 'context'> & {
+      dateKey?: string;
+    },
+  ): Promise<AiCoreResponse & { context: PersonalContext }> {
+    const context = await this.personalContext.build({
+      userId: request.contextUserId,
+      input: request.input,
+      dateKey: request.dateKey,
+    });
+    const response = await this.run({
+      input: request.input,
+      task: request.task,
+      context: this.toProviderContext(context),
+    });
+
+    return { ...response, context };
   }
 
   async understand(input: string, context?: Record<string, unknown>) {
@@ -55,5 +82,16 @@ export class AiCoreGatewayService {
 
   async analyzeVision(input: string, context?: Record<string, unknown>) {
     return this.run({ input, task: 'vision', context });
+  }
+
+  private toProviderContext(context: PersonalContext): Record<string, unknown> {
+    return {
+      dateKey: context.dateKey,
+      request: context.request,
+      user: context.user,
+      conversation: context.conversation,
+      nutrition: context.nutrition,
+      life: context.life,
+    };
   }
 }
