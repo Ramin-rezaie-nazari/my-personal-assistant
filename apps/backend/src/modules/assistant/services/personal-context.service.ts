@@ -4,11 +4,15 @@ import { PrismaService } from '../../../common/database/prisma.service';
 import { BrainLifeContextService } from '../../personal-brain/services/brain-life-context.service';
 import { NutritionService } from '../../nutrition/services/nutrition.service';
 import { ConversationContextService } from './conversation-context.service';
+import { GlobalizationContextService } from './globalization-context.service';
+import { VoiceContextService } from './voice-context.service';
 
 export type PersonalContextRequest = {
   userId: string;
   input?: string;
   dateKey?: string;
+  countryCode?: string;
+  voiceId?: string;
 };
 
 export type PersonalContext = {
@@ -18,6 +22,8 @@ export type PersonalContext = {
     timezone: string | null;
     language: string | null;
   } | null;
+  globalization: ReturnType<GlobalizationContextService['resolve']>;
+  voice: ReturnType<VoiceContextService['resolve']>;
   dateKey: string;
   request: {
     input?: string;
@@ -34,6 +40,8 @@ export class PersonalContextService {
     private readonly conversation: ConversationContextService,
     private readonly nutrition: NutritionService,
     private readonly life: BrainLifeContextService,
+    private readonly globalization: GlobalizationContextService,
+    private readonly voice: VoiceContextService,
   ) {}
 
   async build(request: PersonalContextRequest): Promise<PersonalContext> {
@@ -69,8 +77,22 @@ export class PersonalContextService {
         }
       : null;
 
+    const languageTag = user?.language ?? undefined;
+    const globalization = this.globalization.resolve({
+      languageTag,
+      countryCode: request.countryCode,
+      timezone: user?.timezone ?? undefined,
+    });
+    const voice = this.voice.resolve({
+      languageTag: globalization.languageTag,
+      countryCode: globalization.countryCode ?? undefined,
+      voiceId: request.voiceId,
+    });
+
     return {
       user,
+      globalization,
+      voice,
       dateKey,
       request: { input: request.input },
       conversation,
