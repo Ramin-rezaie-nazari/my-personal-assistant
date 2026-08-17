@@ -6,6 +6,7 @@ import { ContextualCommandService } from './contextual-command.service';
 import { ConversationContextService } from './conversation-context.service';
 import { LocalLanguageUnderstandingService } from './local-language-understanding.service';
 import { PlanningService } from './planning.service';
+import { AiCoreGatewayService } from './ai-core-gateway.service';
 import { BrainResponse } from '../../personal-brain/types';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class AssistantService {
     private readonly naturalActionExecutionService: NaturalActionExecutionService,
     private readonly contextualCommandService: ContextualCommandService,
     private readonly conversationContextService: ConversationContextService,
+    private readonly aiCoreGatewayService: AiCoreGatewayService,
     @Optional()
     private readonly localLanguageUnderstandingService?: LocalLanguageUnderstandingService,
     @Optional() private readonly planningService?: PlanningService,
@@ -81,6 +83,7 @@ export class AssistantService {
           metadata: { local: true, clarification: true },
         } as BrainResponse)
       : ((local ? this.responseForLocalIntent(local) : undefined) ??
+        (await this.contextualAiFallback(input, userId)) ??
         (await this.brainOrchestratorService.processRequest(input, userId)));
     const executionResponse = this.resolveContextualExecution(
       response,
@@ -144,6 +147,28 @@ export class AssistantService {
       resourceId,
     });
     return finalResponse;
+  }
+
+  private async contextualAiFallback(
+    input: string,
+    userId: string,
+  ): Promise<BrainResponse | undefined> {
+    const result = await this.aiCoreGatewayService.runForUser({
+      userId,
+      input,
+      task: 'text-generation',
+    });
+    return {
+      intent: 'assistant',
+      nextAction: undefined,
+      message: result.text,
+      confidence: 0.6,
+      metadata: {
+        aiCore: true,
+        providerId: result.providerId,
+        contextDateKey: result.context.dateKey,
+      },
+    };
   }
 
   private responseForLocalIntent(
