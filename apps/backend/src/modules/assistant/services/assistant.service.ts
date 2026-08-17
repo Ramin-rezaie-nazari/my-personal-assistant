@@ -153,22 +153,26 @@ export class AssistantService {
     input: string,
     userId: string,
   ): Promise<BrainResponse | undefined> {
-    const result = await this.aiCoreGatewayService.runForUser({
-      userId,
-      input,
-      task: 'text-generation',
-    });
-    return {
-      intent: 'assistant',
-      nextAction: undefined,
-      message: result.text,
-      confidence: 0.6,
-      metadata: {
-        aiCore: true,
-        providerId: result.providerId,
-        contextDateKey: result.context.dateKey,
-      },
-    };
+    try {
+      const result = await this.aiCoreGatewayService.runForUser({
+        userId,
+        input,
+        task: 'text-generation',
+      });
+      return {
+        intent: 'assistant',
+        nextAction: undefined,
+        message: result.text,
+        confidence: 0.6,
+        metadata: {
+          aiCore: true,
+          providerId: result.providerId,
+          contextDateKey: result.context.dateKey,
+        },
+      };
+    } catch {
+      return undefined;
+    }
   }
 
   private responseForLocalIntent(
