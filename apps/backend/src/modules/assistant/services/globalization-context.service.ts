@@ -97,27 +97,21 @@ export class GlobalizationContextService {
   }
 
   private isSupportedLocale(languageTag: string): boolean {
-    const languageCode = languageTag.split('-')[0]?.toLowerCase();
-    if (!languageCode) return false;
+    const requestedLanguage = new Intl.Locale(languageTag).language.toLowerCase();
 
-    const supportedValuesOf = (Intl as typeof Intl & {
-      supportedValuesOf?: (key: 'language' | 'region') => string[];
-    }).supportedValuesOf;
+    try {
+      const resolved = new Intl.DateTimeFormat(languageTag).resolvedOptions().locale;
+      const resolvedLanguage = new Intl.Locale(resolved).language.toLowerCase();
+      if (requestedLanguage !== resolvedLanguage) return false;
 
-    if (typeof supportedValuesOf !== 'function') {
-      return /^[a-z]{2,3}(?:-[A-Z]{2})?$/.test(languageTag);
+      const region = this.countryFromLocale(languageTag);
+      if (!region) return true;
+
+      const resolvedLocale = new Intl.Locale(resolved);
+      return resolvedLocale.region?.toUpperCase() === region;
+    } catch {
+      return false;
     }
-
-    const supportedLanguages = new Set(
-      supportedValuesOf('language').map((value) => value.toLowerCase()),
-    );
-    if (!supportedLanguages.has(languageCode)) return false;
-
-    const region = this.countryFromLocale(languageTag);
-    if (!region) return true;
-
-    const supportedRegions = new Set(supportedValuesOf('region'));
-    return supportedRegions.has(region);
   }
 
   private normalizeCountry(value?: string): string | null {
