@@ -78,7 +78,7 @@ export class GlobalizationContextService {
     try {
       if (requested) {
         const [canonical] = Intl.getCanonicalLocales(requested);
-        if (canonical) return canonical;
+        if (canonical && this.isSupportedLocale(canonical)) return canonical;
       }
     } catch {
       // Fall through to a safe locale.
@@ -87,13 +87,37 @@ export class GlobalizationContextService {
     if (normalizedCountry) {
       try {
         const [canonical] = Intl.getCanonicalLocales(`en-${normalizedCountry}`);
-        if (canonical) return canonical;
+        if (canonical && this.isSupportedLocale(canonical)) return canonical;
       } catch {
         // Fall through to the global default.
       }
     }
 
     return DEFAULT_LOCALE;
+  }
+
+  private isSupportedLocale(languageTag: string): boolean {
+    const languageCode = languageTag.split('-')[0]?.toLowerCase();
+    if (!languageCode) return false;
+
+    const supportedValuesOf = (Intl as typeof Intl & {
+      supportedValuesOf?: (key: 'language' | 'region') => string[];
+    }).supportedValuesOf;
+
+    if (typeof supportedValuesOf !== 'function') {
+      return /^[a-z]{2,3}(?:-[A-Z]{2})?$/.test(languageTag);
+    }
+
+    const supportedLanguages = new Set(
+      supportedValuesOf('language').map((value) => value.toLowerCase()),
+    );
+    if (!supportedLanguages.has(languageCode)) return false;
+
+    const region = this.countryFromLocale(languageTag);
+    if (!region) return true;
+
+    const supportedRegions = new Set(supportedValuesOf('region'));
+    return supportedRegions.has(region);
   }
 
   private normalizeCountry(value?: string): string | null {
