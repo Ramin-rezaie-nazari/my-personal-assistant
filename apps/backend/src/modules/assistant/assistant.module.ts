@@ -20,6 +20,7 @@ import { ContextualCommandService } from './services/contextual-command.service'
 import { AiProviderRouterService } from './services/ai-provider-router.service';
 import { AiCoreGatewayService } from './services/ai-core-gateway.service';
 import { PersonalContextService } from './services/personal-context.service';
+import { GlobalizationContextService } from './services/globalization-context.service';
 import { LocalIntelligenceCoreService } from './services/local-intelligence-core.service';
 import { LocalLanguageUnderstandingService } from './services/local-language-understanding.service';
 import { DeviceAwareLocalRuntimeService } from './services/device-aware-local-runtime.service';
@@ -47,6 +48,7 @@ import { LocalWaterActionAdapter } from './adapters/local-water-action.adapter';
     AiProviderRouterService,
     AiCoreGatewayService,
     PersonalContextService,
+    GlobalizationContextService,
     LocalIntelligenceCoreService,
     LocalLanguageUnderstandingService,
     DeviceAwareLocalRuntimeService,
@@ -68,6 +70,7 @@ import { LocalWaterActionAdapter } from './adapters/local-water-action.adapter';
     AiProviderRouterService,
     AiCoreGatewayService,
     PersonalContextService,
+    GlobalizationContextService,
     LocalIntelligenceCoreService,
     LocalLanguageUnderstandingService,
     DeviceAwareLocalRuntimeService,
