@@ -1,3 +1,4 @@
+import { LocalIntelligenceCoreService } from './local-intelligence-core.service';
 import { LocalIntelligenceProvider } from '../providers/local-intelligence.provider';
 import { AiProviderRouterService } from './ai-provider-router.service';
 import { AiProvider } from './ai-provider.types';
@@ -7,9 +8,12 @@ describe('AiProviderRouterService', () => {
     new LocalIntelligenceProvider({
       generate: jest.fn().mockResolvedValue({
         providerId: 'local-core',
+        task: 'intent-understanding',
         text: 'local response',
+        confidence: 0.9,
+        source: 'deterministic',
       }),
-    } as any);
+    } as unknown as LocalIntelligenceCoreService);
 
   const provider = (
     overrides: Partial<AiProvider> & Pick<AiProvider, 'id'>,
