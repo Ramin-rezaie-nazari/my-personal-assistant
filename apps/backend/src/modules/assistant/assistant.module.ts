@@ -20,6 +20,7 @@ import { ContextualCommandService } from './services/contextual-command.service'
 import { AiProviderRouterService } from './services/ai-provider-router.service';
 import { AiCoreGatewayService } from './services/ai-core-gateway.service';
 import { PersonalContextService } from './services/personal-context.service';
+import { LocalIntelligenceCoreService } from './services/local-intelligence-core.service';
 import { LocalLanguageUnderstandingService } from './services/local-language-understanding.service';
 import { LocalIntelligenceProvider } from './providers/local-intelligence.provider';
 import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter';
@@ -45,6 +46,7 @@ import { LocalWaterActionAdapter } from './adapters/local-water-action.adapter';
     AiProviderRouterService,
     AiCoreGatewayService,
     PersonalContextService,
+    LocalIntelligenceCoreService,
     LocalLanguageUnderstandingService,
     LocalIntelligenceProvider,
     LocalBasketActionAdapter,
@@ -64,6 +66,7 @@ import { LocalWaterActionAdapter } from './adapters/local-water-action.adapter';
     AiProviderRouterService,
     AiCoreGatewayService,
     PersonalContextService,
+    LocalIntelligenceCoreService,
     LocalLanguageUnderstandingService,
   ],
 })
