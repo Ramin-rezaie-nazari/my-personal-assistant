@@ -1,13 +1,19 @@
 import { LocalIntelligenceProvider } from '../providers/local-intelligence.provider';
-import { LocalLanguageUnderstandingService } from './local-language-understanding.service';
 import { AiProviderRouterService } from './ai-provider-router.service';
 import { AiProvider } from './ai-provider.types';
 
 describe('AiProviderRouterService', () => {
   const local = () =>
-    new LocalIntelligenceProvider(new LocalLanguageUnderstandingService());
+    new LocalIntelligenceProvider({
+      generate: jest.fn().mockResolvedValue({
+        providerId: 'local-core',
+        text: 'local response',
+      }),
+    } as any);
 
-  const provider = (overrides: Partial<AiProvider> & Pick<AiProvider, 'id'>): AiProvider => ({
+  const provider = (
+    overrides: Partial<AiProvider> & Pick<AiProvider, 'id'>,
+  ): AiProvider => ({
     id: overrides.id,
     metadata: overrides.metadata ?? {
       priority: 50,
@@ -15,22 +21,26 @@ describe('AiProviderRouterService', () => {
       local: false,
     },
     isAvailable: overrides.isAvailable ?? (async () => true),
-    generate: overrides.generate ?? (async () => ({
-      providerId: overrides.id,
-      text: overrides.id,
-    })),
+    generate:
+      overrides.generate ??
+      (async () => ({
+        providerId: overrides.id,
+        text: overrides.id,
+      })),
   });
 
   it('prefers the local provider for supported local work', async () => {
     const router = new AiProviderRouterService(local());
-    router.register(provider({
-      id: 'remote-a',
-      metadata: {
-        priority: 50,
-        capabilities: new Set(['intent-understanding']),
-        local: false,
-      },
-    }));
+    router.register(
+      provider({
+        id: 'remote-a',
+        metadata: {
+          priority: 50,
+          capabilities: new Set(['intent-understanding']),
+          local: false,
+        },
+      }),
+    );
 
     const result = await router.generate({
       input: 'کالری امروزمو بگو',
@@ -59,46 +69,53 @@ describe('AiProviderRouterService', () => {
 
   it('skips an exhausted provider and uses the next available remote provider', async () => {
     const router = new AiProviderRouterService(local());
-    router.register(provider({
-      id: 'remote-a',
-      metadata: {
-        priority: 200,
-        capabilities: new Set(['text-generation']),
-        local: false,
-      },
-    }));
-    router.register(provider({
-      id: 'remote-b',
-      metadata: {
-        priority: 100,
-        capabilities: new Set(['text-generation']),
-        local: false,
-      },
-    }));
+    router.register(
+      provider({
+        id: 'remote-a',
+        metadata: {
+          priority: 200,
+          capabilities: new Set(['text-generation']),
+          local: false,
+        },
+      }),
+    );
+    router.register(
+      provider({
+        id: 'remote-b',
+        metadata: {
+          priority: 100,
+          capabilities: new Set(['text-generation']),
+          local: false,
+        },
+      }),
+    );
 
-    // Focus this scenario on remote-to-remote failover. The local core is
-    // intentionally exhausted so it cannot short-circuit the remote chain.
     router.setQuota('local-core', { remaining: 0 });
     router.setQuota('remote-a', { remaining: 0 });
 
-    const result = await router.generate({ input: 'hello', task: 'text-generation' });
+    const result = await router.generate({
+      input: 'hello',
+      task: 'text-generation',
+    });
 
     expect(result.providerId).toBe('remote-b');
   });
 
   it('fails over after a provider error and cools the failed provider down', async () => {
     const router = new AiProviderRouterService(local());
-    router.register(provider({
-      id: 'remote-a',
-      metadata: {
-        priority: 200,
-        capabilities: new Set(['intent-understanding']),
-        local: false,
-      },
-      generate: async () => {
-        throw Object.assign(new Error('rate limited'), { status: 429 });
-      },
-    }));
+    router.register(
+      provider({
+        id: 'remote-a',
+        metadata: {
+          priority: 200,
+          capabilities: new Set(['intent-understanding']),
+          local: false,
+        },
+        generate: async () => {
+          throw Object.assign(new Error('rate limited'), { status: 429 });
+        },
+      }),
+    );
 
     const result = await router.generate({
       input: 'کالری امروزمو بگو',
@@ -113,14 +130,16 @@ describe('AiProviderRouterService', () => {
 
   it('consumes tracked quota after a successful call', async () => {
     const router = new AiProviderRouterService(local());
-    router.register(provider({
-      id: 'remote-a',
-      metadata: {
-        priority: 200,
-        capabilities: new Set(['text-generation']),
-        local: false,
-      },
-    }));
+    router.register(
+      provider({
+        id: 'remote-a',
+        metadata: {
+          priority: 200,
+          capabilities: new Set(['text-generation']),
+          local: false,
+        },
+      }),
+    );
     router.setQuota('remote-a', { remaining: 2 });
 
     await router.generate({ input: 'hello', task: 'text-generation' });
