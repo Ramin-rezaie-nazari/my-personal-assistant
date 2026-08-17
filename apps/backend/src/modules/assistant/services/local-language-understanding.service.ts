@@ -208,7 +208,7 @@ export class LocalLanguageUnderstandingService {
 
   private extractWaterAmountMl(text: string): number | undefined {
     const explicit = text.match(
-      /\b(\d+(?:\.\d+)?)\s*(?:ml|میلی\s*لیتر|میلیلیتر)\b/i,
+      /(\d+(?:\.\d+)?)\s*(?:ml|میلی\s*لیتر|میلیلیتر)/i,
     );
     if (explicit) return Math.round(Number(explicit[1]));
     const glass = this.extractQuantity(text);
