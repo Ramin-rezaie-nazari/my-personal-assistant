@@ -7,7 +7,6 @@ import {
 import { AiProviderRouterService } from './ai-provider-router.service';
 import {
   PersonalContext,
-  PersonalContextRequest,
   PersonalContextService,
 } from './personal-context.service';
 
@@ -15,6 +14,13 @@ export type AiCoreRequest = {
   input: string;
   task: AiTask;
   context?: Record<string, unknown>;
+};
+
+export type AiCoreUserRequest = {
+  userId: string;
+  input: string;
+  task: AiTask;
+  dateKey?: string;
 };
 
 export type AiCoreResponse = AiProviderResponse & {
@@ -42,12 +48,10 @@ export class AiCoreGatewayService {
   }
 
   async runForUser(
-    request: Omit<AiCoreRequest, 'context'> & {
-      dateKey?: string;
-    },
+    request: AiCoreUserRequest,
   ): Promise<AiCoreResponse & { context: PersonalContext }> {
     const context = await this.personalContext.build({
-      userId: request.contextUserId,
+      userId: request.userId,
       input: request.input,
       dateKey: request.dateKey,
     });
