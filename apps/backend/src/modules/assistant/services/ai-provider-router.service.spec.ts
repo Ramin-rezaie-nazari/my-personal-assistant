@@ -57,7 +57,7 @@ describe('AiProviderRouterService', () => {
     ).rejects.toThrow('No AI provider is available for task: vision');
   });
 
-  it('skips an exhausted provider and uses the next available provider', async () => {
+  it('skips an exhausted provider and uses the next available remote provider', async () => {
     const router = new AiProviderRouterService(local());
     router.register(provider({
       id: 'remote-a',
@@ -75,6 +75,10 @@ describe('AiProviderRouterService', () => {
         local: false,
       },
     }));
+
+    // Focus this scenario on remote-to-remote failover. The local core is
+    // intentionally exhausted so it cannot short-circuit the remote chain.
+    router.setQuota('local-core', { remaining: 0 });
     router.setQuota('remote-a', { remaining: 0 });
 
     const result = await router.generate({ input: 'hello', task: 'text-generation' });
