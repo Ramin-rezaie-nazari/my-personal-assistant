@@ -20,7 +20,6 @@ export class LocalIntelligenceProvider implements AiProvider {
   async generate(request: AiProviderRequest): Promise<AiProviderResponse> {
     const understanding = this.language.understand(request.input);
     const food = understanding.entities.food;
-    const quantity = understanding.entities.quantity ?? 1;
 
     switch (understanding.intent) {
       case 'ADD_TO_BASKET':
