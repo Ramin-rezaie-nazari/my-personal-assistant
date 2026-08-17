@@ -11,6 +11,7 @@ describe('AssistantService', () => {
       get: jest.Mock;
       understand: jest.Mock;
       createPlan: jest.Mock;
+      runForUser: jest.Mock;
     }> = {},
   ) => {
     const orchestrator = {
@@ -53,11 +54,22 @@ describe('AssistantService', () => {
           confidence: 0.7,
         }),
     } as any;
+    const aiCore = {
+      runForUser:
+        overrides.runForUser ??
+        jest.fn().mockResolvedValue({
+          providerId: 'local-core',
+          text: 'context-aware response',
+          task: 'text-generation',
+          context: { dateKey: '2026-08-17' },
+        }),
+    } as any;
     return new AssistantService(
       orchestrator,
       execution,
       contextual,
       conversation,
+      aiCore,
       localLanguageUnderstanding,
       planning,
     );
@@ -78,7 +90,8 @@ describe('AssistantService', () => {
       confidence: 1,
       nextAction: undefined,
     });
-    const service = makeService({ processRequest });
+    const runForUser = jest.fn().mockRejectedValue(new Error('no-ai-fallback'));
+    const service = makeService({ processRequest, runForUser });
 
     await expect(service.process('hello', 'user-123')).resolves.toMatchObject({
       message: 'ok',
@@ -86,6 +99,39 @@ describe('AssistantService', () => {
       confidence: 1,
     });
     expect(processRequest).toHaveBeenCalledWith('hello', 'user-123');
+    expect(runForUser).toHaveBeenCalledWith({
+      userId: 'user-123',
+      input: 'hello',
+      task: 'text-generation',
+    });
+  });
+
+  it('uses contextual AI for an unknown local request', async () => {
+    const runForUser = jest.fn().mockResolvedValue({
+      providerId: 'local-core',
+      text: 'با توجه به شرایط امروزت...',
+      task: 'text-generation',
+      context: { dateKey: '2026-08-17' },
+    });
+    const processRequest = jest.fn();
+    const service = makeService({ runForUser, processRequest });
+
+    await expect(service.process('امروز با توجه به شرایط من چی پیشنهاد میدی؟', 'u1')).resolves.toMatchObject({
+      message: 'با توجه به شرایط امروزت...',
+      intent: 'assistant',
+      nextAction: undefined,
+      metadata: {
+        aiCore: true,
+        providerId: 'local-core',
+        contextDateKey: '2026-08-17',
+      },
+    });
+    expect(runForUser).toHaveBeenCalledWith({
+      userId: 'u1',
+      input: 'امروز با توجه به شرایط من چی پیشنهاد میدی؟',
+      task: 'text-generation',
+    });
+    expect(processRequest).not.toHaveBeenCalled();
   });
 
   it('maps a local water intent to add_water', () => {
