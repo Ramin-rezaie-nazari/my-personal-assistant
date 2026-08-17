@@ -44,6 +44,7 @@ export default tseslint.config(
       '@typescript-eslint/require-await': 'warn',
       '@typescript-eslint/restrict-template-expressions': 'warn',
       '@typescript-eslint/await-thenable': 'warn',
+      '@typescript-eslint/no-unused-vars': 'warn',
       'no-useless-escape': 'warn',
       'prettier/prettier': ['error', { endOfLine: 'auto' }],
     },
