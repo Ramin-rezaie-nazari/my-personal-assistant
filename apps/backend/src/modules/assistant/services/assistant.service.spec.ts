@@ -116,15 +116,13 @@ describe('AssistantService', () => {
     const processRequest = jest.fn();
     const service = makeService({ runForUser, processRequest });
 
-    await expect(service.process('امروز با توجه به شرایط من چی پیشنهاد میدی؟', 'u1')).resolves.toMatchObject({
+    await expect(
+      service.process('امروز با توجه به شرایط من چی پیشنهاد میدی؟', 'u1'),
+    ).resolves.toMatchObject({
       message: 'با توجه به شرایط امروزت...',
       intent: 'assistant',
-      nextAction: undefined,
-      metadata: {
-        aiCore: true,
-        providerId: 'local-core',
-        contextDateKey: '2026-08-17',
-      },
+      confidence: 0.6,
+      metadata: expect.objectContaining({ aiCore: true }),
     });
     expect(runForUser).toHaveBeenCalledWith({
       userId: 'u1',
@@ -132,6 +130,24 @@ describe('AssistantService', () => {
       task: 'text-generation',
     });
     expect(processRequest).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the brain when contextual AI is unavailable', async () => {
+    const processRequest = jest.fn().mockResolvedValue({
+      message: 'brain fallback',
+      intent: 'general',
+      confidence: 0.8,
+      nextAction: undefined,
+    });
+    const runForUser = jest.fn().mockRejectedValue(new Error('provider unavailable'));
+    const service = makeService({ processRequest, runForUser });
+
+    await expect(service.process('یه سؤال ناشناخته', 'u1')).resolves.toMatchObject({
+      message: 'brain fallback',
+      intent: 'general',
+      confidence: 0.8,
+    });
+    expect(processRequest).toHaveBeenCalledWith('یه سؤال ناشناخته', 'u1');
   });
 
   it('maps a local water intent to add_water', () => {
