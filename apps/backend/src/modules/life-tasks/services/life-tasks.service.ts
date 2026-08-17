@@ -114,7 +114,7 @@ export class LifeTasksService {
     const completedAt =
       status === 'completed'
         ? new Date()
-        : status === 'completed'
+        : dto.status === undefined
           ? task.completedAt
           : null;
     await this.prisma
