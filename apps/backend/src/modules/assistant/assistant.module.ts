@@ -22,6 +22,7 @@ import { AiCoreGatewayService } from './services/ai-core-gateway.service';
 import { PersonalContextService } from './services/personal-context.service';
 import { GlobalizationContextService } from './services/globalization-context.service';
 import { VoiceLanguageService } from './services/voice-language.service';
+import { VoiceContextService } from './services/voice-context.service';
 import { LocalIntelligenceCoreService } from './services/local-intelligence-core.service';
 import { LocalLanguageUnderstandingService } from './services/local-language-understanding.service';
 import { DeviceAwareLocalRuntimeService } from './services/device-aware-local-runtime.service';
@@ -51,6 +52,7 @@ import { LocalWaterActionAdapter } from './adapters/local-water-action.adapter';
     PersonalContextService,
     GlobalizationContextService,
     VoiceLanguageService,
+    VoiceContextService,
     LocalIntelligenceCoreService,
     LocalLanguageUnderstandingService,
     DeviceAwareLocalRuntimeService,
@@ -74,6 +76,7 @@ import { LocalWaterActionAdapter } from './adapters/local-water-action.adapter';
     PersonalContextService,
     GlobalizationContextService,
     VoiceLanguageService,
+    VoiceContextService,
     LocalIntelligenceCoreService,
     LocalLanguageUnderstandingService,
     DeviceAwareLocalRuntimeService,
