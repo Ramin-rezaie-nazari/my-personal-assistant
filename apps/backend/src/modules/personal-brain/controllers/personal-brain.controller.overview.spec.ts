@@ -28,15 +28,17 @@ describe('PersonalBrainController overview', () => {
       coachNext: { message: 'Keep going' },
       scheduleHealth: { status: 'healthy' },
     });
-    expect((controller as any).smartPlanningService.getPlan).toHaveBeenCalledWith(
-      'user-1',
-    );
-    expect((controller as any).nextBestActionService.get).toHaveBeenCalledWith('user-1');
-    expect((controller as any).proactiveCoachService.getNextCoach).toHaveBeenCalledWith(
-      'user-1',
-    );
-    expect((controller as any).scheduleHealthService.evaluate).toHaveBeenCalledWith(
-      'user-1',
-    );
+    expect(
+      (controller as any).smartPlanningService.getPlan,
+    ).toHaveBeenCalledWith('user-1');
+    expect(
+      (controller as any).nextBestActionService.get,
+    ).toHaveBeenCalledWith('user-1');
+    expect(
+      (controller as any).proactiveCoachService.getNextCoach,
+    ).toHaveBeenCalledWith('user-1');
+    expect(
+      (controller as any).scheduleHealthService.evaluate,
+    ).toHaveBeenCalledWith('user-1');
   });
 });
