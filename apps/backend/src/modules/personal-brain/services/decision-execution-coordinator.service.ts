@@ -140,8 +140,8 @@ export class DecisionExecutionCoordinatorService {
         });
       const ar = ex.result as { handled: boolean; result?: unknown };
       if (!ar?.handled) {
-        this.gate.fail(userId, c, 'unsupported_action');
-        this.feedback.record({ userId, candidate: c, outcome: 'skipped' });
+        void this.gate.fail(userId, c, 'unsupported_action');
+        void this.feedback.record({ userId, candidate: c, outcome: 'skipped' });
         return this.record({
           ...base,
           status: 'unsupported',
@@ -151,8 +151,8 @@ export class DecisionExecutionCoordinatorService {
           policy: resolved,
         });
       }
-      this.gate.complete(userId, c, ar.result);
-      this.feedback.record({ userId, candidate: c, outcome: 'completed' });
+      void this.gate.complete(userId, c, ar.result);
+      void this.feedback.record({ userId, candidate: c, outcome: 'completed' });
       return this.record({
         ...base,
         status: 'completed',
@@ -164,8 +164,8 @@ export class DecisionExecutionCoordinatorService {
       });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      this.gate.fail(userId, c, msg);
-      this.feedback.record({ userId, candidate: c, outcome: 'failed' });
+      void this.gate.fail(userId, c, msg);
+      void this.feedback.record({ userId, candidate: c, outcome: 'failed' });
       return this.record({
         ...base,
         status: 'failed',
