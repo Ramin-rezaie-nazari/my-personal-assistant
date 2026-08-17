@@ -25,14 +25,20 @@ describe('LocalLanguageUnderstandingService', () => {
     expect(result.confidence).toBeGreaterThan(0.85);
   });
 
-  it('understands natural water logging with explicit milliliters', () => {
+  it('understands natural water logging with explicit Persian milliliters', () => {
     const result = service.understand('۵۰۰ میلی‌لیتر آب خوردم');
     expect(result.intent).toBe('ADD_WATER');
     expect(result.entities.waterAmountMl).toBe(500);
     expect(result.confidence).toBeGreaterThan(0.9);
   });
 
-  it('understands water logging by glasses', () => {
+  it('understands water logging with ASCII milliliters', () => {
+    const result = service.understand('500 ml آب خوردم');
+    expect(result.intent).toBe('ADD_WATER');
+    expect(result.entities.waterAmountMl).toBe(500);
+  });
+
+  it('understands water logging by Persian glass quantities', () => {
     const result = service.understand('دو لیوان آب نوشیدم');
     expect(result.intent).toBe('ADD_WATER');
     expect(result.entities.waterAmountMl).toBe(500);
