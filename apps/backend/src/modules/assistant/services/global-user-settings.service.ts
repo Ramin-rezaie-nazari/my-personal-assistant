@@ -80,19 +80,23 @@ export class GlobalUserSettingsService {
     const current = await this.get(userId);
     const languageTag = patch.languageTag ?? current.languageTag;
     const timezone = patch.timezone ?? current.timezone;
+    const countryCode = patch.countryCode === undefined ? current.countryCode : patch.countryCode;
+    const currencyCode = patch.currencyCode === undefined ? current.currencyCode : patch.currencyCode;
     const globalization = this.globalization.resolve({
       languageTag,
-      countryCode: patch.countryCode ?? current.countryCode ?? undefined,
-      currencyCode: patch.currencyCode ?? current.currencyCode ?? undefined,
+      countryCode: countryCode ?? undefined,
+      currencyCode: currencyCode ?? undefined,
       measurementSystem: patch.measurementSystem ?? current.measurementSystem,
       timezone,
     });
 
-    const voiceProfileId = patch.voiceProfile ?? current.voiceProfile.id;
+    const requestedVoice = patch.voiceProfile === undefined
+      ? current.voiceProfile.id
+      : patch.voiceProfile;
     const voice = this.voice.resolve({
       languageTag: globalization.languageTag,
       countryCode: globalization.countryCode ?? undefined,
-      voiceId: voiceProfileId,
+      voiceId: requestedVoice ?? undefined,
     });
 
     if (patch.voiceProfile && voice.profile.id !== patch.voiceProfile) {
@@ -108,7 +112,7 @@ export class GlobalUserSettingsService {
       ...this.factOperations(userId, FACT_KEYS.countryCode, globalization.countryCode),
       ...this.factOperations(userId, FACT_KEYS.currencyCode, globalization.currencyCode),
       ...this.factOperations(userId, FACT_KEYS.measurementSystem, globalization.measurementSystem),
-      ...this.factOperations(userId, FACT_KEYS.voiceProfile, voice.profile.id),
+      ...this.factOperations(userId, FACT_KEYS.voiceProfile, patch.voiceProfile === null ? null : voice.profile.id),
     ];
 
     await this.prisma.$transaction(operations);
