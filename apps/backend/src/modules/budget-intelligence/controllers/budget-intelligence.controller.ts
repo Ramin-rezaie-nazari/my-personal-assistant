@@ -5,7 +5,6 @@ import { GlobalCountryFinanceService } from '../services/global-country-finance.
 import { MealPlanningService } from '../services/meal-planning.service';
 
 @Controller('budget-intelligence')
-@UseGuards(JwtAuthGuard)
 export class BudgetIntelligenceController {
   constructor(
     private readonly budgetService: BudgetIntelligenceService,
@@ -19,6 +18,7 @@ export class BudgetIntelligenceController {
   }
 
   @Get('meal-plan')
+  @UseGuards(JwtAuthGuard)
   mealPlan(
     @Request() req: { user: { id: string } },
     @Query('servings') servingsText?: string,
