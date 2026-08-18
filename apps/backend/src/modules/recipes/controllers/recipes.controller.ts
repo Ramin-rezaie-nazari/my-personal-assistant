@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RecipesService } from '../services/recipes.service';
 import { RecipeInventoryMatcherService } from '../services/recipe-inventory-matcher.service';
 import { GlobalCountryFoodService } from '../services/global-country-food.service';
+import { FoodOperatingLoopService } from '../services/food-operating-loop.service';
 import { CreateRecipeDto } from '../dto/create-recipe.dto';
 
 @Controller('recipes')
@@ -24,6 +25,7 @@ export class RecipesController {
     private readonly recipesService: RecipesService,
     private readonly matcher: RecipeInventoryMatcherService,
     private readonly globalCountryFood: GlobalCountryFoodService,
+    private readonly foodOperatingLoop: FoodOperatingLoopService,
   ) {}
 
   @Post()
@@ -56,6 +58,33 @@ export class RecipesController {
   @Get('match')
   match(@Request() req: { user: { id: string } }) {
     return this.matcher.match(req.user.id);
+  }
+
+  @Get(':id/food-plan')
+  foodPlan(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Query('servings') servingsText?: string,
+    @Query('countryCode') countryCode = '',
+  ) {
+    if (!servingsText?.trim()) throw new BadRequestException('servings is required');
+    const servings = Number(servingsText);
+    if (!Number.isInteger(servings) || servings <= 0)
+      throw new BadRequestException('servings must be a positive integer');
+    return this.foodOperatingLoop.buildPlan(req.user.id, id, servings, countryCode);
+  }
+
+  @Post(':id/food-plan/shopping')
+  addFoodPlanMissingToShopping(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Query('servings') servingsText?: string,
+  ) {
+    if (!servingsText?.trim()) throw new BadRequestException('servings is required');
+    const servings = Number(servingsText);
+    if (!Number.isInteger(servings) || servings <= 0)
+      throw new BadRequestException('servings must be a positive integer');
+    return this.foodOperatingLoop.addMissingToShopping(req.user.id, id, servings);
   }
 
   @Get(':id/scaled')
