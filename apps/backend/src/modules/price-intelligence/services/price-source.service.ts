@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { NormalizedPrice } from '../models/price-intelligence.model';
 import { GLOBAL_MARKET_SOURCES } from '../data/global-market-source.catalog';
+import { GLOBAL_MARKET_SOURCE_CORRECTIONS } from '../data/global-market-source.corrections';
 import { GlobalMarketSourceRegistryService } from './global-market-source-registry.service';
 import { HttpPriceSourceAdapter } from './http-price-source.adapter';
 import { PriceSourceRegistryService } from './price-source-registry.service';
@@ -28,7 +29,11 @@ export class PriceSourceService {
     for (const source of registry?.list(true) ?? [])
       this.register(new HttpPriceSourceAdapter(source));
 
-    for (const source of Object.values(GLOBAL_MARKET_SOURCES)) {
+    const sources = [
+      ...Object.values(GLOBAL_MARKET_SOURCES),
+      ...Object.values(GLOBAL_MARKET_SOURCE_CORRECTIONS).flat(),
+    ];
+    for (const source of sources) {
       if (!source.enabled) continue;
       this.register(
         new HttpPriceSourceAdapter({
@@ -89,8 +94,15 @@ export class PriceSourceService {
   }
 
   sources() {
-    const global = Object.values(GLOBAL_MARKET_SOURCES)
-      .filter((source) => source.enabled)
+    const global = [
+      ...Object.values(GLOBAL_MARKET_SOURCES),
+      ...Object.values(GLOBAL_MARKET_SOURCE_CORRECTIONS).flat(),
+    ]
+      .filter(
+        (source, index, all) =>
+          source.enabled &&
+          all.findIndex((candidate) => candidate.id === source.id) === index,
+      )
       .map(({ id, name, kind, baseUrl }) => ({ id, name, kind, baseUrl }));
     const local = this.registry
       ? this.registry
