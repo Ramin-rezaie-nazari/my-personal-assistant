@@ -87,8 +87,8 @@ export default function SettingsScreen() {
   }, [draft, text.saved]);
 
   const languageLabel = LANGUAGES.find(([code]) => code === draft.languageTag)?.[1] ?? draft.languageTag;
-  const countryLabel = COUNTRIES.find(([code]) => code === draft.countryCode)?.[1] ?? draft.countryCode || text.custom;
-  const voiceLabel = VOICES.find(([code]) => code === draft.voiceProfile)?.[1] ?? settings?.voiceProfile.label ?? draft.voiceProfile || text.custom;
+  const countryLabel = (COUNTRIES.find(([code]) => code === draft.countryCode)?.[1] ?? draft.countryCode) || text.custom;
+  const voiceLabel = (VOICES.find(([code]) => code === draft.voiceProfile)?.[1] ?? settings?.voiceProfile.label ?? draft.voiceProfile) || text.custom;
 
   if (loading) return <View style={styles.center}><ActivityIndicator color={BRAND.colors.primaryStrong} /><Text style={styles.centerText}>{text.loading}</Text></View>;
   if (error && !settings) return <SafeAreaView style={styles.safe}><View style={styles.center}><Text style={styles.errorTitle}>{text.error}</Text><Text style={styles.errorBody}>{error}</Text><Pressable onPress={() => { setLoading(true); void load(); }} style={styles.primaryButton}><Text style={styles.primaryButtonText}>{text.retry}</Text></Pressable></View></SafeAreaView>;
