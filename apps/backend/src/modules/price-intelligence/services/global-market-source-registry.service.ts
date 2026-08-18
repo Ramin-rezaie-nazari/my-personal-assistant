@@ -6,6 +6,10 @@ import {
   GlobalMarketProfile,
   GlobalMarketSource,
 } from '../data/global-market-source.catalog';
+import {
+  GLOBAL_MARKET_SOURCE_CORRECTIONS,
+  GLOBAL_MARKET_SOURCE_EXCLUSIONS,
+} from '../data/global-market-source.corrections';
 
 @Injectable()
 export class GlobalMarketSourceRegistryService {
@@ -18,12 +22,21 @@ export class GlobalMarketSourceRegistryService {
   }
 
   getSourcesForCountry(countryCode: string, operationalOnly = true): GlobalMarketSource[] {
-    const profile = this.getCountryProfile(countryCode);
+    const normalizedCountry = countryCode.trim().toUpperCase();
+    const profile = this.getCountryProfile(normalizedCountry);
     if (!profile) return [];
-    return profile.sourceIds
-      .map((id) => GLOBAL_MARKET_SOURCES[id])
-      .filter((source): source is GlobalMarketSource => Boolean(source))
-      .filter((source) => !operationalOnly || source.enabled);
+
+    const exclusions = new Set(GLOBAL_MARKET_SOURCE_EXCLUSIONS[normalizedCountry] ?? []);
+    const correctionSources = GLOBAL_MARKET_SOURCE_CORRECTIONS[normalizedCountry] ?? [];
+    const correctionById = new Map(correctionSources.map((source) => [source.id, source]));
+
+    return [
+      ...profile.sourceIds
+        .filter((id) => !exclusions.has(id))
+        .map((id) => correctionById.get(id) ?? GLOBAL_MARKET_SOURCES[id])
+        .filter((source): source is GlobalMarketSource => Boolean(source)),
+      ...correctionSources.filter((source) => !profile.sourceIds.includes(source.id)),
+    ].filter((source) => !operationalOnly || source.enabled);
   }
 
   getOperationalSourceIds(countryCode: string) {
@@ -37,6 +50,8 @@ export class GlobalMarketSourceRegistryService {
   }
 
   hasDirectOrAggregatorCoverage(countryCode: string) {
-    return this.getCountryProfile(countryCode)?.coverage === 'direct_and_aggregator';
+    return this.getSourcesForCountry(countryCode, true).some(
+      (source) => source.role !== 'discovery',
+    );
   }
 }
