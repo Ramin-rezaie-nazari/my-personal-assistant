@@ -1,10 +1,12 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsInt,
   IsNumber,
   IsOptional,
   IsString,
   IsUrl,
+  Max,
   Min,
   MinLength,
   ValidateNested,
@@ -40,6 +42,13 @@ export class CreateRecipeDto {
   @IsOptional()
   @IsUrl()
   imageSource?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(10000)
+  servings?: number;
 
   @IsArray()
   @ValidateNested({ each: true })
