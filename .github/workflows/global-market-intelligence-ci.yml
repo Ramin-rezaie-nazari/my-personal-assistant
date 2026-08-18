@@ -1,0 +1,82 @@
+name: Global Market Intelligence CI
+
+on:
+  push:
+    branches: [feature/global-market-intelligence]
+    paths:
+      - 'apps/backend/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/global-market-intelligence-ci.yml'
+  pull_request:
+    branches: [feature/global-settings-mobile]
+    paths:
+      - 'apps/backend/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/global-market-intelligence-ci.yml'
+
+jobs:
+  backend-global-market:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: personal_assistant
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d personal_assistant"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: apps/backend
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/personal_assistant?schema=public
+      APP_NAME: My Personal Assistant API
+      NODE_ENV: test
+      JWT_ACCESS_SECRET: test-access-secret
+      JWT_REFRESH_SECRET: test-refresh-secret
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 30d
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: .
+      - name: Prisma validate
+        run: pnpm exec prisma validate
+      - name: Prisma generate
+        run: pnpm exec prisma generate
+      - name: Prisma migrate deploy
+        run: pnpm exec prisma migrate deploy
+      - name: Typecheck
+        run: pnpm run typecheck
+      - name: Build
+        run: pnpm run build
+      - name: Focused global market tests
+        run: >-
+          pnpm exec jest --runInBand
+          src/modules/price-intelligence/services/global-market-source-registry.service.spec.ts
+          src/modules/price-intelligence/services/price-source.service.global-market.spec.ts
+          src/modules/price-intelligence/services/global-market-schedule.service.spec.ts
+          src/modules/price-intelligence/services/global-market-automatic-scheduler.service.spec.ts
+          src/modules/price-intelligence/services/http-price-source.adapter.spec.ts
+          src/modules/price-intelligence/services/fx-rate.service.spec.ts
+          src/modules/price-intelligence/services/price-confidence.service.spec.ts
+          src/modules/price-intelligence/services/nightly-market-intelligence.service.spec.ts

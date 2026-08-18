@@ -31,30 +31,36 @@ export class PricePersistenceService {
     for (const price of prices) {
       await this.prisma
         .$executeRaw`INSERT INTO "PriceTrackedProduct" ("id","productKey","name","city") VALUES (${randomUUID()},${price.productKey},${price.title},${price.city ?? null}) ON CONFLICT ("productKey") DO UPDATE SET "updatedAt"=CURRENT_TIMESTAMP`;
-      const id = `${price.productKey}:${price.sourceId}:${price.observedAt.getTime()}`;
+      const id = `${price.countryCode ?? 'global'}:${price.productKey}:${price.sourceId}:${price.observedAt.getTime()}`;
       await this.prisma
-        .$executeRaw`INSERT INTO "PriceSnapshot" ("id","productKey","sourceId","title","url","currency","amount","unit","unitPrice","city","availability","observedAt") VALUES (${id},${price.productKey},${price.sourceId},${price.title},${price.url ?? null},${price.currency},${price.amount},${price.unit ?? null},${price.unitPrice ?? null},${price.city ?? null},${price.availability ?? 'unknown'},${price.observedAt}) ON CONFLICT ("id") DO NOTHING`;
+        .$executeRaw`INSERT INTO "PriceSnapshot" ("id","productKey","sourceId","title","url","currency","amount","unit","unitPrice","city","countryCode","availability","observedAt") VALUES (${id},${price.productKey},${price.sourceId},${price.title},${price.url ?? null},${price.currency},${price.amount},${price.unit ?? null},${price.unitPrice ?? null},${price.city ?? null},${price.countryCode ?? null},${price.availability ?? 'unknown'},${price.observedAt}) ON CONFLICT ("id") DO NOTHING`;
       written += 1;
     }
     return written;
   }
 
-  async latest(productKey?: string) {
+  async latest(productKey?: string, countryCode?: string) {
     if (productKey)
       return this.prisma
-        .$queryRaw`SELECT DISTINCT ON ("sourceId") * FROM "PriceSnapshot" WHERE "productKey"=${productKey} ORDER BY "sourceId", "observedAt" DESC`;
+        .$queryRaw`SELECT DISTINCT ON ("sourceId") * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND (${countryCode ?? null}::text IS NULL OR "countryCode"=${countryCode}) ORDER BY "sourceId", "observedAt" DESC`;
     return this.prisma
-      .$queryRaw`SELECT DISTINCT ON ("productKey","sourceId") * FROM "PriceSnapshot" ORDER BY "productKey","sourceId","observedAt" DESC`;
+      .$queryRaw`SELECT DISTINCT ON ("productKey","sourceId","countryCode") * FROM "PriceSnapshot" WHERE (${countryCode ?? null}::text IS NULL OR "countryCode"=${countryCode}) ORDER BY "productKey","sourceId","countryCode","observedAt" DESC`;
   }
 
-  async history(productKey: string, from?: Date, to?: Date, sourceId?: string) {
+  async history(
+    productKey: string,
+    from?: Date,
+    to?: Date,
+    sourceId?: string,
+    countryCode?: string,
+  ) {
     const start = from ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = to ?? new Date();
     if (sourceId)
       return this.prisma
-        .$queryRaw`SELECT * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND "sourceId"=${sourceId} AND "observedAt" BETWEEN ${start} AND ${end} ORDER BY "observedAt" ASC`;
+        .$queryRaw`SELECT * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND "sourceId"=${sourceId} AND (${countryCode ?? null}::text IS NULL OR "countryCode"=${countryCode}) AND "observedAt" BETWEEN ${start} AND ${end} ORDER BY "observedAt" ASC`;
     return this.prisma
-      .$queryRaw`SELECT * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND "observedAt" BETWEEN ${start} AND ${end} ORDER BY "observedAt" ASC`;
+      .$queryRaw`SELECT * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND (${countryCode ?? null}::text IS NULL OR "countryCode"=${countryCode}) AND "observedAt" BETWEEN ${start} AND ${end} ORDER BY "observedAt" ASC`;
   }
 
   async sources() {
@@ -62,11 +68,12 @@ export class PricePersistenceService {
       .$queryRaw`SELECT id,name,kind,"baseUrl",enabled,"adapterId" FROM "PriceSource" ORDER BY name`;
   }
 
-  async createRun(scheduledFor: Date, startedAt: Date) {
-    const id = `market:${scheduledFor.toISOString()}`;
+  async createRun(scheduledFor: Date, startedAt: Date, countryCode?: string) {
+    const normalizedCountry = countryCode?.trim().toUpperCase() ?? null;
+    const id = `market:${normalizedCountry ?? 'global'}:${scheduledFor.toISOString()}`;
     const rows = await this.prisma.$queryRaw<
       Array<{ id: string }>
-    >`INSERT INTO "PriceCollectionRun" ("id","scheduledFor","startedAt","status") VALUES (${id},${scheduledFor},${startedAt},'running') ON CONFLICT ("scheduledFor") DO NOTHING RETURNING "id"`;
+    >`INSERT INTO "PriceCollectionRun" ("id","scheduledFor","startedAt","status","countryCode") VALUES (${id},${scheduledFor},${startedAt},'running',${normalizedCountry}) ON CONFLICT DO NOTHING RETURNING "id"`;
     return { id, acquired: rows.length === 1 };
   }
 
@@ -85,10 +92,11 @@ export class PricePersistenceService {
       .$executeRaw`UPDATE "PriceCollectionRun" SET "completedAt"=${new Date()},"status"=${result.status},"attempts"=${result.attempts},"collected"=${result.collected},"failedSources"=${JSON.stringify(result.failedSources)}::jsonb,"attemptedSources"=${JSON.stringify(result.attemptedSources)}::jsonb,"error"=${result.error ?? null} WHERE "id"=${id}`;
   }
 
-  async latestSuccessfulRun() {
+  async latestSuccessfulRun(countryCode?: string) {
+    const normalizedCountry = countryCode?.trim().toUpperCase() ?? null;
     const rows = await this.prisma.$queryRaw<
       Array<{ completedAt: Date | null }>
-    >`SELECT "completedAt" FROM "PriceCollectionRun" WHERE "status" IN ('completed','partial') ORDER BY "completedAt" DESC LIMIT 1`;
+    >`SELECT "completedAt" FROM "PriceCollectionRun" WHERE "status" IN ('completed','partial') AND (${normalizedCountry}::text IS NULL OR "countryCode"=${normalizedCountry}) ORDER BY "completedAt" DESC LIMIT 1`;
     return rows[0]?.completedAt;
   }
 

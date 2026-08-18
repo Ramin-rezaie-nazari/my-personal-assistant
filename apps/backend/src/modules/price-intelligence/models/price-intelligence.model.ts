@@ -13,6 +13,7 @@ export type NormalizedPrice = {
   unit?: string;
   unitPrice?: number;
   city?: string;
+  countryCode?: string;
   availability?: 'in_stock' | 'out_of_stock' | 'unknown';
   observedAt: Date;
 };
@@ -23,6 +24,8 @@ export type PriceSnapshot = NormalizedPrice & {
 
 export type PriceInsight = {
   productKey: string;
+  countryCode?: string;
+  currency?: string;
   current: number | null;
   average7d: number | null;
   average30d: number | null;

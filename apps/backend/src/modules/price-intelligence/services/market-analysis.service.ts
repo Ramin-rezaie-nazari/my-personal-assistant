@@ -6,11 +6,25 @@ import { PriceInsight } from '../models/price-intelligence.model';
 export class MarketAnalysisService {
   constructor(private readonly history: PriceHistoryStoreService) {}
 
-  analyze(productKey: string, now = new Date()): PriceInsight {
-    const snapshots = this.history.forProduct(productKey);
+  analyze(
+    productKey: string,
+    now = new Date(),
+    countryCode?: string,
+    currency?: string,
+  ): PriceInsight {
+    const snapshots = this.history.forProduct(
+      productKey,
+      undefined,
+      countryCode,
+      currency,
+    );
+    const normalizedCountry = countryCode?.trim().toUpperCase();
+    const normalizedCurrency = currency?.trim().toUpperCase();
     if (!snapshots.length)
       return {
         productKey,
+        countryCode: normalizedCountry,
+        currency: normalizedCurrency,
         current: null,
         average7d: null,
         average30d: null,
@@ -22,7 +36,8 @@ export class MarketAnalysisService {
         buyScore: 0,
         recommendation: 'unavailable',
       };
-    const latest = snapshots[snapshots.length - 1].amount;
+    const latestSnapshot = snapshots[snapshots.length - 1];
+    const latest = latestSnapshot.amount;
     const seven = snapshots
       .filter(
         (item) => now.getTime() - item.observedAt.getTime() <= 7 * 86400000,
@@ -53,7 +68,7 @@ export class MarketAnalysisService {
             : 'stable';
     const lowVs30 =
       min30 && min30 > 0
-        ? Math.max(0, Math.min(1, (avg30! - latest) / min30 + 0.5))
+        ? Math.max(0, Math.min(1, ((avg30 ?? latest) - latest) / min30 + 0.5))
         : 0.5;
     const buyScore = Math.max(
       0,
@@ -69,6 +84,8 @@ export class MarketAnalysisService {
       buyScore >= 0.7 ? 'buy_now' : trend === 'rising' ? 'watch' : 'wait';
     return {
       productKey,
+      countryCode: latestSnapshot.countryCode ?? normalizedCountry,
+      currency: latestSnapshot.currency ?? normalizedCurrency,
       current: latest,
       average7d: avg7,
       average30d: avg30,

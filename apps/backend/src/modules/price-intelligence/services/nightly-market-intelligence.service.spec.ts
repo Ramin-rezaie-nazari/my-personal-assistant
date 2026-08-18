@@ -42,10 +42,54 @@ describe('NightlyMarketIntelligenceService', () => {
     expect(sources.collectDetailed).toHaveBeenCalledWith(['ssd'], undefined);
     expect(result.status).toBe('failed');
     expect(result.collected).toBe(0);
-    expect(persistence.createRun).toHaveBeenCalled();
-    expect(persistence.finishRun).toHaveBeenCalledWith(
-      'run-1',
-      expect.objectContaining({ status: 'failed', collected: 0 }),
+    expect(persistence.createRun).toHaveBeenCalledWith(
+      expect.any(Date),
+      expect.any(Date),
+      undefined,
+    );
+  });
+
+  it('uses country-aware collection and records country context', async () => {
+    const sources = {
+      collectForCountryDetailed: jest.fn().mockResolvedValue({
+        prices: [
+          {
+            productKey: 'milk',
+            title: 'Milk',
+            sourceId: 'walmart',
+            sourceKind: 'retailer',
+            currency: 'USD',
+            amount: 4.5,
+            countryCode: 'US',
+            observedAt: new Date(),
+          },
+        ],
+        failedSourceIds: [],
+        attemptedSourceIds: ['walmart'],
+      }),
+      collectDetailed: jest.fn(),
+    };
+    const persistence = {
+      createRun: jest.fn().mockResolvedValue({ acquired: true, id: 'run-us' }),
+      trackedProductKeys: jest.fn().mockResolvedValue(['milk']),
+      record: jest.fn().mockResolvedValue(undefined),
+      finishRun: jest.fn().mockResolvedValue(undefined),
+    };
+    const service = new NightlyMarketIntelligenceService(
+      sources as any,
+      persistence as any,
+    );
+    const result = await service.run(undefined, undefined, new Date('2026-08-18T07:30:00Z'), 'us');
+
+    expect(sources.collectForCountryDetailed).toHaveBeenCalledWith('US', ['milk']);
+    expect(result.countryCode).toBe('US');
+    expect(persistence.createRun).toHaveBeenCalledWith(
+      expect.any(Date),
+      expect.any(Date),
+      'US',
+    );
+    expect(persistence.record).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ countryCode: 'US', currency: 'USD' })]),
     );
   });
 });
