@@ -4,6 +4,7 @@ import { PrismaService } from '../../../common/database/prisma.service';
 import { BrainLifeContextService } from '../../personal-brain/services/brain-life-context.service';
 import { NutritionService } from '../../nutrition/services/nutrition.service';
 import { ConversationContextService } from './conversation-context.service';
+import { GlobalUserSettingsService } from './global-user-settings.service';
 import { GlobalizationContextService } from './globalization-context.service';
 import { VoiceContextService } from './voice-context.service';
 
@@ -24,6 +25,7 @@ export type PersonalContext = {
   } | null;
   globalization: ReturnType<GlobalizationContextService['resolve']>;
   voice: ReturnType<VoiceContextService['resolve']>;
+  globalSettings: Awaited<ReturnType<GlobalUserSettingsService['get']>>;
   dateKey: string;
   request: {
     input?: string;
@@ -42,11 +44,12 @@ export class PersonalContextService {
     private readonly life: BrainLifeContextService,
     private readonly globalization: GlobalizationContextService,
     private readonly voice: VoiceContextService,
+    private readonly globalSettings: GlobalUserSettingsService,
   ) {}
 
   async build(request: PersonalContextRequest): Promise<PersonalContext> {
     const dateKey = request.dateKey ?? new Date().toISOString().slice(0, 10);
-    const [userRow, conversation, nutrition, life] = await Promise.all([
+    const [userRow, conversation, nutrition, life, storedSettings] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: request.userId },
         select: {
@@ -64,6 +67,7 @@ export class PersonalContextService {
       this.conversation.get(request.userId),
       this.nutrition.getDailySummary(request.userId, dateKey),
       this.life.getToday(request.userId, dateKey),
+      this.globalSettings.get(request.userId),
     ]);
 
     const user = userRow
@@ -77,22 +81,36 @@ export class PersonalContextService {
         }
       : null;
 
-    const languageTag = user?.language ?? undefined;
-    const globalization = this.globalization.resolve({
-      languageTag,
-      countryCode: request.countryCode,
-      timezone: user?.timezone ?? undefined,
-    });
-    const voice = this.voice.resolve({
-      languageTag: globalization.languageTag,
-      countryCode: globalization.countryCode ?? undefined,
-      voiceId: request.voiceId,
-    });
+    const globalization = request.countryCode || request.voiceId
+      ? this.globalization.resolve({
+          languageTag: storedSettings.languageTag,
+          countryCode: request.countryCode ?? storedSettings.countryCode ?? undefined,
+          currencyCode: storedSettings.currencyCode ?? undefined,
+          measurementSystem: storedSettings.measurementSystem,
+          timezone: storedSettings.timezone,
+        })
+      : storedSettings.globalization;
+
+    const voice = request.voiceId || request.countryCode
+      ? this.voice.resolve({
+          languageTag: globalization.languageTag,
+          countryCode: globalization.countryCode ?? undefined,
+          voiceId: request.voiceId ?? storedSettings.voiceProfile.id,
+        })
+      : {
+          profile: storedSettings.voiceProfile,
+          locale: storedSettings.globalization,
+          inputLanguage: storedSettings.voiceProfile.languageCode,
+          synthesisLanguage: storedSettings.voiceProfile.languageCode,
+          accent: storedSettings.voiceProfile.accent,
+          direction: storedSettings.voiceProfile.direction,
+        };
 
     return {
       user,
       globalization,
       voice,
+      globalSettings: storedSettings,
       dateKey,
       request: { input: request.input },
       conversation,
