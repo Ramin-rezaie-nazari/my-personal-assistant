@@ -11,26 +11,40 @@ export class PriceHistoryStoreService {
   record(prices: NormalizedPrice[]) {
     const created = prices.map((price) => ({
       ...price,
-      snapshotId: `${price.productKey}:${price.sourceId}:${price.observedAt.getTime()}`,
+      snapshotId: `${price.countryCode ?? 'global'}:${price.currency}:${price.productKey}:${price.sourceId}:${price.observedAt.getTime()}`,
     }));
     this.snapshots.push(...created);
     return created;
   }
 
-  forProduct(productKey: string, sourceId?: string) {
+  forProduct(
+    productKey: string,
+    sourceId?: string,
+    countryCode?: string,
+    currency?: string,
+  ) {
+    const normalizedCountry = countryCode?.trim().toUpperCase();
+    const normalizedCurrency = currency?.trim().toUpperCase();
     return this.snapshots
       .filter(
         (snapshot) =>
           snapshot.productKey === productKey &&
-          (!sourceId || snapshot.sourceId === sourceId),
+          (!sourceId || snapshot.sourceId === sourceId) &&
+          (!normalizedCountry || snapshot.countryCode === normalizedCountry) &&
+          (!normalizedCurrency || snapshot.currency.toUpperCase() === normalizedCurrency),
       )
       .sort((a, b) => a.observedAt.getTime() - b.observedAt.getTime());
   }
 
-  since(productKey: string, since: Date) {
+  since(productKey: string, since: Date, countryCode?: string, currency?: string) {
+    const normalizedCountry = countryCode?.trim().toUpperCase();
+    const normalizedCurrency = currency?.trim().toUpperCase();
     return this.snapshots.filter(
       (snapshot) =>
-        snapshot.productKey === productKey && snapshot.observedAt >= since,
+        snapshot.productKey === productKey &&
+        snapshot.observedAt >= since &&
+        (!normalizedCountry || snapshot.countryCode === normalizedCountry) &&
+        (!normalizedCurrency || snapshot.currency.toUpperCase() === normalizedCurrency),
     );
   }
 
