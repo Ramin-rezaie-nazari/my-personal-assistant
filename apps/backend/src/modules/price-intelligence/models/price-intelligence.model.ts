@@ -13,6 +13,7 @@ export type NormalizedPrice = {
   unit?: string;
   unitPrice?: number;
   city?: string;
+  countryCode?: string;
   availability?: 'in_stock' | 'out_of_stock' | 'unknown';
   observedAt: Date;
 };
