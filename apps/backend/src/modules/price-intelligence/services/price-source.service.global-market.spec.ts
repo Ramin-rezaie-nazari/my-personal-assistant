@@ -7,22 +7,29 @@ describe('PriceSourceService global market routing', () => {
       undefined,
       new GlobalMarketSourceRegistryService(),
     );
-    const walmart = {
-      id: 'walmart',
+    const makeMock = (id: string) => ({
+      id,
       kind: 'retailer' as const,
-      fetchPrices: jest.fn().mockResolvedValue([
-        {
-          productKey: 'milk',
-          title: 'Milk',
-          sourceId: 'walmart',
-          sourceKind: 'retailer',
-          currency: 'USD',
-          amount: 4.5,
-          observedAt: new Date(),
-        },
-      ]),
-    };
+      fetchPrices: jest.fn().mockResolvedValue(
+        id === 'walmart'
+          ? [
+              {
+                productKey: 'milk',
+                title: 'Milk',
+                sourceId: 'walmart',
+                sourceKind: 'retailer',
+                currency: 'USD',
+                amount: 4.5,
+                observedAt: new Date(),
+              },
+            ]
+          : [],
+      ),
+    });
+    const walmart = makeMock('walmart');
     service.register(walmart);
+    service.register(makeMock('kroger'));
+    service.register(makeMock('instacart'));
 
     const result = await service.collectForCountryDetailed('US', ['milk']);
 
