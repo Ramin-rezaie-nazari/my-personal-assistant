@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
+import { RecipeContract } from '../../nutrition/recipe-intelligence/recipe-domain.types';
+import { RecipeServingScalingService } from '../../nutrition/recipe-intelligence/recipe-serving-scaling.service';
 
 export type RecipeInput = {
   name: string;
@@ -16,7 +18,10 @@ export type RecipeInput = {
 
 @Injectable()
 export class RecipesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly recipeScaling: RecipeServingScalingService,
+  ) {}
 
   async createRecipe(userId: string, data: RecipeInput) {
     this.validateInput(data);
@@ -80,6 +85,56 @@ export class RecipesService {
     });
     if (!recipe) throw new NotFoundException('Recipe not found');
     return recipe;
+  }
+
+  async getScaledRecipe(userId: string, id: string, targetServings: number) {
+    this.validateServings(targetServings);
+    const recipe = await this.getRecipe(userId, id);
+    const baseServings = recipe.servings;
+
+    const contract: RecipeContract = {
+      id: recipe.id,
+      canonicalName: recipe.name,
+      localizedNames: {},
+      countryCodes: [],
+      regionIds: [],
+      cuisineIds: [],
+      mealTypes: [],
+      dietaryTags: [],
+      ingredients: recipe.ingredients.map((ingredient) => ({
+        ingredientId: ingredient.foodId,
+        role: 'other',
+        quantity: ingredient.quantity,
+        unit: ingredient.unit,
+        measurementKind: inferMeasurementKind(ingredient.unit),
+        scalingPolicy: 'linear',
+      })),
+      nutritionPerServing: {
+        calories: recipe.calories / baseServings,
+        proteinGrams: recipe.protein / baseServings,
+        carbohydratesGrams: recipe.carbs / baseServings,
+        fatGrams: recipe.fat / baseServings,
+      },
+      servings: baseServings,
+      prepMinutes: 0,
+      cookMinutes: 0,
+      difficulty: 'medium',
+      status: recipe.verified ? 'verified' : 'draft',
+      sourceType: recipe.userId ? 'user' : 'internal',
+      version: 1,
+    };
+
+    return {
+      recipe: {
+        id: recipe.id,
+        name: recipe.name,
+        baseServings,
+      },
+      ...this.recipeScaling.scale(contract, {
+        targetServings,
+        kitchenFriendlyRounding: true,
+      }),
+    };
   }
 
   async updateRecipe(userId: string, id: string, data: Partial<RecipeInput>) {
@@ -190,4 +245,13 @@ export class RecipesService {
         'servings must be an integer between 1 and 10000',
       );
   }
+}
+
+function inferMeasurementKind(unit: string): 'mass' | 'volume' | 'count' | 'package' | 'unitless' {
+  const normalized = unit.trim().toLowerCase();
+  if (['g', 'kg', 'mg', 'oz', 'lb', 'gr', 'کیلو', 'گرم'].includes(normalized)) return 'mass';
+  if (['ml', 'l', 'tsp', 'tbsp', 'cup', 'cups', 'ml.'].includes(normalized)) return 'volume';
+  if (['piece', 'pieces', 'pcs', 'count', 'عدد'].includes(normalized)) return 'count';
+  if (['package', 'pack', 'box', 'بسته'].includes(normalized)) return 'package';
+  return 'unitless';
 }
