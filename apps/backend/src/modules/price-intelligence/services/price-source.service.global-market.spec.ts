@@ -1,0 +1,45 @@
+import { GlobalMarketSourceRegistryService } from './global-market-source-registry.service';
+import { PriceSourceService } from './price-source.service';
+
+describe('PriceSourceService global market routing', () => {
+  it('routes a country request only to that country operational sources', async () => {
+    const service = new PriceSourceService(
+      undefined,
+      new GlobalMarketSourceRegistryService(),
+    );
+    const walmart = {
+      id: 'walmart',
+      kind: 'retailer' as const,
+      fetchPrices: jest.fn().mockResolvedValue([
+        {
+          productKey: 'milk',
+          title: 'Milk',
+          sourceId: 'walmart',
+          sourceKind: 'retailer',
+          currency: 'USD',
+          amount: 4.5,
+          observedAt: new Date(),
+        },
+      ]),
+    };
+    service.register(walmart);
+
+    const result = await service.collectForCountryDetailed('US', ['milk']);
+
+    expect(walmart.fetchPrices).toHaveBeenCalledWith(['milk']);
+    expect(result.attemptedSourceIds).toEqual(
+      expect.arrayContaining(['walmart', 'kroger', 'instacart']),
+    );
+    expect(result.prices).toHaveLength(1);
+  });
+
+  it('returns no operational sources for discovery-only markets', async () => {
+    const service = new PriceSourceService(
+      undefined,
+      new GlobalMarketSourceRegistryService(),
+    );
+    const result = await service.collectForCountryDetailed('AF', ['rice']);
+    expect(result.attemptedSourceIds).toEqual([]);
+    expect(result.prices).toEqual([]);
+  });
+});
