@@ -34,14 +34,16 @@ export class RecipesController {
   }
 
   @Get()
-  findAll(@Request() req: { user: { id: string } }) {
-    return this.recipesService.getRecipes(req.user.id);
+  async findAll(
+    @Request() req: { user: { id: string } },
+    @Query('countryCode') countryCode = '',
+  ) {
+    const recipes = await this.recipesService.getRecipes(req.user.id);
+    return this.globalCountryFood.rankRecipesForCountry(countryCode, recipes);
   }
 
   @Get('local')
-  local(
-    @Query('countryCode') countryCode = '',
-  ) {
+  local(@Query('countryCode') countryCode = '') {
     return this.globalCountryFood.getLocalRecipeGuidance(countryCode);
   }
 
