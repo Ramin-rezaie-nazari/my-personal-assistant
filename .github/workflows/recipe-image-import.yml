@@ -62,4 +62,4 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           RECIPE_IMAGE_BATCH_SIZE: ${{ github.event.inputs.batch_size || '500' }}
           RECIPE_IMAGE_CONCURRENCY: ${{ github.event.inputs.concurrency || '4' }}
-        run: node apps/backend/scripts/recipe-image-import.mjs
+        run: node scripts/recipe-image-import.mjs
