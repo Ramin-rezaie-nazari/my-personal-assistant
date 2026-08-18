@@ -65,10 +65,15 @@ async function requestAuthorized<T>(path: string, init: RequestInit = {}): Promi
         body: JSON.stringify({ refreshToken }),
       });
       if (refreshResponse.ok) {
-        const auth = await refreshResponse.json();
-        await setAuthSession(auth);
-        token = auth.accessToken;
-        response = await request(path, init, token);
+        const auth: unknown = await refreshResponse.json();
+        const accessToken = typeof auth === 'object' && auth !== null && 'accessToken' in auth && typeof auth.accessToken === 'string'
+          ? auth.accessToken
+          : null;
+        if (accessToken) {
+          await setAuthSession(auth as Parameters<typeof setAuthSession>[0]);
+          token = accessToken;
+          response = await request(path, init, token);
+        }
       }
     }
   }
