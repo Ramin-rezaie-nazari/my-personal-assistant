@@ -57,6 +57,8 @@ jobs:
         run: pnpm exec prisma validate
       - name: Prisma generate
         run: pnpm exec prisma generate
+      - name: Prisma migrate deploy
+        run: pnpm exec prisma migrate deploy
       - name: Typecheck
         run: pnpm run typecheck
       - name: Build
@@ -67,4 +69,6 @@ jobs:
           src/modules/price-intelligence/services/global-market-source-registry.service.spec.ts
           src/modules/price-intelligence/services/price-source.service.global-market.spec.ts
           src/modules/price-intelligence/services/global-market-schedule.service.spec.ts
+          src/modules/price-intelligence/services/global-market-automatic-scheduler.service.spec.ts
           src/modules/price-intelligence/services/http-price-source.adapter.spec.ts
+          src/modules/price-intelligence/services/fx-rate.service.spec.ts
