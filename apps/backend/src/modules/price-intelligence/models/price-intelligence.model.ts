@@ -24,6 +24,8 @@ export type PriceSnapshot = NormalizedPrice & {
 
 export type PriceInsight = {
   productKey: string;
+  countryCode?: string;
+  currency?: string;
   current: number | null;
   average7d: number | null;
   average30d: number | null;
