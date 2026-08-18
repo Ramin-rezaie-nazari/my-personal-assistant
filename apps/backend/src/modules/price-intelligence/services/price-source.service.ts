@@ -76,8 +76,16 @@ export class PriceSourceService {
     countryCode: string,
     keys: string[],
   ): Promise<PriceCollectionResult> {
-    const ids = this.globalRegistry?.getOperationalSourceIds(countryCode) ?? [];
-    return this.collectDetailed(keys, ids);
+    const normalizedCountry = countryCode.trim().toUpperCase();
+    const ids = this.globalRegistry?.getOperationalSourceIds(normalizedCountry) ?? [];
+    const result = await this.collectDetailed(keys, ids);
+    return {
+      ...result,
+      prices: result.prices.map((price) => ({
+        ...price,
+        countryCode: normalizedCountry,
+      })),
+    };
   }
 
   sources() {
