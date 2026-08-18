@@ -1,0 +1,65 @@
+name: Recipe image import
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'Recipes to process in this run'
+        required: false
+        default: '500'
+      concurrency:
+        description: 'Concurrent image workers'
+        required: false
+        default: '4'
+  schedule:
+    - cron: '*/15 * * * *'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/backend/scripts/recipe-image-import.mjs'
+      - 'tools/recipe-image-pipeline.ts'
+      - '.github/workflows/recipe-image-import.yml'
+
+concurrency:
+  group: recipe-image-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    permissions:
+      contents: read
+
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: .
+
+      - name: Import licensed recipe images
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          RECIPE_IMAGE_BATCH_SIZE: ${{ github.event.inputs.batch_size || '500' }}
+          RECIPE_IMAGE_CONCURRENCY: ${{ github.event.inputs.concurrency || '4' }}
+        run: node apps/backend/scripts/recipe-image-import.mjs
