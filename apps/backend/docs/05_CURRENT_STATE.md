@@ -2,7 +2,7 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Last fully validated locally: 2026-08-18 before the newest Food Operating Loop, Meal Planner and Recipe Scaling Metadata changes. New changes are implemented on `main` but remain pending local validation.
+> Latest fully validated locally: 2026-08-18 11:26+03:30. The Food Operating Loop, Meal Planner and Recipe Scaling Metadata slice is fully green on the user's local runtime.
 
 ## Executive status
 
@@ -10,19 +10,19 @@
 
 This is a weighted engineering/product-completion index, not a claim that 65% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans scaling, inventory, shopping handoff, recommendations and daily meal planning. Major unfinished product work remains in the verified global recipe corpus, live market pricing, mobile UX, production hardening, and monetization.
 
-## Latest fully green local checkpoint
-
-The last local checkpoint before the newest changes was fully green:
+## Latest fully green local checkpoint — 2026-08-18
 
 ```text
-Focused global/recipe tests:  4/4 suites, 14/14 tests — PASS
-Full backend Jest:           149/149 suites, 398/398 tests — PASS
-Backend E2E:                   4/4 suites, 24/24 tests — PASS
-Typecheck:                     PASS
-Build:                         PASS
+Focused Food Operating Loop slice:  5/5 suites, 14/14 tests — PASS
+Full backend Jest:                  152/152 suites, 408/408 tests — PASS
+Backend E2E:                         4/4 suites, 24/24 tests — PASS
+Typecheck:                            PASS
+Build:                                PASS
+Prisma migrate deploy:               PASS
+Prisma migrate status:               Database schema is up to date
 ```
 
-The newer Food Operating Loop, Meal Planner and Recipe Scaling Metadata changes have not yet been executed in the user's local runtime, so they are **not** marked green until that validation happens.
+The non-fatal E2E worker teardown warning remains, but all E2E suites/tests pass.
 
 ## New Slice — Food Operating Loop + Meal Planning + Recipe Scaling Metadata
 
@@ -101,15 +101,17 @@ GET /budget-intelligence/meal-plan?servings=2&countryCode=JP
 
 **Implementation: complete for this current slice.**
 
-**Local validation: pending.**
+**Local validation: 100% green.**
 
-Focused tests added/updated:
+Focused tests:
 
 - `food-operating-loop.service.spec.ts`
 - `recipes.controller.spec.ts`
 - `meal-planning.service.spec.ts`
 - `budget-intelligence.controller.spec.ts`
 - `recipes.service.scaling.spec.ts`
+
+Focused result: **5/5 suites, 14/14 tests — PASS**.
 
 ## Recipe Serving Scaling — 100% for mature current slice
 
@@ -129,11 +131,7 @@ Previously validated and now strengthened with persisted ingredient policies:
 - Target-serving validation.
 - Explicit non-linear policy test coverage.
 
-Last locally validated before persisted metadata changes:
-
-```text
-Focused Recipe Scaling: 2/2 suites, 6/6 tests — PASS
-```
+Current local focused tests are green as part of the 14-test Food Operating Loop checkpoint above.
 
 ## Global Food Intelligence — major slice on main
 
@@ -266,14 +264,13 @@ Remaining:
 
 ## Immediate next priorities
 
-1. Run local validation for the newest migration + Recipe Scaling + Food Operating Loop + Meal Planner slice.
-2. Add canonical ingredient/region/cuisine normalization.
-3. Expand verified recipe corpus with provenance, allergens and dietary constraints.
-4. Integrate the stacked Global Market workstream after conflict/dependency review.
-5. Connect verified live price data into Food Operating Loop and budget recommendations.
-6. Build the real mobile food journey around these APIs.
-7. Add production hardening and observability.
-8. Add monetization after the core user journey is genuinely strong.
+1. Add canonical ingredient/region/cuisine normalization.
+2. Expand verified recipe corpus with provenance, allergens and dietary constraints.
+3. Integrate the stacked Global Market workstream after conflict/dependency review.
+4. Connect verified live price data into Food Operating Loop and budget recommendations.
+5. Build the real mobile food journey around these APIs.
+6. Add production hardening and observability.
+7. Add monetization after the core user journey is genuinely strong.
 
 ## Working rule
 
