@@ -2,17 +2,17 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Last validated locally: 2026-08-18.
+> Last fully validated locally: 2026-08-18 before the new Food Operating Loop slice. The latest Food Operating Loop implementation now exists on `main`; its focused/full validation is the next user-environment checkpoint.
 
 ## Executive status
 
-**Overall project completion: 58%**
+**Overall project completion: ~61%**
 
-This is a weighted engineering/product-completion index, not a claim that 58% of every file is written. Backend foundations are strong, but substantial product work remains in the full global food corpus, connected food intelligence, mobile UX, production hardening, and monetization.
+This is a weighted engineering/product-completion index, not a claim that 61% of every file is written. Backend foundations are strong, the global country-food layer is real, and the connected food loop has now moved substantially forward. Major unfinished product work remains in the verified global recipe corpus, live market pricing, mobile UX, production hardening, and monetization.
 
-## Latest fully green local checkpoint — current `main`
+## Latest fully green local checkpoint
 
-Validated on the user's local backend checkout after the 195-country integration and the controller-test compatibility fix:
+The last local checkpoint before the new Food Operating Loop implementation was fully green:
 
 ```text
 Focused global/recipe tests:  4/4 suites, 14/14 tests — PASS
@@ -22,75 +22,78 @@ Typecheck:                     PASS
 Build:                         PASS
 ```
 
-The current `main` checkpoint therefore has a fully green backend validation for the tested scope. The E2E suite boots the country-aware recipe and finance endpoints successfully.
+The new Food Operating Loop changes below have not yet been executed in the user's local runtime, so they are intentionally **not** marked green until that validation happens.
 
-### Exact current test behavior
+## New Slice — Food Operating Loop
 
-- GlobalCountryFoodService focused suite: PASS.
-- GlobalCountryFinanceService focused suite: PASS.
-- Recipe Serving Scaling focused suites: PASS.
-- Full Jest suite: 149/149 suites, 398/398 tests.
-- E2E: 4/4 suites, 24/24 tests.
-- TypeScript typecheck: PASS.
-- Nest build: PASS.
+### Implemented on `main`
 
-There is still a non-fatal Jest teardown warning in E2E about a worker being force-exited; it does not fail the suite, but should be cleaned up later as test-hygiene work.
+```text
+Recipe
+  ↓
+Target servings
+  ↓
+Deterministic scaling
+  ↓
+Scaled ingredient quantities
+  ↓
+Inventory comparison using scaled quantities
+  ↓
+Unit normalization
+  ↓
+Missing ingredient calculation
+  ↓
+Shopping-ready handoff
+  ↓
+Country food context
+  ↓
+Local currency/finance context
+```
 
-## Completed / mature slices
+A deterministic recommendation path is also implemented:
 
-### Backend platform
+```text
+Recipes + Inventory + Nutrition Profile + Country
+  ↓
+Inventory coverage + nutrition fit + local relevance
+  ↓
+Top 10 meal recommendations
+```
 
-- NestJS + TypeScript backend.
-- Prisma + PostgreSQL foundation.
-- Environment/config validation.
-- Authentication foundations with JWT access/refresh flow.
-- User profile/settings/preferences/onboarding foundations.
-- Health and nutrition profiles.
-- Monorepo/workspace structure.
-- Backend/mobile CI workflow foundations.
+### New API surface
 
-### Core lifestyle foundations
+```text
+GET  /recipes/recommendations?servings=2&countryCode=JP
+GET  /recipes/:id/food-plan?servings=50&countryCode=JP
+POST /recipes/:id/food-plan/shopping?servings=50
+```
 
-- Daily tracking.
-- Nutrition logging and summary foundations.
-- Food database foundation.
-- Meals and recipes foundations.
-- Workout foundation.
-- Supplements.
-- Reminders.
-- Calendar.
-- Notifications.
-- Habits.
-- Goals.
-- Inventory and shopping foundations.
-- Price-intelligence foundation.
+### Important behavior now implemented
 
-### Personal Brain / intelligence foundations
+- The requested serving count is mandatory and bounded to `1..10000`.
+- Inventory is compared against the **target-serving quantities**, not the recipe base quantity.
+- Compatible mass units normalize across g/kg/mg/oz/lb.
+- Compatible volume units normalize across ml/l.
+- Count units normalize across piece/pcs/count.
+- Unknown or incompatible units fail conservatively instead of pretending inventory is sufficient.
+- Missing quantities are returned in the recipe unit.
+- Missing ingredients can be handed directly to the existing ShoppingService with source=`recipe`.
+- Recommendations use inventory coverage, nutrition targets and country relevance deterministically.
+- No external Recipe API is needed for this loop.
+- Live price estimation is intentionally not fabricated; the price/food-cost trust boundary is not yet global-complete.
 
-- Assistant module.
-- Local language understanding.
-- Deterministic local action adapters.
-- Context engine.
-- Decision engine.
-- Personal Brain orchestration.
-- Decision memory/audit.
-- Decision outcomes and bounded learning signals.
-- Explanation-oriented decision pipeline foundations.
-- Proactive coach/notification intelligence foundations.
-- Planning, replanning and execution-state foundations.
-- Fitness decision policy and multi-discipline orchestration.
-- Device-aware runtime abstractions.
+### Current Food Operating Loop validation state
 
-### Fitness foundations
+**Implementation: complete for this slice.**
 
-- Shared Fitness context.
-- Gym foundation.
-- Calisthenics foundation and progression/skill logic.
-- Yoga foundation and coaching/motion-analysis foundations.
-- Equipment-aware workout generation.
-- Fitness performance memory/progression foundations.
+**Validation: pending user-environment run.**
 
-## Recipe Serving Scaling — 100% for current slice
+Focused tests added:
+
+- `food-operating-loop.service.spec.ts`
+- `recipes.controller.spec.ts` updated for the new loop contract
+
+## Recipe Serving Scaling — 100% for current mature slice
 
 Implemented:
 
@@ -106,13 +109,13 @@ Implemented:
 - Edge-case coverage.
 - Target-serving validation.
 
-Current local validation:
+Last locally validated:
 
 ```text
 Focused Recipe Scaling: 2/2 suites, 6/6 tests — PASS
 ```
 
-## Global Food Intelligence — major slice now on main
+## Global Food Intelligence — major slice on main
 
 ### Completed in main
 
@@ -129,14 +132,6 @@ Focused Recipe Scaling: 2/2 suites, 6/6 tests — PASS
 - Country-aware recipe API endpoints.
 - Focused tests for exact 195-country coverage, Japan/Iran behavior, ranking, and unknown-country handling.
 
-### New API surface
-
-```text
-GET /recipes/local?countryCode=JP
-GET /recipes/countries
-GET /recipes?countryCode=JP
-```
-
 ### Still required for 100%
 
 - Canonical ingredient taxonomy.
@@ -151,7 +146,7 @@ GET /recipes?countryCode=JP
 - Provenance/versioning for food knowledge.
 - Duplicate/alias/cultural-metadata QA.
 
-## Global Currency / Finance Intelligence — major slice now on main
+## Global Currency / Finance Intelligence — major slice on main
 
 ### Completed in main
 
@@ -163,13 +158,6 @@ GET /recipes?countryCode=JP
 - Unknown-country rejection instead of guessing.
 - Focused tests for 195-country coverage, Japan, Iran, and unknown-country handling.
 
-### New API surface
-
-```text
-GET /budget-intelligence/country?countryCode=JP
-GET /budget-intelligence/countries
-```
-
 ### Still required
 
 - Full live-price coverage by country.
@@ -177,33 +165,11 @@ GET /budget-intelligence/countries
 - Full country-aware budget planning.
 - Recipe → price → budget integration.
 
-## Full Food Intelligence loop — not complete
+## Global Market / Price Intelligence — still separate
 
-```text
-Recipe
-  ↓
-Serving scaling              ✅
-  ↓
-Nutrition                    ✅ foundation
-  ↓
-Inventory match              🟡 foundation exists
-  ↓
-Missing ingredients          🟡
-  ↓
-Shopping list                🟡 foundation exists
-  ↓
-Local price intelligence     🟡 foundation / not global-complete
-  ↓
-Budget-aware recommendation  🟡
-  ↓
-Meal plan                    🟡 foundation
-  ↓
-User feedback                🟡
-  ↓
-Learning                     🟡 foundation
-```
+A larger stacked workstream exists in PR #48/#49 with a 195-country market/source registry, source routing, discovery-only fallbacks, cached FX, local-time collection scheduling, confidence scoring, and price-source infrastructure.
 
-The biggest opportunity now is to connect these foundations into one end-to-end food operating loop.
+It is **not yet on `main`** because the workstream is stacked and PR #48 currently reports a non-mergeable state against `main`. It must be integrated deliberately after conflict/dependency review rather than force-merged.
 
 ## Mobile product — major work remains
 
@@ -228,12 +194,6 @@ Remaining:
 - Real-device iOS/Android validation.
 - Store-release hardening.
 
-## Global Market / Price Intelligence — still separate
-
-A larger stacked workstream exists in PR #48/#49 with a 195-country market/source registry, source routing, discovery-only fallbacks, cached FX, local-time collection scheduling, confidence scoring, and price-source infrastructure.
-
-It is **not yet on `main`** because the workstream is stacked and PR #48 currently reports a non-mergeable state against `main`. It must be integrated deliberately after conflict/dependency review rather than force-merged.
-
 ## Production hardening — incomplete
 
 Remaining:
@@ -252,6 +212,7 @@ Remaining:
 - Migration-history review.
 - Production deployment runbook.
 - Cost controls and external-API fallback policy.
+- Clean up the non-fatal E2E worker teardown warning.
 
 ## Business / Monetization — not implemented
 
@@ -271,25 +232,25 @@ Remaining:
 |---|---:|
 | Backend platform + architecture | 90% |
 | Personal Brain / deterministic intelligence | 65% |
-| Nutrition foundations | 65% |
+| Nutrition foundations | 70% |
 | Fitness / Yoga / Calisthenics / Gym | 75% |
-| Recipe & Food Intelligence | 45% |
-| Inventory / Shopping / Price Intelligence | 55% |
+| Recipe & Food Intelligence | 55% |
+| Inventory / Shopping / Price Intelligence | 62% |
 | Mobile product / UX | 20% |
 | AI orchestration / voice / globalization | 40% |
 | QA / Security / Production hardening | 50% |
 | Business / Monetization | 0% |
 
-**Weighted overall index: 58%.**
+**Weighted overall index: ~61%.**
 
 ## Immediate next priorities
 
-1. Connect Recipe → Inventory → Shopping → Price/Budget → Meal Planning.
-2. Build canonical ingredient + region + cuisine normalization.
-3. Expand verified recipe corpus and provenance.
-4. Clean up the non-fatal E2E worker teardown warning.
-5. Integrate the stacked Global Market workstream only after its current merge/conflict state is resolved.
-6. Build the real mobile product experience around these backend contracts.
+1. Run local validation for the new Food Operating Loop slice.
+2. Add verified canonical ingredient/region/cuisine data model.
+3. Expand the verified recipe corpus with provenance, allergens and dietary constraints.
+4. Integrate the stacked Global Market workstream after dependency/conflict review.
+5. Connect verified live price data into Food Operating Loop and budget recommendations.
+6. Build the real mobile food journey around these APIs.
 7. Add production hardening and observability.
 8. Add monetization after the core user journey is genuinely strong.
 
