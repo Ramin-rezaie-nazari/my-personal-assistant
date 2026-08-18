@@ -51,6 +51,10 @@ export class PriceSourceService {
     return this;
   }
 
+  registeredSourceIds() {
+    return [...this.adapters.keys()];
+  }
+
   async collect(keys: string[], ids?: string[]) {
     return (await this.collectDetailed(keys, ids)).prices;
   }
