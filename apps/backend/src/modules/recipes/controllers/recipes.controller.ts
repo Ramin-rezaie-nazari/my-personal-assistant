@@ -14,6 +14,7 @@ import {
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RecipesService } from '../services/recipes.service';
 import { RecipeInventoryMatcherService } from '../services/recipe-inventory-matcher.service';
+import { GlobalCountryFoodService } from '../services/global-country-food.service';
 import { CreateRecipeDto } from '../dto/create-recipe.dto';
 
 @Controller('recipes')
@@ -22,6 +23,7 @@ export class RecipesController {
   constructor(
     private readonly recipesService: RecipesService,
     private readonly matcher: RecipeInventoryMatcherService,
+    private readonly globalCountryFood: GlobalCountryFoodService,
   ) {}
 
   @Post()
@@ -33,8 +35,22 @@ export class RecipesController {
   }
 
   @Get()
-  findAll(@Request() req: { user: { id: string } }) {
-    return this.recipesService.getRecipes(req.user.id);
+  async findAll(
+    @Request() req: { user: { id: string } },
+    @Query('countryCode') countryCode = '',
+  ) {
+    const recipes = await this.recipesService.getRecipes(req.user.id);
+    return this.globalCountryFood.rankRecipesForCountry(countryCode, recipes);
+  }
+
+  @Get('local')
+  local(@Query('countryCode') countryCode = '') {
+    return this.globalCountryFood.getLocalRecipeGuidance(countryCode);
+  }
+
+  @Get('countries')
+  countries() {
+    return this.globalCountryFood.getSupportedCountryCodes();
   }
 
   @Get('match')
@@ -42,24 +58,16 @@ export class RecipesController {
     return this.matcher.match(req.user.id);
   }
 
-  /**
-   * Returns a cookable version of a stored recipe for the requested number of
-   * people. The serving count is deliberately required: callers must never
-   * silently assume the wrong household size.
-   */
   @Get(':id/scaled')
   scale(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
     @Query('servings') servingsText?: string,
   ) {
-    if (!servingsText?.trim())
-      throw new BadRequestException('servings is required');
-
+    if (!servingsText?.trim()) throw new BadRequestException('servings is required');
     const servings = Number(servingsText);
     if (!Number.isInteger(servings) || servings <= 0)
       throw new BadRequestException('servings must be a positive integer');
-
     return this.recipesService.getScaledRecipe(req.user.id, id, servings);
   }
 
