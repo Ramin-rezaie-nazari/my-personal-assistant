@@ -34,6 +34,8 @@ type InventoryRecord = {
   food?: { name: string } | null;
 };
 
+type ComparableUnitKind = 'mass' | 'volume' | 'count';
+
 @Injectable()
 export class FoodOperatingLoopService {
   constructor(
@@ -176,7 +178,7 @@ export class FoodOperatingLoopService {
         });
       } else {
         const missingQuantity = canCompare
-          ? denormalizeUnit(Math.max(0, required!.value - availableNormalized!.value), required!.kind, ingredient.unit)
+          ? denormalizeUnit(Math.max(0, required.value - availableNormalized.value), required.kind, ingredient.unit)
           : ingredient.scaledQuantity;
         missing.push({
           foodId: ingredient.ingredientId,
@@ -253,7 +255,7 @@ function inferMeasurementKind(unit: string): 'mass' | 'volume' | 'count' | 'pack
   return 'unitless';
 }
 
-type NormalizedUnit = { kind: 'mass' | 'volume' | 'count'; value: number } | null;
+type NormalizedUnit = { kind: ComparableUnitKind; value: number } | null;
 
 function normalizeUnit(quantity: number, unit: string): NormalizedUnit {
   const normalized = unit.trim().toLowerCase();
@@ -268,7 +270,7 @@ function normalizeUnit(quantity: number, unit: string): NormalizedUnit {
   return null;
 }
 
-function denormalizeUnit(value: number, kind: NormalizedUnit extends null ? never : 'mass' | 'volume' | 'count', unit: string): number {
+function denormalizeUnit(value: number, kind: ComparableUnitKind, unit: string): number {
   const normalized = unit.trim().toLowerCase();
   if (kind === 'mass') {
     if (['kg', 'kilogram', 'kilograms', 'کیلو'].includes(normalized)) return Number((value / 1000).toFixed(3));
