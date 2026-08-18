@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
-import { GlobalCountryFoodService } from './global-country-finance.service';
+import { GlobalCountryFoodService } from '../../recipes/services/global-country-food.service';
 
 export type MealPlanSlot = 'breakfast' | 'lunch' | 'dinner';
 
