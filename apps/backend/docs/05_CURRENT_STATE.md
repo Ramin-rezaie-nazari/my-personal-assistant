@@ -2,7 +2,7 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Last validated locally: 2026-08-18. The latest global-food merge was performed after the last full local validation run, so current-main tests/typecheck/build must be re-run before declaring this checkpoint fully green.
+> Last validated locally: 2026-08-18.
 
 ## Executive status
 
@@ -10,24 +10,31 @@
 
 This is a weighted engineering/product-completion index, not a claim that 58% of every file is written. Backend foundations are strong, but substantial product work remains in the full global food corpus, connected food intelligence, mobile UX, production hardening, and monetization.
 
-## Current validated history
+## Latest fully green local checkpoint — current `main`
 
-### Last fully green local backend checkpoint before the global-food merge
+Validated on the user's local backend checkout after the 195-country integration and the controller-test compatibility fix:
 
 ```text
-Backend Jest:           147/147 suites, 390/390 tests — PASS
-Backend E2E:              4/4 suites, 24/24 tests — PASS
-Recipe Scaling focus:     2/2 suites, 6/6 tests — PASS
-Prisma migrations:       36 applied, database up to date — PASS
-Typecheck:               PASS
-Build:                   PASS
+Focused global/recipe tests:  4/4 suites, 14/14 tests — PASS
+Full backend Jest:           149/149 suites, 398/398 tests — PASS
+Backend E2E:                   4/4 suites, 24/24 tests — PASS
+Typecheck:                     PASS
+Build:                         PASS
 ```
 
-### Current main changes since that checkpoint
+The current `main` checkpoint therefore has a fully green backend validation for the tested scope. The E2E suite boots the country-aware recipe and finance endpoints successfully.
 
-PR #52 was merged to `main` and adds the 195-country food/currency routing layer. The merge includes 11 files and exposes country-aware recipe discovery and finance context endpoints.
+### Exact current test behavior
 
-This latest merge has **not yet been revalidated locally** after the merge. Do not count its focused tests as locally executed on the new `main` until the next local run confirms them.
+- GlobalCountryFoodService focused suite: PASS.
+- GlobalCountryFinanceService focused suite: PASS.
+- Recipe Serving Scaling focused suites: PASS.
+- Full Jest suite: 149/149 suites, 398/398 tests.
+- E2E: 4/4 suites, 24/24 tests.
+- TypeScript typecheck: PASS.
+- Nest build: PASS.
+
+There is still a non-fatal Jest teardown warning in E2E about a worker being force-exited; it does not fail the suite, but should be cleaned up later as test-hygiene work.
 
 ## Completed / mature slices
 
@@ -99,7 +106,7 @@ Implemented:
 - Edge-case coverage.
 - Target-serving validation.
 
-Last locally validated:
+Current local validation:
 
 ```text
 Focused Recipe Scaling: 2/2 suites, 6/6 tests — PASS
@@ -120,6 +127,7 @@ Focused Recipe Scaling: 2/2 suites, 6/6 tests — PASS
 - Explicit global-recipe behavior is preserved; country does not silently replace explicit intent.
 - Substitution-policy contract: preserve cuisine identity, prefer local staples, never silently replace culturally important ingredients.
 - Country-aware recipe API endpoints.
+- Focused tests for exact 195-country coverage, Japan/Iran behavior, ranking, and unknown-country handling.
 
 ### New API surface
 
@@ -153,6 +161,7 @@ GET /recipes?countryCode=JP
 - Source-native currency preservation policy.
 - Currency conversion reserved for comparison/normalization.
 - Unknown-country rejection instead of guessing.
+- Focused tests for 195-country coverage, Japan, Iran, and unknown-country handling.
 
 ### New API surface
 
@@ -179,7 +188,7 @@ Nutrition                    ✅ foundation
   ↓
 Inventory match              🟡 foundation exists
   ↓
-Missing ingredients         🟡
+Missing ingredients          🟡
   ↓
 Shopping list                🟡 foundation exists
   ↓
@@ -273,34 +282,12 @@ Remaining:
 
 **Weighted overall index: 58%.**
 
-## Green vs. not-yet-validated
-
-### Green historical checkpoint
-
-- Backend Jest: 147/147 suites.
-- Backend tests: 390/390.
-- Backend E2E: 4/4 suites, 24/24 tests.
-- Recipe Scaling focused: 2/2 suites, 6/6 tests.
-- Prisma migrations: 36/36 applied and up to date.
-- Typecheck: PASS.
-- Build: PASS.
-
-### Must be re-run on current main after PR #52
-
-- Focused GlobalCountryFood tests.
-- Focused GlobalCountryFinance tests.
-- Full backend Jest.
-- E2E.
-- Typecheck.
-- Build.
-- Fresh database migration validation in CI/local test DB.
-
 ## Immediate next priorities
 
-1. Re-run validation on current `main` after the 195-country integration.
-2. Connect Recipe → Inventory → Shopping → Price/Budget → Meal Planning.
-3. Build canonical ingredient + region + cuisine normalization.
-4. Expand verified recipe corpus and provenance.
+1. Connect Recipe → Inventory → Shopping → Price/Budget → Meal Planning.
+2. Build canonical ingredient + region + cuisine normalization.
+3. Expand verified recipe corpus and provenance.
+4. Clean up the non-fatal E2E worker teardown warning.
 5. Integrate the stacked Global Market workstream only after its current merge/conflict state is resolved.
 6. Build the real mobile product experience around these backend contracts.
 7. Add production hardening and observability.
