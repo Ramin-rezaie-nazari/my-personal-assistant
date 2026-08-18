@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -6,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
@@ -38,6 +40,27 @@ export class RecipesController {
   @Get('match')
   match(@Request() req: { user: { id: string } }) {
     return this.matcher.match(req.user.id);
+  }
+
+  /**
+   * Returns a cookable version of a stored recipe for the requested number of
+   * people. The serving count is deliberately required: callers must never
+   * silently assume the wrong household size.
+   */
+  @Get(':id/scaled')
+  scale(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Query('servings') servingsText?: string,
+  ) {
+    if (!servingsText?.trim())
+      throw new BadRequestException('servings is required');
+
+    const servings = Number(servingsText);
+    if (!Number.isInteger(servings) || servings <= 0)
+      throw new BadRequestException('servings must be a positive integer');
+
+    return this.recipesService.getScaledRecipe(req.user.id, id, servings);
   }
 
   @Get(':id')
