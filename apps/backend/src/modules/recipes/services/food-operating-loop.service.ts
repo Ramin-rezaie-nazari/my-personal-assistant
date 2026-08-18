@@ -121,7 +121,7 @@ export class FoodOperatingLoopService {
           quantity: ingredient.quantity,
           unit: ingredient.unit,
           measurementKind: inferMeasurementKind(ingredient.unit),
-          scalingPolicy: (ingredient.scalingPolicy ?? 'linear') as 'linear' | 'sublinear' | 'fixed' | 'per_batch' | 'manual_review',
+          scalingPolicy: 'linear',
         })),
         nutritionPerServing: {
           calories: recipe.calories / recipe.servings,
