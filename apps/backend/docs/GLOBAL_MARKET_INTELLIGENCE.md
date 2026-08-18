@@ -58,6 +58,10 @@ Frankfurter currently documents a free public API with no API key and no daily/m
 
 Price snapshots and collection runs carry the market country code. The migration `20260818080000_add_global_market_country_context` adds the fields and the supporting indexes/unique key. A price observation therefore cannot be accidentally mixed between markets solely because the same product name and source are used in different countries.
 
+## Migration integrity note
+
+A pre-existing migration-history defect was found during local validation: two separate migrations used the same timestamp `20260812130000` and both attempted to create `LifeTask`. The first migration, `20260812130000_add_life_execution`, already creates the LifeTask domain tables. The later `20260812130000_add_life_execution_engine` has therefore been retained as an intentional no-op so migration history remains stable without recreating an existing relation. The failed database migration must be marked rolled back once on an affected local database, after which `prisma migrate deploy` can proceed normally.
+
 ## Validation contract
 
 Focused tests cover:
