@@ -27,6 +27,13 @@ export type FoodOperatingPlan = {
   financeContext: ReturnType<GlobalCountryFinanceService['getFinanceContext']>;
 };
 
+type InventoryRecord = {
+  foodId: string;
+  quantity: number;
+  unit: string;
+  food?: { name: string } | null;
+};
+
 @Injectable()
 export class FoodOperatingLoopService {
   constructor(
@@ -56,31 +63,8 @@ export class FoodOperatingLoopService {
       where: { userId },
       include: { food: true },
     });
-    const inventoryByFood = new Map(inventory.map((item) => [item.foodId, item]));
-    const available: FoodOperatingPlan['inventory']['available'] = [];
-    const missing: FoodOperatingPlan['inventory']['missing'] = [];
-
-    for (const ingredient of scaledRecipe.ingredients) {
-      const stored = inventoryByFood.get(ingredient.ingredientId);
-      const quantity = stored?.quantity ?? 0;
-      const food = recipe.ingredients.find((item) => item.foodId === ingredient.ingredientId)?.food;
-      const name = food?.name ?? ingredient.ingredientId;
-      if (quantity >= ingredient.scaledQuantity) {
-        available.push({
-          foodId: ingredient.ingredientId,
-          name,
-          quantity: ingredient.scaledQuantity,
-          unit: ingredient.unit,
-        });
-      } else {
-        missing.push({
-          foodId: ingredient.ingredientId,
-          name,
-          quantity: Math.max(0, ingredient.scaledQuantity - quantity),
-          unit: ingredient.unit,
-        });
-      }
-    }
+    const inventoryByFood = new Map(inventory.map((item) => [item.foodId, item as InventoryRecord]));
+    const { available, missing } = this.matchScaledIngredients(recipe.ingredients, scaledRecipe.ingredients, inventoryByFood);
 
     const total = scaledRecipe.ingredients.length;
     const coveragePercent = total === 0 ? 0 : Math.round(((total - missing.length) / total) * 100);
@@ -126,7 +110,7 @@ export class FoodOperatingLoopService {
       }),
     ]);
 
-    const inventoryByFood = new Map(inventory.map((item) => [item.foodId, item.quantity]));
+    const inventoryByFood = new Map(inventory.map((item) => [item.foodId, item as InventoryRecord]));
     const calorieLimit = maxCalories ?? (nutritionProfile?.dailyCaloriesGoal ? Math.round(nutritionProfile.dailyCaloriesGoal * 0.45) : undefined);
     const proteinFloor = minProteinGrams ?? (nutritionProfile?.proteinGoalGrams ? nutritionProfile.proteinGoalGrams * 0.30 : undefined);
     const ranked = this.countryFood.rankRecipesForCountry(countryCode, recipes as Array<{ name: string; cuisineFamily?: string | null }>);
@@ -135,7 +119,7 @@ export class FoodOperatingLoopService {
     return recipes
       .map((recipe) => {
         const scaled = this.buildScaledRecipe(recipe, targetServings);
-        const missing = scaled.ingredients.filter((ingredient) => (inventoryByFood.get(ingredient.ingredientId) ?? 0) < ingredient.scaledQuantity);
+        const { missing } = this.matchScaledIngredients(recipe.ingredients, scaled.ingredients, inventoryByFood);
         const coveragePercent = scaled.ingredients.length === 0
           ? 0
           : Math.round(((scaled.ingredients.length - missing.length) / scaled.ingredients.length) * 100);
@@ -164,6 +148,46 @@ export class FoodOperatingLoopService {
     const plan = await this.buildPlan(userId, recipeId, targetServings);
     const result = await this.shopping.addRecipeMissing(userId, recipeId, plan.inventory.missing);
     return { plan, shopping: result };
+  }
+
+  private matchScaledIngredients(
+    recipeIngredients: Array<{ foodId: string; food?: { name: string } | null }>,
+    scaledIngredients: Array<{ ingredientId: string; scaledQuantity: number; unit: string }>,
+    inventoryByFood: Map<string, InventoryRecord>,
+  ) {
+    const available: FoodOperatingPlan['inventory']['available'] = [];
+    const missing: FoodOperatingPlan['inventory']['missing'] = [];
+
+    for (const ingredient of scaledIngredients) {
+      const stored = inventoryByFood.get(ingredient.ingredientId);
+      const required = normalizeUnit(ingredient.scaledQuantity, ingredient.unit);
+      const availableNormalized = stored ? normalizeUnit(stored.quantity, stored.unit) : null;
+      const food = recipeIngredients.find((item) => item.foodId === ingredient.ingredientId)?.food;
+      const name = food?.name ?? stored?.food?.name ?? ingredient.ingredientId;
+      const canCompare = required !== null && availableNormalized !== null && required.kind === availableNormalized.kind;
+      const enough = canCompare && availableNormalized.value >= required.value;
+
+      if (enough) {
+        available.push({
+          foodId: ingredient.ingredientId,
+          name,
+          quantity: ingredient.scaledQuantity,
+          unit: ingredient.unit,
+        });
+      } else {
+        const missingQuantity = canCompare
+          ? denormalizeUnit(Math.max(0, required!.value - availableNormalized!.value), required!.kind, ingredient.unit)
+          : ingredient.scaledQuantity;
+        missing.push({
+          foodId: ingredient.ingredientId,
+          name,
+          quantity: missingQuantity,
+          unit: ingredient.unit,
+        });
+      }
+    }
+
+    return { available, missing };
   }
 
   private validateServings(targetServings: number) {
@@ -227,4 +251,31 @@ function inferMeasurementKind(unit: string): 'mass' | 'volume' | 'count' | 'pack
   if (['piece', 'pieces', 'pcs', 'count', 'عدد'].includes(normalized)) return 'count';
   if (['package', 'pack', 'box', 'بسته'].includes(normalized)) return 'package';
   return 'unitless';
+}
+
+type NormalizedUnit = { kind: 'mass' | 'volume' | 'count'; value: number } | null;
+
+function normalizeUnit(quantity: number, unit: string): NormalizedUnit {
+  const normalized = unit.trim().toLowerCase();
+  if (['g', 'gr', 'gram', 'grams', 'گرم'].includes(normalized)) return { kind: 'mass', value: quantity };
+  if (['kg', 'kilogram', 'kilograms', 'کیلو'].includes(normalized)) return { kind: 'mass', value: quantity * 1000 };
+  if (['mg', 'milligram', 'milligrams'].includes(normalized)) return { kind: 'mass', value: quantity / 1000 };
+  if (['oz', 'ounce', 'ounces'].includes(normalized)) return { kind: 'mass', value: quantity * 28.349523125 };
+  if (['lb', 'lbs', 'pound', 'pounds'].includes(normalized)) return { kind: 'mass', value: quantity * 453.59237 };
+  if (['ml', 'milliliter', 'milliliters'].includes(normalized)) return { kind: 'volume', value: quantity };
+  if (['l', 'liter', 'liters'].includes(normalized)) return { kind: 'volume', value: quantity * 1000 };
+  if (['piece', 'pieces', 'pcs', 'count', 'عدد'].includes(normalized)) return { kind: 'count', value: quantity };
+  return null;
+}
+
+function denormalizeUnit(value: number, kind: NormalizedUnit extends null ? never : 'mass' | 'volume' | 'count', unit: string): number {
+  const normalized = unit.trim().toLowerCase();
+  if (kind === 'mass') {
+    if (['kg', 'kilogram', 'kilograms', 'کیلو'].includes(normalized)) return Number((value / 1000).toFixed(3));
+    if (['mg', 'milligram', 'milligrams'].includes(normalized)) return Number((value * 1000).toFixed(2));
+    if (['oz', 'ounce', 'ounces'].includes(normalized)) return Number((value / 28.349523125).toFixed(3));
+    if (['lb', 'lbs', 'pound', 'pounds'].includes(normalized)) return Number((value / 453.59237).toFixed(3));
+  }
+  if (kind === 'volume' && ['l', 'liter', 'liters'].includes(normalized)) return Number((value / 1000).toFixed(3));
+  return Number(value.toFixed(3));
 }
