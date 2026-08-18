@@ -20,9 +20,13 @@ This workstream makes the price-intelligence layer global-first. The app recogni
 
 `FxRateService` uses the free public Frankfurter API as the primary FX source, caches successful rates for 12 hours, and has an ECB-backed fallback path through the same public API. The public Frankfurter API currently documents no API key, no monthly/daily quota, and access to 201 currencies; its ECB provider exposes official reference rates for supported currencies. citeturn303427search0turn303427search3
 
+`PriceConfidenceService` provides deterministic confidence levels based on number of successful sources, source coverage ratio, and observation freshness.
+
 ## Source strategy
 
-The catalog contains direct retailer/aggregator sources for a curated set of major markets, plus `ShopByCountries` and the FreshPlaza retailer directory as discovery-only fallbacks. The discovery links are deliberately disabled as direct price sources until a country-specific retailer is verified and promoted into the operational catalog.
+The catalog contains direct retailer/aggregator sources for a curated set of major markets, plus the ShopByCountries and FreshPlaza retailer directories as discovery-only fallbacks. The discovery links are deliberately disabled as direct price sources until a country-specific retailer is verified and promoted into the operational catalog.
+
+Regional corrections are applied separately from the base catalog so a country cannot accidentally inherit a retailer from another country. Current corrections include Mexico using Rappi and excluding Mercadona, and New Zealand using Woolworths New Zealand and excluding Woolworths Australia. Rappi documents active operation across Latin American markets including Mexico, and Woolworths New Zealand currently supports online orders. citeturn858756search7turn858756search25
 
 Useful current sources include Wolt, Glovo, foodpanda, talabat, HungerStation, PedidosYa, Carrefour, Tesco, Mercadona, Conad, Walmart, Instacart, Woolworths, Coles, FairPrice, AEON, BigBasket, JioMart, Chaldal, Shoprite, Checkers Sixty60, Pick n Pay, and Naivas. Current market footprints change over time; Wolt, Delivery Hero brands and local retailers all have country-specific coverage that should be verified before enabling or adding a source adapter. citeturn872889search0turn872889search12
 
@@ -38,6 +42,8 @@ The default market schedule is:
 
 DST and timezone conversion are handled through `Intl.DateTimeFormat` rather than fixed UTC offsets.
 
+The automatic scheduler processes markets one at a time when their local 03:30 arrives, batches multiple markets that share the same instant, and performs startup catch-up when a market has missed a run beyond the configured window.
+
 ## FX policy
 
 - Preserve source-native grocery price currencies in snapshots.
@@ -48,6 +54,10 @@ DST and timezone conversion are handled through `Intl.DateTimeFormat` rather tha
 
 Frankfurter currently documents a free public API with no API key and no daily/monthly quota, with optional provider-specific reference-rate selection. citeturn303427search0turn303427search3
 
+## Persistence policy
+
+Price snapshots and collection runs carry the market country code. The migration `20260818080000_add_global_market_country_context` adds the fields and the supporting indexes/unique key. A price observation therefore cannot be accidentally mixed between markets solely because the same product name and source are used in different countries.
+
 ## Validation contract
 
 Focused tests cover:
@@ -56,30 +66,40 @@ Focused tests cover:
 - every country is resolvable;
 - every country receives discovery fallbacks;
 - operational sources are separated from discovery-only sources;
+- region-specific source corrections are applied;
 - country-aware source routing never needs a global all-source crawl;
 - non-IRR currencies are preserved;
 - Rial is converted to Toman only for Iranian price text;
 - 03:30 is resolved in local market time;
 - simultaneous markets are batched;
 - missed markets can catch up after restart;
-- country context is carried into nightly collection;
-- FX identity/failure behavior is deterministic without network dependence in tests.
+- country context is carried into nightly collection and persistence;
+- FX identity/failure behavior is deterministic without network dependence in tests;
+- price confidence never claims high confidence without multiple fresh successful sources.
 
 ## Current completion state
 
-**Architecture / code foundation: implemented.**
+### Code foundation
 
-**Production market coverage: not yet fully verified.**
+**Implemented.**
 
-The project now has the machinery required for global market collection, but not every one of the 195 markets has yet been verified with multiple direct price-capable retailer/aggregator sources. Countries without verified direct sources remain explicitly `discovery_only`. This is intentional and prevents the product from claiming live price coverage where it cannot prove it.
+The core machinery is now present from country selection through source routing, price parsing, native currency preservation, country-aware persistence, local-time scheduling, FX and confidence.
 
-A market can be promoted from `discovery_only` to `direct_and_aggregator` only after its sources, URLs, regional behavior and extraction strategy have been verified.
+### Production market coverage
 
-## Next hardening stage
+**Not yet fully verified.**
 
-1. Verify/promote direct sources country by country using official retailer pages and current market availability.
-2. Add source-specific adapters where generic HTTP/JSON-LD parsing is not sufficient.
-3. Add source reliability/confidence scoring and freshness thresholds.
-4. Add region/city/postal-code routing where retailer prices vary by location.
-5. Add cross-source product matching and unit normalization.
-6. Add user-facing price confidence and freshness explanations.
+The architecture supports all 195 sovereign market codes, and many high-value markets already have direct retailer/aggregator source entries. However, not every market has yet been independently verified with multiple direct price-capable sources and source-specific extraction behavior. Markets without verified direct sources remain `discovery_only` by design.
+
+This is a deliberate trust boundary, not a missing fallback: the assistant must never claim a live local price when it cannot prove the source.
+
+### Green checkpoint requirements
+
+This workstream can be marked green only when:
+
+1. Dedicated CI passes Prisma migration, typecheck, build and all focused market tests.
+2. Existing full backend validation remains green after the shared price-intelligence changes.
+3. The direct source catalog has been reviewed and verified for every production market we claim to support.
+4. Documentation and `05_CURRENT_STATE.md` are updated with the final verification date and checkpoint commit.
+
+Until those four conditions are met, the workstream remains **implemented foundation / validation pending**, not complete.
