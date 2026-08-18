@@ -1,7 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { RecipeServingScalingService } from '../../nutrition/recipe-intelligence/recipe-serving-scaling.service';
-import { RecipeInventoryMatcherService } from './recipe-inventory-matcher.service';
 import { ShoppingService } from '../../shopping/shopping.service';
 import { GlobalCountryFoodService } from './global-country-food.service';
 import { GlobalCountryFinanceService } from '../../budget-intelligence/services/global-country-finance.service';
@@ -33,7 +32,6 @@ export class FoodOperatingLoopService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly scaling: RecipeServingScalingService,
-    private readonly matcher: RecipeInventoryMatcherService,
     private readonly shopping: ShoppingService,
     private readonly countryFood: GlobalCountryFoodService,
     private readonly countryFinance: GlobalCountryFinanceService,
@@ -54,10 +52,39 @@ export class FoodOperatingLoopService {
     });
     if (!recipe) throw new NotFoundException('Recipe not found');
 
-    const match = (await this.matcher.match(userId)).find((item) => item.recipeId === recipeId);
-    if (!match) throw new NotFoundException('Recipe inventory match not found');
+    const scaledRecipe = this.buildScaledRecipe(recipe, targetServings);
+    const inventory = await this.prisma.inventoryItem.findMany({
+      where: { userId },
+      include: { food: true },
+    });
+    const inventoryByFood = new Map(inventory.map((item) => [item.foodId, item]));
+    const available: FoodOperatingPlan['inventory']['available'] = [];
+    const missing: FoodOperatingPlan['inventory']['missing'] = [];
 
-    const scaledRecipe = await this.loadScaledRecipe(userId, recipe.id, targetServings);
+    for (const ingredient of scaledRecipe.ingredients) {
+      const stored = inventoryByFood.get(ingredient.ingredientId);
+      const quantity = stored?.quantity ?? 0;
+      const food = recipe.ingredients.find((item) => item.foodId === ingredient.ingredientId)?.food;
+      const name = food?.name ?? ingredient.ingredientId;
+      if (quantity >= ingredient.scaledQuantity) {
+        available.push({
+          foodId: ingredient.ingredientId,
+          name,
+          quantity: ingredient.scaledQuantity,
+          unit: ingredient.unit,
+        });
+      } else {
+        missing.push({
+          foodId: ingredient.ingredientId,
+          name,
+          quantity: Math.max(0, ingredient.scaledQuantity - quantity),
+          unit: ingredient.unit,
+        });
+      }
+    }
+
+    const total = scaledRecipe.ingredients.length;
+    const coveragePercent = total === 0 ? 0 : Math.round(((total - missing.length) / total) * 100);
     const localContext = this.countryFood.getLocalRecipeGuidance(countryCode);
     const financeContext = this.countryFinance.getFinanceContext(countryCode);
 
@@ -70,41 +97,31 @@ export class FoodOperatingLoopService {
         scaleFactor: targetServings / recipe.servings,
       },
       scaledRecipe,
-      inventory: {
-        coveragePercent: match.coveragePercent,
-        available: match.available,
-        missing: match.missing,
-      },
-      shopping: {
-        readyToAdd: match.missing,
-        source: 'recipe',
-      },
+      inventory: { coveragePercent, available, missing },
+      shopping: { readyToAdd: missing, source: 'recipe' },
       localContext,
       financeContext,
     };
   }
 
-  async addMissingToShopping(
-    userId: string,
-    recipeId: string,
-    targetServings: number,
-  ) {
+  async addMissingToShopping(userId: string, recipeId: string, targetServings: number) {
     const plan = await this.buildPlan(userId, recipeId, targetServings);
-    const result = await this.shopping.addRecipeMissing(
-      userId,
-      recipeId,
-      plan.inventory.missing,
-    );
+    const result = await this.shopping.addRecipeMissing(userId, recipeId, plan.inventory.missing);
     return { plan, shopping: result };
   }
 
-  private async loadScaledRecipe(userId: string, recipeId: string, targetServings: number) {
-    const recipe = await this.prisma.recipe.findFirst({
-      where: { id: recipeId, OR: [{ userId: null }, { userId }] },
-      include: { ingredients: true },
-    });
-    if (!recipe) throw new NotFoundException('Recipe not found');
-
+  private buildScaledRecipe(recipe: {
+    id: string;
+    name: string;
+    servings: number;
+    verified: boolean;
+    userId: string | null;
+    calories: number;
+    protein: number;
+    carbs: number;
+    fat: number;
+    ingredients: Array<{ foodId: string; quantity: number; unit: string }>;
+  }, targetServings: number) {
     return this.scaling.scale(
       {
         id: recipe.id,
