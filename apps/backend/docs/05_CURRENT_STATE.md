@@ -159,7 +159,31 @@ The settings API is authenticated and designed to become the single source for g
 
 Current persistence intentionally uses the existing user-fact infrastructure so the foundation can evolve without forcing repeated schema migrations while the domain contract is still being refined.
 
-## 6. Natural Language / Action Foundation Already Covered
+## 6. Mobile Global Settings Workstream — Completed Checkpoint
+
+The first end-to-end mobile Global Settings slice is now complete and validated.
+
+Implemented:
+
+- Global Settings API client in `apps/mobile/lib/global-settings-api.ts`.
+- Authenticated settings requests with refresh-token retry behavior.
+- Global Settings screen in `apps/mobile/app/settings.tsx`.
+- Settings route integrated into the Expo Router layout.
+- User-facing selection for language, country, currency, measurement system, timezone, and voice profile.
+- Loading, saving, and error-state handling.
+- Brand-palette alignment and type-safe settings labels.
+- App shell shortcut to the Settings route.
+
+Validation checkpoint:
+
+- `pnpm typecheck` passed.
+- `pnpm exec expo config --type public` passed.
+- `pnpm exec expo export --platform android --output-dir .expo-export` passed.
+- Android bundle/export generated successfully.
+
+**Reuse rule:** Treat this Mobile Global Settings slice as green unless one of its implementation files or shared dependencies/contracts changes. Do not rerun the entire validation stack just because a new work session starts.
+
+## 7. Natural Language / Action Foundation Already Covered
 
 The assistant already has local understanding for several action families, including:
 
@@ -179,7 +203,7 @@ Persian natural-language water logging was hardened for:
 - Persian glass quantities
 - reminder-vs-logging disambiguation
 
-## 7. Testing Ledger
+## 8. Testing Ledger
 
 ### Last fully green backend validation recorded in this checkpoint
 
@@ -187,6 +211,12 @@ Persian natural-language water logging was hardened for:
 - **433 / 433 tests passed**
 - **Typecheck passed** (`tsc -p tsconfig.json --noEmit`)
 - **Build passed** (`nest build` after Prisma generation)
+
+### Mobile Global Settings validation
+
+- `pnpm typecheck` passed.
+- `pnpm exec expo config --type public` passed.
+- `pnpm exec expo export --platform android --output-dir .expo-export` passed.
 
 ### Particularly important AI/Assistant suites already green
 
@@ -219,7 +249,7 @@ Before starting work:
 
 If code has not changed in a previously validated area, its last green result remains valid as a checkpoint unless a dependency/interface affecting it changed.
 
-## 8. Work Completed vs. Not Yet Completed
+## 9. Work Completed vs. Not Yet Completed
 
 ### Completed foundation
 
@@ -236,6 +266,9 @@ If code has not changed in a previously validated area, its last green result re
 - [x] Persistent global settings service and endpoints.
 - [x] Global settings flowing into PersonalContext.
 - [x] Global settings flowing into AI provider context.
+- [x] Mobile global settings API client and screen.
+- [x] Mobile settings route and app-shell integration.
+- [x] Mobile typecheck/config/export validation checkpoint.
 - [x] Full backend test/build/typecheck checkpoint.
 
 ### Not yet complete
@@ -254,24 +287,25 @@ If code has not changed in a previously validated area, its last green result re
 - [ ] Camera-based movement analysis/coaching.
 - [ ] Global content relevance and localization across every content domain.
 - [ ] Daily automatic market-price ingestion pipeline.
+- [ ] Country/region-aware grocery source registry and price normalization.
 - [ ] Subscription/entitlement layer.
 - [ ] Mobile UI/animation system and final design language.
 
-## 9. Recommended Next Work Sequence
+## 10. Recommended Next Work Sequence
 
 The default order should be:
 
-1. Finish global settings UI/client integration.
-2. Build the real Voice runtime boundary (ASR/TTS abstractions, streaming, interruption, caching, local/remote failover).
-3. Build the local-model runtime boundary and real-device packaging strategy.
-4. Expand Nutrition + Budget + Shopping as one connected intelligence slice.
+1. Build the real Voice runtime boundary (ASR/TTS abstractions, streaming, interruption, caching, local/remote failover).
+2. Build the local-model runtime boundary and real-device packaging strategy.
+3. Expand Nutrition + Budget + Shopping as one connected intelligence slice.
+4. Build the global market intelligence foundation: country/region/store source registry, local 03:30 scheduling, price normalization, FX, price history, source confidence, and regional relevance.
 5. Expand Fitness + exercise catalog + equipment awareness.
 6. Add camera-based coaching after the workout domain is stable.
 7. Complete global content/country relevance.
 8. Add entitlement/subscription infrastructure without coupling it to core logic.
 9. Build the polished animated mobile experience around the stable backend contracts.
 
-## 10. Daily Start Protocol
+## 11. Daily Start Protocol
 
 At the beginning of each development session:
 
@@ -290,7 +324,7 @@ At the beginning of each development session:
 12. Create a checkpoint before switching major workstreams
 ```
 
-## 11. Checkpoint Policy
+## 12. Checkpoint Policy
 
 Every meaningful slice should end with:
 
@@ -307,7 +341,7 @@ Every meaningful slice should end with:
 
 A checkpoint is considered trustworthy only after the corresponding tests/build/typecheck and documentation are all green.
 
-## 12. Important Engineering Rules
+## 13. Important Engineering Rules
 
 - Never replace the internal AI architecture with a direct dependency on one external provider.
 - Never put provider secrets/API keys in the mobile application.
