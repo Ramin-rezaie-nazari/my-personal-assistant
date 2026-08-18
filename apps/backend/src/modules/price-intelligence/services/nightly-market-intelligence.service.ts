@@ -13,6 +13,7 @@ export type NightlyMarketConfig = {
 };
 export type NightlyRunResult = {
   runId: string;
+  countryCode?: string;
   status: 'completed' | 'partial' | 'failed' | 'skipped';
   attempts: number;
   collected: number;
@@ -72,12 +73,19 @@ export class NightlyMarketIntelligenceService {
     productKeys?: string[],
     sourceIds?: string[],
     scheduledFor = new Date(),
+    countryCode?: string,
   ): Promise<NightlyRunResult> {
     const startedAt = new Date();
-    const lock = await this.persistence.createRun(scheduledFor, startedAt);
+    const normalizedCountry = countryCode?.trim().toUpperCase();
+    const lock = await this.persistence.createRun(
+      scheduledFor,
+      startedAt,
+      normalizedCountry,
+    );
     if (!lock.acquired)
       return {
         runId: lock.id,
+        countryCode: normalizedCountry,
         status: 'skipped',
         attempts: 0,
         collected: 0,
@@ -107,7 +115,9 @@ export class NightlyMarketIntelligenceService {
         attempts += 1
       ) {
         try {
-          const result = await this.sources.collectDetailed(keys, sourceIds);
+          const result = normalizedCountry
+            ? await this.sources.collectForCountryDetailed(normalizedCountry, keys)
+            : await this.sources.collectDetailed(keys, sourceIds);
           collected = result.prices;
           failedSources = result.failedSourceIds;
           attemptedSources = result.attemptedSourceIds;
@@ -117,9 +127,7 @@ export class NightlyMarketIntelligenceService {
           if (attempts > policy.maxRetries) break;
         }
         if (policy.retryDelayMs > 0)
-          await new Promise((resolve) =>
-            setTimeout(resolve, policy.retryDelayMs),
-          );
+          await new Promise((resolve) => setTimeout(resolve, policy.retryDelayMs));
       }
       await this.persistence.record(collected);
     } catch (cause) {
@@ -141,6 +149,7 @@ export class NightlyMarketIntelligenceService {
     });
     return {
       runId: lock.id,
+      countryCode: normalizedCountry,
       status,
       attempts,
       collected: collected.length,
