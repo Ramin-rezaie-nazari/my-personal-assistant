@@ -257,6 +257,7 @@ model Recipe {
   description String?
   imageUrl String?
   imageSource String?
+  servings Int @default(2)
   calories Int @default(0)
   protein Float @default(0)
   carbs Float @default(0)
