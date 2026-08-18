@@ -1,32 +1,55 @@
 import { Injectable } from '@nestjs/common';
 import { NormalizedPrice } from '../models/price-intelligence.model';
+import { GLOBAL_MARKET_SOURCES } from '../data/global-market-source.catalog';
+import { GlobalMarketSourceRegistryService } from './global-market-source-registry.service';
 import { HttpPriceSourceAdapter } from './http-price-source.adapter';
 import { PriceSourceRegistryService } from './price-source-registry.service';
+
 export type PriceSourceAdapter = {
   id: string;
   kind: NormalizedPrice['sourceKind'];
   fetchPrices(productKeys: string[]): Promise<NormalizedPrice[]>;
 };
+
 export type PriceCollectionResult = {
   prices: NormalizedPrice[];
   failedSourceIds: string[];
   attemptedSourceIds: string[];
 };
+
 @Injectable()
 export class PriceSourceService {
   private readonly adapters = new Map<string, PriceSourceAdapter>();
-  constructor(private readonly registry?: PriceSourceRegistryService) {
-    if (registry)
-      for (const s of registry.list(true))
-        this.register(new HttpPriceSourceAdapter(s));
+
+  constructor(
+    private readonly registry?: PriceSourceRegistryService,
+    private readonly globalRegistry?: GlobalMarketSourceRegistryService,
+  ) {
+    for (const source of registry?.list(true) ?? [])
+      this.register(new HttpPriceSourceAdapter(source));
+
+    for (const source of Object.values(GLOBAL_MARKET_SOURCES)) {
+      if (!source.enabled) continue;
+      this.register(
+        new HttpPriceSourceAdapter({
+          id: source.id,
+          kind: this.kindForGlobalSource(source.role),
+          baseUrl: source.baseUrl,
+          searchUrlTemplate: source.searchUrlTemplate,
+        }),
+      );
+    }
   }
+
   register(a: PriceSourceAdapter) {
     this.adapters.set(a.id, a);
     return this;
   }
+
   async collect(keys: string[], ids?: string[]) {
     return (await this.collectDetailed(keys, ids)).prices;
   }
+
   async collectDetailed(
     keys: string[],
     sourceIds?: string[],
@@ -48,11 +71,30 @@ export class PriceSourceService {
     );
     return { prices, failedSourceIds: failed, attemptedSourceIds: ids };
   }
+
+  async collectForCountryDetailed(
+    countryCode: string,
+    keys: string[],
+  ): Promise<PriceCollectionResult> {
+    const ids = this.globalRegistry?.getOperationalSourceIds(countryCode) ?? [];
+    return this.collectDetailed(keys, ids);
+  }
+
   sources() {
-    return this.registry
+    const global = Object.values(GLOBAL_MARKET_SOURCES)
+      .filter((source) => source.enabled)
+      .map(({ id, name, kind, baseUrl }) => ({ id, name, kind, baseUrl }));
+    const local = this.registry
       ? this.registry
           .list(true)
           .map(({ id, name, kind, baseUrl }) => ({ id, name, kind, baseUrl }))
       : [];
+    return [...local, ...global];
+  }
+
+  private kindForGlobalSource(role: 'retailer' | 'aggregator' | 'discovery'):
+    NormalizedPrice['sourceKind'] {
+    if (role === 'aggregator') return 'web_store';
+    return 'retailer';
   }
 }
