@@ -72,7 +72,7 @@ export class HttpPriceSourceAdapter {
         availability,
         url,
       );
-      const fingerprint = `${normalized.sourceId}|${normalized.url}|${normalized.amount}|${this.normalizeText(normalized.title)}`;
+      const fingerprint = `${normalized.sourceId}|${normalized.url}|${normalized.amount}|${normalized.currency}|${this.normalizeText(normalized.title)}`;
       if (!seen.has(fingerprint)) {
         seen.add(fingerprint);
         prices.push(normalized);
@@ -212,7 +212,7 @@ export class HttpPriceSourceAdapter {
     availability: unknown,
     url: string,
   ): NormalizedPrice {
-    const rawCurrency = String(currency ?? '').toUpperCase();
+    const rawCurrency = String(currency ?? '').trim().toUpperCase();
     const isRial =
       rawCurrency === 'IRR' ||
       rawCurrency.includes('RIAL') ||
@@ -223,7 +223,7 @@ export class HttpPriceSourceAdapter {
       sourceId: this.id,
       sourceKind: this.kind,
       url,
-      currency: 'IRT',
+      currency: isRial ? 'IRT' : rawCurrency || 'UNKNOWN',
       amount: isRial ? amount / 10 : amount,
       availability: this.availability(availability),
       observedAt: new Date(),
@@ -259,7 +259,10 @@ export class HttpPriceSourceAdapter {
     const window =
       index >= 0 ? html.slice(Math.max(0, index - 120), index + 120) : html;
     if (/ریال|rial/i.test(window)) return 'IRR';
-    return 'IRT';
+    if (/\b(?:USD|\$)\b/i.test(window)) return 'USD';
+    if (/\bEUR\b|€/.test(window)) return 'EUR';
+    if (/\bGBP\b|£/.test(window)) return 'GBP';
+    return 'UNKNOWN';
   }
 
   private availability(value: unknown): NormalizedPrice['availability'] {
