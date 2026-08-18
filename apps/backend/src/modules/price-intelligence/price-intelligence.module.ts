@@ -7,6 +7,7 @@ import { PriceSourceService } from './services/price-source.service';
 import { PriceSourceRegistryService } from './services/price-source-registry.service';
 import { GlobalMarketSourceRegistryService } from './services/global-market-source-registry.service';
 import { GlobalMarketScheduleService } from './services/global-market-schedule.service';
+import { GlobalMarketAutomaticSchedulerService } from './services/global-market-automatic-scheduler.service';
 import { FxRateService } from './services/fx-rate.service';
 import { PriceHistoryStoreService } from './services/price-history-store.service';
 import { PricePersistenceService } from './services/price-persistence.service';
@@ -30,6 +31,7 @@ import { PrismaModule } from '../../common/database/prisma.module';
     PriceSourceRegistryService,
     GlobalMarketSourceRegistryService,
     GlobalMarketScheduleService,
+    GlobalMarketAutomaticSchedulerService,
     FxRateService,
     PriceHistoryStoreService,
     PricePersistenceService,
@@ -49,6 +51,7 @@ import { PrismaModule } from '../../common/database/prisma.module';
     PriceSourceRegistryService,
     GlobalMarketSourceRegistryService,
     GlobalMarketScheduleService,
+    GlobalMarketAutomaticSchedulerService,
     FxRateService,
     PriceHistoryStoreService,
     PricePersistenceService,
