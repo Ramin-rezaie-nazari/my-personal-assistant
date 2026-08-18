@@ -56,6 +56,7 @@ export class RecipesService {
           description: data.description?.trim() || undefined,
           imageUrl: data.imageUrl?.trim() || undefined,
           imageSource: data.imageSource?.trim() || undefined,
+          servings: data.servings ?? 2,
           ...totals,
           ingredients: { create: ingredients },
         },
@@ -88,9 +89,11 @@ export class RecipesService {
     if (!existing) throw new NotFoundException('Recipe not found');
     if (data.name !== undefined && !data.name.trim())
       throw new BadRequestException('name must not be empty');
+    if (data.servings !== undefined) this.validateServings(data.servings);
     if (data.ingredients !== undefined) {
       this.validateInput({
         name: data.name ?? existing.name,
+        servings: data.servings ?? existing.servings,
         ingredients: data.ingredients,
       });
     }
@@ -134,6 +137,7 @@ export class RecipesService {
             description: data.description?.trim() || undefined,
             imageUrl: data.imageUrl?.trim() || undefined,
             imageSource: data.imageSource?.trim() || undefined,
+            servings: data.servings ?? existing.servings,
             ...totals,
             ingredients: { create: ingredients },
           },
@@ -147,6 +151,7 @@ export class RecipesService {
           description: data.description?.trim() || undefined,
           imageUrl: data.imageUrl?.trim() || undefined,
           imageSource: data.imageSource?.trim() || undefined,
+          servings: data.servings ?? existing.servings,
         },
         include: { ingredients: { include: { food: true } } },
       });
@@ -168,6 +173,7 @@ export class RecipesService {
       throw new BadRequestException(
         'A recipe must contain at least one ingredient',
       );
+    if (data.servings !== undefined) this.validateServings(data.servings);
     for (const ingredient of data.ingredients) {
       if (!ingredient.foodId?.trim())
         throw new BadRequestException('foodId must not be empty');
@@ -176,5 +182,12 @@ export class RecipesService {
           'ingredient quantity must be a positive finite number',
         );
     }
+  }
+
+  private validateServings(value: number) {
+    if (!Number.isInteger(value) || value <= 0 || value > 10000)
+      throw new BadRequestException(
+        'servings must be an integer between 1 and 10000',
+      );
   }
 }
