@@ -43,14 +43,7 @@ function StartupScreen() {
 }
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
-  return (
-    <AppErrorState
-      title="Something went wrong"
-      message={error.message}
-      retryLabel="Try again"
-      onRetry={retry}
-    />
-  );
+  return <AppErrorState title="Something went wrong" message={error.message} retryLabel="Try again" onRetry={retry} />;
 }
 
 const stackScreens = {
@@ -59,6 +52,7 @@ const stackScreens = {
   '/language': { animation: 'fade' as const },
   '/auth': { animation: 'slide_from_right' as const },
   '/onboarding': { animation: 'slide_from_right' as const },
+  '/settings': { animation: 'slide_from_right' as const },
   default: { animation: 'fade' as const },
 } as const;
 
@@ -96,10 +90,7 @@ export default function RootLayout() {
     };
 
     void bootstrap();
-    return () => {
-      mounted = false;
-      clearTimeout(timeoutId);
-    };
+    return () => { mounted = false; clearTimeout(timeoutId); };
   }, []);
 
   useEffect(() => {
@@ -115,11 +106,8 @@ export default function RootLayout() {
   if (!bootReady) return <StartupScreen />;
 
   const showAssistantBubble = currentSegment != null && !['assistant', 'language', 'auth', 'onboarding'].includes(currentSegment);
-  const screenOptions = {
-    headerShown: false,
-    contentStyle: { backgroundColor: BRAND.colors.canvas },
-    animation: stackScreens.default.animation,
-  };
+  const showSettingsBubble = currentSegment != null && !['settings', 'language', 'auth', 'onboarding'].includes(currentSegment);
+  const screenOptions = { headerShown: false, contentStyle: { backgroundColor: BRAND.colors.canvas }, animation: stackScreens.default.animation };
 
   return (
     <View style={styles.root}>
@@ -129,7 +117,19 @@ export default function RootLayout() {
         <Stack.Screen name="language" options={stackScreens['/language']} />
         <Stack.Screen name="auth" options={stackScreens['/auth']} />
         <Stack.Screen name="onboarding" options={stackScreens['/onboarding']} />
+        <Stack.Screen name="settings" options={stackScreens['/settings']} />
       </Stack>
+      {showSettingsBubble ? (
+        <Pressable
+          onPress={() => router.push('/settings')}
+          style={({ pressed }) => [styles.settingsBubble, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Open settings"
+          accessibilityHint="Opens global assistant settings"
+        >
+          <Text style={styles.settingsIcon}>⚙</Text>
+        </Pressable>
+      ) : null}
       {showAssistantBubble ? (
         <Pressable
           onPress={() => router.push('/assistant')}
@@ -153,5 +153,7 @@ const styles = StyleSheet.create({
   startupSubtitle: { marginTop: 6, color: BRAND.colors.startupMuted, fontSize: 13, textAlign: 'center' },
   startupSpinner: { marginTop: 28 },
   assistantBubble: { position: 'absolute', right: 18, bottom: 24, borderRadius: 20, elevation: 6, shadowColor: '#000', shadowOpacity: BRAND.shadow.opacity, shadowRadius: BRAND.shadow.radius, shadowOffset: { width: 0, height: BRAND.shadow.offsetY } },
+  settingsBubble: { position: 'absolute', right: 20, bottom: 96, width: 46, height: 46, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.surface, borderWidth: 1, borderColor: BRAND.colors.border, elevation: 4, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 8, shadowOffset: { width: 0, height: 3 } },
+  settingsIcon: { fontSize: 20, color: BRAND.colors.primaryStrong },
   pressed: { opacity: 0.82, transform: [{ scale: 0.96 }] },
 });
