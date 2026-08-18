@@ -43,8 +43,7 @@ export class FoodOperatingLoopService {
     targetServings: number,
     countryCode = '',
   ): Promise<FoodOperatingPlan> {
-    if (!Number.isInteger(targetServings) || targetServings <= 0 || targetServings > 10000)
-      throw new NotFoundException('targetServings must be an integer between 1 and 10000');
+    this.validateServings(targetServings);
 
     const recipe = await this.prisma.recipe.findFirst({
       where: { id: recipeId, OR: [{ userId: null }, { userId }] },
@@ -104,10 +103,72 @@ export class FoodOperatingLoopService {
     };
   }
 
+  async recommend(
+    userId: string,
+    targetServings: number,
+    countryCode = '',
+    maxCalories?: number,
+    minProteinGrams?: number,
+  ) {
+    this.validateServings(targetServings);
+
+    const [recipes, inventory, nutritionProfile] = await Promise.all([
+      this.prisma.recipe.findMany({
+        where: { OR: [{ userId: null }, { userId }] },
+        include: { ingredients: { include: { food: true } } },
+      }),
+      this.prisma.inventoryItem.findMany({
+        where: { userId },
+      }),
+      this.prisma.nutritionProfile.findUnique({
+        where: { userId },
+        select: { dailyCaloriesGoal: true, proteinGoalGrams: true },
+      }),
+    ]);
+
+    const inventoryByFood = new Map(inventory.map((item) => [item.foodId, item.quantity]));
+    const calorieLimit = maxCalories ?? (nutritionProfile?.dailyCaloriesGoal ? Math.round(nutritionProfile.dailyCaloriesGoal * 0.45) : undefined);
+    const proteinFloor = minProteinGrams ?? (nutritionProfile?.proteinGoalGrams ? nutritionProfile.proteinGoalGrams * 0.30 : undefined);
+    const ranked = this.countryFood.rankRecipesForCountry(countryCode, recipes as Array<{ name: string; cuisineFamily?: string | null }>);
+    const rankIndex = new Map(ranked.map((recipe, index) => [recipe.name, index]));
+
+    return recipes
+      .map((recipe) => {
+        const scaled = this.buildScaledRecipe(recipe, targetServings);
+        const missing = scaled.ingredients.filter((ingredient) => (inventoryByFood.get(ingredient.ingredientId) ?? 0) < ingredient.scaledQuantity);
+        const coveragePercent = scaled.ingredients.length === 0
+          ? 0
+          : Math.round(((scaled.ingredients.length - missing.length) / scaled.ingredients.length) * 100);
+        const calories = scaled.nutritionForFullBatch.calories / targetServings;
+        const protein = scaled.nutritionPerServing.proteinGrams;
+        const nutritionScore = (calorieLimit && calories <= calorieLimit ? 15 : 0) + (proteinFloor && protein >= proteinFloor ? 15 : 0);
+        const score = Math.min(100, coveragePercent + nutritionScore + Math.max(0, 20 - (rankIndex.get(recipe.name) ?? recipes.length)));
+        return {
+          recipeId: recipe.id,
+          name: recipe.name,
+          score,
+          coveragePercent,
+          missingCount: missing.length,
+          caloriesPerServing: Number(calories.toFixed(1)),
+          proteinPerServing: Number(protein.toFixed(1)),
+          targetServings,
+          missingIngredients: missing,
+        };
+      })
+      .filter((recipe) => (calorieLimit === undefined || recipe.caloriesPerServing <= calorieLimit) && (proteinFloor === undefined || recipe.proteinPerServing >= proteinFloor))
+      .sort((a, b) => b.score - a.score || b.coveragePercent - a.coveragePercent || a.name.localeCompare(b.name))
+      .slice(0, 10);
+  }
+
   async addMissingToShopping(userId: string, recipeId: string, targetServings: number) {
     const plan = await this.buildPlan(userId, recipeId, targetServings);
     const result = await this.shopping.addRecipeMissing(userId, recipeId, plan.inventory.missing);
     return { plan, shopping: result };
+  }
+
+  private validateServings(targetServings: number) {
+    if (!Number.isInteger(targetServings) || targetServings <= 0 || targetServings > 10000)
+      throw new NotFoundException('targetServings must be an integer between 1 and 10000');
   }
 
   private buildScaledRecipe(recipe: {
@@ -120,7 +181,7 @@ export class FoodOperatingLoopService {
     protein: number;
     carbs: number;
     fat: number;
-    ingredients: Array<{ foodId: string; quantity: number; unit: string }>;
+    ingredients: Array<{ foodId: string; quantity: number; unit: string; food?: { name: string } | null }>;
   }, targetServings: number) {
     return this.scaling.scale(
       {
