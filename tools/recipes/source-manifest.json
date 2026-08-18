@@ -1,0 +1,32 @@
+{
+  "production": [
+    {
+      "name": "Wikibooks Cookbook",
+      "url": "https://en.wikibooks.org/wiki/Cookbook",
+      "license": "CC BY-SA 4.0",
+      "attribution": "Wikibooks contributors",
+      "notes": "Recipe text must retain attribution and share-alike obligations."
+    },
+    {
+      "name": "USDA FoodData Central",
+      "url": "https://fdc.nal.usda.gov/",
+      "license": "CC0 1.0",
+      "attribution": "U.S. Department of Agriculture, Agricultural Research Service",
+      "notes": "Use for food composition and nutrition calculations."
+    }
+  ],
+  "development_only": [
+    {
+      "name": "RecipeNLG",
+      "url": "https://recipenlg.cs.put.poznan.pl/",
+      "license": "Unknown / source-dependent",
+      "notes": "Do not publish derived recipe content until underlying rights are verified."
+    },
+    {
+      "name": "dpapathanasiou/recipes",
+      "url": "https://github.com/dpapathanasiou/recipes",
+      "license": "MIT",
+      "notes": "Use only as a development/candidate source unless individual content provenance is verified."
+    }
+  ]
+}
