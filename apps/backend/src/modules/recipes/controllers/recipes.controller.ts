@@ -29,18 +29,12 @@ export class RecipesController {
   ) {}
 
   @Post()
-  create(
-    @Request() req: { user: { id: string } },
-    @Body() dto: CreateRecipeDto,
-  ) {
+  create(@Request() req: { user: { id: string } }, @Body() dto: CreateRecipeDto) {
     return this.recipesService.createRecipe(req.user.id, dto);
   }
 
   @Get()
-  async findAll(
-    @Request() req: { user: { id: string } },
-    @Query('countryCode') countryCode = '',
-  ) {
+  async findAll(@Request() req: { user: { id: string } }, @Query('countryCode') countryCode = '') {
     const recipes = await this.recipesService.getRecipes(req.user.id);
     return this.globalCountryFood.rankRecipesForCountry(countryCode, recipes);
   }
@@ -68,23 +62,32 @@ export class RecipesController {
     @Query('maxCalories') maxCaloriesText?: string,
     @Query('minProteinGrams') minProteinText?: string,
   ) {
-    if (!servingsText?.trim()) throw new BadRequestException('servings is required');
-    const servings = Number(servingsText);
-    if (!Number.isInteger(servings) || servings <= 0)
-      throw new BadRequestException('servings must be a positive integer');
-    const maxCalories = maxCaloriesText?.trim() ? Number(maxCaloriesText) : undefined;
-    const minProteinGrams = minProteinText?.trim() ? Number(minProteinText) : undefined;
-    if (maxCalories !== undefined && (!Number.isFinite(maxCalories) || maxCalories < 0))
-      throw new BadRequestException('maxCalories must be a non-negative number');
-    if (minProteinGrams !== undefined && (!Number.isFinite(minProteinGrams) || minProteinGrams < 0))
-      throw new BadRequestException('minProteinGrams must be a non-negative number');
-    return this.foodOperatingLoop.recommend(
-      req.user.id,
-      servings,
-      countryCode,
-      maxCalories,
-      minProteinGrams,
-    );
+    const servings = parseRequiredServings(servingsText);
+    const maxCalories = parseOptionalNonNegative(maxCaloriesText, 'maxCalories');
+    const minProteinGrams = parseOptionalNonNegative(minProteinText, 'minProteinGrams');
+    return this.foodOperatingLoop.recommend(req.user.id, servings, countryCode, maxCalories, minProteinGrams);
+  }
+
+  @Get('meal-plan')
+  async mealPlan(
+    @Request() req: { user: { id: string } },
+    @Query('servings') servingsText?: string,
+    @Query('countryCode') countryCode = '',
+    @Query('maxCalories') maxCaloriesText?: string,
+    @Query('minProteinGrams') minProteinText?: string,
+  ) {
+    const servings = parseRequiredServings(servingsText);
+    const maxCalories = parseOptionalNonNegative(maxCaloriesText, 'maxCalories');
+    const minProteinGrams = parseOptionalNonNegative(minProteinText, 'minProteinGrams');
+    const recommendations = await this.foodOperatingLoop.recommend(req.user.id, servings, countryCode, maxCalories, minProteinGrams);
+    const mealTypes = ['breakfast', 'lunch', 'dinner'] as const;
+    const used = new Set<string>();
+    const meals = mealTypes.map((mealType, index) => {
+      const recipe = recommendations.find((item) => !used.has(item.recipeId)) ?? recommendations[index] ?? null;
+      if (recipe) used.add(recipe.recipeId);
+      return { mealType, recipe };
+    });
+    return { targetServings: servings, countryCode: countryCode.trim().toUpperCase() || null, meals, generatedDeterministically: true };
   }
 
   @Get(':id/food-plan')
@@ -94,10 +97,7 @@ export class RecipesController {
     @Query('servings') servingsText?: string,
     @Query('countryCode') countryCode = '',
   ) {
-    if (!servingsText?.trim()) throw new BadRequestException('servings is required');
-    const servings = Number(servingsText);
-    if (!Number.isInteger(servings) || servings <= 0)
-      throw new BadRequestException('servings must be a positive integer');
+    const servings = parseRequiredServings(servingsText);
     return this.foodOperatingLoop.buildPlan(req.user.id, id, servings, countryCode);
   }
 
@@ -107,10 +107,7 @@ export class RecipesController {
     @Param('id') id: string,
     @Query('servings') servingsText?: string,
   ) {
-    if (!servingsText?.trim()) throw new BadRequestException('servings is required');
-    const servings = Number(servingsText);
-    if (!Number.isInteger(servings) || servings <= 0)
-      throw new BadRequestException('servings must be a positive integer');
+    const servings = parseRequiredServings(servingsText);
     return this.foodOperatingLoop.addMissingToShopping(req.user.id, id, servings);
   }
 
@@ -120,10 +117,7 @@ export class RecipesController {
     @Param('id') id: string,
     @Query('servings') servingsText?: string,
   ) {
-    if (!servingsText?.trim()) throw new BadRequestException('servings is required');
-    const servings = Number(servingsText);
-    if (!Number.isInteger(servings) || servings <= 0)
-      throw new BadRequestException('servings must be a positive integer');
+    const servings = parseRequiredServings(servingsText);
     return this.recipesService.getScaledRecipe(req.user.id, id, servings);
   }
 
@@ -133,11 +127,7 @@ export class RecipesController {
   }
 
   @Patch(':id')
-  update(
-    @Request() req: { user: { id: string } },
-    @Param('id') id: string,
-    @Body() body: Partial<CreateRecipeDto>,
-  ) {
+  update(@Request() req: { user: { id: string } }, @Param('id') id: string, @Body() body: Partial<CreateRecipeDto>) {
     return this.recipesService.updateRecipe(req.user.id, id, body);
   }
 
@@ -145,4 +135,18 @@ export class RecipesController {
   remove(@Request() req: { user: { id: string } }, @Param('id') id: string) {
     return this.recipesService.deleteRecipe(req.user.id, id);
   }
+}
+
+function parseRequiredServings(value?: string): number {
+  if (!value?.trim()) throw new BadRequestException('servings is required');
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed <= 0) throw new BadRequestException('servings must be a positive integer');
+  return parsed;
+}
+
+function parseOptionalNonNegative(value: string | undefined, name: string): number | undefined {
+  if (!value?.trim()) return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) throw new BadRequestException(`${name} must be a non-negative number`);
+  return parsed;
 }
