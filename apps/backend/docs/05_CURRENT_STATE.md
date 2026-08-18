@@ -2,17 +2,17 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Last fully validated locally: 2026-08-18 before the new Food Operating Loop and Meal Planner changes. New changes are implemented on `main` but remain pending local validation.
+> Last fully validated locally: 2026-08-18 before the newest Food Operating Loop, Meal Planner and Recipe Scaling Metadata changes. New changes are implemented on `main` but remain pending local validation.
 
 ## Executive status
 
-**Overall project completion: ~63%**
+**Overall project completion: ~65%**
 
-This is a weighted engineering/product-completion index, not a claim that 63% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop has moved into recommendation and daily meal planning. Major unfinished product work remains in the verified global recipe corpus, live market pricing, mobile UX, production hardening, and monetization.
+This is a weighted engineering/product-completion index, not a claim that 65% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans scaling, inventory, shopping handoff, recommendations and daily meal planning. Major unfinished product work remains in the verified global recipe corpus, live market pricing, mobile UX, production hardening, and monetization.
 
 ## Latest fully green local checkpoint
 
-The last local checkpoint before the newest Food Operating Loop / Meal Planner changes was fully green:
+The last local checkpoint before the newest changes was fully green:
 
 ```text
 Focused global/recipe tests:  4/4 suites, 14/14 tests — PASS
@@ -22,22 +22,22 @@ Typecheck:                     PASS
 Build:                         PASS
 ```
 
-The newer Food Operating Loop and Meal Planner changes have not yet been executed in the user's local runtime, so they are **not** marked green until that validation happens.
+The newer Food Operating Loop, Meal Planner and Recipe Scaling Metadata changes have not yet been executed in the user's local runtime, so they are **not** marked green until that validation happens.
 
-## New Slice — Food Operating Loop + Meal Planning
+## New Slice — Food Operating Loop + Meal Planning + Recipe Scaling Metadata
 
 ### Implemented on `main`
 
 ```text
-Recipe
+Recipe + persisted ingredient scaling metadata
   ↓
 Target servings
   ↓
-Deterministic scaling
+Deterministic scaling engine
   ↓
 Scaled ingredient quantities
   ↓
-Inventory comparison using scaled quantities
+Inventory comparison using target quantities
   ↓
 Unit normalization
   ↓
@@ -54,10 +54,23 @@ Deterministic meal recommendation
 Deterministic daily meal plan
 ```
 
+### Persisted RecipeIngredient scaling metadata
+
+Each recipe ingredient now has:
+
+- `measurementKind`
+- `scalingPolicy`
+- `scalingExponent`
+- `batchSize`
+- `maxLinearMultiplier`
+
+The values can be supplied explicitly through the Recipe DTO. When omitted, the backend applies conservative deterministic inference rather than silently changing the user's recipe intent.
+
 ### New Food APIs
 
 ```text
 GET  /recipes/recommendations?servings=2&countryCode=JP
+GET  /recipes/meal-plan?servings=2&countryCode=JP
 GET  /recipes/:id/food-plan?servings=50&countryCode=JP
 POST /recipes/:id/food-plan/shopping?servings=50
 ```
@@ -79,7 +92,8 @@ GET /budget-intelligence/meal-plan?servings=2&countryCode=JP
 - Missing quantities are returned in the recipe's requested unit.
 - Missing items can be handed directly to ShoppingService.
 - Recommendations use inventory coverage, nutrition targets and country relevance deterministically.
-- Daily meal planning uses the user's daily calorie/protein targets and chooses distinct recipes where possible.
+- Daily meal planning uses nutrition targets and distinct recommendations where possible.
+- Recipe scaling consumes persisted per-ingredient scaling policies instead of forcing every ingredient into linear scaling.
 - No external Recipe API is required for these flows.
 - Live price values are deliberately not fabricated because global verified price coverage is not complete.
 
@@ -95,15 +109,17 @@ Focused tests added/updated:
 - `recipes.controller.spec.ts`
 - `meal-planning.service.spec.ts`
 - `budget-intelligence.controller.spec.ts`
+- `recipes.service.scaling.spec.ts`
 
-## Recipe Serving Scaling — 100% for current mature slice
+## Recipe Serving Scaling — 100% for mature current slice
 
-Implemented and previously locally validated:
+Previously validated and now strengthened with persisted ingredient policies:
 
 - Recipe `servings` persistence.
 - DTO validation.
 - Deterministic scaling engine.
 - `linear`, `sublinear`, `fixed`, `per_batch`, `manual_review` policies.
+- Policy-specific exponent/batch/max-multiplier metadata.
 - Kitchen-friendly quantity rounding.
 - Full-batch nutrition.
 - Per-serving nutrition.
@@ -111,8 +127,9 @@ Implemented and previously locally validated:
 - Unit/service/controller coverage.
 - Edge-case coverage.
 - Target-serving validation.
+- Explicit non-linear policy test coverage.
 
-Last local validation:
+Last locally validated before persisted metadata changes:
 
 ```text
 Focused Recipe Scaling: 2/2 suites, 6/6 tests — PASS
@@ -143,7 +160,7 @@ Focused Recipe Scaling: 2/2 suites, 6/6 tests — PASS
 - Nutrition provenance and quality controls.
 - Allergens and dietary constraints coverage.
 - Production-scale ingredient substitutions.
-- Serving-scaling metadata for the entire catalog.
+- Serving-scaling metadata for the entire catalog (architecture now ready; corpus population remains).
 - Inventory matching across the full catalog.
 - Shopping conversion across the full catalog.
 - Provenance/versioning.
@@ -236,20 +253,20 @@ Remaining:
 |---|---:|
 | Backend platform + architecture | 90% |
 | Personal Brain / deterministic intelligence | 65% |
-| Nutrition foundations | 72% |
+| Nutrition foundations | 74% |
 | Fitness / Yoga / Calisthenics / Gym | 75% |
-| Recipe & Food Intelligence | 60% |
-| Inventory / Shopping / Price Intelligence | 65% |
+| Recipe & Food Intelligence | 64% |
+| Inventory / Shopping / Price Intelligence | 68% |
 | Mobile product / UX | 20% |
 | AI orchestration / voice / globalization | 40% |
 | QA / Security / Production hardening | 50% |
 | Business / Monetization | 0% |
 
-**Weighted overall index: ~63%.**
+**Weighted overall index: ~65%.**
 
 ## Immediate next priorities
 
-1. Run local validation for the newest Food Operating Loop + Meal Planner slice.
+1. Run local validation for the newest migration + Recipe Scaling + Food Operating Loop + Meal Planner slice.
 2. Add canonical ingredient/region/cuisine normalization.
 3. Expand verified recipe corpus with provenance, allergens and dietary constraints.
 4. Integrate the stacked Global Market workstream after conflict/dependency review.
