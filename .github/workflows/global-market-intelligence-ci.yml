@@ -7,6 +7,12 @@ on:
       - 'apps/backend/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/global-market-intelligence-ci.yml'
+  pull_request:
+    branches: [feature/global-settings-mobile]
+    paths:
+      - 'apps/backend/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/global-market-intelligence-ci.yml'
 
 jobs:
   backend-global-market:
@@ -72,3 +78,5 @@ jobs:
           src/modules/price-intelligence/services/global-market-automatic-scheduler.service.spec.ts
           src/modules/price-intelligence/services/http-price-source.adapter.spec.ts
           src/modules/price-intelligence/services/fx-rate.service.spec.ts
+          src/modules/price-intelligence/services/price-confidence.service.spec.ts
+          src/modules/price-intelligence/services/nightly-market-intelligence.service.spec.ts
