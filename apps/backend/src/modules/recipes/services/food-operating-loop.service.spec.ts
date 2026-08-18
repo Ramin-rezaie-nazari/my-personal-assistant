@@ -53,7 +53,7 @@ describe('FoodOperatingLoopService', () => {
       ],
     });
     prisma.inventoryItem.findMany.mockResolvedValue([
-      { userId: 'user-1', foodId: 'food-1', quantity: 100, unit: 'g', food: { name: 'Chicken' } },
+      { userId: 'user-1', foodId: 'food-1', quantity: 0.75, unit: 'kg', food: { name: 'Chicken' } },
     ]);
     scaling.scale.mockReturnValue({
       targetServings: 50,
@@ -70,11 +70,14 @@ describe('FoodOperatingLoopService', () => {
     const result = await service.buildPlan('user-1', 'recipe-1', 50, 'JP');
 
     expect(result.recipe.scaleFactor).toBe(25);
-    expect(result.inventory.coveragePercent).toBe(0);
-    expect(result.inventory.missing).toEqual([
-      { foodId: 'food-1', name: 'Chicken', quantity: 4900, unit: 'g' },
-    ]);
-    expect(result.shopping.readyToAdd).toHaveLength(1);
+    expect(result.inventory.coveragePercent).toBe(100);
+    expect(result.inventory.missing).toEqual([]);
+    expect(result.inventory.available[0]).toEqual({
+      foodId: 'food-1',
+      name: 'Chicken',
+      quantity: 5000,
+      unit: 'g',
+    });
     expect(result.financeContext).toEqual({ countryCode: 'JP', currencyCode: 'JPY' });
   });
 
@@ -123,7 +126,7 @@ describe('FoodOperatingLoopService', () => {
       },
     ]);
     prisma.inventoryItem.findMany.mockResolvedValue([
-      { foodId: 'food-1', quantity: 100 },
+      { foodId: 'food-1', quantity: 1, unit: 'kg' },
     ]);
     prisma.nutritionProfile.findUnique.mockResolvedValue({
       dailyCaloriesGoal: 2000,
@@ -141,7 +144,7 @@ describe('FoodOperatingLoopService', () => {
 
     expect(result).toHaveLength(1);
     expect(result[0].name).toBe('Chicken Bowl');
-    expect(result[0].coveragePercent).toBe(0);
+    expect(result[0].coveragePercent).toBe(100);
     expect(result[0].proteinPerServing).toBe(40);
   });
 });
