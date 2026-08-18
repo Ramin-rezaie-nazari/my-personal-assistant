@@ -1,7 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { RecipesController } from './recipes.controller';
 
-describe('RecipesController scaling endpoint', () => {
+describe('RecipesController food operating loop', () => {
   const recipesService = {
     getScaledRecipe: jest.fn(),
   };
@@ -13,23 +13,28 @@ describe('RecipesController scaling endpoint', () => {
     getSupportedCountryCodes: jest.fn(),
     rankRecipesForCountry: jest.fn((countryCode, recipes) => recipes),
   };
+  const foodOperatingLoop = {
+    buildPlan: jest.fn(),
+    addMissingToShopping: jest.fn(),
+  };
   const controller = new RecipesController(
     recipesService as never,
     matcher as never,
     globalCountryFood as never,
+    foodOperatingLoop as never,
   );
 
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('requires the target serving count', async () => {
+  it('requires the target serving count', () => {
     expect(() =>
       controller.scale({ user: { id: 'user-1' } }, 'recipe-1', undefined),
     ).toThrow(BadRequestException);
 
     expect(() =>
-      controller.scale({ user: { id: 'user-1' } }, 'recipe-1', 'abc'),
+      controller.foodPlan({ user: { id: 'user-1' } }, 'recipe-1', undefined),
     ).toThrow(BadRequestException);
   });
 
@@ -44,6 +49,30 @@ describe('RecipesController scaling endpoint', () => {
       'user-1',
       'recipe-1',
       50,
+    );
+  });
+
+  it('passes servings and country into the food operating loop', async () => {
+    foodOperatingLoop.buildPlan.mockResolvedValue({
+      recipe: { id: 'recipe-1', targetServings: 50 },
+    });
+
+    await expect(
+      controller.foodPlan(
+        { user: { id: 'user-1' } },
+        'recipe-1',
+        '50',
+        'JP',
+      ),
+    ).resolves.toEqual({
+      recipe: { id: 'recipe-1', targetServings: 50 },
+    });
+
+    expect(foodOperatingLoop.buildPlan).toHaveBeenCalledWith(
+      'user-1',
+      'recipe-1',
+      50,
+      'JP',
     );
   });
 });
