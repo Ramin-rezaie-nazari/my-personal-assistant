@@ -36,6 +36,15 @@ describe('GlobalMarketSourceRegistryService', () => {
     );
   });
 
+  it('corrects country-specific source assignments instead of accepting cross-country mistakes', () => {
+    const mexico = service.getOperationalSourceIds('MX');
+    const newZealand = service.getOperationalSourceIds('NZ');
+    expect(mexico).toEqual(expect.arrayContaining(['walmart_mx', 'rappi']));
+    expect(mexico).not.toContain('mercadona');
+    expect(newZealand).toContain('woolworths_nz');
+    expect(newZealand).not.toContain('woolworths_au');
+  });
+
   it('recognizes direct coverage and rejects unknown countries', () => {
     expect(service.hasDirectOrAggregatorCoverage('MX')).toBe(true);
     expect(service.getCountryProfile('ZZ')).toBeNull();
