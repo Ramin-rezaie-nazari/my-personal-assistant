@@ -16,6 +16,7 @@ describe('RecipesController food operating loop', () => {
   const foodOperatingLoop = {
     buildPlan: jest.fn(),
     addMissingToShopping: jest.fn(),
+    recommend: jest.fn(),
   };
   const controller = new RecipesController(
     recipesService as never,
@@ -35,6 +36,10 @@ describe('RecipesController food operating loop', () => {
 
     expect(() =>
       controller.foodPlan({ user: { id: 'user-1' } }, 'recipe-1', undefined),
+    ).toThrow(BadRequestException);
+
+    expect(() =>
+      controller.recommendations({ user: { id: 'user-1' } }, undefined),
     ).toThrow(BadRequestException);
   });
 
@@ -73,6 +78,32 @@ describe('RecipesController food operating loop', () => {
       'recipe-1',
       50,
       'JP',
+    );
+  });
+
+  it('passes nutrition filters and country into recommendations', async () => {
+    foodOperatingLoop.recommend.mockResolvedValue([
+      { recipeId: 'recipe-1', name: 'Chicken Bowl', score: 92 },
+    ]);
+
+    await expect(
+      controller.recommendations(
+        { user: { id: 'user-1' } },
+        '2',
+        'JP',
+        '700',
+        '35',
+      ),
+    ).resolves.toEqual([
+      { recipeId: 'recipe-1', name: 'Chicken Bowl', score: 92 },
+    ]);
+
+    expect(foodOperatingLoop.recommend).toHaveBeenCalledWith(
+      'user-1',
+      2,
+      'JP',
+      700,
+      35,
     );
   });
 });
