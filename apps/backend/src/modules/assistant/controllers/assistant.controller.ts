@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Get,
+  Patch,
   Post,
   Query,
   Req,
@@ -12,6 +13,8 @@ import { Request } from 'express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ProcessAssistantRequestDto } from '../dto/process-assistant-request.dto';
 import { AssistantService } from '../services/assistant.service';
+import { GlobalUserSettingsService } from '../services/global-user-settings.service';
+import type { UpdateGlobalUserSettings } from '../services/global-user-settings.service';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -21,7 +24,10 @@ interface AuthenticatedRequest extends Request {
 
 @Controller('assistant')
 export class AssistantController {
-  constructor(private readonly assistantService: AssistantService) {}
+  constructor(
+    private readonly assistantService: AssistantService,
+    private readonly globalUserSettings: GlobalUserSettingsService,
+  ) {}
 
   @Get()
   getStatus() {
@@ -39,6 +45,21 @@ export class AssistantController {
       req.user.id,
       Number.isFinite(parsed) ? parsed : 24,
     );
+  }
+
+  @Get('settings/global')
+  @UseGuards(JwtAuthGuard)
+  getGlobalSettings(@Req() req: AuthenticatedRequest) {
+    return this.globalUserSettings.get(req.user.id);
+  }
+
+  @Patch('settings/global')
+  @UseGuards(JwtAuthGuard)
+  updateGlobalSettings(
+    @Body() body: UpdateGlobalUserSettings,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.globalUserSettings.update(req.user.id, body);
   }
 
   @Post()

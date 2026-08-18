@@ -6,6 +6,7 @@ import { ContextualCommandService } from './contextual-command.service';
 import { ConversationContextService } from './conversation-context.service';
 import { LocalLanguageUnderstandingService } from './local-language-understanding.service';
 import { PlanningService } from './planning.service';
+import { AiCoreGatewayService } from './ai-core-gateway.service';
 import { BrainResponse } from '../../personal-brain/types';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class AssistantService {
     private readonly naturalActionExecutionService: NaturalActionExecutionService,
     private readonly contextualCommandService: ContextualCommandService,
     private readonly conversationContextService: ConversationContextService,
+    private readonly aiCoreGatewayService: AiCoreGatewayService,
     @Optional()
     private readonly localLanguageUnderstandingService?: LocalLanguageUnderstandingService,
     @Optional() private readonly planningService?: PlanningService,
@@ -81,6 +83,7 @@ export class AssistantService {
           metadata: { local: true, clarification: true },
         } as BrainResponse)
       : ((local ? this.responseForLocalIntent(local) : undefined) ??
+        (await this.contextualAiFallback(input, userId)) ??
         (await this.brainOrchestratorService.processRequest(input, userId)));
     const executionResponse = this.resolveContextualExecution(
       response,
@@ -146,6 +149,32 @@ export class AssistantService {
     return finalResponse;
   }
 
+  private async contextualAiFallback(
+    input: string,
+    userId: string,
+  ): Promise<BrainResponse | undefined> {
+    try {
+      const result = await this.aiCoreGatewayService.runForUser({
+        userId,
+        input,
+        task: 'text-generation',
+      });
+      return {
+        intent: 'assistant',
+        nextAction: undefined,
+        message: result.text,
+        confidence: 0.6,
+        metadata: {
+          aiCore: true,
+          providerId: result.providerId,
+          contextDateKey: result.context.dateKey,
+        },
+      };
+    } catch {
+      return undefined;
+    }
+  }
+
   private responseForLocalIntent(
     local: ReturnType<LocalLanguageUnderstandingService['understand']>,
   ): BrainResponse | undefined {
@@ -173,6 +202,11 @@ export class AssistantService {
         intent: 'nutrition',
         nextAction: 'get_nutrition_summary',
         message: 'حتماً، خلاصه تغذیه امروزت رو بررسی می‌کنم.',
+      },
+      ADD_WATER: {
+        intent: 'hydration',
+        nextAction: 'add_water',
+        message: 'حتماً، مقدار آب مصرفی‌ات رو ثبت می‌کنم.',
       },
       CREATE_REMINDER: {
         intent: 'reminder',
@@ -217,106 +251,54 @@ export class AssistantService {
       .trim()
       .toLowerCase()
       .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
-    const hasTime =
-      Boolean(entities.time) ||
-      /\b(?:[01]?\d|2[0-3])\s*(?::|\.)\s*[0-5]\d\b/.test(normalizedInput);
-    const hasDuration =
-      Boolean(entities.durationMinutes) ||
-      /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)(?=\s|$)/i.test(
-        normalizedInput,
-      );
-    const hasCalories = /\b\d{2,5}\s*(?:cal|calories|کالری)\b/i.test(
-      normalizedInput,
-    );
-    const hasWeekTarget =
-      /\b[1-7]\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?\b/i.test(
-        normalizedInput,
-      );
-    if (
-      command.operation === 'update' &&
-      previousResource === 'calendar' &&
-      hasTime
-    )
-      return {
-        ...response,
-        intent: 'calendar',
-        nextAction: 'update_calendar_event',
-      };
-    if (command.operation === 'cancel' && previousResource === 'calendar')
-      return {
-        ...response,
-        intent: 'calendar',
-        nextAction: 'cancel_calendar_event',
-      };
-    if (
-      command.operation === 'update' &&
-      previousAction.includes('reminder') &&
-      hasTime
-    )
-      return { ...response, intent: 'reminder', nextAction: 'update_reminder' };
-    if (command.operation === 'cancel' && previousAction.includes('reminder'))
-      return { ...response, intent: 'reminder', nextAction: 'cancel_reminder' };
-    if (
-      command.operation === 'update' &&
-      previousResource === 'workout' &&
-      (hasDuration || hasCalories || hasTime)
-    )
-      return { ...response, intent: 'workout', nextAction: 'update_workout' };
-    if (command.operation === 'cancel' && previousResource === 'workout')
-      return { ...response, intent: 'workout', nextAction: 'delete_workout' };
-    if (
-      command.operation === 'update' &&
-      previousResource === 'habit' &&
-      hasWeekTarget
-    )
-      return { ...response, intent: 'habit', nextAction: 'update_habit' };
-    if (command.operation === 'cancel' && previousResource === 'habit')
-      return { ...response, intent: 'habit', nextAction: 'delete_habit' };
-    if (command.operation === 'cancel' && previousResource === 'supplement')
-      return {
-        ...response,
-        intent: 'supplement',
-        nextAction: 'delete_supplement',
-      };
-    if (
-      command.operation === 'update' &&
-      previousResource === 'supplement' &&
-      hasTime
-    )
-      return {
-        ...response,
-        intent: 'supplement',
-        nextAction: 'update_supplement',
-      };
+    const hasTime = /(?:^|\s)(?:[01]?\d|2[0-3]):[0-5]\d(?:\s|$)/.test(normalizedInput);
+    const hasDuration = /(?:^|\s)\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)(?:\s|$)/iu.test(normalizedInput);
+    const hasCalories = /(?:^|\s)\d{2,5}\s*(?:cal|calories|کالری)(?:\s|$)/iu.test(normalizedInput);
+    const hasWeekTarget = /(?:^|\s)[1-7]\s*(?:times?|x|بار|مرتبه)(?:(?:\s+(?:per|a)?\s*week)|(?:\s*در\s*هفته))?(?:\s|$)/iu.test(normalizedInput);
+    if (command.operation === 'update' && previousResource === 'calendar' && hasTime) return { ...response, intent: 'calendar', nextAction: 'update_calendar_event' };
+    if (command.operation === 'cancel' && previousResource === 'calendar') return { ...response, intent: 'calendar', nextAction: 'cancel_calendar_event' };
+    if (command.operation === 'update' && previousAction.includes('reminder') && hasTime) return { ...response, intent: 'reminder', nextAction: 'update_reminder' };
+    if (command.operation === 'cancel' && previousAction.includes('reminder')) return { ...response, intent: 'reminder', nextAction: 'cancel_reminder' };
+    if (command.operation === 'update' && previousAction.includes('habit') && hasWeekTarget) return { ...response, intent: 'habit', nextAction: 'update_habit' };
+    if (command.operation === 'cancel' && previousAction.includes('habit')) return { ...response, intent: 'habit', nextAction: 'delete_habit' };
+    if (command.operation === 'update' && previousAction.includes('workout') && (hasDuration || hasCalories || hasTime)) return { ...response, intent: 'workout', nextAction: 'update_workout' };
+    if (command.operation === 'cancel' && previousAction.includes('workout')) return { ...response, intent: 'workout', nextAction: 'delete_workout' };
+    if (command.operation === 'cancel' && previousAction.includes('meal')) return { ...response, intent: 'nutrition', nextAction: 'delete_meal' };
+    if (command.operation === 'cancel' && previousAction.includes('water')) return { ...response, intent: 'hydration', nextAction: 'delete_water_log' };
+    if (command.operation === 'cancel' && previousResource === 'food') return { ...response, intent: 'nutrition', nextAction: 'delete_food' };
+    if (command.operation === 'cancel' && previousResource === 'basket') return { ...response, intent: 'shopping', nextAction: 'remove_from_basket' };
+    if (command.operation === 'cancel' && previousResource === 'supplement') return { ...response, intent: 'supplement', nextAction: 'delete_supplement' };
+    if (command.operation === 'update' && previousResource === 'calendar') return { ...response, intent: 'calendar', nextAction: 'update_calendar_event' };
+    if (command.operation === 'update' && previousResource === 'supplement') return { ...response, intent: 'supplement', nextAction: 'update_supplement' };
     return response;
+  }
+
+  private resourceTypeFor(action?: string): string | undefined {
+    if (!action) return undefined;
+    if (action.includes('basket')) return 'basket';
+    if (action.includes('habit')) return 'habit';
+    if (action.includes('workout')) return 'workout';
+    if (action.includes('meal')) return 'meal';
+    if (action.includes('water')) return 'water';
+    if (action.includes('supplement')) return 'supplement';
+    if (action.includes('calendar')) return 'calendar';
+    if (action.includes('reminder')) return 'reminder';
+    if (action.includes('food')) return 'food';
+    return undefined;
   }
 
   private extractExecutionEntityId(result: unknown): string | undefined {
     if (!result || typeof result !== 'object') return undefined;
-    const value = (result as { id?: unknown }).id;
-    return typeof value === 'string' && value ? value : undefined;
+    const record = result as Record<string, unknown>;
+    for (const key of ['id', 'resourceId', 'waterLogId', 'mealId', 'foodId']) {
+      if (typeof record[key] === 'string') return record[key];
+    }
+    return undefined;
   }
+
   private extractDecisionId(receipt: unknown): string | undefined {
     if (!receipt || typeof receipt !== 'object') return undefined;
-    const value = (receipt as { decisionId?: unknown }).decisionId;
-    return typeof value === 'string' && value ? value : undefined;
-  }
-  private resourceTypeFor(value?: string): string | undefined {
-    const text = (value ?? '').toLowerCase();
-    if (text.includes('reminder')) return 'reminder';
-    if (text.includes('calendar') || text.includes('schedule'))
-      return 'calendar';
-    if (
-      text.includes('workout') ||
-      text.includes('exercise') ||
-      text.includes('training')
-    )
-      return 'workout';
-    if (text.includes('habit')) return 'habit';
-    if (text.includes('supplement') || text.includes('vitamin'))
-      return 'supplement';
-    if (text.includes('notification')) return 'notification';
-    if (text.includes('basket')) return 'shopping';
-    return undefined;
+    const record = receipt as Record<string, unknown>;
+    return typeof record.decisionId === 'string' ? record.decisionId : undefined;
   }
 }

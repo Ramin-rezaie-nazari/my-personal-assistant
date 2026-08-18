@@ -5,6 +5,7 @@ export type LocalIntent =
   | 'REMOVE_FROM_BASKET'
   | 'RECOMMEND_MEAL'
   | 'GET_NUTRITION_SUMMARY'
+  | 'ADD_WATER'
   | 'CREATE_REMINDER'
   | 'UPDATE_REQUEST'
   | 'CANCEL_REQUEST'
@@ -34,6 +35,8 @@ export class LocalLanguageUnderstandingService {
       /\b(\d{2,5})\s*(?:کالری|cal|calories)\b/i,
     );
     if (calories) entities.calories = Number(calories[1]);
+    const waterAmountMl = this.extractWaterAmountMl(normalizedText);
+    if (waterAmountMl !== undefined) entities.waterAmountMl = waterAmountMl;
     const mealType = this.findMealType(normalizedText);
     if (mealType) entities.mealType = mealType;
     const food = this.findFood(normalizedText);
@@ -122,6 +125,13 @@ export class LocalLanguageUnderstandingService {
         time ? 0.97 : 0.9,
         normalizedText,
       );
+    if (this.isWaterLogRequest(normalizedText))
+      return this.result(
+        'ADD_WATER',
+        entities,
+        waterAmountMl !== undefined ? 0.97 : 0.92,
+        normalizedText,
+      );
     if (
       this.matches(normalizedText, [
         'چی بخور',
@@ -194,6 +204,34 @@ export class LocalLanguageUnderstandingService {
     for (const [word, value] of Object.entries(words))
       if (new RegExp(`(?:^|\\s)${word}(?:\\s|$)`).test(text)) return value;
     return undefined;
+  }
+
+  private extractWaterAmountMl(text: string): number | undefined {
+    const explicit = text.match(
+      /(\d+(?:\.\d+)?)\s*(?:ml|میلی\s*لیتر|میلیلیتر)/i,
+    );
+    if (explicit) return Math.round(Number(explicit[1]));
+    const glass = this.extractQuantity(text);
+    if (this.matches(text, ['لیوان', 'glass']) && glass !== undefined)
+      return Math.round(glass * 250);
+    return undefined;
+  }
+
+  private isWaterLogRequest(text: string): boolean {
+    const water = this.matches(text, ['آب', 'water']);
+    const logged = this.matches(text, [
+      'خوردم',
+      'نوشیدم',
+      'نوشید',
+      'خورده شد',
+      'ثبت کن',
+      'ثبتش کن',
+      'ثبت شد',
+      'drank',
+      'logged',
+      'log',
+    ]);
+    return water && logged;
   }
 
   private extractTime(text: string): string | undefined {

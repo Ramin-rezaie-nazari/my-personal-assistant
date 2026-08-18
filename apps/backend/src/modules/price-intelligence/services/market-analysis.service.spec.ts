@@ -31,4 +31,31 @@ describe('MarketAnalysisService', () => {
     const service = new MarketAnalysisService({ forProduct: () => [] } as any);
     expect(service.analyze('unknown').recommendation).toBe('unavailable');
   });
+
+  it('does not mix different countries/currencies for the same product', () => {
+    const history = {
+      forProduct: jest.fn((productKey: string, sourceId?: string, country?: string, currency?: string) => {
+        expect(productKey).toBe('milk');
+        expect(sourceId).toBeUndefined();
+        expect(country).toBe('MX');
+        expect(currency).toBe('MXN');
+        return [
+          {
+            productKey: 'milk',
+            countryCode: 'MX',
+            currency: 'MXN',
+            amount: 42,
+            observedAt: new Date('2026-08-18T03:30:00Z'),
+          },
+        ];
+      }),
+    } as any;
+    const service = new MarketAnalysisService(history);
+    const result = service.analyze('milk', new Date('2026-08-18T04:00:00Z'), 'mx', 'mxn');
+    expect(result).toMatchObject({
+      countryCode: 'MX',
+      currency: 'MXN',
+      current: 42,
+    });
+  });
 });

@@ -1,0 +1,64 @@
+name: Global Market Debug
+
+on:
+  push:
+    branches: [feature/global-market-intelligence]
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: personal_assistant
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d personal_assistant"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/personal_assistant?schema=public
+      APP_NAME: My Personal Assistant API
+      NODE_ENV: test
+      JWT_ACCESS_SECRET: test-access-secret
+      JWT_REFRESH_SECRET: test-refresh-secret
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 30d
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install
+        run: pnpm install --frozen-lockfile
+      - name: Diagnose
+        shell: bash
+        run: |
+          set +e
+          mkdir -p /tmp/global-market-debug
+          cd apps/backend
+          pnpm exec prisma validate > /tmp/global-market-debug/prisma-validate.log 2>&1; echo "prisma_validate=$?" >> /tmp/global-market-debug/status.txt
+          pnpm exec prisma generate > /tmp/global-market-debug/prisma-generate.log 2>&1; echo "prisma_generate=$?" >> /tmp/global-market-debug/status.txt
+          pnpm exec prisma migrate deploy > /tmp/global-market-debug/prisma-migrate.log 2>&1; echo "prisma_migrate=$?" >> /tmp/global-market-debug/status.txt
+          pnpm run typecheck > /tmp/global-market-debug/typecheck.log 2>&1; echo "typecheck=$?" >> /tmp/global-market-debug/status.txt
+          pnpm run build > /tmp/global-market-debug/build.log 2>&1; echo "build=$?" >> /tmp/global-market-debug/status.txt
+          pnpm exec jest --runInBand src/modules/price-intelligence/services/global-market-source-registry.service.spec.ts src/modules/price-intelligence/services/price-source.service.global-market.spec.ts src/modules/price-intelligence/services/global-market-schedule.service.spec.ts src/modules/price-intelligence/services/global-market-automatic-scheduler.service.spec.ts src/modules/price-intelligence/services/http-price-source.adapter.spec.ts src/modules/price-intelligence/services/fx-rate.service.spec.ts src/modules/price-intelligence/services/price-confidence.service.spec.ts src/modules/price-intelligence/services/nightly-market-intelligence.service.spec.ts src/modules/price-intelligence/services/market-analysis.service.spec.ts src/modules/price-intelligence/services/global-market-coverage.service.spec.ts > /tmp/global-market-debug/jest.log 2>&1; echo "jest=$?" >> /tmp/global-market-debug/status.txt
+          cat /tmp/global-market-debug/status.txt
+      - name: Upload diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: global-market-debug
+          path: /tmp/global-market-debug
+          if-no-files-found: error
