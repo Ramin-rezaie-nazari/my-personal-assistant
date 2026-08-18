@@ -8,7 +8,16 @@ describe('RecipesController scaling endpoint', () => {
   const matcher = {
     match: jest.fn(),
   };
-  const controller = new RecipesController(recipesService as never, matcher as never);
+  const globalCountryFood = {
+    getLocalRecipeGuidance: jest.fn(),
+    getSupportedCountryCodes: jest.fn(),
+    rankRecipesForCountry: jest.fn((countryCode, recipes) => recipes),
+  };
+  const controller = new RecipesController(
+    recipesService as never,
+    matcher as never,
+    globalCountryFood as never,
+  );
 
   beforeEach(() => {
     jest.clearAllMocks();
