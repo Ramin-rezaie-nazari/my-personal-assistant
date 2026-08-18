@@ -33,7 +33,11 @@ The long-term goal is to build a friendly personal Brain that understands the us
 
 ## Current Phase
 
-Brain-centered architecture, fitness intelligence, long-term memory, outcome learning, proactive coaching, and hands-free coach foundations.
+Brain-centered architecture, AI orchestration, local intelligence, device-aware runtime, personalization context, globalization, multilingual voice foundations, persistent global user settings, long-term memory, outcome learning, proactive coaching, and hands-free coach foundations.
+
+### Living project record
+
+**[05_CURRENT_STATE.md](./05_CURRENT_STATE.md)** is the operational source of truth for the current implementation state, validated checkpoints, test ledger, completed work, unfinished work, architecture boundaries, daily startup procedure, and anti-duplication testing rules.
 
 For the detailed implementation history and living engineering record, see:
 
@@ -43,7 +47,7 @@ For the complete repository architecture, module ownership, file relationships, 
 
 **[04_ARCHITECTURE_ATLAS.md](./04_ARCHITECTURE_ATLAS.md)**
 
-Those documents are the permanent living project record. Every major implementation change must be documented there.
+These documents are the permanent living project record. Every major implementation change must be documented there, and `05_CURRENT_STATE.md` must be updated whenever a meaningful slice reaches a validated checkpoint.
 
 ---
 
@@ -80,3 +84,4 @@ Those documents are the permanent living project record. Every major implementat
 - Explainable decisions
 - Outcome-based learning with bounded confidence updates
 - Mobile/device abstractions that avoid locking core logic to one provider
+- Maintain a validated checkpoint ledger so unchanged green areas are not repeatedly rebuilt or retested without reason
