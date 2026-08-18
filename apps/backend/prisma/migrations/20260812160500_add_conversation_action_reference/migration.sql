@@ -1,6 +1,6 @@
-ALTER TABLE "ConversationTurn"
-  ADD COLUMN "resourceType" TEXT,
-  ADD COLUMN "resourceId" TEXT;
-
-CREATE INDEX "ConversationTurn_userId_resourceType_resourceId_createdAt_idx"
-  ON "ConversationTurn"("userId","resourceType","resourceId","createdAt");
+-- Intentionally empty compatibility migration.
+--
+-- The resource reference columns are now created with ConversationTurn in the
+-- later 20260812193000_add_conversation_turns migration. Keeping this migration
+-- id as a no-op preserves migration history and avoids a forward dependency on
+-- a table that did not exist yet when this migration originally ran.
