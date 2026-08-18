@@ -49,4 +49,14 @@ describe('PriceSourceService global market routing', () => {
     expect(result.attemptedSourceIds).toEqual([]);
     expect(result.prices).toEqual([]);
   });
+
+  it('registers corrected regional adapters so operational routing cannot fail at runtime', () => {
+    const service = new PriceSourceService(
+      undefined,
+      new GlobalMarketSourceRegistryService(),
+    );
+    expect(service.registeredSourceIds()).toEqual(
+      expect.arrayContaining(['rappi', 'woolworths_nz']),
+    );
+  });
 });
