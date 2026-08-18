@@ -1,15 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
-import { GlobalCountryFoodService } from '../../recipes/services/global-country-food.service';
 
 export type MealPlanSlot = 'breakfast' | 'lunch' | 'dinner';
 
 @Injectable()
 export class MealPlanningService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly countryFood: GlobalCountryFoodService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async createMealPlan(
     userId: string,
@@ -34,16 +30,13 @@ export class MealPlanningService {
     const dailyProtein = profile?.proteinGoalGrams ?? null;
     const caloriePerMeal = dailyCalories ? dailyCalories / 3 : null;
     const proteinPerMeal = dailyProtein ? dailyProtein / 3 : null;
-    const countryRanked = this.countryFood.rankRecipesForCountry(countryCode, recipes as Array<{ name: string; cuisineFamily?: string | null }>);
-    const countryRank = new Map(countryRanked.map((recipe, index) => [recipe.name, index]));
 
     const candidates = recipes.map((recipe) => {
       const caloriesPerServing = recipe.calories / recipe.servings;
       const proteinPerServing = recipe.protein / recipe.servings;
       const calorieDistance = caloriePerMeal ? Math.abs(caloriesPerServing - caloriePerMeal) / Math.max(1, caloriePerMeal) : 0;
       const proteinDistance = proteinPerMeal ? Math.abs(proteinPerServing - proteinPerMeal) / Math.max(1, proteinPerMeal) : 0;
-      const localBoost = Math.max(0, 10 - (countryRank.get(recipe.name) ?? recipes.length));
-      const score = Math.max(0, Math.round(100 - calorieDistance * 45 - proteinDistance * 30 + localBoost));
+      const score = Math.max(0, Math.round(100 - calorieDistance * 50 - proteinDistance * 35));
       return {
         recipeId: recipe.id,
         name: recipe.name,
