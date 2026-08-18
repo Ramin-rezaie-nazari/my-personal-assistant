@@ -42,10 +42,6 @@ function normalize(value = '') {
     .trim();
 }
 
-function slugPart(value = '') {
-  return normalize(value).replace(/\s+/g, '-').slice(0, 80) || 'recipe';
-}
-
 function getLicense(meta = {}) {
   const short = htmlToText(meta.LicenseShortName?.value || meta.LicenseShortName || meta.UsageTerms?.value || meta.UsageTerms || '');
   const terms = htmlToText(meta.UsageTerms?.value || meta.UsageTerms || '');
@@ -122,28 +118,19 @@ async function ensureBucket() {
   throw new Error(`Unable to create/ensure Storage bucket: ${response.status} ${text}`);
 }
 
-async function listPrimaryImageRecipeIds() {
-  const ids = new Set();
-  let offset = 0;
-  while (true) {
-    const rows = await supabaseJson(`recipe_images?select=recipe_id&image_type=eq.primary&limit=1000&offset=${offset}`);
-    if (!rows.length) break;
-    for (const row of rows) ids.add(row.recipe_id);
-    if (rows.length < 1000) break;
-    offset += rows.length;
-  }
-  return ids;
-}
-
 async function getMissingRecipes() {
-  const imageIds = await listPrimaryImageRecipeIds();
+  const imageRows = await supabaseJson('recipe_images?select=recipe_id&image_type=eq.primary&limit=1000');
+  const imageIds = new Set(imageRows.map((row) => row.recipe_id));
+  const attempts = await supabaseJson("recipe_image_import_attempts?select=recipe_id&status=eq.skipped&limit=1000");
+  const skippedIds = new Set(attempts.map((row) => row.recipe_id));
   const missing = [];
   let offset = 0;
+
   while (missing.length < BATCH_SIZE) {
     const rows = await supabaseJson(`recipes?select=id,name&order=created_at.asc,id.asc&limit=1000&offset=${offset}`);
     if (!rows.length) break;
     for (const recipe of rows) {
-      if (!imageIds.has(recipe.id)) {
+      if (!imageIds.has(recipe.id) && !skippedIds.has(recipe.id)) {
         missing.push(recipe);
         if (missing.length >= BATCH_SIZE) break;
       }
@@ -152,6 +139,14 @@ async function getMissingRecipes() {
     offset += rows.length;
   }
   return missing;
+}
+
+async function markSkipped(recipeId, reason) {
+  await supabaseJson('recipe_image_import_attempts', {
+    method: 'POST',
+    headers: { Prefer: 'resolution=merge-duplicates,return=minimal' },
+    body: JSON.stringify({ recipe_id: recipeId, status: 'skipped', reason, attempt_count: 1, updated_at: new Date().toISOString() }),
+  });
 }
 
 async function searchWikimedia(recipeName) {
@@ -189,7 +184,7 @@ async function searchWikimedia(recipeName) {
         author: htmlToText(meta.Artist?.value || meta.Credit?.value || 'Wikimedia Commons contributor'),
         license,
         imageUrl: info.thumburl || info.url,
-        sourceUrl: meta.ImageDescription?.source || `https://commons.wikimedia.org/wiki/${encodeURIComponent(page.title.replace(/ /g, '_'))}`,
+        sourceUrl: page.fullurl || `https://commons.wikimedia.org/wiki/${encodeURIComponent(page.title.replace(/ /g, '_'))}`,
       });
     }
     if (candidates.some((candidate) => candidateScore(recipeName, candidate) >= 0.75)) break;
@@ -208,7 +203,7 @@ async function downloadImage(url) {
 async function compressImage(input) {
   const dimensionSteps = [960, 800, 720, 640, 576, 512, 448, 384, 320];
   const qualitySteps = [72, 66, 60, 54, 48, 42, 36, 30];
-  let best = null;
+  let smallest = null;
 
   for (const width of dimensionSteps) {
     for (const quality of qualitySteps) {
@@ -217,14 +212,15 @@ async function compressImage(input) {
         .resize({ width, height: width, fit: 'inside', withoutEnlargement: true })
         .webp({ quality, effort: 6 })
         .toBuffer();
-      if (!best || buffer.byteLength < best.buffer.byteLength) {
+      if (!smallest || buffer.byteLength < smallest.byteLength) smallest = buffer;
+      if (buffer.byteLength <= MAX_BYTES) {
         const meta = await sharp(buffer).metadata();
-        best = { buffer, width: meta.width ?? width, height: meta.height ?? width };
+        return { buffer, width: meta.width ?? width, height: meta.height ?? width };
       }
-      if (buffer.byteLength <= MAX_BYTES) return { buffer, width: (await sharp(buffer).metadata()).width ?? width, height: (await sharp(buffer).metadata()).height ?? width };
     }
   }
-  throw new Error(`No WebP variant fit within ${MAX_BYTES} bytes; smallest=${best?.buffer.byteLength ?? 'unknown'}`);
+
+  throw new Error(`No WebP variant fit within ${MAX_BYTES} bytes; smallest=${smallest?.byteLength ?? 'unknown'}`);
 }
 
 async function uploadObject(storageKey, buffer) {
@@ -254,7 +250,10 @@ async function deleteObject(storageKey) {
 async function processRecipe(recipe) {
   const candidates = await searchWikimedia(recipe.name);
   const candidate = candidates.find((item) => candidateScore(recipe.name, item) >= 0.55);
-  if (!candidate) return { recipeId: recipe.id, status: 'skipped', reason: 'no sufficiently relevant licensed Commons image' };
+  if (!candidate) {
+    await markSkipped(recipe.id, 'no sufficiently relevant licensed Commons image');
+    return { recipeId: recipe.id, status: 'skipped', reason: 'no sufficiently relevant licensed Commons image' };
+  }
 
   const original = await downloadImage(candidate.imageUrl);
   const compressed = await compressImage(original);
@@ -290,12 +289,7 @@ async function processRecipe(recipe) {
     throw error;
   }
 
-  return {
-    recipeId: recipe.id,
-    status: 'imported',
-    bytes: compressed.buffer.byteLength,
-    source: candidate.title,
-  };
+  return { recipeId: recipe.id, status: 'imported', bytes: compressed.buffer.byteLength, source: candidate.title };
 }
 
 async function mapConcurrent(items, limit, worker) {
@@ -320,7 +314,7 @@ async function main() {
   await ensureBucket();
   const recipes = await getMissingRecipes();
   if (!recipes.length) {
-    console.log(JSON.stringify({ status: 'complete', imported: 0, message: 'All recipes already have a primary image.' }, null, 2));
+    console.log(JSON.stringify({ status: 'complete', imported: 0, message: 'No unattempted recipes remain.' }, null, 2));
     return;
   }
 
