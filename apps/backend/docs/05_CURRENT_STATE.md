@@ -1,57 +1,53 @@
 # Current State — My Personal Assistant
 
-> Operational source of truth for project progress, validated checkpoints, completed slices, unfinished work, and the current test ledger.
+> Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Last validated locally: 2026-08-18.
+> Last validated locally: 2026-08-18. The latest global-food merge was performed after the last full local validation run, so current-main tests/typecheck/build must be re-run before declaring this checkpoint fully green.
 
 ## Executive status
 
-**Overall project completion: 55%**
+**Overall project completion: 58%**
 
-This is a weighted engineering/product-completion index, not a claim that 55% of every file is written. The score intentionally discounts backend foundations that are already strong and gives substantial weight to the unfinished mobile product, global food dataset, production hardening, and monetization/business layers.
+This is a weighted engineering/product-completion index, not a claim that 58% of every file is written. Backend foundations are strong, but substantial product work remains in the full global food corpus, connected food intelligence, mobile UX, production hardening, and monetization.
 
-### Current confidence
+## Current validated history
 
-- **Backend unit tests:** 147/147 suites passed; 390/390 tests passed.
-- **Backend E2E tests:** 4/4 suites passed; 24/24 tests passed.
-- **Recipe serving scaling focused tests:** 2/2 suites passed; 6/6 tests passed.
-- **Prisma migrations:** 36 migrations applied successfully; `prisma migrate status` reports the database schema is up to date.
-- **Recipe Scaling API route:** registered and booting in E2E (`GET /recipes/:id/scaled`).
-- **Typecheck/build:** previously passed before the final local sync; **must be re-run on the current `main` checkpoint before declaring the checkpoint fully green**.
-- **Mobile physical-device validation:** not yet recorded as a current green checkpoint in this ledger.
+### Last fully green local backend checkpoint before the global-food merge
 
-## Latest validated checkpoint
+```text
+Backend Jest:           147/147 suites, 390/390 tests — PASS
+Backend E2E:              4/4 suites, 24/24 tests — PASS
+Recipe Scaling focus:     2/2 suites, 6/6 tests — PASS
+Prisma migrations:       36 applied, database up to date — PASS
+Typecheck:               PASS
+Build:                   PASS
+```
 
-The current `main` checkpoint includes:
+### Current main changes since that checkpoint
 
-- Recipe Intelligence domain contracts.
-- Deterministic recipe serving scaling engine.
-- Scaling policies for linear, sublinear, fixed, per-batch and manual-review ingredients.
-- Mandatory recipe servings stored in the database.
-- Scaled recipe endpoint.
-- Nutrition totals for full batch and per serving.
-- Compatibility fixes for two historical out-of-order/duplicate migration problems.
-- 36 successfully applied Prisma migrations.
+PR #52 was merged to `main` and adds the 195-country food/currency routing layer. The merge includes 11 files and exposes country-aware recipe discovery and finance context endpoints.
 
-## Completed work
+This latest merge has **not yet been revalidated locally** after the merge. Do not count its focused tests as locally executed on the new `main` until the next local run confirms them.
 
-### Foundation and backend platform
+## Completed / mature slices
+
+### Backend platform
 
 - NestJS + TypeScript backend.
 - Prisma + PostgreSQL foundation.
 - Environment/config validation.
 - Authentication foundations with JWT access/refresh flow.
-- User profile, settings, preferences and onboarding foundations.
+- User profile/settings/preferences/onboarding foundations.
 - Health and nutrition profiles.
 - Monorepo/workspace structure.
-- Backend CI and mobile CI workflows.
+- Backend/mobile CI workflow foundations.
 
-### Core lifestyle domains
+### Core lifestyle foundations
 
 - Daily tracking.
 - Nutrition logging and summary foundations.
 - Food database foundation.
-- Meals and recipes foundation.
+- Meals and recipes foundations.
 - Workout foundation.
 - Supplements.
 - Reminders.
@@ -60,37 +56,34 @@ The current `main` checkpoint includes:
 - Habits.
 - Goals.
 - Inventory and shopping foundations.
-- Price intelligence foundation.
+- Price-intelligence foundation.
 
-### Personal Brain / intelligence foundation
+### Personal Brain / intelligence foundations
 
 - Assistant module.
-- Local language understanding foundation.
-- Local deterministic action adapters.
+- Local language understanding.
+- Deterministic local action adapters.
 - Context engine.
 - Decision engine.
 - Personal Brain orchestration.
 - Decision memory/audit.
-- Decision outcome model and bounded learning signals.
+- Decision outcomes and bounded learning signals.
 - Explanation-oriented decision pipeline foundations.
-- Proactive coach / notification intelligence foundations.
+- Proactive coach/notification intelligence foundations.
 - Planning, replanning and execution-state foundations.
-- Fitness decision policy and multi-discipline orchestration foundations.
+- Fitness decision policy and multi-discipline orchestration.
 - Device-aware runtime abstractions.
-- Persistent global-user-settings foundations exist on workstreams, but the latest main checkpoint still needs explicit product validation before treating all global UX as complete.
 
-### Fitness
+### Fitness foundations
 
 - Shared Fitness context.
 - Gym foundation.
 - Calisthenics foundation and progression/skill logic.
 - Yoga foundation and coaching/motion-analysis foundations.
 - Equipment-aware workout generation.
-- Fitness performance memory and progression foundations.
+- Fitness performance memory/progression foundations.
 
-### Recipe Serving Scaling — COMPLETE
-
-This slice is considered **100% complete** for its current scope.
+## Recipe Serving Scaling — 100% for current slice
 
 Implemented:
 
@@ -99,149 +92,171 @@ Implemented:
 - Deterministic scaling engine.
 - `linear`, `sublinear`, `fixed`, `per_batch`, `manual_review` policies.
 - Kitchen-friendly quantity rounding.
-- Full-batch nutrition calculation.
-- Per-serving nutrition calculation.
-- Scaled recipe API endpoint.
+- Full-batch nutrition.
+- Per-serving nutrition.
+- Scaled recipe API.
 - Unit/service/controller coverage.
 - Edge-case coverage.
-- Target serving validation.
+- Target-serving validation.
 
-Validated locally:
+Last locally validated:
 
 ```text
 Focused Recipe Scaling: 2/2 suites, 6/6 tests — PASS
-Full backend Jest:       147/147 suites, 390/390 tests — PASS
-E2E:                       4/4 suites, 24/24 tests — PASS
-Prisma:                   36 migrations — APPLIED / UP TO DATE
 ```
 
-## Important work that is NOT complete
+## Global Food Intelligence — major slice now on main
 
-### Global Food Intelligence / 195 countries
+### Completed in main
 
-**Status: ~30% on main; substantial work exists on separate branches/PRs but is not yet merged into main.**
+- 195-country country-code coverage for the food routing layer.
+- Country food profile for each market.
+- Cuisine-family context.
+- Staple-ingredient context.
+- Signature/local recipe discovery anchors.
+- Common cooking units.
+- Hard-to-source ingredient metadata.
+- Deterministic local recipe ranking.
+- Explicit global-recipe behavior is preserved; country does not silently replace explicit intent.
+- Substitution-policy contract: preserve cuisine identity, prefer local staples, never silently replace culturally important ingredients.
+- Country-aware recipe API endpoints.
 
-Already designed/built in workstreams:
+### New API surface
 
-- 195-country food culture profiles.
-- Country-aware local staple/signature-recipe guidance.
-- Deterministic local-first recipe ranking.
-- Cuisine-preserving substitution policy.
-- Global country registry foundations.
+```text
+GET /recipes/local?countryCode=JP
+GET /recipes/countries
+GET /recipes?countryCode=JP
+```
 
-Still required before calling this complete:
+### Still required for 100%
 
-- Merge/integrate the validated country work deliberately.
 - Canonical ingredient taxonomy.
-- Region/cuisine normalization.
-- Large high-quality recipe corpus.
-- Complete recipe instructions and ingredient quantities.
-- Nutrition data quality/provenance.
+- Region/cuisine normalization beyond the routing layer.
+- Large verified recipe corpus with full instructions and quantities.
+- Nutrition provenance and quality controls.
 - Allergens and dietary constraints coverage.
-- Ingredient substitutions at scale.
-- Serving scaling metadata across the whole catalog.
-- Inventory matching across the whole catalog.
-- Shopping-list conversion across the whole catalog.
-- Verification/provenance/versioning for food knowledge.
-- QA for duplicate recipes, aliases and conflicting cultural metadata.
+- Ingredient substitutions at production scale.
+- Serving-scaling metadata for the full recipe catalog.
+- Inventory matching across the full catalog.
+- Shopping-list conversion across the full catalog.
+- Provenance/versioning for food knowledge.
+- Duplicate/alias/cultural-metadata QA.
 
-### Global Market / Price Intelligence
+## Global Currency / Finance Intelligence — major slice now on main
 
-**Status: foundation exists; global production coverage is NOT complete on main.**
+### Completed in main
 
-A separate workstream contains a 195-country market/source foundation and currency intelligence, but it remains on an unmerged branch/PR. It must be integrated only after dependency and validation review.
+- 195-country local currency registry.
+- Fraction-digit metadata.
+- Country finance context service.
+- Source-native currency preservation policy.
+- Currency conversion reserved for comparison/normalization.
+- Unknown-country rejection instead of guessing.
 
-### Mobile product
+### New API surface
 
-**Status: early product shell; major work remains.**
+```text
+GET /budget-intelligence/country?countryCode=JP
+GET /budget-intelligence/countries
+```
 
-Main already contains an Expo/mobile app shell, local language state and assistant entry path.
+### Still required
 
-Major remaining work:
+- Full live-price coverage by country.
+- Price-source verification for each market.
+- Full country-aware budget planning.
+- Recipe → price → budget integration.
 
-- Complete authentication UX.
-- Full onboarding UX.
-- Home/dashboard product experience.
-- Nutrition logging UX.
-- Recipe discovery and cooking UX.
-- Serving selector UI and scaled ingredient presentation.
-- Pantry/inventory UX.
-- Shopping UX.
-- Fitness/Yoga/Calisthenics/Gym UX.
-- Habits/reminders/calendar/supplements UX.
-- Brain chat/coach UX.
-- Global settings UX integration.
-- Offline/local-first behavior where appropriate.
-- Accessibility and responsive device behavior.
-- Real-device iOS/Android validation.
-- App Store/Play Store release hardening.
-
-### Full Food Intelligence loop
-
-Still required:
+## Full Food Intelligence loop — not complete
 
 ```text
 Recipe
   ↓
-Serving scaling
+Serving scaling              ✅
   ↓
-Nutrition
+Nutrition                    ✅ foundation
   ↓
-Inventory match
+Inventory match              🟡 foundation exists
   ↓
-Missing ingredients
+Missing ingredients         🟡
   ↓
-Shopping list
+Shopping list                🟡 foundation exists
   ↓
-Local price intelligence
+Local price intelligence     🟡 foundation / not global-complete
   ↓
-Budget-aware recommendation
+Budget-aware recommendation  🟡
   ↓
-Meal plan
+Meal plan                    🟡 foundation
   ↓
-User feedback
+User feedback                🟡
   ↓
-Learning
+Learning                     🟡 foundation
 ```
 
-The individual foundations exist, but the end-to-end loop is not yet complete.
+The biggest opportunity now is to connect these foundations into one end-to-end food operating loop.
 
-### Production hardening
+## Mobile product — major work remains
 
-Still required:
-
-- Full security audit.
-- Authorization review across all domains.
-- Rate limiting / abuse controls where needed.
-- Observability and structured production telemetry.
-- Database performance/index review under realistic load.
-- Background job reliability.
-- Notification delivery reliability.
-- Backup/restore verification.
-- Disaster recovery procedure.
-- Secret management review.
-- Privacy/data-retention review.
-- Migration discipline review for all historical migrations.
-- Production deployment runbook.
-- Cost controls and external-API fallback policy.
-
-### Business / monetization
-
-**Status: not implemented.**
+Current main contains an Expo/mobile shell, local language state, and assistant entry behavior.
 
 Remaining:
 
-- Product packaging.
+- Complete auth UX.
+- Onboarding UX.
+- Home/dashboard.
+- Nutrition logging UX.
+- Recipe discovery/cooking UX.
+- Serving selector and scaled ingredient UI.
+- Pantry/inventory UI.
+- Shopping UI.
+- Fitness/Yoga/Calisthenics/Gym UI.
+- Habits/reminders/calendar/supplements UI.
+- Brain chat/coach UX.
+- Global settings UX.
+- Offline/local-first behavior where appropriate.
+- Accessibility/responsive behavior.
+- Real-device iOS/Android validation.
+- Store-release hardening.
+
+## Global Market / Price Intelligence — still separate
+
+A larger stacked workstream exists in PR #48/#49 with a 195-country market/source registry, source routing, discovery-only fallbacks, cached FX, local-time collection scheduling, confidence scoring, and price-source infrastructure.
+
+It is **not yet on `main`** because the workstream is stacked and PR #48 currently reports a non-mergeable state against `main`. It must be integrated deliberately after conflict/dependency review rather than force-merged.
+
+## Production hardening — incomplete
+
+Remaining:
+
+- Full security audit.
+- Authorization review across domains.
+- Rate limiting/abuse controls.
+- Production observability.
+- Database performance/index review under realistic load.
+- Background-job reliability.
+- Notification delivery reliability.
+- Backup/restore verification.
+- Disaster recovery.
+- Secret management review.
+- Privacy/data-retention review.
+- Migration-history review.
+- Production deployment runbook.
+- Cost controls and external-API fallback policy.
+
+## Business / Monetization — not implemented
+
+- Packaging.
 - Free/paid boundaries.
-- Subscription/billing architecture.
+- Billing/subscription.
 - Pricing experiments.
-- App Store / Google Play monetization.
+- Store monetization.
 - Growth/retention analytics.
 - Referral/viral loops.
 - Revenue dashboards.
 - Legal/compliance/product policies.
 
-## Progress index by workstream
+## Progress index
 
 | Workstream | Approx. completion |
 |---|---:|
@@ -249,61 +264,48 @@ Remaining:
 | Personal Brain / deterministic intelligence | 65% |
 | Nutrition foundations | 65% |
 | Fitness / Yoga / Calisthenics / Gym | 75% |
-| Recipe & Food Intelligence | 30% |
+| Recipe & Food Intelligence | 45% |
 | Inventory / Shopping / Price Intelligence | 55% |
 | Mobile product / UX | 20% |
 | AI orchestration / voice / globalization | 40% |
 | QA / Security / Production hardening | 50% |
 | Business / Monetization | 0% |
 
-**Weighted overall index: 55%.**
+**Weighted overall index: 58%.**
 
-The index is deliberately conservative. A strong backend foundation does not mean the consumer product is nearly finished.
+## Green vs. not-yet-validated
 
-## What has been validated vs. what has not
+### Green historical checkpoint
 
-### Green / validated
+- Backend Jest: 147/147 suites.
+- Backend tests: 390/390.
+- Backend E2E: 4/4 suites, 24/24 tests.
+- Recipe Scaling focused: 2/2 suites, 6/6 tests.
+- Prisma migrations: 36/36 applied and up to date.
+- Typecheck: PASS.
+- Build: PASS.
 
-- Backend Jest suite: 147/147.
-- Backend E2E: 4/4, 24/24.
-- Recipe Scaling focused suite: 2/2, 6/6.
-- Prisma migrations: 36/36 applied; database up to date.
-- Recipe scaled endpoint is registered during E2E boot.
+### Must be re-run on current main after PR #52
 
-### Not yet a current validated checkpoint
-
-- Current-main typecheck after the final migration fixes.
-- Current-main production build after the final migration fixes.
-- Full mobile CI on the current main checkpoint.
-- Physical-device UX validation.
-- Production deployment validation.
-- Full 195-country recipe-data quality audit.
-- End-to-end food → inventory → shopping → price → budget → meal-plan loop.
+- Focused GlobalCountryFood tests.
+- Focused GlobalCountryFinance tests.
+- Full backend Jest.
+- E2E.
+- Typecheck.
+- Build.
+- Fresh database migration validation in CI/local test DB.
 
 ## Immediate next priorities
 
-1. Re-run `pnpm run typecheck` and `pnpm run build` on current `main`.
-2. Keep the database migration history green and require fresh-database validation in CI.
-3. Integrate the 195-country food intelligence workstream deliberately rather than merging stacked/unrelated branches wholesale.
-4. Expand canonical ingredient + cuisine + region data model.
-5. Build the first verified recipe corpus and provenance model.
-6. Connect Recipe → Inventory → Shopping → Price/Budget → Meal Planning.
-7. Build the real mobile product experience around the already-validated backend.
-8. Add production hardening and observability before public launch.
-9. Add monetization only after the core user journey is genuinely strong.
+1. Re-run validation on current `main` after the 195-country integration.
+2. Connect Recipe → Inventory → Shopping → Price/Budget → Meal Planning.
+3. Build canonical ingredient + region + cuisine normalization.
+4. Expand verified recipe corpus and provenance.
+5. Integrate the stacked Global Market workstream only after its current merge/conflict state is resolved.
+6. Build the real mobile product experience around these backend contracts.
+7. Add production hardening and observability.
+8. Add monetization after the core user journey is genuinely strong.
 
 ## Working rule
 
-Do not mark a slice 100% because its code compiles. A slice reaches 100% only when its architecture, implementation, database changes, focused tests, integration tests, documentation and required environment validation are all green.
-
-## Test ledger policy
-
-Every meaningful slice must leave behind:
-
-- focused unit tests
-- integration/E2E coverage where applicable
-- migration validation when schema changes
-- typecheck/build validation
-- explicit documentation of what was and was not runnable locally
-
-Do not weaken assertions merely to obtain green tests.
+A slice is 100% only when architecture, implementation, database changes, focused tests, integration/E2E tests, documentation, and required environment validation are all green. Do not weaken assertions to obtain green tests.
