@@ -7,5 +7,6 @@ import { ShoppingService } from './shopping.service';
   imports: [InventoryModule],
   controllers: [ShoppingController],
   providers: [ShoppingService],
+  exports: [ShoppingService],
 })
 export class ShoppingModule {}
