@@ -241,6 +241,11 @@ model RecipeIngredient {
   foodId String
   quantity Float @default(1)
   unit String @default("g")
+  measurementKind String @default("unitless")
+  scalingPolicy String @default("linear")
+  scalingExponent Float?
+  batchSize Float?
+  maxLinearMultiplier Float?
   calories Int @default(0)
   protein Float @default(0)
   carbs Float @default(0)
