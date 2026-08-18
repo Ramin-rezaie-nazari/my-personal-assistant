@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { BRAND } from '../lib/branding';
-import { GlobalUserSettings, MeasurementSystem, getGlobalUserSettings, updateGlobalUserSettings } from '../lib/global-settings-api';
-import { AppLocale, getStoredLocale } from '../lib/i18n';
+import { getGlobalUserSettings, updateGlobalUserSettings } from '../lib/global-settings-api';
+import type { GlobalUserSettings, MeasurementSystem } from '../lib/global-settings-api';
+import { getStoredLocale } from '../lib/i18n';
+import type { AppLocale } from '../lib/i18n';
 
 const LANGUAGES = [
   ['en-US', 'English — United States'], ['en-GB', 'English — United Kingdom'], ['fa-IR', 'فارسی — ایران'],
@@ -139,7 +142,7 @@ function SettingRow({ title, value, onPress }: { title: string; value: string; o
   return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.card, styles.settingRow, pressed && styles.pressed]}><View><Text style={styles.rowTitle}>{title}</Text><Text style={styles.rowValue}>{value}</Text></View><Text style={styles.chevron}>›</Text></Pressable>;
 }
 
-function PickerModal({ title, visible, onClose, children }: { title: string; visible: boolean; onClose: () => void; children: React.ReactNode }) {
+function PickerModal({ title, visible, onClose, children }: { title: string; visible: boolean; onClose: () => void; children: ReactNode }) {
   return <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}><View style={styles.modalBackdrop}><View style={styles.modal}><View style={styles.modalHeader}><Text style={styles.modalTitle}>{title}</Text><Pressable onPress={onClose}><Text style={styles.close}>×</Text></Pressable></View><ScrollView>{children}</ScrollView></View></View></Modal>;
 }
 
