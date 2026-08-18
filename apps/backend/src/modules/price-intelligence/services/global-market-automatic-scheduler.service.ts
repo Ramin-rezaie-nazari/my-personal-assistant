@@ -20,6 +20,7 @@ export class GlobalMarketAutomaticSchedulerService
   onModuleInit() {
     if (process.env.PRICE_GLOBAL_SCHEDULER_ENABLED === 'false') return;
     this.scheduleNext();
+    void this.catchUpMissedMarkets();
   }
 
   onModuleDestroy() {
@@ -30,7 +31,7 @@ export class GlobalMarketAutomaticSchedulerService
     if (this.timer) clearTimeout(this.timer);
     const target = this.findSoonestOccurrence(new Date());
     const delay = Math.max(1_000, target.when.getTime() - Date.now());
-    this.timer = setTimeout(() => void this.execute(target.countryCode, target.when), Math.min(delay, 2_147_000_000));
+    this.timer = setTimeout(() => void this.execute(target.when), Math.min(delay, 2_147_000_000));
   }
 
   private findSoonestOccurrence(now: Date) {
@@ -43,26 +44,50 @@ export class GlobalMarketAutomaticSchedulerService
     return best ?? { countryCode: 'US', when: new Date(now.getTime() + 24 * 60 * 60 * 1000) };
   }
 
-  private async execute(countryCode: string, scheduledFor: Date) {
+  private async execute(scheduledFor: Date) {
     if (this.running) {
       this.scheduleNext();
       return;
     }
     this.running = true;
     try {
+      const dueCountries = this.schedule.dueCountries(scheduledFor);
+      const countries = dueCountries.length ? dueCountries : [this.findCountryForInstant(scheduledFor)];
       await this.persistence.ensureTrackedProducts();
-      const result = await this.nightly.run(
-        undefined,
-        undefined,
-        scheduledFor,
-        countryCode,
-      );
-      if (result.status === 'failed') {
-        // The next occurrence scheduler remains authoritative; source failures are persisted by NightlyMarketIntelligenceService.
+      for (const countryCode of countries) {
+        await this.nightly.run(undefined, undefined, scheduledFor, countryCode);
       }
     } finally {
       this.running = false;
       this.scheduleNext();
     }
+  }
+
+  private async catchUpMissedMarkets() {
+    for (const countryCode of GLOBAL_MARKET_COUNTRY_CODES) {
+      try {
+        const lastRun = await this.persistence.latestSuccessfulRun(countryCode);
+        const decision = this.nightly.shouldRun(new Date(), lastRun, {
+          timezone: this.schedule.timezoneForCountry(countryCode),
+        });
+        if (decision.reason === 'catch_up_after_missed_window') {
+          await this.nightly.run(undefined, undefined, new Date(), countryCode);
+        }
+      } catch {
+        // A market with unavailable persistence/source infrastructure must not stop other markets.
+      }
+    }
+  }
+
+  private findCountryForInstant(instant: Date) {
+    return (
+      GLOBAL_MARKET_COUNTRY_CODES.find(
+        (countryCode) =>
+          this.schedule.nextOccurrence(
+            new Date(instant.getTime() - 60_000),
+            this.schedule.timezoneForCountry(countryCode),
+          ).getTime() === instant.getTime(),
+      ) ?? 'US'
+    );
   }
 }
