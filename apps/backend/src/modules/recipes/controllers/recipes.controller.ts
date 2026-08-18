@@ -60,6 +60,33 @@ export class RecipesController {
     return this.matcher.match(req.user.id);
   }
 
+  @Get('recommendations')
+  recommendations(
+    @Request() req: { user: { id: string } },
+    @Query('servings') servingsText?: string,
+    @Query('countryCode') countryCode = '',
+    @Query('maxCalories') maxCaloriesText?: string,
+    @Query('minProteinGrams') minProteinText?: string,
+  ) {
+    if (!servingsText?.trim()) throw new BadRequestException('servings is required');
+    const servings = Number(servingsText);
+    if (!Number.isInteger(servings) || servings <= 0)
+      throw new BadRequestException('servings must be a positive integer');
+    const maxCalories = maxCaloriesText?.trim() ? Number(maxCaloriesText) : undefined;
+    const minProteinGrams = minProteinText?.trim() ? Number(minProteinText) : undefined;
+    if (maxCalories !== undefined && (!Number.isFinite(maxCalories) || maxCalories < 0))
+      throw new BadRequestException('maxCalories must be a non-negative number');
+    if (minProteinGrams !== undefined && (!Number.isFinite(minProteinGrams) || minProteinGrams < 0))
+      throw new BadRequestException('minProteinGrams must be a non-negative number');
+    return this.foodOperatingLoop.recommend(
+      req.user.id,
+      servings,
+      countryCode,
+      maxCalories,
+      minProteinGrams,
+    );
+  }
+
   @Get(':id/food-plan')
   foodPlan(
     @Request() req: { user: { id: string } },
