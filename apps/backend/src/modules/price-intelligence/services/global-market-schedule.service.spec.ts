@@ -16,7 +16,7 @@ describe('GlobalMarketScheduleService', () => {
   it('identifies countries whose local clock is exactly 03:30', () => {
     const instant = new Date('2026-08-17T00:00:00.000Z');
     const due = service.dueCountries(instant);
-    expect(due).toEqual(expect.arrayContaining(['IR', 'AZ']));
+    expect(due).toContain('IR');
     expect(due).not.toContain('JP');
   });
 
