@@ -53,7 +53,7 @@ describe('FoodOperatingLoopService', () => {
       ],
     });
     prisma.inventoryItem.findMany.mockResolvedValue([
-      { userId: 'user-1', foodId: 'food-1', quantity: 0.75, unit: 'kg', food: { name: 'Chicken' } },
+      { userId: 'user-1', foodId: 'food-1', quantity: 5, unit: 'kg', food: { name: 'Chicken' } },
     ]);
     scaling.scale.mockReturnValue({
       targetServings: 50,
@@ -130,7 +130,7 @@ describe('FoodOperatingLoopService', () => {
     ]);
     prisma.nutritionProfile.findUnique.mockResolvedValue({
       dailyCaloriesGoal: 2000,
-      proteinGoalGrams: 150,
+      proteinGoalGrams: 120,
     });
     scaling.scale.mockReturnValue({
       targetServings: 2,
