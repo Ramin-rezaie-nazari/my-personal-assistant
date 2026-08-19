@@ -24,7 +24,8 @@
     "recipe-images:dataset": "node ./scripts/recipe-image-dataset-import-v2.mjs",
     "recipe-images:reprocess-quality": "node ./scripts/recipe-image-reprocess-quality.mjs",
     "recipe-images:retry-quality": "node ./scripts/recipe-image-reprocess-retry.mjs",
-    "recipe-intelligence:classify": "node ./scripts/recipe-intelligence-classify.mjs"
+    "recipe-intelligence:classify": "node ./scripts/recipe-intelligence-classify.mjs",
+    "recipe-intelligence:profile": "node ./scripts/recipe-intelligence-profile.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -52,6 +53,7 @@
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
+    "@nestjs/testing": "^11.0.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
