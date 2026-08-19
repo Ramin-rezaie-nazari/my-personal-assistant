@@ -76,7 +76,6 @@ async function sourceRows() {
 async function bestWebp(input) {
   const meta = await sharp(input).metadata();
   const sourceWidth = meta.width || 0;
-  const sourceHeight = meta.height || 0;
   const maxWidth = Math.min(sourceWidth || 960, 1200);
   const widths = [...new Set([maxWidth, 1080, 1024, 960, 900, 840, 800, 720, 640, 576, 512, 448, 384])]
     .filter((w) => w > 0 && w <= maxWidth)
@@ -92,18 +91,16 @@ async function bestWebp(input) {
         .webp({ quality, effort: 6 })
         .toBuffer();
       if (out.byteLength <= MAX_BYTES) {
-        // For the same source width, choose the highest quality that fits.
         const score = width * 1_000_000 + quality * 1_000 - out.byteLength / 1_000;
         if (!best || score > best.score) best = { out, width, quality, score };
-        // Highest quality at the largest width is preferred; no need to try lower qualities for this width.
         break;
       }
     }
   }
 
-  if (!best) throw new Error(`Cannot produce WebP <= 60KB (source=${sourceWidth}x${sourceHeight})`);
+  if (!best) throw new Error(`Cannot produce WebP <= 60KB (source=${sourceWidth})`);
   const outMeta = await sharp(best.out).metadata();
-  return { buffer: best.out, width: outMeta.width || best.width, height: outMeta.height || sourceHeight, quality: best.quality };
+  return { buffer: best.out, width: outMeta.width || best.width, height: outMeta.height || meta.height || best.width, quality: best.quality };
 }
 
 async function upload(key, buffer) {
@@ -118,7 +115,6 @@ async function upload(key, buffer) {
 }
 
 async function processOne(row, imageName, index) {
-  if (!imageName) throw new Error('Missing Image_Name');
   const file = index.get(imageName) || index.get(`${imageName}.jpg`) || index.get(`${imageName}.jpeg`) || index.get(`${imageName}.png`) || index.get(`${imageName}.webp`);
   if (!file) throw new Error(`Original image not found: ${imageName}`);
   const original = await readFile(file);
