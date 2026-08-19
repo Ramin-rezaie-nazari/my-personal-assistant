@@ -21,7 +21,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "node ./test/prepare-e2e-db.cjs && jest --config ./test/jest-e2e.json",
     "recipe-images:import": "node ./scripts/recipe-image-import.mjs",
-    "recipe-images:dataset": "node ./scripts/recipe-image-dataset-import-v2.mjs"
+    "recipe-images:dataset": "node ./scripts/recipe-image-dataset-import-v2.mjs",
+    "recipe-images:reprocess-quality": "node ./scripts/recipe-image-reprocess-quality.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
