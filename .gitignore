@@ -4,3 +4,10 @@ dist
 .DS_Store
 *.log
 .expo/
+
+# Local recipe/image datasets and generated assets
+recipe-image-dataset/
+apps/backend/recipe-image-dataset/
+.kaggle-venv/
+My-Personal-Assistant-Data/
+processed-images/
