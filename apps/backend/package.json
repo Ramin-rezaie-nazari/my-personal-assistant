@@ -23,7 +23,8 @@
     "recipe-images:import": "node ./scripts/recipe-image-import.mjs",
     "recipe-images:dataset": "node ./scripts/recipe-image-dataset-import-v2.mjs",
     "recipe-images:reprocess-quality": "node ./scripts/recipe-image-reprocess-quality.mjs",
-    "recipe-images:retry-quality": "node ./scripts/recipe-image-reprocess-retry.mjs"
+    "recipe-images:retry-quality": "node ./scripts/recipe-image-reprocess-retry.mjs",
+    "recipe-intelligence:classify": "node ./scripts/recipe-intelligence-classify.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -51,7 +52,6 @@
     "@eslint/js": "^9.18.0",
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
-    "@nestjs/testing": "^11.0.0",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
     "@types/node": "^24.0.0",
@@ -65,6 +65,7 @@
     "jest-environment-node": "30.4.0",
     "prettier": "^3.9.6",
     "source-map-support": "^0.5.21",
+    "supertest": "^7.2.1",
     "ts-jest": "29.4.12",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
