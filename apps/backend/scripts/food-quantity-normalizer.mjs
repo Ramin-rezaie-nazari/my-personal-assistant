@@ -1,6 +1,6 @@
 const UNITS = new Map([
   ['ml', 'ml'], ['milliliter', 'ml'], ['milliliters', 'ml'], ['میلی لیتر', 'ml'],
-  ['l', 'l'], ['liter', 'l'], ['liters', 'l'], ['لیتر', 'لیتر'], ['لیتر', 'l'],
+  ['l', 'l'], ['liter', 'l'], ['liters', 'l'], ['لیتر', 'l'], ['لیتر', 'l'],
   ['g', 'g'], ['gram', 'g'], ['grams', 'g'], ['گرم', 'g'],
   ['kg', 'kg'], ['kilogram', 'kg'], ['kilograms', 'kg'], ['کیلو', 'kg'], ['کیلوگرم', 'kg'],
   ['oz', 'oz'], ['ounce', 'oz'], ['ounces', 'oz'],
@@ -23,6 +23,19 @@ function normalizeFractionSlash(value) {
   return String(value || '').replace(/⁄/g, '/');
 }
 
+function parseRangeToken(value) {
+  const normalized = normalizeFractionSlash(value).trim();
+  const range = normalized.match(/^(.+?)\s*(?:[-–—]|\bto\b)\s*(.+)$/iu);
+  if (!range) {
+    const single = parseNumber(normalized);
+    return single == null ? null : { min: single, max: single, token: normalized };
+  }
+  const min = parseNumber(range[1]);
+  const max = parseNumber(range[2]);
+  if (min == null || max == null) return null;
+  return { min, max, token: normalized };
+}
+
 export function parseNumber(value) {
   const s = normalizeFractionSlash(value).trim();
   if (FRACTIONS[s] != null) return FRACTIONS[s];
@@ -40,11 +53,20 @@ export function parseNumber(value) {
 }
 
 function parseLeadingNumber(text) {
-  const match = text.match(/^\s*(\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?)/u);
-  if (!match) return null;
-  const quantity = parseNumber(match[1]);
-  if (quantity == null) return null;
-  return { token: match[1], length: match[0].length, quantity };
+  const normalized = normalizeFractionSlash(text);
+  const rangeMatch = normalized.match(/^\s*(\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?)(?:\s*(?:[-–—]|\bto\b)\s*(\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?))?/iu);
+  if (!rangeMatch) return null;
+  const first = parseNumber(rangeMatch[1]);
+  const second = rangeMatch[2] ? parseNumber(rangeMatch[2]) : first;
+  if (first == null || second == null) return null;
+  return {
+    token: rangeMatch[0].trim(),
+    length: rangeMatch[0].length,
+    quantity: first,
+    quantity_min: Math.min(first, second),
+    quantity_max: Math.max(first, second),
+    is_range: rangeMatch[2] != null,
+  };
 }
 
 export function normalizeQuantity(input) {
@@ -65,12 +87,18 @@ export function normalizeQuantity(input) {
   const packageSize = afterNumber.match(packageSizePattern);
   if (packageSize) {
     const remainder = afterNumber.slice(packageSize[0].length).trimStart();
+    const parsedSize = packageSize.groups?.size ? parseRangeToken(packageSize.groups.size) : null;
     return {
       raw,
       quantity: leading.quantity,
+      quantity_min: leading.quantity_min,
+      quantity_max: leading.quantity_max,
+      is_range: leading.is_range,
       unit: null,
       remainder,
       package_size: packageSize.groups?.size || null,
+      package_size_min: parsedSize?.min ?? null,
+      package_size_max: parsedSize?.max ?? null,
       package_size_unit: packageSize.groups?.sizeUnit || null,
       package_type: packageSize.groups?.package || null,
       package_modifier: packageSize.groups?.modifier || null,
@@ -79,7 +107,7 @@ export function normalizeQuantity(input) {
   }
 
   if (/^(?:[-–—]\s*)?inch(?:es)?\b/i.test(afterNumber) || /^['’\"]\s*(?:-|to|$)/i.test(afterNumber)) {
-    return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
+    return { raw, quantity: null, quantity_min: null, quantity_max: null, unit: null, remainder: raw, confidence: 0 };
   }
 
   const unitPattern = new RegExp(`^(${UNIT_ALTERNATION})(?=\\s|$)`, 'iu');
@@ -89,13 +117,25 @@ export function normalizeQuantity(input) {
     return {
       raw,
       quantity: leading.quantity,
+      quantity_min: leading.quantity_min,
+      quantity_max: leading.quantity_max,
+      is_range: leading.is_range,
       unit: UNITS.get(unitKey) || null,
       remainder: afterNumber.slice(unitMatch[0].length).trim(),
       confidence: 1,
     };
   }
 
-  return { raw, quantity: leading.quantity, unit: null, remainder: afterNumber, confidence: 0.7 };
+  return {
+    raw,
+    quantity: leading.quantity,
+    quantity_min: leading.quantity_min,
+    quantity_max: leading.quantity_max,
+    is_range: leading.is_range,
+    unit: null,
+    remainder: afterNumber,
+    confidence: 0.7,
+  };
 }
 
 export function convertToBase(quantity, unit) {
