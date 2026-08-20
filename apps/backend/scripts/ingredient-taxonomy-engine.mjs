@@ -161,7 +161,8 @@ export function analyzeIngredientLine(rawLine) {
 
 export function analyzeRecipeIngredients(rawIngredients) {
   const raw = parseArray(rawIngredients);
-  const analyzed = raw.flatMap((line) => splitIngredientParts(line).map(analyzeIngredientLine)).filter((item) => item.canonical_id);
+  const sourceParts = raw.flatMap(splitIngredientParts);
+  const analyzed = sourceParts.map(analyzeIngredientLine).filter((item) => item.canonical_id);
   const canonicalIds = [...new Set(analyzed.map((item) => item.canonical_id))];
   const unresolved = analyzed.filter((item) => item.review_required);
   const flags = {
@@ -180,7 +181,22 @@ export function analyzeRecipeIngredients(rawIngredients) {
     vegetarian_candidate: !flags.contains_animal_meat && !flags.contains_seafood,
   };
   const confidence = analyzed.length ? Number((analyzed.reduce((sum, item) => sum + item.confidence, 0) / analyzed.length).toFixed(3)) : 0;
-  return { version: VERSION, raw_count: raw.length, analyzed_count: analyzed.length, canonical_count: canonicalIds.length, ingredients: analyzed, canonical_ids: canonicalIds, unresolved_count: unresolved.length, unresolved: unresolved.map(({ raw: original, canonical_id, canonical_name, reason }) => ({ raw: original, canonical_id, canonical_name, reason })), flags, dietary, confidence, coverage: raw.length ? Number((analyzed.length / raw.length).toFixed(3)) : 0, review_required: unresolved.length > 0 };
+  return {
+    version: VERSION,
+    raw_count: raw.length,
+    source_part_count: sourceParts.length,
+    analyzed_count: analyzed.length,
+    canonical_count: canonicalIds.length,
+    ingredients: analyzed,
+    canonical_ids: canonicalIds,
+    unresolved_count: unresolved.length,
+    unresolved: unresolved.map(({ raw: original, canonical_id, canonical_name, reason }) => ({ raw: original, canonical_id, canonical_name, reason })),
+    flags,
+    dietary,
+    confidence,
+    coverage: sourceParts.length ? Number((analyzed.length / sourceParts.length).toFixed(3)) : 0,
+    review_required: unresolved.length > 0,
+  };
 }
 
 export const TAXONOMY_VERSION = VERSION;
