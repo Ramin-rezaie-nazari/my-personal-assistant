@@ -36,7 +36,8 @@ function cleanIngredientText(value) {
   let text = normalizeText(value)
     .replace(quantityPrefix, '')
     .replace(unitWords, ' ')
-    .replace(preparationTail, ' ');
+    .replace(preparationTail, ' ')
+    .replace(/[,:;]+$/g, ' ');
   return text
     .replace(/^[-*•]+\s*/, '')
     .replace(/[,:;]+$/g, '')
