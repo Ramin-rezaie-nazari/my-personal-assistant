@@ -4,13 +4,14 @@ import supplementV2 from '../data/ingredient-taxonomy-supplement-v2.json' with {
 import supplementV3 from '../data/ingredient-taxonomy-supplement-v3.json' with { type: 'json' };
 import supplementV4 from '../data/ingredient-taxonomy-supplement-v4.json' with { type: 'json' };
 import supplementV5 from '../data/ingredient-taxonomy-supplement-v5.json' with { type: 'json' };
+import supplementV6 from '../data/ingredient-taxonomy-supplement-v6.json' with { type: 'json' };
 import knowledge from '../data/food-entity-knowledge-v1.json' with { type: 'json' };
 import locales from '../data/food-entity-locale-pack-v1.json' with { type: 'json' };
 import { normalizeQuantity } from './food-quantity-normalizer.mjs';
 
-export const RESOLVER_VERSION = 'food-entity-resolver-final-v7';
+export const RESOLVER_VERSION = 'food-entity-resolver-final-v8';
 
-const all = [...taxonomy, ...supplement, ...supplementV2, ...supplementV3, ...supplementV4, ...supplementV5];
+const all = [...taxonomy, ...supplement, ...supplementV2, ...supplementV3, ...supplementV4, ...supplementV5, ...supplementV6];
 const knowledgeById = new Map(knowledge.map((x) => [x.id, x]));
 const canonicalRedirects = new Map([
   ['simple_syrup', 'syrup_simple'],
@@ -35,6 +36,11 @@ function stripPrep(value) {
   return String(value || '')
     .replace(/^\s*equipment\s*:\s*/i, ' ')
     .replace(/^\s*(?:an?|one)\s+(?:instant[- ]read|deep[- ]fat|candy)\s+thermometer\b.*$/i, ' ')
+    .replace(/^\s*\d+(?:\s+\d+\/\d+)?\s*(?:[-–]\s*\d+(?:\s+\d+\/\d+)?)?\s*(?:ounce|ounces|oz|pound|pounds|lb|lbs|gram|grams|g|kg|ml|milliliter|milliliters|liter|liters)\s+/i, ' ')
+    .replace(/^\s*\d+(?:\s+\d+\/\d+)?\s*(?:[-–]\s*\d+(?:\s+\d+\/\d+)?)?\s*(?:inch|inches|in|cm|mm)\s+(?:pieces?|cubes?|slices?|planks?|thick)\s+/i, ' ')
+    .replace(/^\s*\d+(?:\s+\d+\/\d+)?\s*(?:to|[-–])\s*\d+(?:\s+\d+\/\d+)?\s*(?:cup|cups|teaspoon|teaspoons|tbsp|tablespoon|tablespoons|ounce|ounces|oz|pound|pounds|lb|lbs|package|packages|bag|bags|box|boxes|can|cans)\s+/i, ' ')
+    .replace(/^\s*\d+\s*[-–]\s*\d+\s*percent[- ]lean\s+/i, ' ')
+    .replace(/^\s*\d+\s*percent[- ]lean\s+/i, ' ')
     .replace(/\b(?:\d+(?:\.\d+)?\s*)?(?:ounce|ounces|oz|pound|pounds|lb|lbs|gram|grams|g|kg|ml|milliliter|milliliters|liter|liters)\s+(?:bottle|can|package|pkg|jar|bag|box|carton)\b/gi, ' ')
     .replace(/\b(?:bottle|bottles|can|cans|package|packages|pkg|jar|jars|bag|bags|box|boxes|carton|cartons)\b/gi, ' ')
     .replace(/\b(?:small|medium|large|extra large|baby|young|tiny|mini|ripe|firm ripe|high quality|high-quality)\b/gi, ' ')
