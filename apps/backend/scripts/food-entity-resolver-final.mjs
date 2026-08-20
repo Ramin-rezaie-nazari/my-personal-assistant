@@ -97,6 +97,8 @@ function result(raw,entry,quantityData,matchedBy){
     quantity_max:quantityData.quantity_max ?? null,
     is_range:quantityData.is_range ?? false,
     unit:quantityData.unit,
+    additional_quantity:quantityData.additional_quantity ?? null,
+    additional_unit:quantityData.additional_unit ?? null,
     package_size:quantityData.package_size ?? null,
     package_size_min:quantityData.package_size_min ?? null,
     package_size_max:quantityData.package_size_max ?? null,
@@ -118,10 +120,10 @@ export function resolveFoodEntity(input){
   if(alternativeParts.length>=2){
     const candidates=alternativeParts.map(findBest).filter((x)=>x&&x.score>=0.9).map((x)=>({canonical_id:canonicalId(x.entry.id),canonical_name:x.entry.name,confidence:x.score}));
     const distinct=[...new Map(candidates.map((x)=>[x.canonical_id,x])).values()];
-    if(distinct.length>=2)return {resolver_version:RESOLVER_VERSION,raw,normalized:cleaned,canonical_id:null,canonical_name:null,quantity:quantityData.quantity,quantity_min:quantityData.quantity_min ?? null,quantity_max:quantityData.quantity_max ?? null,is_range:quantityData.is_range ?? false,unit:quantityData.unit,confidence:0,review_required:true,relations:[],reason:'ambiguous_alternatives',alternatives:distinct};
+    if(distinct.length>=2)return {resolver_version:RESOLVER_VERSION,raw,normalized:cleaned,canonical_id:null,canonical_name:null,quantity:quantityData.quantity,quantity_min:quantityData.quantity_min ?? null,quantity_max:quantityData.quantity_max ?? null,is_range:quantityData.is_range ?? false,unit:quantityData.unit,additional_quantity:quantityData.additional_quantity ?? null,additional_unit:quantityData.additional_unit ?? null,confidence:0,review_required:true,relations:[],reason:'ambiguous_alternatives',alternatives:distinct};
   }
   const best=findBest(cleaned);
-  if(!best||best.score<0.8)return {resolver_version:RESOLVER_VERSION,raw,normalized:cleaned,canonical_id:null,canonical_name:null,quantity:quantityData.quantity,quantity_min:quantityData.quantity_min ?? null,quantity_max:quantityData.quantity_max ?? null,is_range:quantityData.is_range ?? false,unit:quantityData.unit,confidence:0,review_required:true,relations:[],reason:'unresolved_offline'};
+  if(!best||best.score<0.8)return {resolver_version:RESOLVER_VERSION,raw,normalized:cleaned,canonical_id:null,canonical_name:null,quantity:quantityData.quantity,quantity_min:quantityData.quantity_min ?? null,quantity_max:quantityData.quantity_max ?? null,is_range:quantityData.is_range ?? false,unit:quantityData.unit,additional_quantity:quantityData.additional_quantity ?? null,additional_unit:quantityData.additional_unit ?? null,confidence:0,review_required:true,relations:[],reason:'unresolved_offline'};
   return result(raw,best.entry,quantityData,best.matchedBy);
 }
 export function resolverIntegrity(){
