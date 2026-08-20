@@ -55,7 +55,14 @@ export function taxonomyIntegrity() {
     ids.set(item.id, item);
     if (!Array.isArray(item.aliases) || !item.aliases.length) emptyAliases.push(item.id);
   }
-  return { version: VERSION, entries: taxonomy.length, duplicateIds: [...new Set(taxonomy.map((x) => x.id))].filter((id, index, all) => all.indexOf(id) !== index), conflictingIds: [...new Set(conflictingIds)], emptyAliases, valid: conflictingIds.length === 0 && emptyAliases.length === 0 };
+  return {
+    version: VERSION,
+    entries: taxonomy.length,
+    duplicateIds: [...new Set(taxonomy.map((x) => x.id))].filter((id, index, all) => all.indexOf(id) !== index),
+    conflictingIds: [...new Set(conflictingIds)],
+    emptyAliases,
+    valid: conflictingIds.length === 0 && emptyAliases.length === 0,
+  };
 }
 
 function matchesAlias(cleaned, alias) {
@@ -79,7 +86,21 @@ export function analyzeIngredientLine(rawLine) {
   const match = aliasIndex.find(({ alias }) => matchesAlias(cleaned, alias));
   if (!match) return { version: VERSION, raw, normalized_text: cleaned, canonical_id: `unknown:${slugify(cleaned)}`, canonical_name: cleaned, category: 'unknown', flags: {}, dietary: { vegan_compatible_candidate: null, vegetarian_compatible_candidate: null, animal_derived: null }, confidence: 0.35, review_required: true, reason: 'no_taxonomy_match' };
   const { item, alias } = match;
-  return { version: VERSION, raw, normalized_text: cleaned, canonical_id: item.id, canonical_name: item.name, category: item.category, matched_alias: alias, flags: item.flags || {}, dietary: deriveDietary(item.flags || {}), confidence: alias === normalizeText(item.name) ? 0.98 : 0.94, review_required: false, reason: 'taxonomy_alias_match' };
+  const reviewRequired = Boolean(item.flags?.composition_ambiguous);
+  return {
+    version: VERSION,
+    raw,
+    normalized_text: cleaned,
+    canonical_id: item.id,
+    canonical_name: item.name,
+    category: item.category,
+    matched_alias: alias,
+    flags: item.flags || {},
+    dietary: deriveDietary(item.flags || {}),
+    confidence: reviewRequired ? 0.72 : (alias === normalizeText(item.name) ? 0.98 : 0.94),
+    review_required: reviewRequired,
+    reason: reviewRequired ? 'composition_ambiguous' : 'taxonomy_alias_match',
+  };
 }
 
 export function analyzeRecipeIngredients(rawIngredients) {
@@ -103,7 +124,7 @@ export function analyzeRecipeIngredients(rawIngredients) {
     vegetarian_candidate: !flags.contains_animal_meat && !flags.contains_seafood,
   };
   const confidence = analyzed.length ? Number((analyzed.reduce((sum, item) => sum + item.confidence, 0) / analyzed.length).toFixed(3)) : 0;
-  return { version: VERSION, raw_count: raw.length, analyzed_count: analyzed.length, canonical_count: canonicalIds.length, ingredients: analyzed, canonical_ids: canonicalIds, unresolved_count: unresolved.length, unresolved: unresolved.map(({ raw: original, canonical_id, canonical_name }) => ({ raw: original, canonical_id, canonical_name })), flags, dietary, confidence, coverage: raw.length ? Number((analyzed.length / raw.length).toFixed(3)) : 0, review_required: unresolved.length > 0 };
+  return { version: VERSION, raw_count: raw.length, analyzed_count: analyzed.length, canonical_count: canonicalIds.length, ingredients: analyzed, canonical_ids: canonicalIds, unresolved_count: unresolved.length, unresolved: unresolved.map(({ raw: original, canonical_id, canonical_name, reason }) => ({ raw: original, canonical_id, canonical_name, reason })), flags, dietary, confidence, coverage: raw.length ? Number((analyzed.length / raw.length).toFixed(3)) : 0, review_required: unresolved.length > 0 };
 }
 
 export const TAXONOMY_VERSION = VERSION;
