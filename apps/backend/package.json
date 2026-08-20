@@ -26,15 +26,15 @@
     "recipe-images:retry-quality": "node ./scripts/recipe-image-reprocess-retry.mjs",
     "recipe-intelligence:classify": "node ./scripts/recipe-intelligence-classify.mjs",
     "recipe-intelligence:profile": "node ./scripts/recipe-intelligence-profile.mjs",
-    "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence-v4.mjs"
+    "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence-v5.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
-    "@nestjs/config": "^4.0.4",
+    "@nestjs/config": "^4.0.0",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
-    "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-express": "^11.0.5",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "argon2": "^0.45.1",
@@ -72,7 +72,6 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
