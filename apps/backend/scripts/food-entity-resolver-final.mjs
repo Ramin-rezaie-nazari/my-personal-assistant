@@ -6,13 +6,14 @@ import supplementV4 from '../data/ingredient-taxonomy-supplement-v4.json' with {
 import supplementV5 from '../data/ingredient-taxonomy-supplement-v5.json' with { type: 'json' };
 import supplementV6 from '../data/ingredient-taxonomy-supplement-v6.json' with { type: 'json' };
 import supplementV7 from '../data/ingredient-taxonomy-supplement-v7.json' with { type: 'json' };
+import supplementV8 from '../data/ingredient-taxonomy-supplement-v8.json' with { type: 'json' };
 import knowledge from '../data/food-entity-knowledge-v1.json' with { type: 'json' };
 import locales from '../data/food-entity-locale-pack-v1.json' with { type: 'json' };
 import { normalizeQuantity } from './food-quantity-normalizer.mjs';
 
-export const RESOLVER_VERSION = 'food-entity-resolver-final-v10';
+export const RESOLVER_VERSION = 'food-entity-resolver-final-v11';
 
-const all = [...taxonomy, ...supplement, ...supplementV2, ...supplementV3, ...supplementV4, ...supplementV5, ...supplementV6, ...supplementV7];
+const all = [...taxonomy, ...supplement, ...supplementV2, ...supplementV3, ...supplementV4, ...supplementV5, ...supplementV6, ...supplementV7, ...supplementV8];
 const knowledgeById = new Map(knowledge.map((x) => [x.id, x]));
 const canonicalRedirects = new Map([['simple_syrup', 'syrup_simple']]);
 function canonicalId(id) { return canonicalRedirects.get(id) || id; }
