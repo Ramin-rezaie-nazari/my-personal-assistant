@@ -1,5 +1,6 @@
 import { resolveFoodEntity } from './food-entity-resolver-final.mjs';
 import { classifyNonFoodPart } from './ingredient-non-food-classifier.mjs';
+import { splitSourcePart } from './food-source-part-decomposer.mjs';
 
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, '');
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -80,30 +81,38 @@ const raws = await allRows('recipe_source_raw', 'recipe_id,raw_ingredients', 'cr
 const byId = new Map(raws.map((x) => [x.recipe_id, parseRaw(x.raw_ingredients)]));
 const selected = LIMIT === 0 ? recipes : recipes.slice(0, LIMIT);
 
-let parts = 0;
+let sourceParts = 0;
 let resolved = 0;
 let review = 0;
 let nonIngredient = 0;
+let decomposedSourceLines = 0;
+let generatedComponents = 0;
 const unresolved = new Map();
 
 for (const recipe of selected) {
   for (const line of byId.get(recipe.id) || []) {
-    const rawLine = String(line);
-    const nonFood = classifyNonFoodPart(rawLine);
-    if (nonFood) { nonIngredient += 1; continue; }
-    const r = resolveFoodEntity(rawLine);
-    parts += 1;
-    if (r.canonical_id) resolved += 1;
-    else {
-      review += 1;
-      if (AUDIT) {
-        const key = r.normalized || rawLine.toLowerCase().trim();
-        const existing = unresolved.get(key) || { normalized: key, count: 0, examples: [], recipes: 0, reasons: new Set() };
-        existing.count += 1;
-        existing.recipes += 1;
-        if (existing.examples.length < 5 && !existing.examples.includes(rawLine)) existing.examples.push(rawLine);
-        existing.reasons.add(r.reason || 'unresolved_offline');
-        unresolved.set(key, existing);
+    const components = splitSourcePart(line);
+    if (components.length > 1) {
+      decomposedSourceLines += 1;
+      generatedComponents += components.length;
+    }
+    for (const rawLine of components) {
+      const nonFood = classifyNonFoodPart(rawLine);
+      if (nonFood) { nonIngredient += 1; continue; }
+      sourceParts += 1;
+      const r = resolveFoodEntity(rawLine);
+      if (r.canonical_id) resolved += 1;
+      else {
+        review += 1;
+        if (AUDIT) {
+          const key = r.normalized || rawLine.toLowerCase().trim();
+          const existing = unresolved.get(key) || { normalized: key, count: 0, examples: [], recipes: 0, reasons: new Set() };
+          existing.count += 1;
+          existing.recipes += 1;
+          if (existing.examples.length < 5 && !existing.examples.includes(rawLine)) existing.examples.push(rawLine);
+          existing.reasons.add(r.reason || 'unresolved_offline');
+          unresolved.set(key, existing);
+        }
       }
     }
   }
@@ -115,12 +124,14 @@ const result = {
   limit: LIMIT,
   processed: selected.length,
   total: recipes.length,
-  totalSourceParts: parts,
+  totalSourceParts: sourceParts,
   nonIngredientParts: nonIngredient,
   resolvedParts: resolved,
   reviewRequiredParts: review,
-  coverage: parts ? Number((resolved / parts).toFixed(4)) : 0,
-  version: 'food-entity-intelligence-final-v3',
+  coverage: sourceParts ? Number((resolved / sourceParts).toFixed(4)) : 0,
+  decomposedSourceLines,
+  generatedComponents,
+  version: 'food-entity-intelligence-final-v4',
 };
 
 if (AUDIT) {
