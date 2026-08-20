@@ -3,7 +3,7 @@ import { analyzeIngredientLine, analyzeRecipeIngredients, taxonomyIntegrity } fr
 
 const integrity = taxonomyIntegrity();
 assert.equal(integrity.valid, true, JSON.stringify(integrity));
-assert.ok(integrity.entries >= 70);
+assert.ok(integrity.entries >= 130);
 
 const oliveOil = analyzeIngredientLine('2 tbsp extra virgin olive oil');
 assert.equal(oliveOil.canonical_id, 'olive_oil');
@@ -32,6 +32,19 @@ const milk = analyzeIngredientLine('1 cup whole milk');
 assert.equal(milk.canonical_id, 'milk');
 assert.equal(milk.flags.dairy, true);
 
+const baguette = analyzeIngredientLine('Baguette (for serving)');
+assert.equal(baguette.canonical_id, 'baguette');
+assert.equal(baguette.flags.gluten_candidate, true);
+
+const nonFood = analyzeIngredientLine('an instant-read thermometer');
+assert.equal(nonFood.non_ingredient, true);
+assert.equal(nonFood.category, 'non_ingredient');
+assert.equal(nonFood.review_required, false);
+
+const preparationOnly = analyzeIngredientLine('finely diced');
+assert.equal(preparationOnly.non_ingredient, true);
+assert.equal(preparationOnly.category, 'preparation_note');
+
 const unknown = analyzeIngredientLine('1 cup dragon fruit powder concentrate');
 assert.equal(unknown.category, 'unknown');
 assert.equal(unknown.review_required, true);
@@ -43,9 +56,10 @@ const recipe = analyzeRecipeIngredients([
   '2 eggs',
   '1/2 cup all-purpose flour',
   '1 tbsp tahini',
-  'kosher salt, freshly ground black pepper',
+  'kosher salt',
+  'freshly ground black pepper',
 ]);
-assert.equal(recipe.raw_count, 6);
+assert.equal(recipe.raw_count, 7);
 assert.equal(recipe.coverage, 1);
 assert.equal(recipe.flags.contains_dairy, true);
 assert.equal(recipe.flags.contains_egg, true);
@@ -56,4 +70,4 @@ assert.equal(recipe.dietary.vegetarian_candidate, true);
 assert.ok(recipe.canonical_ids.includes('salt'));
 assert.ok(recipe.canonical_ids.includes('black_pepper'));
 
-console.log(JSON.stringify({ status: 'pass', taxonomyEntries: integrity.entries, cases: 11 }, null, 2));
+console.log(JSON.stringify({ status: 'pass', taxonomyEntries: integrity.entries, cases: 15 }, null, 2));
