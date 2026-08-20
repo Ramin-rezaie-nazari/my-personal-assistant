@@ -15,6 +15,8 @@ const UNIT_ALTERNATION = [...UNITS.keys()]
   .sort((a, b) => b.length - a.length)
   .map((unit) => unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   .join('|');
+const SIZE_UNITS = 'ounce|ounces|oz|pound|pounds|lb|lbs|gram|grams|g|kg|ml|milliliter|milliliters|liter|liters';
+const PACKAGE_WORDS = 'package|packages|pkg|bag|bags|box|boxes|can|cans|jar|jars|bottle|bottles|carton|cartons';
 
 function normalizeFractionSlash(value) {
   return String(value || '').replace(/⁄/g, '/');
@@ -36,20 +38,48 @@ export function parseNumber(value) {
   return null;
 }
 
+function parseLeadingNumber(text) {
+  const match = text.match(/^\s*(\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?)/u);
+  if (!match) return null;
+  const quantity = parseNumber(match[1]);
+  if (quantity == null) return null;
+  return { token: match[1], length: match[0].length, quantity };
+}
+
 export function normalizeQuantity(input) {
   const raw = String(input || '').trim();
   const normalizedRaw = normalizeFractionSlash(raw);
-  const numberMatch = normalizedRaw.match(/^\s*(\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?)/u);
-  if (!numberMatch) return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
+  const leading = parseLeadingNumber(normalizedRaw);
+  if (!leading) return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
 
-  const quantityToken = numberMatch[1];
-  const quantity = parseNumber(quantityToken);
-  if (quantity == null) return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
+  const afterNumber = normalizedRaw.slice(leading.length).trimStart();
 
-  const afterNumber = normalizedRaw.slice(numberMatch[0].length).trimStart();
+  // A leading count followed by a per-package size, e.g.
+  // "2 3-ounce packages ladyfingers" or "1 28-ounce rib-eye steak".
+  // The first number is the recipe quantity; the following size is metadata.
+  const packageSizePattern = new RegExp(
+    `^(?<size>(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?)` +
+      `(?:\\s*(?:[-–—]|to)\\s*(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?))?` +
+      `)\\s*-?\\s*(?<sizeUnit>${SIZE_UNITS})(?:\\b|(?=\\s|-))` +
+      `(?:\\s+(?<package>${PACKAGE_WORDS})(?:\\b|(?=\\s)))?`,
+    'iu',
+  );
+  const packageSize = afterNumber.match(packageSizePattern);
+  if (packageSize) {
+    const remainder = afterNumber.slice(packageSize[0].length).trimStart();
+    return {
+      raw,
+      quantity: leading.quantity,
+      unit: null,
+      remainder,
+      package_size: packageSize.groups?.size || null,
+      package_size_unit: packageSize.groups?.sizeUnit || null,
+      package_type: packageSize.groups?.package || null,
+      confidence: 0.98,
+    };
+  }
 
   // Protect dimensions such as "1/2-inch pieces" and "1 1/2-inch-thick".
-  // These are preparation/shape descriptors, not the recipe quantity.
   if (/^(?:[-–—]\s*)?inch(?:es)?\b/i.test(afterNumber) || /^['’\"]\s*(?:-|to|$)/i.test(afterNumber)) {
     return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
   }
@@ -60,14 +90,14 @@ export function normalizeQuantity(input) {
     const unitKey = unitMatch[1].toLowerCase();
     return {
       raw,
-      quantity,
+      quantity: leading.quantity,
       unit: UNITS.get(unitKey) || null,
       remainder: afterNumber.slice(unitMatch[0].length).trim(),
       confidence: 1,
     };
   }
 
-  return { raw, quantity, unit: null, remainder: afterNumber, confidence: 0.7 };
+  return { raw, quantity: leading.quantity, unit: null, remainder: afterNumber, confidence: 0.7 };
 }
 
 export function convertToBase(quantity, unit) {
