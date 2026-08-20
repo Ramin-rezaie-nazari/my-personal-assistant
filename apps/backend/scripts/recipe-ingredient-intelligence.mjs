@@ -1,5 +1,4 @@
 import { analyzeRecipeIngredients, TAXONOMY_VERSION, taxonomyIntegrity } from './ingredient-taxonomy-engine.mjs';
-import { classifyNonFoodPart } from './ingredient-non-food-classifier.mjs';
 
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, '');
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -44,37 +43,11 @@ function parseSourceIngredients(value) {
   if (!value) return [];
   const text = String(value).trim();
   try {
-    const parsed = JSON.parse(text.replace(/'/g, '"'));
+    const parsed = JSON.parse(text.replace(/'/g, '\"'));
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return text.replace(/^\[/, '').replace(/\]$/, '').split(/\s*[,;]\s*/).map((item) => item.trim()).filter(Boolean);
+    return text.replace(/^\[/, '').replace(/\]$/, '').split(/\s*;\s*/).map((item) => item.replace(/^['\"]|['\"]$/g, '').trim()).filter(Boolean);
   }
-}
-
-function enrichAnalysis(analysis) {
-  const nonIngredientParts = analysis.unresolved
-    .map((item) => ({ ...item, classification: classifyNonFoodPart(item.raw) }))
-    .filter((item) => item.classification)
-    .map(({ raw, classification }) => ({ raw, ...classification }));
-  const unresolvedIngredientParts = analysis.unresolved.filter((item) => !classifyNonFoodPart(item.raw));
-  const sourcePartCount = analysis.analyzed_count + analysis.unresolved_count;
-  const classifiedPartCount = analysis.analyzed_count + nonIngredientParts.length;
-
-  return {
-    ...analysis,
-    source_part_count: sourcePartCount,
-    classified_part_count: classifiedPartCount,
-    resolved_ingredient_count: analysis.analyzed_count,
-    non_ingredient_count: nonIngredientParts.length,
-    unresolved_ingredient_count: unresolvedIngredientParts.length,
-    unresolved: unresolvedIngredientParts,
-    non_ingredient_parts: nonIngredientParts,
-    ingredient_coverage: (analysis.analyzed_count + unresolvedIngredientParts.length) > 0
-      ? Number((analysis.analyzed_count / (analysis.analyzed_count + unresolvedIngredientParts.length)).toFixed(4))
-      : 1,
-    classification_coverage: sourcePartCount ? Number((classifiedPartCount / sourcePartCount).toFixed(4)) : 1,
-    review_required: unresolvedIngredientParts.length > 0,
-  };
 }
 
 async function patchProfile(recipeId, analysis) {
@@ -116,14 +89,14 @@ async function main() {
 
   for (let i = 0; i < recipes.length; i += BATCH) {
     for (const recipe of recipes.slice(i, i + BATCH)) {
-      const analysis = enrichAnalysis(analyzeRecipeIngredients(rawByRecipe.get(recipe.id) || []));
+      const analysis = analyzeRecipeIngredients(rawByRecipe.get(recipe.id) || []);
       if (analysis.raw_count) {
         withRawIngredients += 1;
         totalSourceParts += analysis.source_part_count;
         resolvedIngredientParts += analysis.resolved_ingredient_count;
         nonIngredientParts += analysis.non_ingredient_count;
-        unresolvedIngredientParts += analysis.unresolved_ingredient_count;
-        if (analysis.unresolved_ingredient_count === 0) fullyCoveredRecipes += 1;
+        unresolvedIngredientParts += analysis.unresolved_count;
+        if (analysis.unresolved_count === 0) fullyCoveredRecipes += 1;
         else partiallyCoveredRecipes += 1;
       } else {
         noIngredientRecipes += 1;
