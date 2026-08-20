@@ -80,7 +80,7 @@ function parseLeadingNumber(text) {
 
 export function normalizeQuantity(input) {
   const raw = String(input || '').trim();
-  const normalizedRaw = normalizeFractionSlash(raw);
+  const normalizedRaw = normalizeFractionSlash(raw).replace(/^\s*(?:about|approximately|around|at least|up to)\s+/i, '');
   const leading = parseLeadingNumber(normalizedRaw);
   if (!leading) return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
 
