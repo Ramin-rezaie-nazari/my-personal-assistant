@@ -5,28 +5,38 @@ import supplementV3 from '../data/ingredient-taxonomy-supplement-v3.json' with {
 import supplementV4 from '../data/ingredient-taxonomy-supplement-v4.json' with { type: 'json' };
 import supplementV5 from '../data/ingredient-taxonomy-supplement-v5.json' with { type: 'json' };
 import supplementV6 from '../data/ingredient-taxonomy-supplement-v6.json' with { type: 'json' };
+import supplementV7 from '../data/ingredient-taxonomy-supplement-v7.json' with { type: 'json' };
 import knowledge from '../data/food-entity-knowledge-v1.json' with { type: 'json' };
 import locales from '../data/food-entity-locale-pack-v1.json' with { type: 'json' };
 import { normalizeQuantity } from './food-quantity-normalizer.mjs';
 
-export const RESOLVER_VERSION = 'food-entity-resolver-final-v9';
+export const RESOLVER_VERSION = 'food-entity-resolver-final-v10';
 
-const all = [...taxonomy, ...supplement, ...supplementV2, ...supplementV3, ...supplementV4, ...supplementV5, ...supplementV6];
+const all = [...taxonomy, ...supplement, ...supplementV2, ...supplementV3, ...supplementV4, ...supplementV5, ...supplementV6, ...supplementV7];
 const knowledgeById = new Map(knowledge.map((x) => [x.id, x]));
 const canonicalRedirects = new Map([['simple_syrup', 'syrup_simple']]);
 function canonicalId(id) { return canonicalRedirects.get(id) || id; }
 function norm(value) {
-  return String(value || '').toLowerCase().normalize('NFKD').replace(/\p{Diacritic}/gu, '').replace(/[\u2018\u2019]/g, "'").replace(/[-_/]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/(\d)\s*[⁄/]\s*(\d)/g, '$1/$2')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 function stripPrep(value) {
   return String(value || '')
     .replace(/^\s*equipment\s*:\s*/i, ' ')
     .replace(/^\s*(?:an?|one)\s+(?:instant[- ]read|deep[- ]fat|candy)\s+thermometer\b.*$/i, ' ')
     .replace(/^\s*\d+(?:\s+\d+\/\d+)?\s*(?:[-–]\s*\d+(?:\s+\d+\/\d+)?)?\s*(?:ounce|ounces|oz|pound|pounds|lb|lbs|gram|grams|g|kg|ml|milliliter|milliliters|liter|liters)\s+/i, ' ')
-    .replace(/^\s*\d+(?:\s+\d+\/\d+)?\s*(?:[-–]\s*\d+(?:\s+\d+\/\d+)?)?\s*(?:inch|inches|in|cm|mm)\s+(?:pieces?|cubes?|slices?|planks?|thick)\s+/i, ' ')
+    .replace(/^\s*\d+(?:\/\d+)?(?:\s+\d+\/\d+)?\s*(?:[-–]\s*\d+(?:\s+\d+\/\d+)?)?\s*(?:inch|inches|in|cm|mm)\s+(?:pieces?|cubes?|slices?|planks?|thick)\s+/i, ' ')
     .replace(/^\s*\d+(?:\s+\d+\/\d+)?\s*(?:to|[-–])\s*\d+(?:\s+\d+\/\d+)?\s*(?:cup|cups|teaspoon|teaspoons|tbsp|tablespoon|tablespoons|ounce|ounces|oz|pound|pounds|lb|lbs|package|packages|bag|bags|box|boxes|can|cans)\s+/i, ' ')
     .replace(/^\s*\d+\s*[-–]\s*\d+\s*percent[- ]lean\s+/i, ' ')
     .replace(/^\s*\d+\s*percent[- ]lean\s+/i, ' ')
+    .replace(/^\s*\d+(?:\.\d+)?%\s+(?=(?:buttermilk|milk)\b)/i, ' ')
     .replace(/\b(?:\d+(?:\.\d+)?\s*)?(?:ounce|ounces|oz|pound|pounds|lb|lbs|gram|grams|g|kg|ml|milliliter|milliliters|liter|liters)\s+(?:bottle|can|package|pkg|jar|bag|box|carton)\b/gi, ' ')
     .replace(/\b(?:bottle|bottles|can|cans|package|packages|pkg|jar|jars|bag|bags|box|boxes|carton|cartons)\b/gi, ' ')
     .replace(/\b(?:small|medium|large|extra large|baby|young|tiny|mini|ripe|firm ripe|high quality|high-quality)\b/gi, ' ')
@@ -71,7 +81,32 @@ function findBest(cleaned){
 }
 function result(raw,entry,quantityData,matchedBy){
   const id=canonicalId(entry.id); const knowledgeItem=knowledgeById.get(id); const confidence=entry.source==='knowledge'||entry.source==='locale'||entry.source==='semantic-override'?0.99:matchedBy==='exact'?0.985:0.93;
-  return {resolver_version:RESOLVER_VERSION,raw,normalized:canonicalizeText(quantityData.remainder),canonical_id:id,canonical_name:knowledgeItem?.name||entry.name,category:knowledgeItem?.category||entry.category,matched_by:matchedBy,matched_alias:entry.key,quantity:quantityData.quantity,unit:quantityData.unit,confidence,review_required:false,parent_id:knowledgeItem?.parent_id||null,relations:knowledgeItem?.relations||[],locale:entry.locale||null};
+  return {
+    resolver_version:RESOLVER_VERSION,
+    raw,
+    normalized:canonicalizeText(quantityData.remainder),
+    canonical_id:id,
+    canonical_name:knowledgeItem?.name||entry.name,
+    category:knowledgeItem?.category||entry.category,
+    matched_by:matchedBy,
+    matched_alias:entry.key,
+    quantity:quantityData.quantity,
+    quantity_min:quantityData.quantity_min ?? null,
+    quantity_max:quantityData.quantity_max ?? null,
+    is_range:quantityData.is_range ?? false,
+    unit:quantityData.unit,
+    package_size:quantityData.package_size ?? null,
+    package_size_min:quantityData.package_size_min ?? null,
+    package_size_max:quantityData.package_size_max ?? null,
+    package_size_unit:quantityData.package_size_unit ?? null,
+    package_type:quantityData.package_type ?? null,
+    package_modifier:quantityData.package_modifier ?? null,
+    confidence,
+    review_required:false,
+    parent_id:knowledgeItem?.parent_id||null,
+    relations:knowledgeItem?.relations||[],
+    locale:entry.locale||null
+  };
 }
 export function resolveFoodEntity(input){
   const raw=String(input||'').trim();
@@ -81,10 +116,10 @@ export function resolveFoodEntity(input){
   if(alternativeParts.length>=2){
     const candidates=alternativeParts.map(findBest).filter((x)=>x&&x.score>=0.9).map((x)=>({canonical_id:canonicalId(x.entry.id),canonical_name:x.entry.name,confidence:x.score}));
     const distinct=[...new Map(candidates.map((x)=>[x.canonical_id,x])).values()];
-    if(distinct.length>=2)return {resolver_version:RESOLVER_VERSION,raw,normalized:cleaned,canonical_id:null,canonical_name:null,quantity:quantityData.quantity,unit:quantityData.unit,confidence:0,review_required:true,relations:[],reason:'ambiguous_alternatives',alternatives:distinct};
+    if(distinct.length>=2)return {resolver_version:RESOLVER_VERSION,raw,normalized:cleaned,canonical_id:null,canonical_name:null,quantity:quantityData.quantity,quantity_min:quantityData.quantity_min ?? null,quantity_max:quantityData.quantity_max ?? null,is_range:quantityData.is_range ?? false,unit:quantityData.unit,confidence:0,review_required:true,relations:[],reason:'ambiguous_alternatives',alternatives:distinct};
   }
   const best=findBest(cleaned);
-  if(!best||best.score<0.8)return {resolver_version:RESOLVER_VERSION,raw,normalized:cleaned,canonical_id:null,canonical_name:null,quantity:quantityData.quantity,unit:quantityData.unit,confidence:0,review_required:true,relations:[],reason:'unresolved_offline'};
+  if(!best||best.score<0.8)return {resolver_version:RESOLVER_VERSION,raw,normalized:cleaned,canonical_id:null,canonical_name:null,quantity:quantityData.quantity,quantity_min:quantityData.quantity_min ?? null,quantity_max:quantityData.quantity_max ?? null,is_range:quantityData.is_range ?? false,unit:quantityData.unit,confidence:0,review_required:true,relations:[],reason:'unresolved_offline'};
   return result(raw,best.entry,quantityData,best.matchedBy);
 }
 export function resolverIntegrity(){
