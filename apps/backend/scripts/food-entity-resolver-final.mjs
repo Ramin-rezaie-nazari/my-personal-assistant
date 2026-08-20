@@ -5,10 +5,17 @@ import knowledge from '../data/food-entity-knowledge-v1.json' with { type: 'json
 import locales from '../data/food-entity-locale-pack-v1.json' with { type: 'json' };
 import { normalizeQuantity } from './food-quantity-normalizer.mjs';
 
-export const RESOLVER_VERSION = 'food-entity-resolver-final-v3';
+export const RESOLVER_VERSION = 'food-entity-resolver-final-v4';
 
 const all = [...taxonomy, ...supplement, ...supplementV2];
 const knowledgeById = new Map(knowledge.map((x) => [x.id, x]));
+const canonicalRedirects = new Map([
+  ['simple_syrup', 'syrup_simple'],
+]);
+
+function canonicalId(id) {
+  return canonicalRedirects.get(id) || id;
+}
 
 function norm(value) {
   return String(value || '')
@@ -47,7 +54,7 @@ const aliasMap = new Map();
 function registerAlias(alias, entry, priority) {
   const key = norm(alias);
   if (!key) return;
-  const candidate = { ...entry, key, priority };
+  const candidate = { ...entry, id: canonicalId(entry.id), key, priority };
   const existing = aliasMap.get(key);
   if (!existing || priority > existing.priority || (priority === existing.priority && candidate.id === existing.id)) {
     aliasMap.set(key, candidate);
@@ -83,8 +90,8 @@ for (const pack of locales) {
     for (const alias of names) {
       registerAlias(alias, {
         id,
-        name: knowledgeById.get(id)?.name || id,
-        category: knowledgeById.get(id)?.category || 'food',
+        name: knowledgeById.get(canonicalId(id))?.name || id,
+        category: knowledgeById.get(canonicalId(id))?.category || 'food',
         source: 'locale',
         locale: pack.locale,
       }, 40);
@@ -101,6 +108,7 @@ const semanticOverrides = [
   ['prepared white horseradish', 'prepared_horseradish', 'prepared horseradish', 'condiment'],
   ['prepared horseradish', 'prepared_horseradish', 'prepared horseradish', 'condiment'],
   ['bottled horseradish', 'prepared_horseradish', 'prepared horseradish', 'condiment'],
+  ['simple syrup', 'syrup_simple', 'simple syrup', 'sweetener'],
 ];
 for (const [alias, id, name, category] of semanticOverrides) {
   registerAlias(alias, { id, name, category, source: 'semantic-override', locale: null }, 100);
@@ -120,7 +128,8 @@ function score(text, key) {
 }
 
 function result(raw, entry, quantityData, matchedBy) {
-  const knowledgeItem = knowledgeById.get(entry.id);
+  const id = canonicalId(entry.id);
+  const knowledgeItem = knowledgeById.get(id);
   const confidence = entry.source === 'knowledge' || entry.source === 'locale' || entry.source === 'semantic-override'
     ? 0.99
     : matchedBy === 'exact' ? 0.985 : 0.93;
@@ -129,7 +138,7 @@ function result(raw, entry, quantityData, matchedBy) {
     resolver_version: RESOLVER_VERSION,
     raw,
     normalized: canonicalizeText(quantityData.remainder),
-    canonical_id: entry.id,
+    canonical_id: id,
     canonical_name: knowledgeItem?.name || entry.name,
     category: knowledgeItem?.category || entry.category,
     matched_by: matchedBy,
@@ -192,12 +201,16 @@ export function resolveFoodEntity(input) {
 }
 
 export function resolverIntegrity() {
-  const ids = new Set([...all.map((x) => x.id), ...knowledge.map((x) => x.id), ...semanticOverrides.map(([, id]) => id)]);
+  const ids = new Set([
+    ...all.map((x) => canonicalId(x.id)),
+    ...knowledge.map((x) => canonicalId(x.id)),
+    ...semanticOverrides.map(([, id]) => canonicalId(id)),
+  ]);
   const conflicts = [];
   const seen = new Map();
   for (const entry of aliasEntries) {
     const previous = seen.get(entry.key);
-    if (previous && previous.id !== entry.id) conflicts.push({ alias: entry.key, ids: [previous.id, entry.id] });
+    if (previous && canonicalId(previous.id) !== canonicalId(entry.id)) conflicts.push({ alias: entry.key, ids: [canonicalId(previous.id), canonicalId(entry.id)] });
     seen.set(entry.key, entry);
   }
 
@@ -207,6 +220,7 @@ export function resolverIntegrity() {
     knowledge_entries: knowledge.length,
     alias_entries: aliasEntries.length,
     conflicting_aliases: conflicts,
+    canonical_redirects: Object.fromEntries(canonicalRedirects),
     valid: ids.size > 0 && conflicts.length === 0,
   };
 }
