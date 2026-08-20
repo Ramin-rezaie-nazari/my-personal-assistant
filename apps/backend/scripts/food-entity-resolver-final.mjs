@@ -1,12 +1,13 @@
 import taxonomy from '../data/ingredient-taxonomy-v1.json' with { type: 'json' };
 import supplement from '../data/ingredient-taxonomy-supplement-v1.json' with { type: 'json' };
+import supplementV2 from '../data/ingredient-taxonomy-supplement-v2.json' with { type: 'json' };
 import knowledge from '../data/food-entity-knowledge-v1.json' with { type: 'json' };
 import locales from '../data/food-entity-locale-pack-v1.json' with { type: 'json' };
 import { normalizeQuantity } from './food-quantity-normalizer.mjs';
 
-export const RESOLVER_VERSION = 'food-entity-resolver-final-v2';
+export const RESOLVER_VERSION = 'food-entity-resolver-final-v3';
 
-const all = [...taxonomy, ...supplement];
+const all = [...taxonomy, ...supplement, ...supplementV2];
 const knowledgeById = new Map(knowledge.map((x) => [x.id, x]));
 
 function norm(value) {
@@ -22,8 +23,14 @@ function norm(value) {
 
 function stripPrep(value) {
   return String(value || '')
+    .replace(/^\s*equipment\s*:\s*/i, ' ')
+    .replace(/^\s*(?:an?|one)\s+(?:instant[- ]read|deep[- ]fat|candy)\s+thermometer\b.*$/i, ' ')
+    .replace(/\b(?:\d+(?:\.\d+)?\s*)?(?:ounce|ounces|oz|pound|pounds|lb|lbs|gram|grams|g|kg|ml|milliliter|milliliters|liter|liters)\s+(?:bottle|can|package|pkg|jar|bag|box|carton)\b/gi, ' ')
+    .replace(/\b(?:bottle|bottles|can|cans|package|packages|pkg|jar|jars|bag|bags|box|boxes|carton|cartons)\b/gi, ' ')
+    .replace(/\b(?:small|medium|large|extra large|baby|young|tiny|mini)\b/gi, ' ')
+    .replace(/\b(?:freshly|fresh|finely|coarsely|roughly|thinly|thickly|lightly|heaping|packed|divided|melted|softened|chopped|diced|minced|sliced|grated|shredded|peeled|seeded|cored|boneless|skinless|trimmed|quartered|split|sifted|julienned|shucked|drained|rinsed|washed|shelled|husked|hulled|toasted|roasted|cooked|raw|optional|halved|lengthwise|at room temperature)\b/gi, ' ')
+    .replace(/\b(?:seeds? removed|casings? removed|skin removed|skin on|bone[- ]in|bones? removed)\b/gi, ' ')
     .replace(/\([^)]*\)/g, ' ')
-    .replace(/\b(?:freshly|fresh|finely|coarsely|roughly|thinly|thickly|lightly|heaping|packed|divided|melted|softened|chopped|diced|minced|sliced|grated|shredded|peeled|seeded|cored|boneless|skinless|trimmed|quartered|split|sifted|julienned|shucked|drained|rinsed|optional)\b/gi, ' ')
     .replace(/\b(?:for garnish|for serving|for frying|for dusting|for brushing|for drizzling|to taste|as needed|plus more|plus extra|or more|additional)\b.*$/i, ' ')
     .replace(/[,:;]+/g, ' ')
     .replace(/\s+/g, ' ')
