@@ -112,7 +112,6 @@ const semanticOverrides = [
   ['simple syrup', 'syrup_simple', 'simple syrup', 'sweetener'],
   ['dried ancho chiles', 'ancho_chile', 'ancho chile', 'pepper'],
   ['dried ancho chile', 'ancho_chile', 'ancho chile', 'pepper'],
-  ['dried new mexico or guajillo chiles', 'generic_chile', 'chile', 'pepper'],
   ['drops yellow food coloring', 'food_coloring', 'food coloring', 'food_additive'],
   ['food coloring', 'food_coloring', 'food coloring', 'food_additive'],
   ['frozen blackberries', 'blackberry', 'blackberry', 'fruit'],
