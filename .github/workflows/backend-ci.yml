@@ -80,6 +80,9 @@ jobs:
       - name: Build backend
         run: pnpm build
 
+      - name: Run canonical ingredient self-test
+        run: node ./scripts/ingredient-taxonomy-self-test.mjs
+
       - name: Run backend unit tests
         run: pnpm test -- --runInBand
 
