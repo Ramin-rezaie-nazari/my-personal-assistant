@@ -29,6 +29,7 @@
     "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence-final.mjs",
     "recipe-intelligence:ingredients": "node ./scripts/recipe-ingredient-intelligence.mjs",
     "recipe-intelligence:ingredients:self-test": "node ./scripts/ingredient-taxonomy-self-test.mjs",
+    "recipe-intelligence:ingredients:audit": "node ./scripts/recipe-ingredient-audit.mjs",
     "recipe-intelligence:nutrition": "node ./scripts/recipe-nutrition-estimate.mjs",
     "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs"
   },
