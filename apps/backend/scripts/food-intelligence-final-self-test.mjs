@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { resolveFoodEntity, resolverIntegrity } from './food-entity-resolver-final.mjs';
 import { resolveLocalizedFoodEntity, localePackIntegrity } from './localized-food-entity-resolver-final.mjs';
 import { normalizeQuantity } from './food-quantity-normalizer.mjs';
+import { sourcePartDecomposerSelfTest, splitSourcePart } from './food-source-part-decomposer.mjs';
 const integrity = resolverIntegrity();
 assert.equal(integrity.valid, true);
 assert.ok(integrity.knowledge_entries >= 8);
@@ -32,6 +33,12 @@ assert.equal(resolveFoodEntity('10–12 curry leaves').canonical_id, 'curry_leaf
 assert.equal(resolveFoodEntity('1 to 2 jalapeño peppers').canonical_id, 'jalapeno_pepper');
 assert.equal(resolveFoodEntity('2 cups 3/4-inch cubes peeled jicama').canonical_id, 'jicama');
 assert.equal(resolveFoodEntity('1/3 cup 1% buttermilk').canonical_id, 'buttermilk');
+
+const decomposer = sourcePartDecomposerSelfTest();
+assert.equal(decomposer.status, 'pass');
+assert.equal(splitSourcePart('chilled, 1 1/2 teaspoons agave syrup or honey, 1 1/2 tablespoons lemon juice, citrus wedges').length, 4);
+assert.equal(splitSourcePart('Accompaniments: butter lettuce; thinly sliced garlic; packaged kimchi; steamed white rice').length, 4);
+assert.equal(splitSourcePart('450 g chicken breasts, boneless, skinless').length, 1);
 
 const packageSizeCases = [
   ['2 3-ounce packages soft ladyfingers', 2, null, 'soft ladyfingers'],
@@ -200,4 +207,4 @@ const auditCases = [
 ];
 for (const [input, expected] of auditCases) assert.equal(resolveFoodEntity(input).canonical_id, expected, input);
 
-console.log(JSON.stringify({ status: 'pass', cases: 25 + packageSizeCases.length + auditCases.length, ...resolverIntegrity(), ...localePackIntegrity() }, null, 2));
+console.log(JSON.stringify({ status: 'pass', cases: 25 + packageSizeCases.length + auditCases.length + 7, ...resolverIntegrity(), ...localePackIntegrity() }, null, 2));
