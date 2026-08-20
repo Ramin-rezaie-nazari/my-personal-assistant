@@ -23,6 +23,12 @@ assert.equal(normalizeQuantity('1⁄2 tsp').quantity, 0.5);
 assert.equal(normalizeQuantity('1/2-inch pieces').quantity, null);
 assert.equal(normalizeQuantity('1 1/2-inch-thick').quantity, null);
 
+const ambiguous = resolveFoodEntity('2 6 ounces fillets branzino or black bass');
+assert.equal(ambiguous.canonical_id, null);
+assert.equal(ambiguous.review_required, true);
+assert.equal(ambiguous.reason, 'ambiguous_alternatives');
+assert.deepEqual(ambiguous.alternatives.map((x) => x.canonical_id), ['branzino', 'black_bass']);
+
 const auditCases = [
   ['2 serrano chiles, seeds removed, finely chopped', 'serrano_chile'],
   ['1 lb skirt steak', 'skirt_steak'],
@@ -117,7 +123,6 @@ const auditCases = [
   ['6 6-ounce Arctic char steaks', 'arctic_char'],
   ['4 6-ounce monkfish fillets', 'monkfish'],
   ['4 6-ounce tilapia fillets', 'tilapia'],
-  ['2 6-ounce fillets branzino or black bass', 'branzino'],
   ['1 750-ml chilled bottle Prosecco', 'prosecco'],
   ['2 8-inch whole wheat tortillas', 'whole_wheat_tortilla'],
   ['6-8 tablespoons jam of your choice', 'jam'],
@@ -150,4 +155,4 @@ const auditCases = [
 ];
 for (const [input, expected] of auditCases) assert.equal(resolveFoodEntity(input).canonical_id, expected, input);
 
-console.log(JSON.stringify({ status: 'pass', cases: 18 + auditCases.length, ...integrity, ...localePackIntegrity() }, null, 2));
+console.log(JSON.stringify({ status: 'pass', cases: 19 + auditCases.length, ...integrity, ...localePackIntegrity() }, null, 2));
