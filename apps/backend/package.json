@@ -29,9 +29,9 @@
     "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence-final.mjs",
     "recipe-intelligence:ingredients": "node ./scripts/recipe-ingredient-intelligence.mjs",
     "recipe-intelligence:ingredients:self-test": "node ./scripts/ingredient-taxonomy-self-test.mjs",
-    "recipe-intelligence:ingredients:resolver-self-test": "node ./scripts/food-entity-resolver-self-test.mjs",
-    "recipe-intelligence:food-self-test": "node ./scripts/food-intelligence-self-test.mjs",
-    "recipe-intelligence:food-entity": "node ./scripts/recipe-food-entity-intelligence.mjs",
+    "recipe-intelligence:ingredients:resolver-self-test": "node ./scripts/food-entity-resolver-v2-self-test.mjs",
+    "recipe-intelligence:food-self-test": "node ./scripts/food-intelligence-v2-self-test.mjs",
+    "recipe-intelligence:food-entity": "node ./scripts/recipe-food-entity-intelligence-v2.mjs",
     "recipe-intelligence:ingredients:audit": "node ./scripts/recipe-ingredient-audit.mjs",
     "recipe-intelligence:nutrition": "node ./scripts/recipe-nutrition-estimate.mjs",
     "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs"
