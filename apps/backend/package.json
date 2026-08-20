@@ -26,7 +26,9 @@
     "recipe-images:retry-quality": "node ./scripts/recipe-image-reprocess-retry.mjs",
     "recipe-intelligence:classify": "node ./scripts/recipe-intelligence-classify.mjs",
     "recipe-intelligence:profile": "node ./scripts/recipe-intelligence-profile.mjs",
-    "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence-final.mjs"
+    "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence-final.mjs",
+    "recipe-intelligence:ingredients": "node ./scripts/recipe-ingredient-intelligence.mjs",
+    "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
