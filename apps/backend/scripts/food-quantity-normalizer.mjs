@@ -19,22 +19,22 @@ const UNIT_ALTERNATION = [...UNITS.keys()]
 export function parseNumber(value) {
   const s = String(value || '').trim();
   if (FRACTIONS[s] != null) return FRACTIONS[s];
+  const mixed = s.match(/^(\d+)\s+(\d+)\/(\d+)$/);
+  if (mixed) {
+    const denominator = Number(mixed[3]);
+    return denominator ? Number(mixed[1]) + Number(mixed[2]) / denominator : null;
+  }
   if (/^\d+\/\d+$/.test(s)) {
     const [a, b] = s.split('/').map(Number);
     return b ? a / b : null;
   }
   if (/^\d+(?:\.\d+)?$/.test(s)) return Number(s);
-  const m = s.match(/^(\d+)\s+(\d+\/\d+)$/);
-  if (m) {
-    const [a, b] = m[2].split('/').map(Number);
-    return b ? Number(m[1]) + a / b : null;
-  }
   return null;
 }
 
 export function normalizeQuantity(input) {
   const raw = String(input || '').trim();
-  const numberMatch = raw.match(/^\s*(\d+(?:\.\d+)?|\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])/u);
+  const numberMatch = raw.match(/^\s*(\d+\s+\d+\/\d+|\d+(?:\.\d+)?|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])/u);
   if (!numberMatch) return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
 
   const quantity = parseNumber(numberMatch[1]);
