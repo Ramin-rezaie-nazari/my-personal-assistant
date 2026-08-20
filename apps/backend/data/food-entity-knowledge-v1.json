@@ -1,0 +1,12 @@
+[
+  {"id":"olive_oil","name":"olive oil","parent_id":null,"aliases":["olive oil","aceite de oliva","huile d'olive","زیتون oil","روغن زیتون"],"relations":[]},
+  {"id":"olive_oil_extra_virgin","name":"extra virgin olive oil","parent_id":"olive_oil","aliases":["extra virgin olive oil","evoo","huile d'olive extra vierge","aceite de oliva virgen extra","روغن زیتون فرابکر"],"relations":[{"type":"variant_of","target":"olive_oil"}]},
+  {"id":"olive_pomace_oil","name":"olive pomace oil","parent_id":null,"aliases":["olive pomace oil","pomace olive oil"],"relations":[{"type":"related_but_distinct","target":"olive_oil"}]},
+  {"id":"tomato","name":"tomato","parent_id":null,"aliases":["tomato","tomatoes","گوجه","گوجه فرنگی"],"relations":[]},
+  {"id":"tomato_cherry","name":"cherry tomato","parent_id":"tomato","aliases":["cherry tomato","cherry tomatoes","گوجه گیلاسی"],"relations":[{"type":"variant_of","target":"tomato"}]},
+  {"id":"milk","name":"milk","parent_id":null,"aliases":["milk","whole milk"," شیر","حليب","süt"],"relations":[]},
+  {"id":"wheat_flour","name":"wheat flour","parent_id":null,"aliases":["all-purpose flour","all purpose flour","wheat flour","آرد","آرد سفید"],"relations":[]},
+  {"id":"rice","name":"rice","parent_id":null,"aliases":["rice","برنج","رز","أرز","رز","pirinç"],"relations":[]},
+  {"id":"chicken_breast","name":"chicken breast","parent_id":"chicken","aliases":["chicken breast","chicken breasts","سینه مرغ","صدر الدجاج"],"relations":[{"type":"variant_of","target":"chicken"}]},
+  {"id":"chicken","name":"chicken","parent_id":null,"aliases":["chicken","مرغ","دجاج"],"relations":[]}
+]
