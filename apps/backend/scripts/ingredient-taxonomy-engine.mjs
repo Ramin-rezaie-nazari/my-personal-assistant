@@ -37,10 +37,9 @@ function cleanIngredientText(value) {
     .replace(quantityPrefix, '')
     .replace(unitWords, ' ')
     .replace(preparationTail, ' ')
-    .replace(/[,:;]+$/g, ' ');
+    .replace(/[,:;]+/g, ' ');
   return text
     .replace(/^[-*•]+\s*/, '')
-    .replace(/[,:;]+$/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
