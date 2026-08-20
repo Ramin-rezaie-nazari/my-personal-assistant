@@ -1,13 +1,14 @@
 import taxonomy from '../data/ingredient-taxonomy-v1.json' with { type: 'json' };
 import supplement from '../data/ingredient-taxonomy-supplement-v1.json' with { type: 'json' };
 import supplementV2 from '../data/ingredient-taxonomy-supplement-v2.json' with { type: 'json' };
+import supplementV3 from '../data/ingredient-taxonomy-supplement-v3.json' with { type: 'json' };
 import knowledge from '../data/food-entity-knowledge-v1.json' with { type: 'json' };
 import locales from '../data/food-entity-locale-pack-v1.json' with { type: 'json' };
 import { normalizeQuantity } from './food-quantity-normalizer.mjs';
 
-export const RESOLVER_VERSION = 'food-entity-resolver-final-v4';
+export const RESOLVER_VERSION = 'food-entity-resolver-final-v5';
 
-const all = [...taxonomy, ...supplement, ...supplementV2];
+const all = [...taxonomy, ...supplement, ...supplementV2, ...supplementV3];
 const knowledgeById = new Map(knowledge.map((x) => [x.id, x]));
 const canonicalRedirects = new Map([
   ['simple_syrup', 'syrup_simple'],
@@ -34,12 +35,12 @@ function stripPrep(value) {
     .replace(/^\s*(?:an?|one)\s+(?:instant[- ]read|deep[- ]fat|candy)\s+thermometer\b.*$/i, ' ')
     .replace(/\b(?:\d+(?:\.\d+)?\s*)?(?:ounce|ounces|oz|pound|pounds|lb|lbs|gram|grams|g|kg|ml|milliliter|milliliters|liter|liters)\s+(?:bottle|can|package|pkg|jar|bag|box|carton)\b/gi, ' ')
     .replace(/\b(?:bottle|bottles|can|cans|package|packages|pkg|jar|jars|bag|bags|box|boxes|carton|cartons)\b/gi, ' ')
-    .replace(/\b(?:small|medium|large|extra large|baby|young|tiny|mini)\b/gi, ' ')
+    .replace(/\b(?:small|medium|large|extra large|baby|young|tiny|mini|ripe|firm ripe|high quality|high-quality)\b/gi, ' ')
     .replace(/\b(?:freshly|fresh|finely|coarsely|roughly|thinly|thickly|lightly|heaping|packed|divided|melted|softened|chopped|diced|minced|sliced|grated|shredded|peeled|seeded|cored|boneless|skinless|trimmed|quartered|split|sifted|julienned|shucked|drained|rinsed|washed|shelled|husked|hulled|toasted|roasted|cooked|raw|optional|halved|lengthwise|at room temperature)\b/gi, ' ')
-    .replace(/\b(?:seeds? removed|casings? removed|skin removed|skin on|bone[- ]in|bones? removed)\b/gi, ' ')
+    .replace(/\b(?:seeds? removed|casings? removed|skin removed|skin on|bone[- ]in|bones? removed|center membrane removed|tough outer (?:layers|leaves) removed|picked over|wiped clean|tough ligament removed)\b/gi, ' ')
     .replace(/\([^)]*\)/g, ' ')
     .replace(/\b(?:for garnish|for serving|for frying|for dusting|for brushing|for drizzling|to taste|as needed|plus more|plus extra|or more|additional)\b.*$/i, ' ')
-    .replace(/[,:;]+/g, ' ')
+    .replace(/[,*:;]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -109,6 +110,25 @@ const semanticOverrides = [
   ['prepared horseradish', 'prepared_horseradish', 'prepared horseradish', 'condiment'],
   ['bottled horseradish', 'prepared_horseradish', 'prepared horseradish', 'condiment'],
   ['simple syrup', 'syrup_simple', 'simple syrup', 'sweetener'],
+  ['dried ancho chiles', 'ancho_chile', 'ancho chile', 'pepper'],
+  ['dried ancho chile', 'ancho_chile', 'ancho chile', 'pepper'],
+  ['dried new mexico or guajillo chiles', 'generic_chile', 'chile', 'pepper'],
+  ['drops yellow food coloring', 'food_coloring', 'food coloring', 'food_additive'],
+  ['food coloring', 'food_coloring', 'food coloring', 'food_additive'],
+  ['frozen blackberries', 'blackberry', 'blackberry', 'fruit'],
+  ['frozen raspberries', 'raspberry', 'raspberry', 'fruit'],
+  ['green chilies', 'green_chile', 'green chile', 'pepper'],
+  ['green thai chiles', 'thai_chile', 'thai chile', 'pepper'],
+  ['red thai chiles', 'thai_chile', 'thai chile', 'pepper'],
+  ['ground chia seeds', 'chia_seed', 'chia seed', 'seed'],
+  ['ground flax', 'flaxseed', 'flaxseed', 'seed'],
+  ['ground flaxseed', 'flaxseed', 'flaxseed', 'seed'],
+  ['miso', 'miso', 'miso', 'condiment'],
+  ['neutral oil', 'neutral_oil', 'neutral oil', 'oil_fat'],
+  ['polenta *', 'polenta', 'polenta', 'grain'],
+  ['quick cooking polenta', 'polenta', 'polenta', 'grain'],
+  ['popcorn kernels', 'popcorn_kernel', 'popcorn kernel', 'grain'],
+  ['rum', 'rum', 'rum', 'alcohol'],
 ];
 for (const [alias, id, name, category] of semanticOverrides) {
   registerAlias(alias, { id, name, category, source: 'semantic-override', locale: null }, 100);
