@@ -3,7 +3,7 @@ import taxonomy from '../data/ingredient-taxonomy-v1.json' with { type: 'json' }
 const VERSION = 'ingredient-taxonomy-v1';
 
 export function normalizeText(value) {
-  return String(value || '').toLowerCase().normalize('NFKD').replace(/\p{Diacritic}/gu, '').replace(/\s+/g, ' ').trim();
+  return String(value || '').toLowerCase().normalize('NFKD').replace(/\p{Diacritic}/gu, '').replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 function slugify(value) {
@@ -45,15 +45,17 @@ const aliasIndex = (() => {
 })();
 
 export function taxonomyIntegrity() {
-  const ids = new Set();
-  const duplicateIds = [];
+  const ids = new Map();
+  const conflictingIds = [];
   const emptyAliases = [];
   for (const item of taxonomy) {
-    if (ids.has(item.id)) duplicateIds.push(item.id);
-    ids.add(item.id);
+    if (!item?.id || !item?.name) continue;
+    const previous = ids.get(item.id);
+    if (previous && (previous.name !== item.name || previous.category !== item.category)) conflictingIds.push(item.id);
+    ids.set(item.id, item);
     if (!Array.isArray(item.aliases) || !item.aliases.length) emptyAliases.push(item.id);
   }
-  return { version: VERSION, entries: taxonomy.length, duplicateIds, emptyAliases, valid: duplicateIds.length === 0 && emptyAliases.length === 0 };
+  return { version: VERSION, entries: taxonomy.length, duplicateIds: [...new Set(taxonomy.map((x) => x.id))].filter((id, index, all) => all.indexOf(id) !== index), conflictingIds: [...new Set(conflictingIds)], emptyAliases, valid: conflictingIds.length === 0 && emptyAliases.length === 0 };
 }
 
 function matchesAlias(cleaned, alias) {
