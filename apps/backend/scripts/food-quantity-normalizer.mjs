@@ -58,12 +58,14 @@ export function normalizeQuantity(input) {
   // A leading count followed by a per-package size, e.g.
   // "2 3-ounce packages ladyfingers" or "1 28-ounce rib-eye steak".
   // The first number is the recipe quantity; the following size is metadata.
+  // IMPORTANT: a modifier such as "chilled" is only consumed when it is
+  // immediately followed by an explicit package word. Otherwise it belongs
+  // to the ingredient remainder (e.g. "1 750-ml chilled Prosecco").
   const packageSizePattern = new RegExp(
     `^(?<size>(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?)` +
       `(?:\\s*(?:[-–—]|to)\\s*(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?))?` +
       `)\\s*-?\\s*(?<sizeUnit>${SIZE_UNITS})(?:\\b|(?=\\s|-))` +
-      `(?:\\s+(?<modifier>${PACKAGE_MODIFIERS}))?` +
-      `(?:\\s+(?<package>${PACKAGE_WORDS})(?:\\b|(?=\\s)))?`,
+      `(?:\\s+(?:(?<modifier>${PACKAGE_MODIFIERS})\\s+)?(?<package>${PACKAGE_WORDS})(?:\\b|(?=\\s)))?`,
     'iu',
   );
   const packageSize = afterNumber.match(packageSizePattern);
