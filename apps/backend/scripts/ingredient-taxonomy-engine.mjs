@@ -37,7 +37,11 @@ function cleanIngredientText(value) {
     .replace(quantityPrefix, '')
     .replace(unitWords, ' ')
     .replace(preparationTail, ' ');
-  return text.replace(/\s+/g, ' ').replace(/^[-*•]+\s*/, '').trim();
+  return text
+    .replace(/^[-*•]+\s*/, '')
+    .replace(/[,:;]+$/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 const aliasIndex = (() => {
@@ -79,32 +83,13 @@ export function taxonomyIntegrity() {
   };
 }
 
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+function aliasSpecificity(alias) {
+  return alias.split(' ').length;
 }
 
 function matchesAlias(cleaned, alias) {
-  return new RegExp(`(?:^|\\s)${escapeRegExp(alias)}(?:$|\\s)`, 'i').test(cleaned);
-}
-
-function findAliasMatch(cleaned) {
-  if (!cleaned) return null;
-
-  const exact = aliasIndex.find(({ alias }) => alias === cleaned);
-  if (exact) return exact;
-
-  const candidates = aliasIndex.filter(({ alias }) => matchesAlias(cleaned, alias));
-  if (!candidates.length) return null;
-
-  candidates.sort((a, b) => {
-    const aWordCount = a.alias.split(' ').length;
-    const bWordCount = b.alias.split(' ').length;
-    if (bWordCount !== aWordCount) return bWordCount - aWordCount;
-    if (b.alias.length !== a.alias.length) return b.alias.length - a.alias.length;
-    return a.alias.localeCompare(b.alias);
-  });
-
-  return candidates[0];
+  const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?:^|\\s)${escaped}(?:$|\\s)`, 'i').test(cleaned);
 }
 
 function deriveDietary(flags) {
@@ -113,56 +98,35 @@ function deriveDietary(flags) {
   const egg = Boolean(flags.egg);
   const dairy = Boolean(flags.dairy);
   const animalDerived = Boolean(flags.animal_derived || meat || fish || egg || dairy);
-  return {
-    vegan_compatible_candidate: !animalDerived,
-    vegetarian_compatible_candidate: !meat && !fish,
-    animal_derived: animalDerived,
-  };
+  return { vegan_compatible_candidate: !animalDerived, vegetarian_compatible_candidate: !meat && !fish, animal_derived: animalDerived };
 }
 
 export function analyzeIngredientLine(rawLine) {
   const raw = String(rawLine || '').trim();
   const cleaned = cleanIngredientText(raw);
+  if (!cleaned) return { version: VERSION, raw, canonical_id: null, canonical_name: null, category: null, flags: {}, dietary: null, confidence: 0, review_required: true, reason: 'empty_after_normalization' };
 
-  if (!cleaned) {
-    return {
-      version: VERSION,
-      raw,
-      canonical_id: null,
-      canonical_name: null,
-      category: null,
-      flags: {},
-      dietary: null,
-      confidence: 0,
-      review_required: true,
-      reason: 'empty_after_normalization',
-    };
-  }
+  const exact = aliasIndex.find(({ alias }) => alias === cleaned);
+  const match = exact || aliasIndex
+    .filter(({ alias }) => matchesAlias(cleaned, alias))
+    .sort((a, b) => aliasSpecificity(b.alias) - aliasSpecificity(a.alias) || b.alias.length - a.alias.length)[0];
 
-  const match = findAliasMatch(cleaned);
-  if (!match) {
-    return {
-      version: VERSION,
-      raw,
-      normalized_text: cleaned,
-      canonical_id: `unknown:${slugify(cleaned)}`,
-      canonical_name: cleaned,
-      category: 'unknown',
-      flags: {},
-      dietary: {
-        vegan_compatible_candidate: null,
-        vegetarian_compatible_candidate: null,
-        animal_derived: null,
-      },
-      confidence: 0.35,
-      review_required: true,
-      reason: 'no_taxonomy_match',
-    };
-  }
+  if (!match) return {
+    version: VERSION,
+    raw,
+    normalized_text: cleaned,
+    canonical_id: `unknown:${slugify(cleaned)}`,
+    canonical_name: cleaned,
+    category: 'unknown',
+    flags: {},
+    dietary: { vegan_compatible_candidate: null, vegetarian_compatible_candidate: null, animal_derived: null },
+    confidence: 0.35,
+    review_required: true,
+    reason: 'no_taxonomy_match',
+  };
 
   const { item, alias } = match;
   const reviewRequired = Boolean(item.flags?.composition_ambiguous);
-
   return {
     version: VERSION,
     raw,
@@ -184,7 +148,6 @@ export function analyzeRecipeIngredients(rawIngredients) {
   const analyzed = raw.map(analyzeIngredientLine).filter((item) => item.canonical_id);
   const canonicalIds = [...new Set(analyzed.map((item) => item.canonical_id))];
   const unresolved = analyzed.filter((item) => item.review_required);
-
   const flags = {
     contains_animal_meat: analyzed.some((item) => item.flags.meat),
     contains_seafood: analyzed.some((item) => item.flags.fish || item.flags.crustacean),
@@ -196,31 +159,12 @@ export function analyzeRecipeIngredients(rawIngredients) {
     contains_soy: analyzed.some((item) => item.flags.soy),
     contains_gluten_candidate: analyzed.some((item) => item.flags.gluten_candidate),
   };
-
   const dietary = {
     vegan_candidate: !flags.contains_animal_meat && !flags.contains_seafood && !flags.contains_dairy && !flags.contains_egg,
     vegetarian_candidate: !flags.contains_animal_meat && !flags.contains_seafood,
   };
-
-  const confidence = analyzed.length
-    ? Number((analyzed.reduce((sum, item) => sum + item.confidence, 0) / analyzed.length).toFixed(3))
-    : 0;
-
-  return {
-    version: VERSION,
-    raw_count: raw.length,
-    analyzed_count: analyzed.length,
-    canonical_count: canonicalIds.length,
-    ingredients: analyzed,
-    canonical_ids: canonicalIds,
-    unresolved_count: unresolved.length,
-    unresolved: unresolved.map(({ raw: original, canonical_id, canonical_name, reason }) => ({ raw: original, canonical_id, canonical_name, reason })),
-    flags,
-    dietary,
-    confidence,
-    coverage: raw.length ? Number((analyzed.length / raw.length).toFixed(3)) : 0,
-    review_required: unresolved.length > 0,
-  };
+  const confidence = analyzed.length ? Number((analyzed.reduce((sum, item) => sum + item.confidence, 0) / analyzed.length).toFixed(3)) : 0;
+  return { version: VERSION, raw_count: raw.length, analyzed_count: analyzed.length, canonical_count: canonicalIds.length, ingredients: analyzed, canonical_ids: canonicalIds, unresolved_count: unresolved.length, unresolved: unresolved.map(({ raw: original, canonical_id, canonical_name, reason }) => ({ raw: original, canonical_id, canonical_name, reason })), flags, dietary, confidence, coverage: raw.length ? Number((analyzed.length / raw.length).toFixed(3)) : 0, review_required: unresolved.length > 0 };
 }
 
 export const TAXONOMY_VERSION = VERSION;
