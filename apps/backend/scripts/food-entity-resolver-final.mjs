@@ -40,11 +40,12 @@ function stripPrep(value) {
     .replace(/^\s*\d+(?:\.\d+)?%\s+(?=(?:buttermilk|milk)\b)/i, ' ')
     .replace(/\b(?:\d+(?:\.\d+)?\s*)?(?:ounce|ounces|oz|pound|pounds|lb|lbs|gram|grams|g|kg|ml|milliliter|milliliters|liter|liters)\s+(?:bottle|can|package|pkg|jar|bag|box|carton)\b/gi, ' ')
     .replace(/\b(?:bottle|bottles|can|cans|package|packages|pkg|jar|jars|bag|bags|box|boxes|carton|cartons)\b/gi, ' ')
+    .replace(/^\s*(?:additional|plus(?:\s+(?:extra|more))?)\s+/i, ' ')
     .replace(/\b(?:small|medium|large|extra large|baby|young|tiny|mini|ripe|firm ripe|high quality|high-quality)\b/gi, ' ')
     .replace(/\b(?:freshly|fresh|finely|coarsely|roughly|thinly|thickly|lightly|heaping|packed|divided|melted|softened|chopped|diced|minced|sliced|grated|shredded|peeled|seeded|cored|boneless|skinless|trimmed|quartered|split|sifted|julienned|shucked|drained|rinsed|washed|shelled|husked|hulled|toasted|roasted|cooked|raw|optional|halved|lengthwise|at room temperature)\b/gi, ' ')
     .replace(/\b(?:seeds? removed|casings? removed|skin removed|skin on|bone[- ]in|bones? removed|center membrane removed|tough outer (?:layers|leaves) removed|picked over|wiped clean|tough ligament removed)\b/gi, ' ')
     .replace(/\([^)]*\)/g, ' ')
-    .replace(/\b(?:for garnish|for serving|for frying|for dusting|for brushing|for drizzling|to taste|as needed|plus more|plus extra|or more|additional)\b.*$/i, ' ')
+    .replace(/\b(?:for garnish|for serving|for frying|for dusting|for brushing|for drizzling|to taste|as needed|plus more|plus extra|or more)\b.*$/i, ' ')
     .replace(/[,*:;]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
