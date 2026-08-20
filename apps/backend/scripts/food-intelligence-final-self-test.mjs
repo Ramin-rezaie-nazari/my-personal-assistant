@@ -18,6 +18,10 @@ assert.equal(resolveFoodEntity('dragon fruit protein concentrate').canonical_id,
 assert.equal(resolveFoodEntity('dragon fruit protein concentrate').review_required, true);
 assert.equal(resolveLocalizedFoodEntity('aceite de oliva', 'es').canonical_id, 'olive_oil');
 assert.equal(normalizeQuantity('1 1/2 cups').quantity, 1.5);
+assert.equal(normalizeQuantity('1/2 cup').quantity, 0.5);
+assert.equal(normalizeQuantity('1⁄2 tsp').quantity, 0.5);
+assert.equal(normalizeQuantity('1/2-inch pieces').quantity, null);
+assert.equal(normalizeQuantity('1 1/2-inch-thick').quantity, null);
 
 const auditCases = [
   ['2 serrano chiles, seeds removed, finely chopped', 'serrano_chile'],
@@ -107,4 +111,4 @@ const auditCases = [
 ];
 for (const [input, expected] of auditCases) assert.equal(resolveFoodEntity(input).canonical_id, expected, input);
 
-console.log(JSON.stringify({ status: 'pass', cases: 12 + auditCases.length, ...integrity, ...localePackIntegrity() }, null, 2));
+console.log(JSON.stringify({ status: 'pass', cases: 18 + auditCases.length, ...integrity, ...localePackIntegrity() }, null, 2));
