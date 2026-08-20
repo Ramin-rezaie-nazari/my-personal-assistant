@@ -41,18 +41,11 @@ function parseSourceIngredients(value) {
   if (!value) return [];
   const text = String(value).trim();
   try {
-    const parsed = JSON.parse(text.replace(/'/g, '"'));
+    const parsed = JSON.parse(text.replace(/'/g, '\"'));
     return Array.isArray(parsed) ? parsed : [];
   } catch {
-    return text.replace(/^\[/, '').replace(/\]$/, '').split(/\s*[,;]\s*/).map((item) => item.trim()).filter(Boolean);
+    return text.replace(/^\[/, '').replace(/\]$/, '').split(/\s*;\s*/).map((item) => item.replace(/^['\"]|['\"]$/g, '').trim()).filter(Boolean);
   }
-}
-
-function splitIngredientParts(raw) {
-  const normalized = String(raw || '').trim();
-  if (!normalized) return [];
-  const pieces = normalized.replace(/\([^)]*\)/g, ' ').split(/,|;|\band\b/gi).map((part) => part.trim()).filter(Boolean);
-  return pieces.length > 1 ? pieces : [normalized];
 }
 
 async function main() {
@@ -74,19 +67,22 @@ async function main() {
     const rawLines = rawByRecipe.get(recipe.id) || [];
     if (rawLines.length) recipesWithRaw += 1;
     for (const rawLine of rawLines) {
-      for (const part of splitIngredientParts(rawLine)) {
-        totalParts += 1;
-        const analysis = analyzeIngredientLine(part);
-        if (analysis.review_required) {
-          const key = analysis.normalized_text || part.toLowerCase();
-          const current = unresolved.get(key) || { normalized: key, count: 0, examples: [], reasons: new Set() };
-          current.count += 1;
-          current.reasons.add(analysis.reason);
-          if (current.examples.length < 5 && !current.examples.includes(part)) current.examples.push(part);
-          unresolved.set(key, current);
-        } else {
-          resolved += 1;
-        }
+      if (!String(rawLine || '').trim()) continue;
+      totalParts += 1;
+      const analysis = analyzeIngredientLine(rawLine);
+      if (analysis.non_ingredient) {
+        nonIngredient += 1;
+        continue;
+      }
+      if (analysis.review_required || analysis.category === 'unknown') {
+        const key = analysis.normalized_text || String(rawLine).toLowerCase();
+        const current = unresolved.get(key) || { normalized: key, count: 0, examples: [], reasons: new Set() };
+        current.count += 1;
+        current.reasons.add(analysis.reason);
+        if (current.examples.length < 5 && !current.examples.includes(rawLine)) current.examples.push(rawLine);
+        unresolved.set(key, current);
+      } else {
+        resolved += 1;
       }
     }
   }
@@ -103,7 +99,8 @@ async function main() {
     recipesWithRaw,
     totalParts,
     resolvedParts: resolved,
-    unresolvedParts: totalParts - resolved - nonIngredient,
+    nonIngredientParts: nonIngredient,
+    unresolvedParts: unresolved.size ? top.reduce((sum, item) => sum + item.count, 0) : 0,
     unresolvedUnique: unresolved.size,
     top,
     taxonomyEntries: integrity.entries,
