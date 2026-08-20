@@ -55,12 +55,6 @@ export function normalizeQuantity(input) {
 
   const afterNumber = normalizedRaw.slice(leading.length).trimStart();
 
-  // A leading count followed by a per-package size, e.g.
-  // "2 3-ounce packages ladyfingers" or "1 28-ounce rib-eye steak".
-  // The first number is the recipe quantity; the following size is metadata.
-  // IMPORTANT: a modifier such as "chilled" is only consumed when it is
-  // immediately followed by an explicit package word. Otherwise it belongs
-  // to the ingredient remainder (e.g. "1 750-ml chilled Prosecco").
   const packageSizePattern = new RegExp(
     `^(?<size>(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?)` +
       `(?:\\s*(?:[-–—]|to)\\s*(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?))?` +
@@ -79,11 +73,11 @@ export function normalizeQuantity(input) {
       package_size: packageSize.groups?.size || null,
       package_size_unit: packageSize.groups?.sizeUnit || null,
       package_type: packageSize.groups?.package || null,
+      package_modifier: packageSize.groups?.modifier || null,
       confidence: 0.98,
     };
   }
 
-  // Protect dimensions such as "1/2-inch pieces" and "1 1/2-inch-thick".
   if (/^(?:[-–—]\s*)?inch(?:es)?\b/i.test(afterNumber) || /^['’\"]\s*(?:-|to|$)/i.test(afterNumber)) {
     return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
   }
