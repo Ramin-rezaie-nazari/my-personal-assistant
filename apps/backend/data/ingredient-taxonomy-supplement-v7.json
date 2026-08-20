@@ -19,5 +19,9 @@
   {"id":"ziti","name":"Ziti","aliases":["ziti"],"category":"pasta"},
   {"id":"nutmeg","name":"Nutmeg","aliases":["whole nutmegs","whole nutmeg"],"category":"spice"},
   {"id":"unsweetened_cocoa","name":"Unsweetened Cocoa Powder","aliases":["unsweetened cocoa","unsweetened cocoa powder"],"category":"baking"},
-  {"id":"prosecco","name":"Prosecco","aliases":["prosecco"],"category":"alcohol"}
+  {"id":"prosecco","name":"Prosecco","aliases":["prosecco"],"category":"alcohol"},
+  {"id":"curry_leaf","name":"Curry Leaf","aliases":["curry leaf","curry leaves"],"category":"herb_spice"},
+  {"id":"jalapeno_pepper","name":"Jalapeño Pepper","aliases":["jalapeno","jalapenos","jalapeño","jalapeños","jalapeno pepper","jalapeño pepper","jalapeno peppers","jalapeño peppers"],"category":"pepper"},
+  {"id":"jicama","name":"Jicama","aliases":["jicama"],"category":"vegetable"},
+  {"id":"buttermilk","name":"Buttermilk","aliases":["buttermilk","1% buttermilk","lowfat buttermilk","low-fat buttermilk"],"category":"dairy"}
 ]
