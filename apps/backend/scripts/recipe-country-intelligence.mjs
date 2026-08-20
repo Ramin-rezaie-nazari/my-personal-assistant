@@ -101,7 +101,7 @@ function infer(recipe) {
   if (recipe.cuisine) {
     const c = norm(recipe.cuisine);
     const explicitCuisine = [...countryNameAliases.entries()].filter(([alias]) => c.includes(alias));
-    for (const [alias, iso2] of explicitCuisine) add(iso2, c.includes('inspired') ? 'inspired' : 'traditional', c.includes('inspired') ? 0.76 : 0.86, `recipe.cuisine=${recipe.cuisine}`);
+    for (const [alias, iso2] of explicitCuisine) add(iso2, c.includes('inspired') ? 'associated' : 'traditional', c.includes('inspired') ? 0.76 : 0.86, `recipe.cuisine=${recipe.cuisine}`);
   }
   const global = globalPatterns.some((re) => re.test(text));
   const globalConfidence = global ? 0.78 : 0;
@@ -111,7 +111,7 @@ function infer(recipe) {
 async function seedCountries(countries) {
   for (let i = 0; i < countries.length; i += 500) {
     const rows = countries.slice(i, i + 500).map((c) => ({ iso2: c.iso2, iso3: c.iso3, name: c.name, continent: c.continent, subregion: c.subregion, target_recipes: 100, minimum_recipes: 20, is_active: true }));
-    await rest('countries', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(rows) });
+    await rest('countries?on_conflict=iso2', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify(rows) });
   }
 }
 
