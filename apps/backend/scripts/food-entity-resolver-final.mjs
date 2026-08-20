@@ -3,16 +3,189 @@ import supplement from '../data/ingredient-taxonomy-supplement-v1.json' with { t
 import knowledge from '../data/food-entity-knowledge-v1.json' with { type: 'json' };
 import locales from '../data/food-entity-locale-pack-v1.json' with { type: 'json' };
 import { normalizeQuantity } from './food-quantity-normalizer.mjs';
-export const RESOLVER_VERSION='food-entity-resolver-final-v1';
-const all=[...taxonomy,...supplement];
-const knowledgeById=new Map(knowledge.map(x=>[x.id,x]));
-function norm(v){return String(v||'').toLowerCase().normalize('NFKD').replace(/\p{Diacritic}/gu,'').replace(/[\u2018\u2019]/g,"'").replace(/[-_/]+/g,' ').replace(/\s+/g,' ').trim();}
-const aliases=new Map();
-for(const item of [...all,...knowledge])for(const a of [item.name,...(item.aliases||[])]){const k=norm(a);if(k)aliases.set(k,{id:item.id,name:item.name,category:item.category||'food',source:'knowledge' in item?'knowledge':'taxonomy'});}
-for(const pack of locales)for(const [id,names] of Object.entries(pack.aliases||{}))for(const a of names)aliases.set(norm(a),{id,name:knowledgeById.get(id)?.name||id,category:knowledgeById.get(id)?.category||'food',source:'locale',locale:pack.locale});
-function stripPrep(v){return v.replace(/\([^)]*\)/g,' ').replace(/\b(?:freshly|fresh|finely|coarsely|roughly|thinly|thickly|lightly|heaping|packed|divided|melted|softened|chopped|diced|minced|sliced|grated|shredded|peeled|seeded|cored|boneless|skinless|dried|ground|crushed|toasted|roasted|cooked|uncooked|washed|shelled|trimmed|quartered|split|sifted|julienned|shucked|drained|rinsed|optional)\b/gi,' ').replace(/\b(?:for garnish|for serving|for frying|for dusting|for brushing|for drizzling|to taste|as needed|plus more|plus extra|or more|additional)\b.*$/i,' ').replace(/[,:;]+/g,' ').replace(/\s+/g,' ').trim();}
-export function canonicalizeText(v){return stripPrep(norm(v));}
-function score(text,key){if(text===key)return 1;const toks=text.split(' '), ks=key.split(' ');if(ks.length>toks.length)return 0;if(text.startsWith(key+' ')||text.endsWith(' '+key))return .91;const hit=ks.filter(x=>toks.includes(x)).length/ks.length;return hit>=1?.82+Math.min(.07,hit*.07):0;}
-export function resolveFoodEntity(input){const raw=String(input||'').trim();if(!raw)return{resolver_version:RESOLVER_VERSION,raw,canonical_id:null,review_required:true,confidence:0,reason:'empty_input'};const q=normalizeQuantity(raw);const cleaned=canonicalizeText(q.remainder);const exact=aliases.get(cleaned);if(exact)return result(raw,exact,q,'exact');let best=null;for(const [key,e] of aliases){const s=score(cleaned,key);if(s&&( !best||s>best.s||(s===best.s&&key.length>best.key.length)))best={key,e,s};}if(!best||best.s<.8)return{resolver_version:RESOLVER_VERSION,raw,normalized:cleaned,canonical_id:null,canonical_name:null,quantity:q.quantity,unit:q.unit,confidence:0,review_required:true,relations:[],reason:'unresolved_offline'};return result(raw,best.e,q,best.s>.9?'fuzzy-high':'fuzzy');}
-function result(raw,e,q,matched_by){const k=knowledgeById.get(e.id);const confidence=e.source==='knowledge'||e.source==='locale'?0.99:matched_by==='exact'?.985:.93;return{resolver_version:RESOLVER_VERSION,raw,normalized:canonicalizeText(q.remainder),canonical_id:e.id,canonical_name:k?.name||e.name,category:k?.category||e.category,matched_by,matched_alias:e.id,quantity:q.quantity,unit:q.unit,confidence,review_required:false,parent_id:k?.parent_id||null,relations:k?.relations||[]};}
-export function resolverIntegrity(){const ids=new Set(all.map(x=>x.id).concat(knowledge.map(x=>x.id)));return{version:RESOLVER_VERSION,taxonomy_entries:all.length,knowledge_entries:knowledge.length,alias_entries:aliases.size,valid:ids.size>0};}
+
+export const RESOLVER_VERSION = 'food-entity-resolver-final-v2';
+
+const all = [...taxonomy, ...supplement];
+const knowledgeById = new Map(knowledge.map((x) => [x.id, x]));
+
+function norm(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[-_/]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function stripPrep(value) {
+  return String(value || '')
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/\b(?:freshly|fresh|finely|coarsely|roughly|thinly|thickly|lightly|heaping|packed|divided|melted|softened|chopped|diced|minced|sliced|grated|shredded|peeled|seeded|cored|boneless|skinless|trimmed|quartered|split|sifted|julienned|shucked|drained|rinsed|optional)\b/gi, ' ')
+    .replace(/\b(?:for garnish|for serving|for frying|for dusting|for brushing|for drizzling|to taste|as needed|plus more|plus extra|or more|additional)\b.*$/i, ' ')
+    .replace(/[,:;]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function canonicalizeText(value) {
+  return stripPrep(norm(value));
+}
+
+const aliasEntries = [];
+const aliasMap = new Map();
+
+function registerAlias(alias, entry, priority) {
+  const key = norm(alias);
+  if (!key) return;
+  const candidate = { ...entry, key, priority };
+  const existing = aliasMap.get(key);
+  if (!existing || priority > existing.priority || (priority === existing.priority && candidate.id === existing.id)) {
+    aliasMap.set(key, candidate);
+  }
+}
+
+for (const item of all) {
+  for (const alias of [item.name, ...(item.aliases || [])]) {
+    registerAlias(alias, {
+      id: item.id,
+      name: item.name,
+      category: item.category || 'food',
+      source: 'taxonomy',
+      locale: null,
+    }, 20);
+  }
+}
+
+for (const item of knowledge) {
+  for (const alias of [item.name, ...(item.aliases || [])]) {
+    registerAlias(alias, {
+      id: item.id,
+      name: item.name,
+      category: item.category || 'food',
+      source: 'knowledge',
+      locale: null,
+    }, 30);
+  }
+}
+
+for (const pack of locales) {
+  for (const [id, names] of Object.entries(pack.aliases || {})) {
+    for (const alias of names) {
+      registerAlias(alias, {
+        id,
+        name: knowledgeById.get(id)?.name || id,
+        category: knowledgeById.get(id)?.category || 'food',
+        source: 'locale',
+        locale: pack.locale,
+      }, 40);
+    }
+  }
+}
+
+for (const entry of aliasMap.values()) aliasEntries.push(entry);
+aliasEntries.sort((a, b) => b.key.length - a.key.length || b.priority - a.priority || a.id.localeCompare(b.id));
+
+function score(text, key) {
+  if (text === key) return 1;
+  const tokens = text.split(' ').filter(Boolean);
+  const keys = key.split(' ').filter(Boolean);
+  if (keys.length > tokens.length) return 0;
+  if (text.startsWith(`${key} `) || text.endsWith(` ${key}`)) return 0.91;
+  const hit = keys.filter((token) => tokens.includes(token)).length / keys.length;
+  return hit >= 1 ? 0.82 + Math.min(0.07, hit * 0.07) : 0;
+}
+
+function result(raw, entry, quantityData, matchedBy) {
+  const knowledgeItem = knowledgeById.get(entry.id);
+  const confidence = entry.source === 'knowledge' || entry.source === 'locale'
+    ? 0.99
+    : matchedBy === 'exact' ? 0.985 : 0.93;
+
+  return {
+    resolver_version: RESOLVER_VERSION,
+    raw,
+    normalized: canonicalizeText(quantityData.remainder),
+    canonical_id: entry.id,
+    canonical_name: knowledgeItem?.name || entry.name,
+    category: knowledgeItem?.category || entry.category,
+    matched_by: matchedBy,
+    matched_alias: entry.key,
+    quantity: quantityData.quantity,
+    unit: quantityData.unit,
+    confidence,
+    review_required: false,
+    parent_id: knowledgeItem?.parent_id || null,
+    relations: knowledgeItem?.relations || [],
+    locale: entry.locale || null,
+  };
+}
+
+export function resolveFoodEntity(input) {
+  const raw = String(input || '').trim();
+  if (!raw) {
+    return {
+      resolver_version: RESOLVER_VERSION,
+      raw,
+      canonical_id: null,
+      review_required: true,
+      confidence: 0,
+      reason: 'empty_input',
+    };
+  }
+
+  const quantityData = normalizeQuantity(raw);
+  const cleaned = canonicalizeText(quantityData.remainder);
+
+  const exact = aliasMap.get(cleaned);
+  if (exact) return result(raw, exact, quantityData, 'exact');
+
+  let best = null;
+  for (const entry of aliasEntries) {
+    const candidateScore = score(cleaned, entry.key);
+    if (!candidateScore) continue;
+    if (!best || candidateScore > best.score || (candidateScore === best.score && entry.key.length > best.entry.key.length)) {
+      best = { entry, score: candidateScore };
+    }
+  }
+
+  if (!best || best.score < 0.8) {
+    return {
+      resolver_version: RESOLVER_VERSION,
+      raw,
+      normalized: cleaned,
+      canonical_id: null,
+      canonical_name: null,
+      quantity: quantityData.quantity,
+      unit: quantityData.unit,
+      confidence: 0,
+      review_required: true,
+      relations: [],
+      reason: 'unresolved_offline',
+    };
+  }
+
+  return result(raw, best.entry, quantityData, best.score > 0.9 ? 'fuzzy-high' : 'fuzzy');
+}
+
+export function resolverIntegrity() {
+  const ids = new Set([...all.map((x) => x.id), ...knowledge.map((x) => x.id)]);
+  const conflicts = [];
+  const seen = new Map();
+  for (const entry of aliasEntries) {
+    const previous = seen.get(entry.key);
+    if (previous && previous.id !== entry.id) conflicts.push({ alias: entry.key, ids: [previous.id, entry.id] });
+    seen.set(entry.key, entry);
+  }
+
+  return {
+    version: RESOLVER_VERSION,
+    taxonomy_entries: all.length,
+    knowledge_entries: knowledge.length,
+    alias_entries: aliasEntries.length,
+    conflicting_aliases: conflicts,
+    valid: ids.size > 0 && conflicts.length === 0,
+  };
+}
