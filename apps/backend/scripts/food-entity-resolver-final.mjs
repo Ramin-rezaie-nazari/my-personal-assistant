@@ -2,13 +2,14 @@ import taxonomy from '../data/ingredient-taxonomy-v1.json' with { type: 'json' }
 import supplement from '../data/ingredient-taxonomy-supplement-v1.json' with { type: 'json' };
 import supplementV2 from '../data/ingredient-taxonomy-supplement-v2.json' with { type: 'json' };
 import supplementV3 from '../data/ingredient-taxonomy-supplement-v3.json' with { type: 'json' };
+import supplementV4 from '../data/ingredient-taxonomy-supplement-v4.json' with { type: 'json' };
 import knowledge from '../data/food-entity-knowledge-v1.json' with { type: 'json' };
 import locales from '../data/food-entity-locale-pack-v1.json' with { type: 'json' };
 import { normalizeQuantity } from './food-quantity-normalizer.mjs';
 
-export const RESOLVER_VERSION = 'food-entity-resolver-final-v5';
+export const RESOLVER_VERSION = 'food-entity-resolver-final-v6';
 
-const all = [...taxonomy, ...supplement, ...supplementV2, ...supplementV3];
+const all = [...taxonomy, ...supplement, ...supplementV2, ...supplementV3, ...supplementV4];
 const knowledgeById = new Map(knowledge.map((x) => [x.id, x]));
 const canonicalRedirects = new Map([
   ['simple_syrup', 'syrup_simple'],
@@ -110,10 +111,9 @@ const semanticOverrides = [
   ['prepared horseradish', 'prepared_horseradish', 'prepared horseradish', 'condiment'],
   ['bottled horseradish', 'prepared_horseradish', 'prepared horseradish', 'condiment'],
   ['simple syrup', 'syrup_simple', 'simple syrup', 'sweetener'],
-  ['dried ancho chiles', 'ancho_chile', 'ancho chile', 'pepper'],
-  ['dried ancho chile', 'ancho_chile', 'ancho chile', 'pepper'],
+  ['additional olive oil', 'olive_oil', 'olive oil', 'oil_fat'],
+  ['additional powdered sugar', 'powdered_sugar', 'powdered sugar', 'sweetener'],
   ['drops yellow food coloring', 'food_coloring', 'food coloring', 'food_additive'],
-  ['food coloring', 'food_coloring', 'food coloring', 'food_additive'],
   ['frozen blackberries', 'blackberry', 'blackberry', 'fruit'],
   ['frozen raspberries', 'raspberry', 'raspberry', 'fruit'],
   ['green chilies', 'green_chile', 'green chile', 'pepper'],
