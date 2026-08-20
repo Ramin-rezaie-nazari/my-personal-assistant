@@ -19,6 +19,15 @@ assert.equal(chicken.dietary.vegetarian_compatible_candidate, false);
 const chickenSingular = analyzeIngredientLine('1 chicken breast');
 assert.equal(chickenSingular.canonical_id, 'chicken_breast');
 
+const pepper = analyzeIngredientLine('freshly ground black pepper');
+assert.equal(pepper.canonical_id, 'black_pepper');
+
+const pinchSalt = analyzeIngredientLine('pinch of kosher salt');
+assert.equal(pinchSalt.canonical_id, 'salt');
+
+const lemon = analyzeIngredientLine('juice of 1 lemon');
+assert.equal(lemon.canonical_id, 'lemon');
+
 const milk = analyzeIngredientLine('1 cup whole milk');
 assert.equal(milk.canonical_id, 'milk');
 assert.equal(milk.flags.dairy, true);
@@ -34,8 +43,9 @@ const recipe = analyzeRecipeIngredients([
   '2 eggs',
   '1/2 cup all-purpose flour',
   '1 tbsp tahini',
+  'kosher salt, freshly ground black pepper',
 ]);
-assert.equal(recipe.raw_count, 5);
+assert.equal(recipe.raw_count, 6);
 assert.equal(recipe.coverage, 1);
 assert.equal(recipe.flags.contains_dairy, true);
 assert.equal(recipe.flags.contains_egg, true);
@@ -43,5 +53,7 @@ assert.equal(recipe.flags.contains_sesame, true);
 assert.equal(recipe.flags.contains_gluten_candidate, true);
 assert.equal(recipe.dietary.vegan_candidate, false);
 assert.equal(recipe.dietary.vegetarian_candidate, true);
+assert.ok(recipe.canonical_ids.includes('salt'));
+assert.ok(recipe.canonical_ids.includes('black_pepper'));
 
-console.log(JSON.stringify({ status: 'pass', taxonomyEntries: integrity.entries, cases: 7 }, null, 2));
+console.log(JSON.stringify({ status: 'pass', taxonomyEntries: integrity.entries, cases: 11 }, null, 2));
