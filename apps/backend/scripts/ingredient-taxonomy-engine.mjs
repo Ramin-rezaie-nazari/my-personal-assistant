@@ -3,7 +3,13 @@ import taxonomy from '../data/ingredient-taxonomy-v1.json' with { type: 'json' }
 const VERSION = 'ingredient-taxonomy-v1';
 
 export function normalizeText(value) {
-  return String(value || '').toLowerCase().normalize('NFKD').replace(/\p{Diacritic}/gu, '').replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[-_]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 function slugify(value) {
@@ -27,7 +33,10 @@ const unitWords = /\b(?:oz|ounce|ounces|lb|lbs|pound|pounds|kg|g|gram|grams|ml|l
 const preparationTail = /(?:,|\(|\s+)\b(?:finely|coarsely|roughly|thinly|thickly|freshly|lightly|heaping|packed|divided|melted|softened|chopped|diced|minced|sliced|grated|shredded|peeled|seeded|cored|boneless|skinless|fresh|dried|ground|crushed|toasted|roasted|cooked|uncooked|optional|to taste|as needed|for garnish|for serving|plus more|or more)\b.*$/i;
 
 function cleanIngredientText(value) {
-  let text = normalizeText(value).replace(quantityPrefix, '').replace(unitWords, ' ').replace(preparationTail, ' ');
+  let text = normalizeText(value)
+    .replace(quantityPrefix, '')
+    .replace(unitWords, ' ')
+    .replace(preparationTail, ' ');
   return text.replace(/\s+/g, ' ').replace(/^[-*•]+\s*/, '').trim();
 }
 
@@ -41,7 +50,11 @@ const aliasIndex = (() => {
       map.set(key, { alias: key, item });
     }
   }
-  return [...map.values()].sort((a, b) => b.alias.length - a.alias.length);
+  return [...map.values()].sort((a, b) => {
+    const lengthDelta = b.alias.length - a.alias.length;
+    if (lengthDelta !== 0) return lengthDelta;
+    return a.alias.localeCompare(b.alias);
+  });
 })();
 
 export function taxonomyIntegrity() {
@@ -55,19 +68,43 @@ export function taxonomyIntegrity() {
     ids.set(item.id, item);
     if (!Array.isArray(item.aliases) || !item.aliases.length) emptyAliases.push(item.id);
   }
+  const duplicateIds = [...new Set(taxonomy.map((x) => x.id))].filter((id, index, all) => all.indexOf(id) !== index);
   return {
     version: VERSION,
     entries: taxonomy.length,
-    duplicateIds: [...new Set(taxonomy.map((x) => x.id))].filter((id, index, all) => all.indexOf(id) !== index),
+    duplicateIds,
     conflictingIds: [...new Set(conflictingIds)],
     emptyAliases,
-    valid: conflictingIds.length === 0 && emptyAliases.length === 0,
+    valid: duplicateIds.length === 0 && conflictingIds.length === 0 && emptyAliases.length === 0,
   };
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function matchesAlias(cleaned, alias) {
-  const escaped = alias.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`(?:^|\\s)${escaped}(?:$|\\s)`, 'i').test(cleaned);
+  return new RegExp(`(?:^|\\s)${escapeRegExp(alias)}(?:$|\\s)`, 'i').test(cleaned);
+}
+
+function findAliasMatch(cleaned) {
+  if (!cleaned) return null;
+
+  const exact = aliasIndex.find(({ alias }) => alias === cleaned);
+  if (exact) return exact;
+
+  const candidates = aliasIndex.filter(({ alias }) => matchesAlias(cleaned, alias));
+  if (!candidates.length) return null;
+
+  candidates.sort((a, b) => {
+    const aWordCount = a.alias.split(' ').length;
+    const bWordCount = b.alias.split(' ').length;
+    if (bWordCount !== aWordCount) return bWordCount - aWordCount;
+    if (b.alias.length !== a.alias.length) return b.alias.length - a.alias.length;
+    return a.alias.localeCompare(b.alias);
+  });
+
+  return candidates[0];
 }
 
 function deriveDietary(flags) {
@@ -76,17 +113,56 @@ function deriveDietary(flags) {
   const egg = Boolean(flags.egg);
   const dairy = Boolean(flags.dairy);
   const animalDerived = Boolean(flags.animal_derived || meat || fish || egg || dairy);
-  return { vegan_compatible_candidate: !animalDerived, vegetarian_compatible_candidate: !meat && !fish, animal_derived: animalDerived };
+  return {
+    vegan_compatible_candidate: !animalDerived,
+    vegetarian_compatible_candidate: !meat && !fish,
+    animal_derived: animalDerived,
+  };
 }
 
 export function analyzeIngredientLine(rawLine) {
   const raw = String(rawLine || '').trim();
   const cleaned = cleanIngredientText(raw);
-  if (!cleaned) return { version: VERSION, raw, canonical_id: null, canonical_name: null, category: null, flags: {}, dietary: null, confidence: 0, review_required: true, reason: 'empty_after_normalization' };
-  const match = aliasIndex.find(({ alias }) => matchesAlias(cleaned, alias));
-  if (!match) return { version: VERSION, raw, normalized_text: cleaned, canonical_id: `unknown:${slugify(cleaned)}`, canonical_name: cleaned, category: 'unknown', flags: {}, dietary: { vegan_compatible_candidate: null, vegetarian_compatible_candidate: null, animal_derived: null }, confidence: 0.35, review_required: true, reason: 'no_taxonomy_match' };
+
+  if (!cleaned) {
+    return {
+      version: VERSION,
+      raw,
+      canonical_id: null,
+      canonical_name: null,
+      category: null,
+      flags: {},
+      dietary: null,
+      confidence: 0,
+      review_required: true,
+      reason: 'empty_after_normalization',
+    };
+  }
+
+  const match = findAliasMatch(cleaned);
+  if (!match) {
+    return {
+      version: VERSION,
+      raw,
+      normalized_text: cleaned,
+      canonical_id: `unknown:${slugify(cleaned)}`,
+      canonical_name: cleaned,
+      category: 'unknown',
+      flags: {},
+      dietary: {
+        vegan_compatible_candidate: null,
+        vegetarian_compatible_candidate: null,
+        animal_derived: null,
+      },
+      confidence: 0.35,
+      review_required: true,
+      reason: 'no_taxonomy_match',
+    };
+  }
+
   const { item, alias } = match;
   const reviewRequired = Boolean(item.flags?.composition_ambiguous);
+
   return {
     version: VERSION,
     raw,
@@ -108,6 +184,7 @@ export function analyzeRecipeIngredients(rawIngredients) {
   const analyzed = raw.map(analyzeIngredientLine).filter((item) => item.canonical_id);
   const canonicalIds = [...new Set(analyzed.map((item) => item.canonical_id))];
   const unresolved = analyzed.filter((item) => item.review_required);
+
   const flags = {
     contains_animal_meat: analyzed.some((item) => item.flags.meat),
     contains_seafood: analyzed.some((item) => item.flags.fish || item.flags.crustacean),
@@ -119,12 +196,31 @@ export function analyzeRecipeIngredients(rawIngredients) {
     contains_soy: analyzed.some((item) => item.flags.soy),
     contains_gluten_candidate: analyzed.some((item) => item.flags.gluten_candidate),
   };
+
   const dietary = {
     vegan_candidate: !flags.contains_animal_meat && !flags.contains_seafood && !flags.contains_dairy && !flags.contains_egg,
     vegetarian_candidate: !flags.contains_animal_meat && !flags.contains_seafood,
   };
-  const confidence = analyzed.length ? Number((analyzed.reduce((sum, item) => sum + item.confidence, 0) / analyzed.length).toFixed(3)) : 0;
-  return { version: VERSION, raw_count: raw.length, analyzed_count: analyzed.length, canonical_count: canonicalIds.length, ingredients: analyzed, canonical_ids: canonicalIds, unresolved_count: unresolved.length, unresolved: unresolved.map(({ raw: original, canonical_id, canonical_name, reason }) => ({ raw: original, canonical_id, canonical_name, reason })), flags, dietary, confidence, coverage: raw.length ? Number((analyzed.length / raw.length).toFixed(3)) : 0, review_required: unresolved.length > 0 };
+
+  const confidence = analyzed.length
+    ? Number((analyzed.reduce((sum, item) => sum + item.confidence, 0) / analyzed.length).toFixed(3))
+    : 0;
+
+  return {
+    version: VERSION,
+    raw_count: raw.length,
+    analyzed_count: analyzed.length,
+    canonical_count: canonicalIds.length,
+    ingredients: analyzed,
+    canonical_ids: canonicalIds,
+    unresolved_count: unresolved.length,
+    unresolved: unresolved.map(({ raw: original, canonical_id, canonical_name, reason }) => ({ raw: original, canonical_id, canonical_name, reason })),
+    flags,
+    dietary,
+    confidence,
+    coverage: raw.length ? Number((analyzed.length / raw.length).toFixed(3)) : 0,
+    review_required: unresolved.length > 0,
+  };
 }
 
 export const TAXONOMY_VERSION = VERSION;
