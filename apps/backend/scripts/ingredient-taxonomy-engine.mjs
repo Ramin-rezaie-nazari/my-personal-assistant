@@ -28,21 +28,36 @@ function parseArray(value) {
   }
 }
 
-const quantityPrefix = /^\s*(?:about\s+)?(?:\d+(?:[\d\s./-]*\d)?|[a-z]+)\b/i;
+const quantityPrefix = /^\s*(?:about\s+)?(?:\d+(?:\s+\d+\/\d+|[./]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s*/i;
 const unitWords = /\b(?:oz|ounce|ounces|lb|lbs|pound|pounds|kg|g|gram|grams|ml|l|liter|liters|cup|cups|tbsp|tablespoon|tablespoons|tsp|teaspoon|teaspoons|pinch|dash|clove|cloves|can|cans|package|packages|pkg|stick|sticks|slice|slices|piece|pieces|bunch|bunches|sprig|sprigs)\b/gi;
-const preparationTail = /(?:,|\(|\s+)\b(?:finely|coarsely|roughly|thinly|thickly|freshly|lightly|heaping|packed|divided|melted|softened|chopped|diced|minced|sliced|grated|shredded|peeled|seeded|cored|boneless|skinless|fresh|dried|ground|crushed|toasted|roasted|cooked|uncooked|optional|to taste|as needed|for garnish|for serving|plus more|or more)\b.*$/i;
+const culinaryModifiers = /\b(?:freshly|fresh|finely|coarsely|roughly|thinly|thickly|lightly|heaping|packed|divided|melted|softened|chopped|diced|minced|sliced|grated|shredded|peeled|seeded|cored|boneless|skinless|dried|ground|crushed|toasted|roasted|cooked|uncooked)\b/gi;
+const trailingNote = /\b(?:for garnish|for serving|for frying|for dusting|for brushing|for drizzling|for surface|for grill|to taste|as needed|plus more|or more)\b.*$/i;
 
 function cleanIngredientText(value) {
   let text = normalizeText(value)
+    .replace(/\([^)]*\)/g, ' ')
     .replace(quantityPrefix, '')
+    .replace(/^(?:a\s+)?(?:pinch|dash)\s+of\s+/i, '')
+    .replace(/^(?:juice|zest)\s+of\s+(?:\d+(?:\/\d+)?\s+)?/i, '')
     .replace(unitWords, ' ')
-    .replace(/[,:;]+/g, ' ')
-    .replace(preparationTail, ' ');
+    .replace(trailingNote, ' ')
+    .replace(culinaryModifiers, ' ')
+    .replace(/[,:;]+/g, ' ');
   return text
     .replace(/^[-*•]+\s*/, '')
-    .replace(/[,:;]+$/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function splitIngredientParts(raw) {
+  const normalized = String(raw || '').trim();
+  if (!normalized) return [];
+  const pieces = normalized
+    .replace(/\([^)]*\)/g, ' ')
+    .split(/,|;|\band\b/gi)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  return pieces.length > 1 ? pieces : [normalized];
 }
 
 const aliasIndex = (() => {
@@ -146,7 +161,7 @@ export function analyzeIngredientLine(rawLine) {
 
 export function analyzeRecipeIngredients(rawIngredients) {
   const raw = parseArray(rawIngredients);
-  const analyzed = raw.map(analyzeIngredientLine).filter((item) => item.canonical_id);
+  const analyzed = raw.flatMap((line) => splitIngredientParts(line).map(analyzeIngredientLine)).filter((item) => item.canonical_id);
   const canonicalIds = [...new Set(analyzed.map((item) => item.canonical_id))];
   const unresolved = analyzed.filter((item) => item.review_required);
   const flags = {
