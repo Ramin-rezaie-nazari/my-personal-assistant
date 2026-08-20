@@ -78,6 +78,15 @@ function parseLeadingNumber(text) {
   };
 }
 
+function parseAdditiveQuantity(value) {
+  const match = String(value || '').match(new RegExp(`^\\s*plus\\s+(${NUMBER_TOKEN})\\s+(${UNIT_ALTERNATION})\\b\\s*(.*)$`, 'iu'));
+  if (!match) return null;
+  const quantity = parseNumber(match[1]);
+  const unit = UNITS.get(match[2].toLowerCase()) || null;
+  if (quantity == null || !unit) return null;
+  return { quantity, unit, remainder: match[3].trim() };
+}
+
 export function normalizeQuantity(input) {
   const raw = String(input || '').trim();
   const normalizedRaw = normalizeFractionSlash(raw).replace(/^\s*(?:about|approximately|around|at least|up to)\s+/i, '');
@@ -123,14 +132,19 @@ export function normalizeQuantity(input) {
   const unitMatch = afterNumber.match(unitPattern);
   if (unitMatch) {
     const unitKey = unitMatch[1].toLowerCase();
+    const primaryUnit = UNITS.get(unitKey) || null;
+    const primaryRemainder = afterNumber.slice(unitMatch[0].length).trim();
+    const additive = parseAdditiveQuantity(primaryRemainder);
     return {
       raw,
       quantity: leading.quantity,
       quantity_min: leading.quantity_min,
       quantity_max: leading.quantity_max,
       is_range: leading.is_range,
-      unit: UNITS.get(unitKey) || null,
-      remainder: afterNumber.slice(unitMatch[0].length).trim(),
+      unit: primaryUnit,
+      remainder: additive ? additive.remainder : primaryRemainder,
+      additional_quantity: additive?.quantity ?? null,
+      additional_unit: additive?.unit ?? null,
       confidence: 1,
     };
   }
