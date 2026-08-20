@@ -11,7 +11,8 @@ const UNITS = new Map([
 ]);
 
 const FRACTIONS = { '¼': .25, '½': .5, '¾': .75, '⅓': 1 / 3, '⅔': 2 / 3, '⅛': .125, '⅜': .375, '⅝': .625, '⅞': .875 };
-const UNIT_ALTERNATION = [...UNITS.keys()].sort((a, b) => b.length - a.length)
+const UNIT_ALTERNATION = [...UNITS.keys()]
+  .sort((a, b) => b.length - a.length)
   .map((unit) => unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   .join('|');
 
@@ -33,14 +34,14 @@ export function parseNumber(value) {
 
 export function normalizeQuantity(input) {
   const raw = String(input || '').trim();
-  const numberMatch = raw.match(/^\s*(\d+(?:\.\d+)?|\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])\b?/u);
+  const numberMatch = raw.match(/^\s*(\d+(?:\.\d+)?|\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])/u);
   if (!numberMatch) return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
 
   const quantity = parseNumber(numberMatch[1]);
   if (quantity == null) return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
 
   const afterNumber = raw.slice(numberMatch[0].length).trimStart();
-  const unitPattern = new RegExp(`^(${UNIT_ALTERNATION})\\b\\s*`, 'iu');
+  const unitPattern = new RegExp(`^(${UNIT_ALTERNATION})(?=\\s|$)`, 'iu');
   const unitMatch = afterNumber.match(unitPattern);
   if (unitMatch) {
     const unitKey = unitMatch[1].toLowerCase();
