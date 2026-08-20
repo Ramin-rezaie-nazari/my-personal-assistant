@@ -1,0 +1,66 @@
+[
+  {
+    "id": "olive_oil_extra_virgin",
+    "name": "extra virgin olive oil",
+    "parent_id": "olive_oil",
+    "aliases": ["extra virgin olive oil", "extra-virgin olive oil", "evoo", "extra virgin olive oil evoo"],
+    "relations": [{"type":"variant_of","target":"olive_oil"}],
+    "confidence": 0.99
+  },
+  {
+    "id": "olive_oil_virgin",
+    "name": "virgin olive oil",
+    "parent_id": "olive_oil",
+    "aliases": ["virgin olive oil"],
+    "relations": [{"type":"variant_of","target":"olive_oil"}],
+    "confidence": 0.99
+  },
+  {
+    "id": "olive_pomace_oil",
+    "name": "olive pomace oil",
+    "parent_id": null,
+    "aliases": ["olive pomace oil", "pomace olive oil"],
+    "relations": [{"type":"related_but_distinct","target":"olive_oil"}],
+    "confidence": 0.99
+  },
+  {
+    "id": "tomato_cherry",
+    "name": "cherry tomato",
+    "parent_id": "tomato",
+    "aliases": ["cherry tomato", "cherry tomatoes"],
+    "relations": [{"type":"variant_of","target":"tomato"}],
+    "confidence": 0.99
+  },
+  {
+    "id": "tomato_roma",
+    "name": "roma tomato",
+    "parent_id": "tomato",
+    "aliases": ["roma tomato", "roma tomatoes", "romano tomato"],
+    "relations": [{"type":"variant_of","target":"tomato"}],
+    "confidence": 0.99
+  },
+  {
+    "id": "almond_flour",
+    "name": "almond flour",
+    "parent_id": null,
+    "aliases": ["almond flour", "almond meal"],
+    "relations": [{"type":"derived_from","target":"almond"}],
+    "confidence": 0.99
+  },
+  {
+    "id": "coconut_milk",
+    "name": "coconut milk",
+    "parent_id": "coconut",
+    "aliases": ["coconut milk", "full fat coconut milk", "lite coconut milk"],
+    "relations": [{"type":"derived_from","target":"coconut"}],
+    "confidence": 0.99
+  },
+  {
+    "id": "corn_tortilla",
+    "name": "corn tortilla",
+    "parent_id": "tortilla",
+    "aliases": ["corn tortilla", "corn tortillas", "maize tortilla"],
+    "relations": [{"type":"variant_of","target":"tortilla"}],
+    "confidence": 0.99
+  }
+]
