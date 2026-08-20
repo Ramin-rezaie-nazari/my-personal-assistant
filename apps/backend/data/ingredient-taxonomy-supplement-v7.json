@@ -1,0 +1,23 @@
+[
+  {"id":"port","name":"Port","aliases":["port"],"category":"alcohol"},
+  {"id":"psyllium_husk","name":"Psyllium Husk","aliases":["psyllium husk","psyllium husk powder","psyllium-husk powder"],"category":"fiber"},
+  {"id":"queso_fresco","name":"Queso Fresco","aliases":["queso fresco"],"category":"cheese"},
+  {"id":"quick_cooking_grits","name":"Quick-Cooking Grits","aliases":["quick cooking grits","quick-cooking grits"],"category":"grain"},
+  {"id":"red_curry_paste","name":"Red Curry Paste","aliases":["red curry paste"],"category":"condiment"},
+  {"id":"rosewater","name":"Rosewater","aliases":["rosewater","rose water"],"category":"flavoring"},
+  {"id":"sirloin_steak","name":"Sirloin Steak","aliases":["sirloin steak","top sirloin steak"],"category":"beef"},
+  {"id":"spaghettini","name":"Spaghettini","aliases":["spaghettini","thin spaghetti"],"category":"pasta"},
+  {"id":"spicy_italian_sausage","name":"Spicy Italian Sausage","aliases":["spicy italian sausage"],"category":"sausage"},
+  {"id":"squid","name":"Squid","aliases":["squid","cleaned squid","squid bodies and tentacles"],"category":"seafood"},
+  {"id":"striped_bass","name":"Striped Bass","aliases":["striped bass","striped bass fillets"],"category":"seafood"},
+  {"id":"tamarind_block","name":"Tamarind Block","aliases":["tamarind from a pliable block","tamarind (not concentrate) from a pliable block"],"category":"fruit_paste"},
+  {"id":"tapioca_pearl","name":"Tapioca Pearl","aliases":["tapioca pearls","small tapioca pearls","pearl tapioca"],"category":"starch"},
+  {"id":"toffee_bit","name":"Toffee Bit","aliases":["toffee bits"],"category":"baking"},
+  {"id":"tortilla","name":"Tortilla","aliases":["tortillas"],"category":"bread_grain"},
+  {"id":"whole_wheat_rigatoni","name":"Whole Wheat Rigatoni","aliases":["whole wheat rigatoni","whole-wheat rigatoni"],"category":"pasta"},
+  {"id":"zest_orange","name":"Orange Zest","aliases":["zest of 2 oranges","finely grated zest of 2 oranges","orange zest"],"category":"fruit_flavor"},
+  {"id":"ziti","name":"Ziti","aliases":["ziti"],"category":"pasta"},
+  {"id":"nutmeg","name":"Nutmeg","aliases":["whole nutmegs","whole nutmeg"],"category":"spice"},
+  {"id":"unsweetened_cocoa","name":"Unsweetened Cocoa Powder","aliases":["unsweetened cocoa","unsweetened cocoa powder"],"category":"baking"},
+  {"id":"prosecco","name":"Prosecco","aliases":["prosecco"],"category":"alcohol"}
+]
