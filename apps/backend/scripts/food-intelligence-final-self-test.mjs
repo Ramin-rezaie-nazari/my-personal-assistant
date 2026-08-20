@@ -29,7 +29,7 @@ const packageSizeCases = [
   ['2 5-pound whole Peking ducks', 2, null, 'whole Peking ducks'],
   ['3 6 1/2-ounce cans chopped clams in juice', 3, null, 'chopped clams in juice'],
   ['6 6-ounce Arctic char steaks', 6, null, 'Arctic char steaks'],
-  ['1 750-ml chilled bottle Prosecco', 1, null, 'chilled bottle Prosecco'],
+  ['1 750-ml chilled bottle Prosecco', 1, null, 'chilled Prosecco'],
 ];
 for (const [input, quantity, unit, remainder] of packageSizeCases) {
   const parsed = normalizeQuantity(input);
