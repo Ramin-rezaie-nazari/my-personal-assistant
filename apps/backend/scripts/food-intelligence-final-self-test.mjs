@@ -22,6 +22,16 @@ assert.equal(normalizeQuantity('1/2 cup').quantity, 0.5);
 assert.equal(normalizeQuantity('1⁄2 tsp').quantity, 0.5);
 assert.equal(normalizeQuantity('1/2-inch pieces').quantity, null);
 assert.equal(normalizeQuantity('1 1/2-inch-thick').quantity, null);
+assert.equal(normalizeQuantity('10–12 curry leaves').quantity_min, 10);
+assert.equal(normalizeQuantity('10–12 curry leaves').quantity_max, 12);
+assert.equal(normalizeQuantity('1 to 2 jalapeño peppers').quantity_min, 1);
+assert.equal(normalizeQuantity('1 to 2 jalapeño peppers').quantity_max, 2);
+assert.equal(normalizeQuantity('6-8 tablespoons jam').quantity_min, 6);
+assert.equal(normalizeQuantity('6-8 tablespoons jam').quantity_max, 8);
+assert.equal(resolveFoodEntity('10–12 curry leaves').canonical_id, 'curry_leaf');
+assert.equal(resolveFoodEntity('1 to 2 jalapeño peppers').canonical_id, 'jalapeno_pepper');
+assert.equal(resolveFoodEntity('2 cups 3/4-inch cubes peeled jicama').canonical_id, 'jicama');
+assert.equal(resolveFoodEntity('1/3 cup 1% buttermilk').canonical_id, 'buttermilk');
 
 const packageSizeCases = [
   ['2 3-ounce packages soft ladyfingers', 2, null, 'soft ladyfingers'],
@@ -169,7 +179,25 @@ const auditCases = [
   ['8 ounces burrata', 'burrata'],
   ['3/4 cup butterscotch chips', 'butterscotch_chip'],
   ['2 teaspoons Cajun Spice Mix', 'cajun_spice_mix'],
+  ['1/4 cup Port', 'port'],
+  ['3/4 teaspoon psyllium husk powder', 'psyllium_husk'],
+  ['6 ounces queso fresco, crumbled', 'queso_fresco'],
+  ['1/2 cup quick-cooking grits', 'quick_cooking_grits'],
+  ['1/3 cup red curry paste', 'red_curry_paste'],
+  ['1/4 teaspoon rosewater', 'rosewater'],
+  ['1/2 lb boneless sirloin steak', 'sirloin_steak'],
+  ['1/2 pound spaghettini', 'spaghettini'],
+  ['1 pound spicy Italian sausage, casings removed', 'spicy_italian_sausage'],
+  ['1 pound squid, cleaned', 'squid'],
+  ['4 striped bass fillets', 'striped_bass'],
+  ['2 ounces tamarind from a pliable block', 'tamarind_block'],
+  ['1 1/2 cups tapioca pearls', 'tapioca_pearl'],
+  ['1/2 cup toffee bits', 'toffee_bit'],
+  ['12 tortillas', 'tortilla'],
+  ['12 ounces whole wheat rigatoni', 'whole_wheat_rigatoni'],
+  ['zest of 2 oranges', 'zest_orange'],
+  ['2 pounds ziti', 'ziti'],
 ];
 for (const [input, expected] of auditCases) assert.equal(resolveFoodEntity(input).canonical_id, expected, input);
 
-console.log(JSON.stringify({ status: 'pass', cases: 19 + packageSizeCases.length + auditCases.length, ...resolverIntegrity(), ...localePackIntegrity() }, null, 2));
+console.log(JSON.stringify({ status: 'pass', cases: 25 + packageSizeCases.length + auditCases.length, ...resolverIntegrity(), ...localePackIntegrity() }, null, 2));
