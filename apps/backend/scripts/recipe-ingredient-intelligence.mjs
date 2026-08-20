@@ -1,4 +1,5 @@
 import { analyzeRecipeIngredients, TAXONOMY_VERSION, taxonomyIntegrity } from './ingredient-taxonomy-engine.mjs';
+import { classifyNonFoodPart } from './ingredient-non-food-classifier.mjs';
 
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, '');
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -50,6 +51,32 @@ function parseSourceIngredients(value) {
   }
 }
 
+function enrichAnalysis(analysis) {
+  const nonIngredientParts = analysis.unresolved
+    .map((item) => ({ ...item, classification: classifyNonFoodPart(item.raw) }))
+    .filter((item) => item.classification)
+    .map(({ raw, classification }) => ({ raw, ...classification }));
+  const unresolvedIngredientParts = analysis.unresolved.filter((item) => !classifyNonFoodPart(item.raw));
+  const sourcePartCount = analysis.analyzed_count + analysis.unresolved_count;
+  const classifiedPartCount = analysis.analyzed_count + nonIngredientParts.length;
+
+  return {
+    ...analysis,
+    source_part_count: sourcePartCount,
+    classified_part_count: classifiedPartCount,
+    resolved_ingredient_count: analysis.analyzed_count,
+    non_ingredient_count: nonIngredientParts.length,
+    unresolved_ingredient_count: unresolvedIngredientParts.length,
+    unresolved: unresolvedIngredientParts,
+    non_ingredient_parts: nonIngredientParts,
+    ingredient_coverage: (analysis.analyzed_count + unresolvedIngredientParts.length) > 0
+      ? Number((analysis.analyzed_count / (analysis.analyzed_count + unresolvedIngredientParts.length)).toFixed(4))
+      : 1,
+    classification_coverage: sourcePartCount ? Number((classifiedPartCount / sourcePartCount).toFixed(4)) : 1,
+    review_required: unresolvedIngredientParts.length > 0,
+  };
+}
+
 async function patchProfile(recipeId, analysis) {
   const existing = await rest(`recipe_intelligence_profiles?recipe_id=eq.${recipeId}&select=evidence&limit=1`);
   const currentEvidence = existing?.[0]?.evidence && typeof existing[0].evidence === 'object' ? existing[0].evidence : {};
@@ -80,19 +107,23 @@ async function main() {
   let processed = 0;
   let withRawIngredients = 0;
   let totalSourceParts = 0;
-  let unresolvedParts = 0;
+  let resolvedIngredientParts = 0;
+  let nonIngredientParts = 0;
+  let unresolvedIngredientParts = 0;
   let fullyCoveredRecipes = 0;
   let partiallyCoveredRecipes = 0;
   let noIngredientRecipes = 0;
 
   for (let i = 0; i < recipes.length; i += BATCH) {
     for (const recipe of recipes.slice(i, i + BATCH)) {
-      const analysis = analyzeRecipeIngredients(rawByRecipe.get(recipe.id) || []);
+      const analysis = enrichAnalysis(analyzeRecipeIngredients(rawByRecipe.get(recipe.id) || []));
       if (analysis.raw_count) {
         withRawIngredients += 1;
-        totalSourceParts += analysis.analyzed_count + analysis.unresolved_count;
-        unresolvedParts += analysis.unresolved_count;
-        if (analysis.coverage === 1) fullyCoveredRecipes += 1;
+        totalSourceParts += analysis.source_part_count;
+        resolvedIngredientParts += analysis.resolved_ingredient_count;
+        nonIngredientParts += analysis.non_ingredient_count;
+        unresolvedIngredientParts += analysis.unresolved_ingredient_count;
+        if (analysis.unresolved_ingredient_count === 0) fullyCoveredRecipes += 1;
         else partiallyCoveredRecipes += 1;
       } else {
         noIngredientRecipes += 1;
@@ -106,7 +137,9 @@ async function main() {
       total: recipes.length,
       withRawIngredients,
       totalSourceParts,
-      unresolvedParts,
+      resolvedIngredientParts,
+      nonIngredientParts,
+      unresolvedIngredientParts,
       fullyCoveredRecipes,
       partiallyCoveredRecipes,
       noIngredientRecipes,
@@ -121,9 +154,12 @@ async function main() {
     withRawIngredients,
     noIngredientRecipes,
     totalSourceParts,
-    unresolvedParts,
-    resolvedParts: totalSourceParts - unresolvedParts,
-    partCoverage: totalSourceParts ? Number(((totalSourceParts - unresolvedParts) / totalSourceParts).toFixed(4)) : 1,
+    resolvedIngredientParts,
+    nonIngredientParts,
+    unresolvedIngredientParts,
+    classifiedParts: resolvedIngredientParts + nonIngredientParts,
+    ingredientPartCoverage: totalSourceParts ? Number((resolvedIngredientParts / Math.max(1, resolvedIngredientParts + unresolvedIngredientParts)).toFixed(4)) : 1,
+    classificationCoverage: totalSourceParts ? Number(((resolvedIngredientParts + nonIngredientParts) / totalSourceParts).toFixed(4)) : 1,
     fullyCoveredRecipes,
     partiallyCoveredRecipes,
     taxonomyEntries: integrity.entries,
