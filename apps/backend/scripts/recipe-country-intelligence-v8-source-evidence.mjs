@@ -80,23 +80,37 @@ for (const row of stepRows) {
   stepsByRecipe.set(row.recipe_id, list);
 }
 
+const evidenceStats = {
+  rawEvidenceRecipes: 0,
+  ingredientEvidenceRecipes: 0,
+  stepEvidenceRecipes: 0,
+  taggedRecipes: 0,
+};
+
 function decorateRecipes(rows) {
   return rows.map((recipe) => {
     const raw = rawByRecipe.get(recipe.id) || {};
     const ingredients = ingredientsByRecipe.get(recipe.id) || [];
     const steps = stepsByRecipe.get(recipe.id) || [];
+    const rawIngredientText = raw.raw_ingredients || '';
+    const rawInstructionText = raw.raw_instructions || '';
     const tags = evidenceTags([
-      raw.raw_ingredients,
-      raw.raw_instructions,
+      rawIngredientText,
+      rawInstructionText,
       ...ingredients,
       ...steps,
     ].filter(Boolean).join(' '));
 
+    if (rawIngredientText || rawInstructionText) evidenceStats.rawEvidenceRecipes += 1;
+    if (ingredients.length > 0) evidenceStats.ingredientEvidenceRecipes += 1;
+    if (steps.length > 0) evidenceStats.stepEvidenceRecipes += 1;
+    if (tags.length > 0) evidenceStats.taggedRecipes += 1;
+
     return {
       ...recipe,
-      // V6 already understands regional/country tokens; this injects only
-      // high-signal composite evidence derived from the raw recipe source.
-      description: [recipe.description, tags.join(' ')].filter(Boolean).join(' '),
+      // Country aliases in V6 are evaluated from cuisine, so source-derived
+      // country tags are injected there. This keeps the base recipe unchanged.
+      cuisine: [recipe.cuisine, ...tags].filter(Boolean).join(' / '),
     };
   });
 }
@@ -115,6 +129,9 @@ globalThis.fetch = async (input, init) => {
   });
 };
 
-// V6 executes its main() on import. The fetch interceptor above must therefore
-// be installed in this same process so the raw-source evidence reaches V6.
+process.env.RECIPE_COUNTRY_VERSION_OVERRIDE = 'country-rules-v8-source-evidence';
+
 await import('./recipe-country-intelligence-v6.mjs');
+
+// eslint-disable-next-line no-console
+console.error(JSON.stringify({ evidenceCoverage: evidenceStats }));
