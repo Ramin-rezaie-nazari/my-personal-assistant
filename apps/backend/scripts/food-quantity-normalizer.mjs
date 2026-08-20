@@ -16,8 +16,12 @@ const UNIT_ALTERNATION = [...UNITS.keys()]
   .map((unit) => unit.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
   .join('|');
 
+function normalizeFractionSlash(value) {
+  return String(value || '').replace(/⁄/g, '/');
+}
+
 export function parseNumber(value) {
-  const s = String(value || '').trim();
+  const s = normalizeFractionSlash(value).trim();
   if (FRACTIONS[s] != null) return FRACTIONS[s];
   const mixed = s.match(/^(\d+)\s+(\d+)\/(\d+)$/);
   if (mixed) {
@@ -34,13 +38,22 @@ export function parseNumber(value) {
 
 export function normalizeQuantity(input) {
   const raw = String(input || '').trim();
-  const numberMatch = raw.match(/^\s*(\d+\s+\d+\/\d+|\d+(?:\.\d+)?|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])/u);
+  const normalizedRaw = normalizeFractionSlash(raw);
+  const numberMatch = normalizedRaw.match(/^\s*(\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?)/u);
   if (!numberMatch) return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
 
-  const quantity = parseNumber(numberMatch[1]);
+  const quantityToken = numberMatch[1];
+  const quantity = parseNumber(quantityToken);
   if (quantity == null) return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
 
-  const afterNumber = raw.slice(numberMatch[0].length).trimStart();
+  const afterNumber = normalizedRaw.slice(numberMatch[0].length).trimStart();
+
+  // Protect dimensions such as "1/2-inch pieces" and "1 1/2-inch-thick".
+  // These are preparation/shape descriptors, not the recipe quantity.
+  if (/^(?:[-–—]\s*)?inch(?:es)?\b/i.test(afterNumber) || /^['’\"]\s*(?:-|to|$)/i.test(afterNumber)) {
+    return { raw, quantity: null, unit: null, remainder: raw, confidence: 0 };
+  }
+
   const unitPattern = new RegExp(`^(${UNIT_ALTERNATION})(?=\\s|$)`, 'iu');
   const unitMatch = afterNumber.match(unitPattern);
   if (unitMatch) {
