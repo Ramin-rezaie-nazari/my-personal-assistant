@@ -79,19 +79,38 @@ async function main() {
 
   let processed = 0;
   let withRawIngredients = 0;
-  let unresolvedLines = 0;
+  let totalSourceParts = 0;
+  let unresolvedParts = 0;
   let fullyCoveredRecipes = 0;
+  let partiallyCoveredRecipes = 0;
+  let noIngredientRecipes = 0;
 
   for (let i = 0; i < recipes.length; i += BATCH) {
     for (const recipe of recipes.slice(i, i + BATCH)) {
       const analysis = analyzeRecipeIngredients(rawByRecipe.get(recipe.id) || []);
-      if (analysis.raw_count) withRawIngredients += 1;
-      unresolvedLines += analysis.unresolved_count;
-      if (analysis.raw_count === 0 || analysis.coverage === 1) fullyCoveredRecipes += 1;
+      if (analysis.raw_count) {
+        withRawIngredients += 1;
+        totalSourceParts += analysis.analyzed_count + analysis.unresolved_count;
+        unresolvedParts += analysis.unresolved_count;
+        if (analysis.coverage === 1) fullyCoveredRecipes += 1;
+        else partiallyCoveredRecipes += 1;
+      } else {
+        noIngredientRecipes += 1;
+        fullyCoveredRecipes += 1;
+      }
       if (!DRY_RUN) await patchProfile(recipe.id, analysis);
       processed += 1;
     }
-    console.log(JSON.stringify({ progress: processed, total: recipes.length, withRawIngredients, unresolvedLines, fullyCoveredRecipes }, null, 2));
+    console.log(JSON.stringify({
+      progress: processed,
+      total: recipes.length,
+      withRawIngredients,
+      totalSourceParts,
+      unresolvedParts,
+      fullyCoveredRecipes,
+      partiallyCoveredRecipes,
+      noIngredientRecipes,
+    }, null, 2));
   }
 
   console.log(JSON.stringify({
@@ -100,8 +119,13 @@ async function main() {
     processed,
     total: recipes.length,
     withRawIngredients,
-    unresolvedLines,
+    noIngredientRecipes,
+    totalSourceParts,
+    unresolvedParts,
+    resolvedParts: totalSourceParts - unresolvedParts,
+    partCoverage: totalSourceParts ? Number(((totalSourceParts - unresolvedParts) / totalSourceParts).toFixed(4)) : 1,
     fullyCoveredRecipes,
+    partiallyCoveredRecipes,
     taxonomyEntries: integrity.entries,
     version: VERSION,
   }, null, 2));
