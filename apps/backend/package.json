@@ -25,7 +25,8 @@
     "recipe-images:reprocess-quality": "node ./scripts/recipe-image-reprocess-quality.mjs",
     "recipe-images:retry-quality": "node ./scripts/recipe-image-reprocess-retry.mjs",
     "recipe-intelligence:classify": "node ./scripts/recipe-intelligence-classify.mjs",
-    "recipe-intelligence:profile": "node ./scripts/recipe-intelligence-profile.mjs"
+    "recipe-intelligence:profile": "node ./scripts/recipe-intelligence-profile.mjs",
+    "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
