@@ -23,6 +23,11 @@ function normalizeFractionSlash(value) {
   return String(value || '').replace(/⁄/g, '/');
 }
 
+function unicodeFractionValue(value) {
+  const fraction = String(value || '').trim();
+  return FRACTIONS[fraction] ?? null;
+}
+
 function parseRangeToken(value) {
   const normalized = normalizeFractionSlash(value).trim();
   const range = normalized.match(/^(.+?)\s*(?:[-–—]|\bto\b)\s*(.+)$/iu);
@@ -39,6 +44,8 @@ function parseRangeToken(value) {
 export function parseNumber(value) {
   const s = normalizeFractionSlash(value).trim();
   if (FRACTIONS[s] != null) return FRACTIONS[s];
+  const unicodeMixed = s.match(/^(\d+)\s*([¼½¾⅓⅔⅛⅜⅝⅞])$/u);
+  if (unicodeMixed) return Number(unicodeMixed[1]) + unicodeFractionValue(unicodeMixed[2]);
   const mixed = s.match(/^(\d+)\s+(\d+)\/(\d+)$/);
   if (mixed) {
     const denominator = Number(mixed[3]);
@@ -52,9 +59,11 @@ export function parseNumber(value) {
   return null;
 }
 
+const NUMBER_TOKEN = '(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|\\d+\\s*[¼½¾⅓⅔⅛⅜⅝⅞]|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?)';
+
 function parseLeadingNumber(text) {
   const normalized = normalizeFractionSlash(text);
-  const rangeMatch = normalized.match(/^\s*(\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?)(?:\s*(?:[-–—]|\bto\b)\s*(\d+\s+\d+\/\d+|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\d+(?:\.\d+)?))?/iu);
+  const rangeMatch = normalized.match(new RegExp(`^\\s*(${NUMBER_TOKEN})(?:\\s*(?:[-–—]|\\bto\\b)\\s*(${NUMBER_TOKEN}))?`, 'iu'));
   if (!rangeMatch) return null;
   const first = parseNumber(rangeMatch[1]);
   const second = rangeMatch[2] ? parseNumber(rangeMatch[2]) : first;
@@ -78,8 +87,8 @@ export function normalizeQuantity(input) {
   const afterNumber = normalizedRaw.slice(leading.length).trimStart();
 
   const packageSizePattern = new RegExp(
-    `^(?<size>(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?)` +
-      `(?:\\s*(?:[-–—]|to)\\s*(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?))?` +
+    `^(?<size>${NUMBER_TOKEN}` +
+      `(?:\\s*(?:[-–—]|to)\\s*${NUMBER_TOKEN})?` +
       `)\\s*-?\\s*(?<sizeUnit>${SIZE_UNITS})(?:\\b|(?=\\s|-))` +
       `(?:\\s+(?:(?<modifier>${PACKAGE_MODIFIERS})\\s+)?(?<package>${PACKAGE_WORDS})(?:\\b|(?=\\s)))?`,
     'iu',
