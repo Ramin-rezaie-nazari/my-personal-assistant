@@ -92,6 +92,19 @@ for (const pack of locales) {
   }
 }
 
+// Semantic descriptor overrides: generic culinary descriptors should resolve
+// to a stable generic food entity instead of an older legacy bucket.
+const semanticOverrides = [
+  ['herbs', 'culinary_herbs', 'culinary herbs', 'herb_spice'],
+  ['fresh herbs', 'culinary_herbs', 'culinary herbs', 'herb_spice'],
+  ['mixed herbs', 'culinary_herbs', 'culinary herbs', 'herb_spice'],
+  ['mixed tender herbs', 'culinary_herbs', 'culinary herbs', 'herb_spice'],
+  ['culinary herbs', 'culinary_herbs', 'culinary herbs', 'herb_spice'],
+];
+for (const [alias, id, name, category] of semanticOverrides) {
+  registerAlias(alias, { id, name, category, source: 'semantic-override', locale: null }, 100);
+}
+
 for (const entry of aliasMap.values()) aliasEntries.push(entry);
 aliasEntries.sort((a, b) => b.key.length - a.key.length || b.priority - a.priority || a.id.localeCompare(b.id));
 
@@ -107,7 +120,7 @@ function score(text, key) {
 
 function result(raw, entry, quantityData, matchedBy) {
   const knowledgeItem = knowledgeById.get(entry.id);
-  const confidence = entry.source === 'knowledge' || entry.source === 'locale'
+  const confidence = entry.source === 'knowledge' || entry.source === 'locale' || entry.source === 'semantic-override'
     ? 0.99
     : matchedBy === 'exact' ? 0.985 : 0.93;
 
@@ -178,7 +191,7 @@ export function resolveFoodEntity(input) {
 }
 
 export function resolverIntegrity() {
-  const ids = new Set([...all.map((x) => x.id), ...knowledge.map((x) => x.id)]);
+  const ids = new Set([...all.map((x) => x.id), ...knowledge.map((x) => x.id), ...semanticOverrides.map(([, id]) => id)]);
   const conflicts = [];
   const seen = new Map();
   for (const entry of aliasEntries) {
