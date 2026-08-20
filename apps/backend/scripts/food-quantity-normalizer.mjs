@@ -1,6 +1,6 @@
 const UNITS = new Map([
   ['ml', 'ml'], ['milliliter', 'ml'], ['milliliters', 'ml'], ['میلی لیتر', 'ml'],
-  ['l', 'l'], ['liter', 'l'], ['liters', 'l'], ['لیتر', 'l'],
+  ['l', 'l'], ['liter', 'l'], ['liters', 'l'], ['لیتر', 'لیتر'], ['لیتر', 'l'],
   ['g', 'g'], ['gram', 'g'], ['grams', 'g'], ['گرم', 'g'],
   ['kg', 'kg'], ['kilogram', 'kg'], ['kilograms', 'kg'], ['کیلو', 'kg'], ['کیلوگرم', 'kg'],
   ['oz', 'oz'], ['ounce', 'oz'], ['ounces', 'oz'],
@@ -17,6 +17,7 @@ const UNIT_ALTERNATION = [...UNITS.keys()]
   .join('|');
 const SIZE_UNITS = 'ounce|ounces|oz|pound|pounds|lb|lbs|gram|grams|g|kg|ml|milliliter|milliliters|liter|liters';
 const PACKAGE_WORDS = 'package|packages|pkg|bag|bags|box|boxes|can|cans|jar|jars|bottle|bottles|carton|cartons';
+const PACKAGE_MODIFIERS = 'chilled|well chilled|fresh|frozen|cold|hot';
 
 function normalizeFractionSlash(value) {
   return String(value || '').replace(/⁄/g, '/');
@@ -61,6 +62,7 @@ export function normalizeQuantity(input) {
     `^(?<size>(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?)` +
       `(?:\\s*(?:[-–—]|to)\\s*(?:\\d+\\s+\\d+\\/\\d+|\\d+\\/\\d+|[¼½¾⅓⅔⅛⅜⅝⅞]|\\d+(?:\\.\\d+)?))?` +
       `)\\s*-?\\s*(?<sizeUnit>${SIZE_UNITS})(?:\\b|(?=\\s|-))` +
+      `(?:\\s+(?<modifier>${PACKAGE_MODIFIERS}))?` +
       `(?:\\s+(?<package>${PACKAGE_WORDS})(?:\\b|(?=\\s)))?`,
     'iu',
   );
