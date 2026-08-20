@@ -92,14 +92,15 @@ for (const pack of locales) {
   }
 }
 
-// Semantic descriptor overrides: generic culinary descriptors should resolve
-// to a stable generic food entity instead of an older legacy bucket.
 const semanticOverrides = [
   ['herbs', 'culinary_herbs', 'culinary herbs', 'herb_spice'],
   ['fresh herbs', 'culinary_herbs', 'culinary herbs', 'herb_spice'],
   ['mixed herbs', 'culinary_herbs', 'culinary herbs', 'herb_spice'],
   ['mixed tender herbs', 'culinary_herbs', 'culinary herbs', 'herb_spice'],
   ['culinary herbs', 'culinary_herbs', 'culinary herbs', 'herb_spice'],
+  ['prepared white horseradish', 'prepared_horseradish', 'prepared horseradish', 'condiment'],
+  ['prepared horseradish', 'prepared_horseradish', 'prepared horseradish', 'condiment'],
+  ['bottled horseradish', 'prepared_horseradish', 'prepared horseradish', 'condiment'],
 ];
 for (const [alias, id, name, category] of semanticOverrides) {
   registerAlias(alias, { id, name, category, source: 'semantic-override', locale: null }, 100);
