@@ -1,0 +1,7 @@
+[
+  {"locale":"fa-IR","country":"IR","aliases":{"olive_oil":["روغن زیتون"],"olive_oil_extra_virgin":["روغن زیتون فرابکر","روغن زیتون اکسترا ورجین"],"tomato":["گوجه","گوجه فرنگی"],"tomato_cherry":["گوجه گیلاسی"],"milk":["شیر"],"wheat_flour":["آرد","آرد سفید"],"rice":["برنج","رز"],"chicken":["مرغ"],"chicken_breast":["سینه مرغ"]}},
+  {"locale":"ar","country":null,"aliases":{"olive_oil":["زيت الزيتون"],"tomato":["طماطم","بندورة"],"milk":["حليب"],"rice":["أرز","رز"],"chicken":["دجاج"],"chicken_breast":["صدر الدجاج"]}},
+  {"locale":"tr","country":"TR","aliases":{"olive_oil":["zeytinyağı"],"tomato":["domates"],"milk":["süt"],"rice":["pirinç"],"chicken":["tavuk"]}},
+  {"locale":"es","country":null,"aliases":{"olive_oil":["aceite de oliva"],"olive_oil_extra_virgin":["aceite de oliva virgen extra"],"tomato":["tomate","tomates"],"milk":["leche"],"rice":["arroz"],"chicken":["pollo"]}},
+  {"locale":"fr","country":null,"aliases":{"olive_oil":["huile d'olive"],"olive_oil_extra_virgin":["huile d'olive extra vierge"],"tomato":["tomate"],"milk":["lait"],"rice":["riz"],"chicken":["poulet"]}}
+]
