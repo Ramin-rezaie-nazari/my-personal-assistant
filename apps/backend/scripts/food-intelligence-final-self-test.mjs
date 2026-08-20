@@ -40,6 +40,18 @@ assert.equal(splitSourcePart('chilled, 1 1/2 teaspoons agave syrup or honey, 1 1
 assert.equal(splitSourcePart('Accompaniments: butter lettuce; thinly sliced garlic; packaged kimchi; steamed white rice').length, 4);
 assert.equal(splitSourcePart('450 g chicken breasts, boneless, skinless').length, 1);
 
+const additive = normalizeQuantity('1/4 cup plus 2 tablespoons Sambuca');
+assert.equal(additive.quantity, 0.25);
+assert.equal(additive.unit, 'cup');
+assert.equal(additive.additional_quantity, 2);
+assert.equal(additive.additional_unit, 'tbsp');
+assert.equal(additive.remainder, 'Sambuca');
+
+const additiveEntity = resolveFoodEntity('1/4 cup plus 2 tablespoons Sambuca');
+assert.notEqual(additiveEntity.canonical_id, null);
+assert.equal(additiveEntity.additional_quantity, 2);
+assert.equal(additiveEntity.additional_unit, 'tbsp');
+
 const packageSizeCases = [
   ['2 3-ounce packages soft ladyfingers', 2, null, 'soft ladyfingers'],
   ['1 28-ounces dry-aged rib-eye steak', 1, null, 'dry-aged rib-eye steak'],
@@ -207,4 +219,4 @@ const auditCases = [
 ];
 for (const [input, expected] of auditCases) assert.equal(resolveFoodEntity(input).canonical_id, expected, input);
 
-console.log(JSON.stringify({ status: 'pass', cases: 25 + packageSizeCases.length + auditCases.length + 7, ...resolverIntegrity(), ...localePackIntegrity() }, null, 2));
+console.log(JSON.stringify({ status: 'pass', cases: 25 + packageSizeCases.length + auditCases.length + 10, ...resolverIntegrity(), ...localePackIntegrity() }, null, 2));
