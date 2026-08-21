@@ -2,19 +2,19 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Latest fully validated locally: 2026-08-18 11:26+03:30. The Food Operating Loop, Meal Planner and Recipe Scaling Metadata slice is fully green on the user's local runtime.
+> Latest fully validated locally before the current workstream: Food Decision Brain on `work/canonical-ingredient-intelligence`, with backend typecheck/build and 155/155 suites, 415/415 tests green.
 
 ## Executive status
 
-**Overall project completion: ~65%**
+**Overall project completion: ~66%**
 
-This is a weighted engineering/product-completion index, not a claim that 65% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans scaling, inventory, shopping handoff, recommendations and daily meal planning. Major unfinished product work remains in the verified global recipe corpus, live market pricing, mobile UX, production hardening, and monetization.
+This is a weighted engineering/product-completion index, not a claim that 66% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans canonical food intelligence, scaling, inventory, shopping handoff, recommendations, daily planning, and a new weekly budget optimizer. Major unfinished product work remains in the verified global recipe corpus, full live market coverage, mobile UX, production hardening, voice/local AI integration, and monetization.
 
-## Latest recommendation workstream on `work/canonical-ingredient-intelligence`
+## Latest workstream — Food Decision Brain + Weekly Budget Optimizer
 
-A new deterministic **Food Decision Brain** slice is now wired into the recommendation-intelligence module. It builds on the existing Food Operating Loop rather than creating a parallel recipe engine.
+A deterministic **Food Decision Brain** is wired into recommendation-intelligence and a **Weekly Food Budget Optimizer** is now layered on top of the existing recipe, inventory and price-intelligence systems rather than creating a parallel data model.
 
-### Decision pipeline
+### Food Decision pipeline
 
 ```text
 Natural request context
@@ -29,6 +29,8 @@ Nutrition fit
   ↓
 Explicit ingredient/style preference
   ↓
+Ingredient-aware cuisine/theme evidence
+  ↓
 Country/cuisine context
   ↓
 Novelty / recent-meal rotation
@@ -42,6 +44,30 @@ Diverse top-N ranking
 Reasons + score breakdown + rejected candidates
 ```
 
+### Weekly budget decision pipeline
+
+```text
+Monthly / weekly food budget
+  ↓
+Household size + planning horizon
+  ↓
+Recipe serving scaling
+  ↓
+Current household inventory
+  ↓
+Verified latest unit-price observations
+  ↓
+Recipe ingredient cost estimation (only where price evidence exists)
+  ↓
+Nutrition / affordability / inventory / verification / simplicity scoring
+  ↓
+7-day diversified meal selection
+  ↓
+Budget envelope + confidence
+  ↓
+Aggregated shopping summary
+```
+
 ### Current decision signals
 
 - target servings
@@ -53,14 +79,25 @@ Reasons + score breakdown + rejected candidates
 - disliked ingredients
 - explicit preferred ingredients
 - food-theme intent inferred from category/goal/context
+- ingredient-aware cuisine evidence
 - country/cuisine context
 - recent-meal novelty
 - verified recipe state
 - diversity/family de-duplication
+- monthly or explicit weekly food budget
+- planning horizon up to 7 days
+- meals per day up to 3
+- current price evidence where available
+- price coverage and budget confidence
 
-### Important design boundary
+### Important design boundaries
 
-Canonical ingredient identity remains upstream. The decision engine should consume stable food entities rather than trying to create a second synonym/taxonomy layer. This preserves the work in `08_CANONICAL_INGREDIENT_INTELLIGENCE.md` and the final resolver chain.
+- Canonical ingredient identity remains upstream. The decision engine consumes stable food entities rather than creating a second synonym/taxonomy layer.
+- The budget optimizer never fabricates a price. A recipe can remain selectable when price coverage is incomplete, but budget confidence exposes the missing evidence.
+- Inventory reduces estimated purchase cost only for quantities already present in the user's household inventory.
+- Country context is a relevance signal, not a cuisine restriction. A user in Iran can ask for Indian food; a user in Spain can ask for seafood.
+- Allergy/diet checks are candidate safety signals, not medical clearance.
+- Budget selection is deterministic and explainable rather than an opaque optimization black box.
 
 ### Current API surface
 
@@ -70,142 +107,95 @@ GET  /recipes/recommendations
 GET  /recipes/meal-plan
 GET  /recipes/:id/food-plan
 POST /recipes/:id/food-plan/shopping
+POST /budget-intelligence/weekly-plan
+GET  /budget-intelligence/meal-plan
+GET  /budget-intelligence/country
+GET  /budget-intelligence/countries
+```
+
+### Weekly budget request contract
+
+The current controller accepts:
+
+```text
+monthlyBudget
+familySize
+goal
+countryCode
+weeklyBudget? 
+days? (1..7)
+mealsPerDay? (1..3)
+currency?
+```
+
+Example intent:
+
+```text
+monthlyBudget = 15000000
+familySize = 4
+goal = healthy affordable meals
+countryCode = IR
+weeklyBudget = 3450000   # optional override
 ```
 
 ### Current limitations
 
-- Cost/budget is not yet a first-class scoring dimension because verified current market prices are still a separate workstream.
-- Cuisine intent is currently deterministic and conservative; full multilingual cuisine/entity inference should eventually reuse the same canonical food intelligence layer rather than relying on name regex alone.
-- Allergy/diet checks are candidate safety signals, not medical clearance.
-- Recommendation engine currently samples up to 500 latest recipes before ranking; production scale should move toward database-side candidate retrieval/filtering before scoring the whole corpus.
-- Final local typecheck/build/test validation for the latest recommendation commits is still required before calling this slice 100% green.
+- The price layer is only as complete as verified `PriceSnapshot.unitPrice` coverage. Missing prices are intentionally not synthesized.
+- Ingredient quantity → price-unit semantics must be verified globally before treating every market's cost as directly comparable. The current optimizer is conservative and exposes coverage/confidence.
+- Cuisine intent is still deterministic/conservative; full multilingual intent/entity inference should eventually reuse the canonical food intelligence layer rather than relying on regex-only request parsing.
+- Recommendation engine currently samples up to 500 latest recipes before ranking; production scale should move toward database-side candidate retrieval/filtering.
+- Weekly optimizer currently uses deterministic scoring/greedy diversification. A future phase can add constrained multi-day optimization with meal-pattern constraints, leftovers, batch cooking and explicit macro distribution.
+- Latest weekly budget implementation still requires local validation before being called fully green.
 
-## Latest fully green local checkpoint — 2026-08-18
-
-```text
-Focused Food Operating Loop slice:  5/5 suites, 14/14 tests — PASS
-Full backend Jest:                  152/152 suites, 408/408 tests — PASS
-Backend E2E:                         4/4 suites, 24/24 tests — PASS
-Typecheck:                            PASS
-Build:                                PASS
-Prisma migrate deploy:               PASS
-Prisma migrate status:               Database schema is up to date
-```
-
-The non-fatal E2E worker teardown warning remains, but all E2E suites/tests pass.
-
-## New Slice — Food Operating Loop + Meal Planning + Recipe Scaling Metadata
-
-### Implemented on `main`
+## Latest fully green local checkpoint — 2026-08-21
 
 ```text
-Recipe + persisted ingredient scaling metadata
-  ↓
-Target servings
-  ↓
-Deterministic scaling engine
-  ↓
-Scaled ingredient quantities
-  ↓
-Inventory comparison using target quantities
-  ↓
-Unit normalization
-  ↓
-Missing ingredient calculation
-  ↓
-Shopping-ready handoff
-  ↓
-Country food context
-  ↓
-Local currency/finance context
-  ↓
-Deterministic meal recommendation
-  ↓
-Deterministic daily meal plan
+Backend typecheck:                    PASS
+Backend build:                        PASS
+Full backend Jest:                    155/155 suites — PASS
+Tests:                                415/415 — PASS
+Food Decision Brain focused tests:    PASS
 ```
 
-### Persisted RecipeIngredient scaling metadata
+The only previously failing test was the CPU-heavy recipe-image compression test; its Jest timeout was raised to 30 seconds without weakening the assertion. The latest user-run validation completed fully green after that fix.
 
-Each recipe ingredient now has:
+## New Slice — Weekly Food Budget Optimizer
 
-- `measurementKind`
-- `scalingPolicy`
-- `scalingExponent`
-- `batchSize`
-- `maxLinearMultiplier`
+### Implementation status
 
-The values can be supplied explicitly through the Recipe DTO. When omitted, the backend applies conservative deterministic inference rather than silently changing the user's recipe intent.
+**Implementation: complete for the current deterministic optimizer slice.**
 
-### New Food APIs
+Added:
 
-```text
-GET  /recipes/recommendations?servings=2&countryCode=JP
-GET  /recipes/meal-plan?servings=2&countryCode=JP
-GET  /recipes/:id/food-plan?servings=50&countryCode=JP
-POST /recipes/:id/food-plan/shopping?servings=50
-```
-
-### New Meal Plan API
-
-```text
-GET /budget-intelligence/meal-plan?servings=2&countryCode=JP
-```
-
-### Current guarantees
-
-- Requested serving count is explicit and bounded to `1..10000`.
-- Inventory is compared against **target-serving quantities**.
-- Compatible mass units normalize across g/kg/mg/oz/lb.
-- Compatible volume units normalize across ml/l.
-- Count units normalize across piece/pcs/count.
-- Unknown/incompatible units fail conservatively.
-- Missing quantities are returned in the recipe's requested unit.
-- Missing items can be handed directly to ShoppingService.
-- Recommendations use inventory coverage, nutrition targets and country relevance deterministically.
-- Daily meal planning uses nutrition targets and distinct recommendations where possible.
-- Recipe scaling consumes persisted per-ingredient scaling policies instead of forcing every ingredient into linear scaling.
-- No external Recipe API is required for these flows.
-- Live price values are deliberately not fabricated because global verified price coverage is not complete.
+- `BudgetIntelligenceService.createWeeklyPlan(...)`
+- Price-intelligence integration through `PricePersistenceService`
+- Inventory-aware purchase-cost estimation
+- Budget envelope calculation
+- Price coverage / budget confidence
+- 1–7 day planning horizon
+- 1–3 meals per day
+- Family-size serving scaling
+- Nutrition-aware affordability scoring
+- Diversity/family-repeat penalty
+- Aggregated shopping summary
+- `POST /budget-intelligence/weekly-plan`
+- Focused optimizer tests for budget selection and no-fabricated-price behavior
 
 ### Validation state
 
-**Implementation: complete for this current slice.**
+**Local validation: pending.**
 
-**Local validation: 100% green.**
+Before calling this slice 100% green, run on the user's local runtime:
 
-Focused tests:
+```bash
+cd ~/My-Personal-Assistant/apps/backend
+pnpm install
+pnpm run typecheck && pnpm run build && pnpm test --runInBand
+```
 
-- `food-operating-loop.service.spec.ts`
-- `recipes.controller.spec.ts`
-- `meal-planning.service.spec.ts`
-- `budget-intelligence.controller.spec.ts`
-- `recipes.service.scaling.spec.ts`
+## Global Food Intelligence — major slice
 
-Focused result: **5/5 suites, 14/14 tests — PASS**.
-
-## Recipe Serving Scaling — 100% for mature current slice
-
-Previously validated and now strengthened with persisted ingredient policies:
-
-- Recipe `servings` persistence.
-- DTO validation.
-- Deterministic scaling engine.
-- `linear`, `sublinear`, `fixed`, `per_batch`, `manual_review` policies.
-- Policy-specific exponent/batch/max-multiplier metadata.
-- Kitchen-friendly quantity rounding.
-- Full-batch nutrition.
-- Per-serving nutrition.
-- Scaled recipe API.
-- Unit/service/controller coverage.
-- Edge-case coverage.
-- Target-serving validation.
-- Explicit non-linear policy test coverage.
-
-Current local focused tests are green as part of the 14-test Food Operating Loop checkpoint above.
-
-## Global Food Intelligence — major slice on main
-
-### Completed in main
+### Completed in main / active branch
 
 - 195-country country-code coverage for the food routing layer.
 - Country food profile for each market.
@@ -218,25 +208,25 @@ Current local focused tests are green as part of the 14-test Food Operating Loop
 - Explicit global-recipe behavior preserved.
 - Cuisine-preserving substitution policy.
 - Country-aware recipe API endpoints.
-- Focused tests for exact 195-country coverage, Japan/Iran behavior, ranking and unknown-country handling.
+- Canonical ingredient taxonomy and supplement chain through v9.
+- Final food resolver chain with quantity normalization, source-part decomposition, alias handling and locale support.
 
 ### Still required for 100%
 
-- Canonical ingredient taxonomy.
-- Region/cuisine normalization beyond routing.
 - Large verified recipe corpus with complete instructions and quantities.
 - Nutrition provenance and quality controls.
-- Allergens and dietary constraints coverage.
+- Allergens and dietary constraints coverage across the full corpus.
 - Production-scale ingredient substitutions.
-- Serving-scaling metadata for the entire catalog (architecture now ready; corpus population remains).
+- Serving-scaling metadata population for the entire catalog.
 - Inventory matching across the full catalog.
 - Shopping conversion across the full catalog.
 - Provenance/versioning.
 - Duplicate/alias/cultural-metadata QA.
+- Full multilingual entity normalization beyond the current deterministic layer.
 
-## Global Currency / Finance Intelligence — major slice on main
+## Global Currency / Finance Intelligence — major slice
 
-### Completed in main
+### Completed
 
 - 195-country local currency registry.
 - Fraction-digit metadata.
@@ -250,97 +240,25 @@ Current local focused tests are green as part of the 14-test Food Operating Loop
 
 - Full live-price coverage by country.
 - Source verification per market.
-- Full country-aware budget planning.
-- Recipe → price → budget integration.
+- Recipe → ingredient price → budget integration at global production coverage.
+- More robust unit-price semantics and market normalization.
 
-## Global Market / Price Intelligence — still separate
+## Global Market / Price Intelligence
 
-A larger stacked workstream exists in PR #48/#49 with 195-country market/source registry, routing, discovery-only fallbacks, cached FX, local-time scheduling, confidence scoring and price-source infrastructure.
+A larger stacked workstream exists with 195-country market/source registry, routing, discovery-only fallbacks, cached FX, local-time scheduling, confidence scoring and price-source infrastructure.
 
-It is **not on `main`** because the workstream is stacked and PR #48 currently has merge conflicts. It must be integrated deliberately after dependency/conflict review rather than force-merged.
-
-## Mobile product — major work remains
-
-Current main contains the Expo/mobile shell, local language state and assistant entry behavior.
-
-Remaining:
-
-- Complete auth UX.
-- Onboarding.
-- Home/dashboard.
-- Nutrition logging UX.
-- Recipe discovery/cooking UX.
-- Serving selector and scaled ingredient UI.
-- Food-plan/recommendation UI.
-- Pantry/inventory UI.
-- Shopping UI.
-- Fitness/Yoga/Calisthenics/Gym UI.
-- Habits/reminders/calendar/supplements UI.
-- Brain chat/coach UX.
-- Global settings UX.
-- Offline/local-first behavior where appropriate.
-- Accessibility/responsive behavior.
-- Real-device iOS/Android validation.
-- Store-release hardening.
-
-## Production hardening — incomplete
-
-Remaining:
-
-- Full security audit.
-- Authorization review across domains.
-- Rate limiting/abuse controls.
-- Production observability.
-- Database performance/index review under realistic load.
-- Background-job reliability.
-- Notification delivery reliability.
-- Backup/restore verification.
-- Disaster recovery.
-- Secret management review.
-- Privacy/data-retention review.
-- Migration-history review.
-- Production deployment runbook.
-- Cost controls and external-API fallback policy.
-- Clean up the non-fatal E2E worker teardown warning.
-
-## Business / Monetization — not implemented
-
-- Packaging.
-- Free/paid boundaries.
-- Billing/subscription.
-- Pricing experiments.
-- Store monetization.
-- Growth/retention analytics.
-- Referral/viral loops.
-- Revenue dashboards.
-- Legal/compliance/product policies.
-
-## Progress index
-
-| Workstream | Approx. completion |
-|---|---:|
-| Backend platform + architecture | 90% |
-| Personal Brain / deterministic intelligence | 65% |
-| Nutrition foundations | 74% |
-| Fitness / Yoga / Calisthenics / Gym | 75% |
-| Recipe & Food Intelligence | 64% |
-| Inventory / Shopping / Price Intelligence | 68% |
-| Mobile product / UX | 20% |
-| AI orchestration / voice / globalization | 40% |
-| QA / Security / Production hardening | 50% |
-| Business / Monetization | 0% |
-
-**Weighted overall index: ~65%.**
+It must be integrated deliberately after conflict/dependency review rather than force-merged.
 
 ## Immediate next priorities
 
-1. Add canonical ingredient/region/cuisine normalization.
-2. Expand verified recipe corpus with provenance, allergens and dietary constraints.
-3. Integrate the stacked Global Market workstream after conflict/dependency review.
-4. Connect verified live price data into Food Operating Loop and budget recommendations.
-5. Build the real mobile food journey around these APIs.
-6. Add production hardening and observability.
-7. Add monetization after the core user journey is genuinely strong.
+1. Validate the Weekly Food Budget Optimizer locally and fix any regressions.
+2. Upgrade weekly optimization from greedy selection to constrained multi-day planning with leftovers/batch cooking and macro distribution.
+3. Expand verified recipe corpus with provenance, allergens and dietary constraints.
+4. Improve canonical/global multilingual cuisine and ingredient inference.
+5. Integrate verified live price coverage into Food Operating Loop and budget recommendations.
+6. Build the real mobile food journey around these APIs.
+7. Continue production hardening, observability and external-API cost controls.
+8. Add voice/local AI orchestration and premium monetization after the core user journey is strong.
 
 ## Working rule
 
