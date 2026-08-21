@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
 import {
   FitnessEquipment,
@@ -47,7 +48,7 @@ export class FitnessProfilePersistenceService {
     const normalized = this.normalize(profile);
     await this.prisma.fitnessProfileState.upsert({
       where: { userId },
-      create: { userId, profile: normalized },
+      create: { id: randomUUID(), userId, profile: normalized },
       update: { profile: normalized },
     });
     return normalized;
