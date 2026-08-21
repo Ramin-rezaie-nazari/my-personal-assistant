@@ -2,17 +2,17 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Latest fully validated locally: 2026-08-21. Food Decision Brain + Weekly Food Budget Optimizer + ingredient reuse/unit-aware pricing hardening are fully green on `work/canonical-ingredient-intelligence`.
+> Latest fully validated locally: 2026-08-21. Food Decision Brain + Weekly Food Budget Optimizer + Ingredient Reuse hardening + Health Data Gateway backend slice are fully green on `work/canonical-ingredient-intelligence`.
 
 ## Executive status
 
-**Overall project completion: ~67%**
+**Overall project completion: ~68%**
 
-This is a weighted engineering/product-completion index, not a claim that 67% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans canonical food intelligence, scaling, inventory, shopping handoff, recommendations, daily planning, and weekly budget optimization. Major unfinished product work remains in the verified global recipe corpus, full live market coverage, mobile UX, production hardening, voice/local AI integration, and monetization.
+This is a weighted engineering/product-completion index, not a claim that 68% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans canonical food intelligence, scaling, inventory, shopping handoff, recommendations, daily planning, weekly budget optimization, and the first normalized health-data gateway. Major unfinished product work remains in the verified global recipe corpus, full live market coverage, native health-provider integrations, mobile UX, production hardening, voice/local AI integration, and monetization.
 
-## Latest workstream — Food Decision Brain + Weekly Budget Optimizer
+## Latest workstream — Food Decision Brain + Weekly Budget Optimizer + Health Data Gateway
 
-A deterministic **Food Decision Brain** is wired into recommendation-intelligence and a **Weekly Food Budget Optimizer** is layered on top of the existing recipe, inventory and price-intelligence systems rather than creating a parallel data model.
+A deterministic **Food Decision Brain** is wired into recommendation-intelligence, a **Weekly Food Budget Optimizer** is layered on top of the existing recipe, inventory and price-intelligence systems, and a **Health Data Gateway** now provides a vendor-neutral contract for wearable/health data.
 
 ### Food Decision pipeline
 
@@ -72,6 +72,22 @@ Budget envelope + confidence
 Aggregated shopping summary
 ```
 
+### Health Data Gateway pipeline
+
+```text
+Apple HealthKit / Android Health Connect / other providers
+  ↓
+Vendor-neutral health-provider contract
+  ↓
+POST /device-intelligence/health-sync
+  ↓
+Idempotent normalized HealthDataPoint records
+  ↓
+Daily health/activity aggregation
+  ↓
+Personal Brain / Nutrition Brain / Workout Brain
+```
+
 ### Current decision signals
 
 - target servings
@@ -95,6 +111,21 @@ Aggregated shopping summary
 - price coverage and budget confidence
 - ingredient reuse / shared-shopping value
 
+### Health data currently normalized
+
+- steps
+- walking/running distance
+- active calories
+- total calories
+- sleep duration
+- workout duration
+- workout calories
+- heart rate
+- resting heart rate
+- weight
+
+The gateway deliberately separates provider-specific records from the normalized contract so the backend is not coupled to Apple, Google, or a specific wearable vendor.
+
 ### Important design boundaries
 
 - Canonical ingredient identity remains upstream. The decision engine consumes stable food entities rather than creating a second synonym/taxonomy layer.
@@ -106,6 +137,8 @@ Aggregated shopping summary
 - Allergy/diet checks are candidate safety signals, not medical clearance.
 - Budget selection is deterministic and explainable rather than an opaque optimization black box.
 - Real leftovers/batch-cooking reuse is not fabricated without yield/batch/storage metadata; current reuse optimization is ingredient/shopping reuse.
+- Health data is treated as source data, not medical diagnosis. The gateway normalizes measurements but does not invent clinical conclusions.
+- Native provider access remains mobile-side; backend stays provider-neutral.
 
 ### Current API surface
 
@@ -119,6 +152,8 @@ POST /budget-intelligence/weekly-plan
 GET  /budget-intelligence/meal-plan
 GET  /budget-intelligence/country
 GET  /budget-intelligence/countries
+GET  /device-intelligence
+POST /device-intelligence/health-sync
 ```
 
 ### Weekly budget request contract
@@ -146,6 +181,23 @@ countryCode = IR
 weeklyBudget = 3450000   # optional override
 ```
 
+### Health sync request contract
+
+```text
+provider
+ deviceId
+points[]
+  dataType
+  value
+  unit
+  startAt
+  endAt
+  sourceRecordId?
+  metadata?
+```
+
+The current contract supports idempotent replay using `sourceRecordId` when available and a deterministic fallback identity when it is not.
+
 ### Current limitations
 
 - The price layer is only as complete as verified `PriceSnapshot.unitPrice` coverage. Missing prices are intentionally not synthesized.
@@ -154,19 +206,63 @@ weeklyBudget = 3450000   # optional override
 - Recommendation engine currently samples up to 500 latest recipes before ranking; production scale should move toward database-side candidate retrieval/filtering.
 - Weekly optimizer currently uses deterministic scoring/greedy diversification plus ingredient reuse. A future phase can add constrained multi-day optimization with meal-pattern constraints, leftovers, batch cooking and explicit macro distribution once the necessary recipe metadata exists.
 - Budget cost estimates remain confidence-scored rather than treated as exact financial truth.
+- Health Data Gateway backend contract is complete, but native HealthKit and Android Health Connect adapters are not yet implemented and require device/development builds for real-device validation.
+- Daily health aggregation exists as a contract/logic layer; production scheduling, historical reconciliation and richer provider-specific sync semantics remain.
 
 ## Latest fully green local checkpoint — 2026-08-21
 
 ```text
 Backend typecheck:                    PASS
+Prisma generate:                      PASS
 Backend build:                        PASS
-Full backend Jest:                    156/156 suites — PASS
-Tests:                                419/419 — PASS
+Full backend Jest:                    158/158 suites — PASS
+Tests:                                422/422 — PASS
 Food Decision Brain focused tests:    PASS
 Weekly Budget Optimizer tests:        PASS
+Health Data Gateway focused tests:    PASS
 ```
 
 The CPU-heavy recipe-image compression test previously required a higher Jest timeout; the assertion itself remains unchanged. The latest user-run validation completed fully green after the fix.
+
+## New Slice — Health Data Gateway
+
+### Implementation status
+
+**Implementation and local validation: complete for the backend gateway slice.**
+
+Added / strengthened:
+
+- provider-neutral health datapoint contract
+- `HealthDataPoint` persistence model
+- migration `20260821130000_add_health_data_points`
+- idempotent health sync through `HealthSyncService`
+- normalized supported health metrics
+- daily summary contract for activity/energy data
+- device-intelligence controller endpoint for synchronization
+- focused device-intelligence tests
+- focused health-sync tests
+- mobile-side `health-provider.ts` abstraction for later native adapters
+- Health Gateway architecture/progress documentation
+
+### Validation state
+
+**Local validation: 100% green.**
+
+```text
+Typecheck:                  PASS
+Prisma generate:            PASS
+Build:                      PASS
+Full backend Jest:          158/158 suites — PASS
+Tests:                      422/422 — PASS
+```
+
+### Next native phase
+
+- iOS HealthKit adapter behind the shared mobile provider contract.
+- Android Health Connect adapter behind the same contract.
+- Real-device sync/reconciliation tests.
+- Daily aggregation into Nutrition Brain, Workout Brain, and Personal Brain.
+- Adaptive nutrition using consumed calories vs activity/energy data.
 
 ## New Slice — Weekly Food Budget Optimizer + Ingredient Reuse Hardening
 
@@ -201,8 +297,8 @@ Added / strengthened:
 ```text
 Typecheck:                  PASS
 Build:                      PASS
-Full backend Jest:          156/156 suites — PASS
-Tests:                      419/419 — PASS
+Full backend Jest:          158/158 suites — PASS
+Tests:                      422/422 — PASS
 ```
 
 ## Global Food Intelligence — major slice
@@ -263,13 +359,15 @@ It must be integrated deliberately after conflict/dependency review rather than 
 
 ## Immediate next priorities
 
-1. Upgrade weekly optimization from greedy selection to constrained multi-day planning with leftovers/batch cooking once yield/storage metadata is available.
-2. Expand verified recipe corpus with provenance, allergens and dietary constraints.
-3. Improve canonical/global multilingual cuisine and ingredient inference.
-4. Integrate verified live price coverage into Food Operating Loop and budget recommendations.
-5. Build the real mobile food journey around these APIs.
-6. Continue production hardening, observability and external-API cost controls.
-7. Add voice/local AI orchestration and premium monetization after the core user journey is strong.
+1. Build and validate native HealthKit + Android Health Connect adapters behind the shared mobile health-provider contract.
+2. Feed normalized health/activity summaries into Nutrition Brain, Workout Brain and Personal Brain.
+3. Upgrade weekly optimization from greedy selection to constrained multi-day planning with leftovers/batch cooking once yield/storage metadata is available.
+4. Expand verified recipe corpus with provenance, allergens and dietary constraints.
+5. Improve canonical/global multilingual cuisine and ingredient inference.
+6. Integrate verified live price coverage into Food Operating Loop and budget recommendations.
+7. Build the real mobile food/health journey around these APIs.
+8. Continue production hardening, observability and external-API cost controls.
+9. Add voice/local AI orchestration and premium monetization after the core user journey is strong.
 
 ## Working rule
 
