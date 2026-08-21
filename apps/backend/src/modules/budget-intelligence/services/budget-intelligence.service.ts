@@ -16,6 +16,7 @@ export type WeeklyBudgetMeal = {
   priceCoverage: number;
   alreadyOwnedCost: number | null;
   missingIngredients: string[];
+  ingredientReuseScore?: number;
 };
 
 type ExtendedBudgetPlanRequest = CreateBudgetPlanDto & {
@@ -37,6 +38,20 @@ type RecipeIngredientLike = {
   quantity: number;
   unit: string;
   food: { name: string };
+};
+
+type Candidate = {
+  recipe: {
+    id: string;
+    name: string;
+    servings: number;
+    calories: number;
+    protein: number;
+    verified: boolean;
+    ingredients: RecipeIngredientLike[];
+  };
+  ingredientAnalysis: ReturnType<typeof analyzeRecipeCost>;
+  score: number;
 };
 
 @Injectable()
@@ -115,7 +130,7 @@ export class BudgetIntelligenceService {
       });
     }
 
-    const ranked = recipes
+    const ranked: Candidate[] = recipes
       .map((recipe) => {
         const scale = request.familySize / Math.max(recipe.servings, 1);
         const ingredientAnalysis = analyzeRecipeCost(recipe, scale, ownedByKey, priceByKey);
@@ -138,6 +153,7 @@ export class BudgetIntelligenceService {
       .sort((a, b) => b.score - a.score || a.recipe.name.localeCompare(b.recipe.name));
 
     const selected: WeeklyBudgetMeal[] = [];
+    const selectedCandidates: Candidate[] = [];
     const usedFamilies = new Map<string, number>();
     let plannedCost = 0;
 
@@ -145,7 +161,13 @@ export class BudgetIntelligenceService {
       const dailyCandidates = [...ranked].sort((a, b) => {
         const familyPenaltyA = (usedFamilies.get(familyKey(a.recipe.name)) ?? 0) * 0.12;
         const familyPenaltyB = (usedFamilies.get(familyKey(b.recipe.name)) ?? 0) * 0.12;
-        return (b.score / 100 - familyPenaltyB) - (a.score / 100 - familyPenaltyA);
+        const reuseA = ingredientReuseScore(a.recipe.ingredients, selectedCandidates.slice(-mealsPerDay));
+        const reuseB = ingredientReuseScore(b.recipe.ingredients, selectedCandidates.slice(-mealsPerDay));
+        return (
+          b.score / 100 + reuseB * 0.08 - familyPenaltyB
+        ) - (
+          a.score / 100 + reuseA * 0.08 - familyPenaltyA
+        );
       });
 
       for (const mealType of mealTypesFor(mealsPerDay)) {
@@ -159,9 +181,11 @@ export class BudgetIntelligenceService {
         if (!chosen) continue;
 
         const family = familyKey(chosen.recipe.name);
+        const reuseScore = ingredientReuseScore(chosen.recipe.ingredients, selectedCandidates.slice(-mealsPerDay));
         usedFamilies.set(family, (usedFamilies.get(family) ?? 0) + 1);
         if (chosen.ingredientAnalysis.estimatedCost !== null) plannedCost += chosen.ingredientAnalysis.estimatedCost;
 
+        selectedCandidates.push(chosen);
         selected.push({
           day,
           mealType,
@@ -175,6 +199,7 @@ export class BudgetIntelligenceService {
           priceCoverage: round(chosen.ingredientAnalysis.priceCoverage),
           alreadyOwnedCost: chosen.ingredientAnalysis.alreadyOwnedCost,
           missingIngredients: chosen.ingredientAnalysis.missingIngredients,
+          ingredientReuseScore: round(reuseScore),
         });
       }
     }
@@ -273,6 +298,13 @@ function buildShoppingSummary(
 ) {
   const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
   const totals = new Map<string, { name: string; quantity: number; unit: string; recipeCount: number }>();
+  const selectedRecipeUses = new Map<string, number>();
+
+  for (const meal of meals) {
+    const recipe = recipeById.get(meal.recipeId);
+    if (!recipe) continue;
+    selectedRecipeUses.set(meal.recipeId, (selectedRecipeUses.get(meal.recipeId) ?? 0) + 1);
+  }
 
   for (const meal of meals) {
     const recipe = recipeById.get(meal.recipeId);
@@ -296,6 +328,19 @@ function buildShoppingSummary(
   return [...totals.values()]
     .map((item) => ({ ...item, quantity: round(item.quantity, 2) }))
     .sort((a, b) => b.recipeCount - a.recipeCount || a.name.localeCompare(b.name));
+}
+
+function ingredientReuseScore(ingredients: RecipeIngredientLike[], previous: Candidate[]): number {
+  if (!previous.length || !ingredients.length) return 0;
+  const current = new Set(ingredients.map((ingredient) => normalizeKey(ingredient.food.name)).filter(Boolean));
+  const previousKeys = new Set<string>();
+  for (const candidate of previous) {
+    for (const ingredient of candidate.recipe.ingredients) previousKeys.add(normalizeKey(ingredient.food.name));
+  }
+  if (!previousKeys.size) return 0;
+  let hits = 0;
+  for (const key of current) if (previousKeys.has(key)) hits += 1;
+  return clamp01(hits / Math.max(1, Math.min(current.size, previousKeys.size)));
 }
 
 function mealTypesFor(mealsPerDay: number): Array<'breakfast' | 'lunch' | 'dinner'> {
