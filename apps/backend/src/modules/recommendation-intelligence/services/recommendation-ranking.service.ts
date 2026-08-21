@@ -16,31 +16,29 @@ export type RankedFoodRecommendation = {
 @Injectable()
 export class RecommendationRankingService {
   rankRecommendations(items: RankedFoodRecommendation[], limit = 10): RankedFoodRecommendation[] {
+    const safeLimit = Math.min(Math.max(Math.floor(limit), 1), 30);
     const sorted = [...items].sort((a, b) => b.score - a.score || b.breakdown.inventory - a.breakdown.inventory || a.name.localeCompare(b.name));
     const result: RankedFoodRecommendation[] = [];
     const seen = new Set<string>();
+    const diversityWindow = Math.max(3, Math.floor(safeLimit * 0.6));
 
     for (const item of sorted) {
       const family = familyKey(item.name);
-      if (seen.has(family) && result.length < Math.max(3, Math.floor(limit * 0.6))) continue;
+      if (seen.has(family) && result.length < diversityWindow) continue;
       result.push(item);
       seen.add(family);
-      if (result.length >= limit) break;
+      if (result.length >= safeLimit) break;
     }
 
-    if (result.length < limit) {
+    if (result.length < safeLimit) {
       for (const item of sorted) {
         if (result.some((existing) => existing.recipeId === item.recipeId)) continue;
         result.push(item);
-        if (result.length >= limit) break;
+        if (result.length >= safeLimit) break;
       }
     }
 
     return result;
-  }
-
-  async rankRecommendationsLegacy() {
-    return { ranked: [] };
   }
 }
 
