@@ -27,18 +27,21 @@ export class GlobalCountryFoodService {
   getLocalRecipeGuidance(countryCode: string): LocalRecipeGuidance | null {
     const profile = this.getProfile(countryCode);
     if (!profile) return null;
-    return {
-      countryCode: profile.countryCode,
-      cuisineFamily: profile.cuisineFamily,
-      preferredRecipes: profile.signatureRecipes,
-      stapleIngredients: profile.stapleIngredients,
-      hardToSourceIngredients: profile.hardToSourceIngredients,
-      substitutionPolicy: {
-        preserveCuisineIdentity: true,
-        preferLocalStaples: true,
-        neverSilentlyReplace: true,
-      },
-    };
+    return guidance(profile);
+  }
+
+  findCountryCodesForCuisine(cuisineHint: string): string[] {
+    const needle = normalizeCuisine(cuisineHint);
+    if (!needle) return [];
+    return Object.values(GLOBAL_COUNTRY_FOOD_PROFILES)
+      .filter((profile) => normalizeCuisine(profile.cuisineFamily).includes(needle) || needle.includes(normalizeCuisine(profile.cuisineFamily)))
+      .map((profile) => profile.countryCode);
+  }
+
+  getGuidanceForCuisine(cuisineHint: string): LocalRecipeGuidance | null {
+    const countryCodes = this.findCountryCodesForCuisine(cuisineHint);
+    const preferred = countryCodes.find((code) => this.getProfile(code)?.signatureRecipes.length);
+    return preferred ? this.getLocalRecipeGuidance(preferred) : null;
   }
 
   rankRecipesForCountry(
@@ -56,4 +59,23 @@ export class GlobalCountryFoodService {
       return bScore - aScore || a.name.localeCompare(b.name);
     });
   }
+}
+
+function guidance(profile: GlobalCountryFoodProfile): LocalRecipeGuidance {
+  return {
+    countryCode: profile.countryCode,
+    cuisineFamily: profile.cuisineFamily,
+    preferredRecipes: profile.signatureRecipes,
+    stapleIngredients: profile.stapleIngredients,
+    hardToSourceIngredients: profile.hardToSourceIngredients,
+    substitutionPolicy: {
+      preserveCuisineIdentity: true,
+      preferLocalStaples: true,
+      neverSilentlyReplace: true,
+    },
+  };
+}
+
+function normalizeCuisine(value: string): string {
+  return String(value || '').toLowerCase().replace(/[^a-z0-9آ-ی]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
