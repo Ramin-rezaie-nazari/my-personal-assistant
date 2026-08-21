@@ -96,6 +96,26 @@ export const healthConnectProvider: HealthProvider = {
       metadata: { source: 'HealthConnect', recordType: RANGES.totalCalories },
     }));
 
+    await read(RANGES.sleep, (record) => ({
+      dataType: 'sleep_duration',
+      value: Math.max(0, (new Date(record.endTime).getTime() - new Date(record.startTime).getTime()) / 3_600_000),
+      unit: 'h',
+      startAt: new Date(record.startTime).toISOString(),
+      endAt: new Date(record.endTime).toISOString(),
+      sourceRecordId: record.metadata?.id,
+      metadata: { source: 'HealthConnect', recordType: RANGES.sleep, stage: record.stage?.name ?? record.stage },
+    }));
+
+    await read(RANGES.exercise, (record) => ({
+      dataType: 'workout_duration',
+      value: Math.max(0, (new Date(record.endTime).getTime() - new Date(record.startTime).getTime()) / 60_000),
+      unit: 'min',
+      startAt: new Date(record.startTime).toISOString(),
+      endAt: new Date(record.endTime).toISOString(),
+      sourceRecordId: record.metadata?.id,
+      metadata: { source: 'HealthConnect', recordType: RANGES.exercise, exerciseType: record.exerciseType },
+    }));
+
     await read(RANGES.heartRate, (record) => {
       const samples = record.samples ?? [];
       const bpm = samples.length ? samples.reduce((sum: number, item: any) => sum + Number(item.beatsPerMinute ?? 0), 0) / samples.length : 0;
