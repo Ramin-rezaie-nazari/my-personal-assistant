@@ -18,6 +18,13 @@ export type WeeklyBudgetMeal = {
   missingIngredients: string[];
 };
 
+type ExtendedBudgetPlanRequest = CreateBudgetPlanDto & {
+  weeklyBudget?: number;
+  days?: number;
+  mealsPerDay?: number;
+  currency?: string;
+};
+
 @Injectable()
 export class BudgetIntelligenceService {
   constructor(
@@ -46,9 +53,10 @@ export class BudgetIntelligenceService {
     if (!Number.isInteger(request.familySize) || request.familySize <= 0 || request.familySize > 100)
       throw new BadRequestException('familySize must be an integer between 1 and 100');
 
-    const days = clampInteger(request.days ?? 7, 1, 7);
-    const mealsPerDay = clampInteger(request.mealsPerDay ?? 3, 1, 3);
-    const weeklyBudget = request.weeklyBudget ?? request.monthlyBudget / 4.345;
+    const extended = request as ExtendedBudgetPlanRequest;
+    const days = clampInteger(extended.days ?? 7, 1, 7);
+    const mealsPerDay = clampInteger(extended.mealsPerDay ?? 3, 1, 3);
+    const weeklyBudget = extended.weeklyBudget ?? request.monthlyBudget / 4.345;
     const perDayBudget = weeklyBudget / days;
 
     const [recipes, inventory] = await Promise.all([
@@ -69,7 +77,7 @@ export class BudgetIntelligenceService {
     for (const row of latestPrices as Array<{ productKey: string; unitPrice: number | null; currency: string; observedAt: Date }>) {
       if (!row.unitPrice || !Number.isFinite(Number(row.unitPrice)) || Number(row.unitPrice) <= 0) continue;
       const existing = priceByKey.get(row.productKey);
-      if (!existing || new Date(row.observedAt).getTime() > new Date(existing.observedAt).getTime()) {
+      if (!existing || new Date(row.observedAt).getTime() > existing.observedAt.getTime()) {
         priceByKey.set(row.productKey, {
           unitPrice: Number(row.unitPrice),
           currency: row.currency,
@@ -101,13 +109,7 @@ export class BudgetIntelligenceService {
           simplicity * 0.05
         ) * 100;
 
-        return {
-          recipe,
-          scale,
-          ingredientAnalysis,
-          score,
-          nutrition,
-        };
+        return { recipe, ingredientAnalysis, score };
       })
       .sort((a, b) => b.score - a.score || a.recipe.name.localeCompare(b.recipe.name));
 
@@ -125,8 +127,7 @@ export class BudgetIntelligenceService {
       for (const mealType of mealTypesFor(mealsPerDay)) {
         const chosen = dailyCandidates.find((item) => {
           const family = familyKey(item.recipe.name);
-          const repeated = usedFamilies.get(family) ?? 0;
-          if (repeated >= 2) return false;
+          if ((usedFamilies.get(family) ?? 0) >= 2) return false;
           if (item.ingredientAnalysis.estimatedCost !== null && plannedCost + item.ingredientAnalysis.estimatedCost > weeklyBudget * 1.02) return false;
           return !selected.some((meal) => meal.recipeId === item.recipe.id && meal.day === day);
         }) ?? dailyCandidates.find((item) => !selected.some((meal) => meal.recipeId === item.recipe.id && meal.day === day));
@@ -143,8 +144,8 @@ export class BudgetIntelligenceService {
           recipeId: chosen.recipe.id,
           recipeName: chosen.recipe.name,
           servings: request.familySize,
-          caloriesPerServing: round(chosen.recipe.calories / Math.max(chosen.recipe.servings, 1)),
-          proteinPerServing: round(chosen.recipe.protein / Math.max(chosen.recipe.servings, 1)),
+          caloriesPerServing: round(chosen.recipe.calories / Math.max(chosen.recipe.servings, 1), 1),
+          proteinPerServing: round(chosen.recipe.protein / Math.max(chosen.recipe.servings, 1), 1),
           estimatedCost: chosen.ingredientAnalysis.estimatedCost,
           costCurrency: chosen.ingredientAnalysis.costCurrency,
           priceCoverage: round(chosen.ingredientAnalysis.priceCoverage),
@@ -165,7 +166,7 @@ export class BudgetIntelligenceService {
         monthlyBudget: request.monthlyBudget,
         weeklyBudget,
         perDayBudget,
-        currency: request.currency ?? null,
+        currency: extended.currency ?? null,
         plannedEstimatedCost: plannedCost > 0 ? round(plannedCost, 2) : null,
         remainingEstimatedBudget: plannedCost > 0 ? round(Math.max(0, weeklyBudget - plannedCost), 2) : null,
         budgetConfidence: estimatedMealsWithPrice / Math.max(1, selected.length),
