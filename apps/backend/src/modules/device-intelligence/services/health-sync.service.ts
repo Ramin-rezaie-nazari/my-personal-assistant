@@ -21,17 +21,50 @@ export class HealthSyncService {
         throw new BadRequestException(`Invalid health datapoint: ${point.dataType}`);
       }
       if (!SUPPORTED_TYPES.has(point.dataType)) throw new BadRequestException(`Unsupported health data type: ${point.dataType}`);
+
       const sourceRecordId = point.sourceRecordId ?? `${point.dataType}:${startAt.toISOString()}:${endAt.toISOString()}:${value}`;
+      const metadata = normalizeMetadata(point.metadata);
+
       await this.prisma.healthDataPoint.upsert({
-        where: { userId_provider_dataType_sourceRecordId: { userId, provider: input.provider.trim(), dataType: point.dataType, sourceRecordId } },
-        create: { userId, provider: input.provider.trim(), deviceId: input.deviceId.trim(), dataType: point.dataType, value, unit: point.unit, startAt, endAt, sourceRecordId, metadata: point.metadata ?? undefined },
-        update: { deviceId: input.deviceId.trim(), value, unit: point.unit, startAt, endAt, metadata: point.metadata ?? undefined },
+        where: {
+          userId_provider_dataType_sourceRecordId: {
+            userId,
+            provider: input.provider.trim(),
+            dataType: point.dataType,
+            sourceRecordId,
+          },
+        },
+        create: {
+          userId,
+          provider: input.provider.trim(),
+          deviceId: input.deviceId.trim(),
+          dataType: point.dataType,
+          value,
+          unit: point.unit,
+          startAt,
+          endAt,
+          sourceRecordId,
+          metadata,
+        },
+        update: {
+          deviceId: input.deviceId.trim(),
+          value,
+          unit: point.unit,
+          startAt,
+          endAt,
+          metadata,
+        },
       });
       written += 1;
     }
 
     return { provider: input.provider.trim(), deviceId: input.deviceId.trim(), received: input.points.length, written };
   }
+}
+
+function normalizeMetadata(value?: Record<string, unknown>) {
+  if (!value) return undefined;
+  return JSON.parse(JSON.stringify(value));
 }
 
 const SUPPORTED_TYPES = new Set<HealthDataType>([
