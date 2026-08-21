@@ -2,17 +2,17 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Latest fully validated locally before the current workstream: Food Decision Brain on `work/canonical-ingredient-intelligence`, with backend typecheck/build and 155/155 suites, 415/415 tests green.
+> Latest fully validated locally: 2026-08-21. Food Decision Brain + Weekly Food Budget Optimizer + ingredient reuse/unit-aware pricing hardening are fully green on `work/canonical-ingredient-intelligence`.
 
 ## Executive status
 
-**Overall project completion: ~66%**
+**Overall project completion: ~67%**
 
-This is a weighted engineering/product-completion index, not a claim that 66% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans canonical food intelligence, scaling, inventory, shopping handoff, recommendations, daily planning, and a new weekly budget optimizer. Major unfinished product work remains in the verified global recipe corpus, full live market coverage, mobile UX, production hardening, voice/local AI integration, and monetization.
+This is a weighted engineering/product-completion index, not a claim that 67% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans canonical food intelligence, scaling, inventory, shopping handoff, recommendations, daily planning, and weekly budget optimization. Major unfinished product work remains in the verified global recipe corpus, full live market coverage, mobile UX, production hardening, voice/local AI integration, and monetization.
 
 ## Latest workstream — Food Decision Brain + Weekly Budget Optimizer
 
-A deterministic **Food Decision Brain** is wired into recommendation-intelligence and a **Weekly Food Budget Optimizer** is now layered on top of the existing recipe, inventory and price-intelligence systems rather than creating a parallel data model.
+A deterministic **Food Decision Brain** is wired into recommendation-intelligence and a **Weekly Food Budget Optimizer** is layered on top of the existing recipe, inventory and price-intelligence systems rather than creating a parallel data model.
 
 ### Food Decision pipeline
 
@@ -57,11 +57,15 @@ Current household inventory
   ↓
 Verified latest unit-price observations
   ↓
-Recipe ingredient cost estimation (only where price evidence exists)
+Unit-aware ingredient → price conversion
+  ↓
+Recipe ingredient cost estimation (only where evidence exists)
   ↓
 Nutrition / affordability / inventory / verification / simplicity scoring
   ↓
-7-day diversified meal selection
+Ingredient reuse + family-repeat diversification
+  ↓
+7-day meal selection
   ↓
 Budget envelope + confidence
   ↓
@@ -89,15 +93,19 @@ Aggregated shopping summary
 - meals per day up to 3
 - current price evidence where available
 - price coverage and budget confidence
+- ingredient reuse / shared-shopping value
 
 ### Important design boundaries
 
 - Canonical ingredient identity remains upstream. The decision engine consumes stable food entities rather than creating a second synonym/taxonomy layer.
 - The budget optimizer never fabricates a price. A recipe can remain selectable when price coverage is incomplete, but budget confidence exposes the missing evidence.
 - Inventory reduces estimated purchase cost only for quantities already present in the user's household inventory.
+- Ingredient quantities and price units must belong to compatible unit families before cost is calculated; mass/volume/count are never silently mixed.
+- An explicitly requested currency filters price evidence to that currency; no hidden FX conversion is performed in the optimizer.
 - Country context is a relevance signal, not a cuisine restriction. A user in Iran can ask for Indian food; a user in Spain can ask for seafood.
 - Allergy/diet checks are candidate safety signals, not medical clearance.
 - Budget selection is deterministic and explainable rather than an opaque optimization black box.
+- Real leftovers/batch-cooking reuse is not fabricated without yield/batch/storage metadata; current reuse optimization is ingredient/shopping reuse.
 
 ### Current API surface
 
@@ -122,7 +130,7 @@ monthlyBudget
 familySize
 goal
 countryCode
-weeklyBudget? 
+weeklyBudget?
 days? (1..7)
 mealsPerDay? (1..3)
 currency?
@@ -141,35 +149,38 @@ weeklyBudget = 3450000   # optional override
 ### Current limitations
 
 - The price layer is only as complete as verified `PriceSnapshot.unitPrice` coverage. Missing prices are intentionally not synthesized.
-- Ingredient quantity → price-unit semantics must be verified globally before treating every market's cost as directly comparable. The current optimizer is conservative and exposes coverage/confidence.
+- Ingredient quantity → price-unit semantics are now conservative and unit-aware, but complete global market unit normalization still needs broader verified source coverage.
 - Cuisine intent is still deterministic/conservative; full multilingual intent/entity inference should eventually reuse the canonical food intelligence layer rather than relying on regex-only request parsing.
 - Recommendation engine currently samples up to 500 latest recipes before ranking; production scale should move toward database-side candidate retrieval/filtering.
-- Weekly optimizer currently uses deterministic scoring/greedy diversification. A future phase can add constrained multi-day optimization with meal-pattern constraints, leftovers, batch cooking and explicit macro distribution.
-- Latest weekly budget implementation still requires local validation before being called fully green.
+- Weekly optimizer currently uses deterministic scoring/greedy diversification plus ingredient reuse. A future phase can add constrained multi-day optimization with meal-pattern constraints, leftovers, batch cooking and explicit macro distribution once the necessary recipe metadata exists.
+- Budget cost estimates remain confidence-scored rather than treated as exact financial truth.
 
 ## Latest fully green local checkpoint — 2026-08-21
 
 ```text
 Backend typecheck:                    PASS
 Backend build:                        PASS
-Full backend Jest:                    155/155 suites — PASS
-Tests:                                415/415 — PASS
+Full backend Jest:                    156/156 suites — PASS
+Tests:                                419/419 — PASS
 Food Decision Brain focused tests:    PASS
+Weekly Budget Optimizer tests:        PASS
 ```
 
-The only previously failing test was the CPU-heavy recipe-image compression test; its Jest timeout was raised to 30 seconds without weakening the assertion. The latest user-run validation completed fully green after that fix.
+The CPU-heavy recipe-image compression test previously required a higher Jest timeout; the assertion itself remains unchanged. The latest user-run validation completed fully green after the fix.
 
-## New Slice — Weekly Food Budget Optimizer
+## New Slice — Weekly Food Budget Optimizer + Ingredient Reuse Hardening
 
 ### Implementation status
 
-**Implementation: complete for the current deterministic optimizer slice.**
+**Implementation and local validation: complete for the current deterministic optimizer slice.**
 
-Added:
+Added / strengthened:
 
 - `BudgetIntelligenceService.createWeeklyPlan(...)`
 - Price-intelligence integration through `PricePersistenceService`
 - Inventory-aware purchase-cost estimation
+- Unit-aware price conversion (mass / volume / count families)
+- Currency filtering without hidden FX conversion
 - Budget envelope calculation
 - Price coverage / budget confidence
 - 1–7 day planning horizon
@@ -177,20 +188,21 @@ Added:
 - Family-size serving scaling
 - Nutrition-aware affordability scoring
 - Diversity/family-repeat penalty
-- Aggregated shopping summary
+- Ingredient reuse / shared-shopping signal
+- Aggregated shopping summary with quantities and units
 - `POST /budget-intelligence/weekly-plan`
-- Focused optimizer tests for budget selection and no-fabricated-price behavior
+- Focused optimizer tests for budget selection, unit conversion, missing prices and currency filtering
+- Progress documentation and source-of-truth update
 
 ### Validation state
 
-**Local validation: pending.**
+**Local validation: 100% green.**
 
-Before calling this slice 100% green, run on the user's local runtime:
-
-```bash
-cd ~/My-Personal-Assistant/apps/backend
-pnpm install
-pnpm run typecheck && pnpm run build && pnpm test --runInBand
+```text
+Typecheck:                  PASS
+Build:                      PASS
+Full backend Jest:          156/156 suites — PASS
+Tests:                      419/419 — PASS
 ```
 
 ## Global Food Intelligence — major slice
@@ -251,14 +263,13 @@ It must be integrated deliberately after conflict/dependency review rather than 
 
 ## Immediate next priorities
 
-1. Validate the Weekly Food Budget Optimizer locally and fix any regressions.
-2. Upgrade weekly optimization from greedy selection to constrained multi-day planning with leftovers/batch cooking and macro distribution.
-3. Expand verified recipe corpus with provenance, allergens and dietary constraints.
-4. Improve canonical/global multilingual cuisine and ingredient inference.
-5. Integrate verified live price coverage into Food Operating Loop and budget recommendations.
-6. Build the real mobile food journey around these APIs.
-7. Continue production hardening, observability and external-API cost controls.
-8. Add voice/local AI orchestration and premium monetization after the core user journey is strong.
+1. Upgrade weekly optimization from greedy selection to constrained multi-day planning with leftovers/batch cooking once yield/storage metadata is available.
+2. Expand verified recipe corpus with provenance, allergens and dietary constraints.
+3. Improve canonical/global multilingual cuisine and ingredient inference.
+4. Integrate verified live price coverage into Food Operating Loop and budget recommendations.
+5. Build the real mobile food journey around these APIs.
+6. Continue production hardening, observability and external-API cost controls.
+7. Add voice/local AI orchestration and premium monetization after the core user journey is strong.
 
 ## Working rule
 
