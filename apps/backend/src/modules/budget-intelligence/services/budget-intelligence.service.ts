@@ -25,6 +25,20 @@ type ExtendedBudgetPlanRequest = CreateBudgetPlanDto & {
   currency?: string;
 };
 
+type PriceRow = {
+  productKey: string;
+  unitPrice: number | null;
+  unit?: string | null;
+  currency: string;
+  observedAt: Date;
+};
+
+type RecipeIngredientLike = {
+  quantity: number;
+  unit: string;
+  food: { name: string };
+};
+
 @Injectable()
 export class BudgetIntelligenceService {
   constructor(
@@ -57,7 +71,10 @@ export class BudgetIntelligenceService {
     const days = clampInteger(extended.days ?? 7, 1, 7);
     const mealsPerDay = clampInteger(extended.mealsPerDay ?? 3, 1, 3);
     const weeklyBudget = extended.weeklyBudget ?? request.monthlyBudget / 4.345;
+    if (!Number.isFinite(weeklyBudget) || weeklyBudget <= 0)
+      throw new BadRequestException('weeklyBudget must be greater than 0');
     const perDayBudget = weeklyBudget / days;
+    const requestedCurrency = normalizeCurrency(extended.currency);
 
     const [recipes, inventory] = await Promise.all([
       this.prisma.recipe.findMany({
@@ -73,22 +90,29 @@ export class BudgetIntelligenceService {
     ]);
 
     const latestPrices = await this.prices.latest();
-    const priceByKey = new Map<string, { unitPrice: number; currency: string; observedAt: Date }>();
-    for (const row of latestPrices as Array<{ productKey: string; unitPrice: number | null; currency: string; observedAt: Date }>) {
-      if (!row.unitPrice || !Number.isFinite(Number(row.unitPrice)) || Number(row.unitPrice) <= 0) continue;
+    const priceByKey = new Map<string, PriceRow>();
+    for (const row of latestPrices as PriceRow[]) {
+      if (requestedCurrency && normalizeCurrency(row.currency) !== requestedCurrency) continue;
+      if (!Number.isFinite(Number(row.unitPrice)) || Number(row.unitPrice) <= 0) continue;
+      if (!row.unit) continue;
       const existing = priceByKey.get(row.productKey);
       if (!existing || new Date(row.observedAt).getTime() > existing.observedAt.getTime()) {
         priceByKey.set(row.productKey, {
+          productKey: row.productKey,
           unitPrice: Number(row.unitPrice),
+          unit: row.unit,
           currency: row.currency,
           observedAt: new Date(row.observedAt),
         });
       }
     }
 
-    const ownedByKey = new Map<string, number>();
+    const ownedByKey = new Map<string, { quantity: number; unit: string }>();
     for (const item of inventory) {
-      ownedByKey.set(normalizeKey(item.food.name), Number(item.quantity));
+      ownedByKey.set(normalizeKey(item.food.name), {
+        quantity: Number(item.quantity),
+        unit: item.unit,
+      });
     }
 
     const ranked = recipes
@@ -159,6 +183,7 @@ export class BudgetIntelligenceService {
     const averagePriceCoverage = selected.length
       ? selected.reduce((sum, item) => sum + item.priceCoverage, 0) / selected.length
       : 0;
+    const planCurrency = requestedCurrency || selected.find((item) => item.costCurrency)?.costCurrency || null;
 
     return {
       status: 'complete',
@@ -166,7 +191,7 @@ export class BudgetIntelligenceService {
         monthlyBudget: request.monthlyBudget,
         weeklyBudget,
         perDayBudget,
-        currency: extended.currency ?? null,
+        currency: planCurrency,
         plannedEstimatedCost: plannedCost > 0 ? round(plannedCost, 2) : null,
         remainingEstimatedBudget: plannedCost > 0 ? round(Math.max(0, weeklyBudget - plannedCost), 2) : null,
         budgetConfidence: estimatedMealsWithPrice / Math.max(1, selected.length),
@@ -179,22 +204,23 @@ export class BudgetIntelligenceService {
         goal: request.goal,
       },
       meals: selected,
-      shopping: buildShoppingSummary(selected),
+      shopping: buildShoppingSummary(selected, recipes, request.familySize),
       meta: {
         candidateRecipes: recipes.length,
         plannedMeals: selected.length,
         averagePriceCoverage: round(averagePriceCoverage),
         pricesWereAvailable: priceByKey.size > 0,
+        priceCurrencyFiltered: Boolean(requestedCurrency),
       },
     };
   }
 }
 
 function analyzeRecipeCost(
-  recipe: { ingredients: Array<{ quantity: number; unit: string; food: { name: string } }> },
+  recipe: { ingredients: RecipeIngredientLike[] },
   scale: number,
-  ownedByKey: Map<string, number>,
-  prices: Map<string, { unitPrice: number; currency: string; observedAt: Date }>,
+  ownedByKey: Map<string, { quantity: number; unit: string }>,
+  prices: Map<string, PriceRow>,
 ) {
   let cost = 0;
   let priced = 0;
@@ -205,17 +231,22 @@ function analyzeRecipeCost(
   for (const ingredient of recipe.ingredients) {
     const key = normalizeKey(ingredient.food.name);
     const neededQuantity = Math.max(0, Number(ingredient.quantity) * scale);
-    const ownedQuantity = ownedByKey.get(key) ?? 0;
+    const owned = ownedByKey.get(key);
+    const ownedQuantity = owned && compatibleUnits(ingredient.unit, owned.unit)
+      ? convertQuantity(owned.quantity, owned.unit, ingredient.unit)
+      : 0;
     const missingQuantity = Math.max(0, neededQuantity - ownedQuantity);
     const price = prices.get(key);
 
     if (missingQuantity > 0) missingIngredients.push(ingredient.food.name);
-    if (!price) continue;
+    if (!price || !price.unit || !compatibleUnits(ingredient.unit, price.unit)) continue;
 
     priced += 1;
     pricedCurrency ??= price.currency;
-    cost += missingQuantity * price.unitPrice;
-    alreadyOwnedCost += Math.min(ownedQuantity, neededQuantity) * price.unitPrice;
+    const missingInPriceUnit = convertQuantity(missingQuantity, ingredient.unit, price.unit);
+    const ownedInPriceUnit = convertQuantity(Math.min(ownedQuantity, neededQuantity), ingredient.unit, price.unit);
+    cost += missingInPriceUnit * Number(price.unitPrice);
+    alreadyOwnedCost += ownedInPriceUnit * Number(price.unitPrice);
   }
 
   return {
@@ -225,7 +256,9 @@ function analyzeRecipeCost(
     inventoryCoverage: recipe.ingredients.length
       ? recipe.ingredients.filter((ingredient) => {
           const needed = Math.max(0, Number(ingredient.quantity) * scale);
-          return (ownedByKey.get(normalizeKey(ingredient.food.name)) ?? 0) >= needed;
+          const owned = ownedByKey.get(normalizeKey(ingredient.food.name));
+          if (!owned || !compatibleUnits(ingredient.unit, owned.unit)) return false;
+          return convertQuantity(owned.quantity, owned.unit, ingredient.unit) >= needed;
         }).length / recipe.ingredients.length
       : 0,
     costCurrency: pricedCurrency,
@@ -233,15 +266,35 @@ function analyzeRecipeCost(
   };
 }
 
-function buildShoppingSummary(meals: WeeklyBudgetMeal[]) {
-  const counts = new Map<string, number>();
+function buildShoppingSummary(
+  meals: WeeklyBudgetMeal[],
+  recipes: Array<{ id: string; servings: number; ingredients: RecipeIngredientLike[] }>,
+  familySize: number,
+) {
+  const recipeById = new Map(recipes.map((recipe) => [recipe.id, recipe]));
+  const totals = new Map<string, { name: string; quantity: number; unit: string; recipeCount: number }>();
+
   for (const meal of meals) {
-    for (const ingredient of meal.missingIngredients) {
-      counts.set(ingredient, (counts.get(ingredient) ?? 0) + 1);
+    const recipe = recipeById.get(meal.recipeId);
+    if (!recipe) continue;
+    const scale = familySize / Math.max(recipe.servings, 1);
+    for (const ingredient of recipe.ingredients) {
+      const key = `${normalizeKey(ingredient.food.name)}|${normalizeUnit(ingredient.unit)}`;
+      const needed = Math.max(0, Number(ingredient.quantity) * scale);
+      const current = totals.get(key) ?? {
+        name: ingredient.food.name,
+        quantity: 0,
+        unit: ingredient.unit,
+        recipeCount: 0,
+      };
+      current.quantity += needed;
+      current.recipeCount += 1;
+      totals.set(key, current);
     }
   }
-  return [...counts.entries()]
-    .map(([name, recipeCount]) => ({ name, recipeCount }))
+
+  return [...totals.values()]
+    .map((item) => ({ ...item, quantity: round(item.quantity, 2) }))
     .sort((a, b) => b.recipeCount - a.recipeCount || a.name.localeCompare(b.name));
 }
 
@@ -266,6 +319,43 @@ function normalizeKey(value: string): string {
     .replace(/[\u200c\s]+/g, '-')
     .replace(/[^\p{L}\p{N}-]+/gu, '')
     .slice(0, 180);
+}
+
+function normalizeUnit(value?: string | null): string {
+  return String(value || '').trim().toLowerCase();
+}
+
+function normalizeCurrency(value?: string | null): string | null {
+  const currency = String(value || '').trim().toUpperCase();
+  return currency || null;
+}
+
+function compatibleUnits(left?: string | null, right?: string | null): boolean {
+  const a = normalizeUnit(left);
+  const b = normalizeUnit(right);
+  if (!a || !b) return false;
+  return unitFamily(a) === unitFamily(b);
+}
+
+function unitFamily(unit: string): 'mass' | 'volume' | 'count' | 'other' {
+  if (['mg', 'g', 'kg', 'oz', 'lb'].includes(unit)) return 'mass';
+  if (['ml', 'l', 'cup', 'tbsp', 'tsp'].includes(unit)) return 'volume';
+  if (['piece', 'pieces', 'pcs', 'count', 'unit'].includes(unit)) return 'count';
+  return 'other';
+}
+
+function convertQuantity(quantity: number, from?: string | null, to?: string | null): number {
+  const source = normalizeUnit(from);
+  const target = normalizeUnit(to);
+  if (source === target) return quantity;
+  if (unitFamily(source) !== unitFamily(target)) return 0;
+
+  const massToGram: Record<string, number> = { mg: 0.001, g: 1, kg: 1000, oz: 28.349523125, lb: 453.59237 };
+  const volumeToMl: Record<string, number> = { ml: 1, l: 1000, cup: 240, tbsp: 15, tsp: 5 };
+
+  if (unitFamily(source) === 'mass') return (quantity * massToGram[source]) / massToGram[target];
+  if (unitFamily(source) === 'volume') return (quantity * volumeToMl[source]) / volumeToMl[target];
+  return quantity;
 }
 
 function clamp01(value: number) {
