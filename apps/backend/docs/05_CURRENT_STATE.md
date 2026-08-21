@@ -6,13 +6,13 @@
 
 ## Executive status
 
-**Overall project completion: ~68%**
+**Overall project completion: ~69%**
 
-This is a weighted engineering/product-completion index, not a claim that 68% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans canonical food intelligence, scaling, inventory, shopping handoff, recommendations, daily planning, weekly budget optimization, and the first normalized health-data gateway. Major unfinished product work remains in the verified global recipe corpus, full live market coverage, native health-provider integrations, mobile UX, production hardening, voice/local AI integration, and monetization.
+This is a weighted engineering/product-completion index, not a claim that 69% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans canonical food intelligence, scaling, inventory, shopping handoff, recommendations, daily planning, weekly budget optimization, and normalized health data. Major unfinished product work remains in the verified global recipe corpus, full live market coverage, device-level health validation, mobile UX, production hardening, voice/local AI integration, and monetization.
 
-## Latest workstream — Food Decision Brain + Weekly Budget Optimizer + Health Data Gateway
+## Latest workstream — Food Decision Brain + Weekly Budget Optimizer + Health Data Gateway + Native Health Providers
 
-A deterministic **Food Decision Brain** is wired into recommendation-intelligence, a **Weekly Food Budget Optimizer** is layered on top of the existing recipe, inventory and price-intelligence systems, and a **Health Data Gateway** now provides a vendor-neutral contract for wearable/health data.
+A deterministic **Food Decision Brain** is wired into recommendation-intelligence, a **Weekly Food Budget Optimizer** is layered on top of the existing recipe, inventory and price-intelligence systems, and the health stack now spans a provider-neutral backend gateway plus native mobile adapters for HealthKit and Health Connect.
 
 ### Food Decision pipeline
 
@@ -88,6 +88,21 @@ Daily health/activity aggregation
 Personal Brain / Nutrition Brain / Workout Brain
 ```
 
+### Native mobile health pipeline
+
+```text
+iPhone / Apple Watch                     Android phone / watch
+        ↓                                         ↓
+   HealthKit adapter                       Health Connect adapter
+        └──────────────┬─────────────────────────┘
+                       ↓
+              Shared HealthProvider
+                       ↓
+             Incremental sync client
+                       ↓
+       /device-intelligence/health-sync
+```
+
 ### Current decision signals
 
 - target servings
@@ -126,6 +141,18 @@ Personal Brain / Nutrition Brain / Workout Brain
 
 The gateway deliberately separates provider-specific records from the normalized contract so the backend is not coupled to Apple, Google, or a specific wearable vendor.
 
+### Native provider implementation
+
+Implemented in the mobile repo:
+
+- iOS HealthKit provider behind the shared contract.
+- Android Health Connect provider behind the same contract.
+- Shared platform-provider factory.
+- Authenticated health-sync client.
+- Incremental sync orchestrator with last-success timestamp.
+- Expo native config for HealthKit + Health Connect.
+- EAS development profile with installable Android APK.
+
 ### Important design boundaries
 
 - Canonical ingredient identity remains upstream. The decision engine consumes stable food entities rather than creating a second synonym/taxonomy layer.
@@ -139,6 +166,8 @@ The gateway deliberately separates provider-specific records from the normalized
 - Real leftovers/batch-cooking reuse is not fabricated without yield/batch/storage metadata; current reuse optimization is ingredient/shopping reuse.
 - Health data is treated as source data, not medical diagnosis. The gateway normalizes measurements but does not invent clinical conclusions.
 - Native provider access remains mobile-side; backend stays provider-neutral.
+- HealthKit is pinned to a known-good v13.4.0 line rather than v14 until its reported cold-start permission-sheet regression is resolved.
+- Android Health Connect uses the current v4 integration and does not use the deprecated standalone `expo-health-connect` package.
 
 ### Current API surface
 
@@ -156,36 +185,11 @@ GET  /device-intelligence
 POST /device-intelligence/health-sync
 ```
 
-### Weekly budget request contract
-
-The current controller accepts:
-
-```text
-monthlyBudget
-familySize
-goal
-countryCode
-weeklyBudget?
-days? (1..7)
-mealsPerDay? (1..3)
-currency?
-```
-
-Example intent:
-
-```text
-monthlyBudget = 15000000
-familySize = 4
-goal = healthy affordable meals
-countryCode = IR
-weeklyBudget = 3450000   # optional override
-```
-
 ### Health sync request contract
 
 ```text
 provider
- deviceId
+deviceId
 points[]
   dataType
   value
@@ -206,8 +210,9 @@ The current contract supports idempotent replay using `sourceRecordId` when avai
 - Recommendation engine currently samples up to 500 latest recipes before ranking; production scale should move toward database-side candidate retrieval/filtering.
 - Weekly optimizer currently uses deterministic scoring/greedy diversification plus ingredient reuse. A future phase can add constrained multi-day optimization with meal-pattern constraints, leftovers, batch cooking and explicit macro distribution once the necessary recipe metadata exists.
 - Budget cost estimates remain confidence-scored rather than treated as exact financial truth.
-- Health Data Gateway backend contract is complete, but native HealthKit and Android Health Connect adapters are not yet implemented and require device/development builds for real-device validation.
-- Daily health aggregation exists as a contract/logic layer; production scheduling, historical reconciliation and richer provider-specific sync semantics remain.
+- Native HealthKit and Android Health Connect adapters are implemented, but real-device permission/read/reconciliation validation is still pending.
+- Historical reconciliation, background delivery, vendor-specific source prioritization and richer anchor/watermark semantics remain for the next health phase.
+- Adaptive nutrition/workout decisions from health summaries are not yet fully wired into Personal Brain.
 
 ## Latest fully green local checkpoint — 2026-08-21
 
@@ -224,29 +229,33 @@ Health Data Gateway focused tests:    PASS
 
 The CPU-heavy recipe-image compression test previously required a higher Jest timeout; the assertion itself remains unchanged. The latest user-run validation completed fully green after the fix.
 
-## New Slice — Health Data Gateway
+## New Slice — Native Health Providers
 
 ### Implementation status
 
-**Implementation and local validation: complete for the backend gateway slice.**
+**Implementation complete; real-device validation pending.**
 
-Added / strengthened:
+Added:
 
-- provider-neutral health datapoint contract
-- `HealthDataPoint` persistence model
-- migration `20260821130000_add_health_data_points`
-- idempotent health sync through `HealthSyncService`
-- normalized supported health metrics
-- daily summary contract for activity/energy data
-- device-intelligence controller endpoint for synchronization
-- focused device-intelligence tests
-- focused health-sync tests
-- mobile-side `health-provider.ts` abstraction for later native adapters
-- Health Gateway architecture/progress documentation
+- `@kingstinct/react-native-healthkit@13.4.0`
+- `react-native-health-connect@4.1.3`
+- `react-native-nitro-modules@0.35.6`
+- Expo SDK 53-compatible `expo-build-properties@~0.14.8`
+- `expo-dev-client@~5.2.0`
+- iOS HealthKit adapter and permission flow
+- Android Health Connect adapter and permission flow
+- platform provider factory
+- auth-aware health sync client
+- incremental health sync orchestrator
+- Expo native configuration
+- EAS `development` profile with installable Android APK
+- native-health progress documentation
 
 ### Validation state
 
-**Local validation: 100% green.**
+**Backend is green; native validation is pending.**
+
+The backend had a fully green checkpoint immediately before this native phase:
 
 ```text
 Typecheck:                  PASS
@@ -256,118 +265,20 @@ Full backend Jest:          158/158 suites — PASS
 Tests:                      422/422 — PASS
 ```
 
-### Next native phase
-
-- iOS HealthKit adapter behind the shared mobile provider contract.
-- Android Health Connect adapter behind the same contract.
-- Real-device sync/reconciliation tests.
-- Daily aggregation into Nutrition Brain, Workout Brain, and Personal Brain.
-- Adaptive nutrition using consumed calories vs activity/energy data.
-
-## New Slice — Weekly Food Budget Optimizer + Ingredient Reuse Hardening
-
-### Implementation status
-
-**Implementation and local validation: complete for the current deterministic optimizer slice.**
-
-Added / strengthened:
-
-- `BudgetIntelligenceService.createWeeklyPlan(...)`
-- Price-intelligence integration through `PricePersistenceService`
-- Inventory-aware purchase-cost estimation
-- Unit-aware price conversion (mass / volume / count families)
-- Currency filtering without hidden FX conversion
-- Budget envelope calculation
-- Price coverage / budget confidence
-- 1–7 day planning horizon
-- 1–3 meals per day
-- Family-size serving scaling
-- Nutrition-aware affordability scoring
-- Diversity/family-repeat penalty
-- Ingredient reuse / shared-shopping signal
-- Aggregated shopping summary with quantities and units
-- `POST /budget-intelligence/weekly-plan`
-- Focused optimizer tests for budget selection, unit conversion, missing prices and currency filtering
-- Progress documentation and source-of-truth update
-
-### Validation state
-
-**Local validation: 100% green.**
-
-```text
-Typecheck:                  PASS
-Build:                      PASS
-Full backend Jest:          158/158 suites — PASS
-Tests:                      422/422 — PASS
-```
-
-## Global Food Intelligence — major slice
-
-### Completed in main / active branch
-
-- 195-country country-code coverage for the food routing layer.
-- Country food profile for each market.
-- Cuisine-family context.
-- Staple-ingredient context.
-- Signature/local recipe discovery anchors.
-- Common cooking units.
-- Hard-to-source ingredient metadata.
-- Deterministic local recipe ranking.
-- Explicit global-recipe behavior preserved.
-- Cuisine-preserving substitution policy.
-- Country-aware recipe API endpoints.
-- Canonical ingredient taxonomy and supplement chain through v9.
-- Final food resolver chain with quantity normalization, source-part decomposition, alias handling and locale support.
-
-### Still required for 100%
-
-- Large verified recipe corpus with complete instructions and quantities.
-- Nutrition provenance and quality controls.
-- Allergens and dietary constraints coverage across the full corpus.
-- Production-scale ingredient substitutions.
-- Serving-scaling metadata population for the entire catalog.
-- Inventory matching across the full catalog.
-- Shopping conversion across the full catalog.
-- Provenance/versioning.
-- Duplicate/alias/cultural-metadata QA.
-- Full multilingual entity normalization beyond the current deterministic layer.
-
-## Global Currency / Finance Intelligence — major slice
-
-### Completed
-
-- 195-country local currency registry.
-- Fraction-digit metadata.
-- Country finance context.
-- Source-native currency preservation policy.
-- Comparison/normalization-only FX contract.
-- Unknown-country rejection.
-- Focused 195-country tests.
-
-### Still required
-
-- Full live-price coverage by country.
-- Source verification per market.
-- Recipe → ingredient price → budget integration at global production coverage.
-- More robust unit-price semantics and market normalization.
-
-## Global Market / Price Intelligence
-
-A larger stacked workstream exists with 195-country market/source registry, routing, discovery-only fallbacks, cached FX, local-time scheduling, confidence scoring and price-source infrastructure.
-
-It must be integrated deliberately after conflict/dependency review rather than force-merged.
+The native provider code requires an iOS/Android development build and a real device because Expo Go cannot execute custom native health modules. Expo development builds are intended for custom native modules, while APK production/internal builds remain supported through EAS. citeturn508369search8turn508369search0
 
 ## Immediate next priorities
 
-1. Build and validate native HealthKit + Android Health Connect adapters behind the shared mobile health-provider contract.
-2. Feed normalized health/activity summaries into Nutrition Brain, Workout Brain and Personal Brain.
-3. Upgrade weekly optimization from greedy selection to constrained multi-day planning with leftovers/batch cooking once yield/storage metadata is available.
-4. Expand verified recipe corpus with provenance, allergens and dietary constraints.
-5. Improve canonical/global multilingual cuisine and ingredient inference.
-6. Integrate verified live price coverage into Food Operating Loop and budget recommendations.
-7. Build the real mobile food/health journey around these APIs.
-8. Continue production hardening, observability and external-API cost controls.
-9. Add voice/local AI orchestration and premium monetization after the core user journey is strong.
+1. Validate the native health providers with iOS and Android development builds.
+2. Add true background/incremental reconciliation and provider-source precedence.
+3. Feed health summaries into Nutrition Brain, Workout Brain and Personal Brain so calories burned/activity can adapt plans.
+4. Upgrade weekly optimization from greedy selection to constrained multi-day planning with leftovers/batch cooking once yield/storage metadata is available.
+5. Expand verified recipe corpus with provenance, allergens and dietary constraints.
+6. Improve canonical/global multilingual cuisine and ingredient inference.
+7. Integrate verified live price coverage into Food Operating Loop and budget recommendations.
+8. Build the real mobile food/health journey around these APIs.
+9. Continue production hardening, observability and external-API cost controls.
+10. Add voice/local AI orchestration and premium monetization after the core user journey is strong.
 
 ## Working rule
 
