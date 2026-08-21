@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class NutritionService {
       where: { userId },
       update: data,
       create: {
+        id: randomUUID(),
         userId,
         ...data,
       },
