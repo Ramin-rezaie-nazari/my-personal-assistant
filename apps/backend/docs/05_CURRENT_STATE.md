@@ -10,6 +10,76 @@
 
 This is a weighted engineering/product-completion index, not a claim that 65% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans scaling, inventory, shopping handoff, recommendations and daily meal planning. Major unfinished product work remains in the verified global recipe corpus, live market pricing, mobile UX, production hardening, and monetization.
 
+## Latest recommendation workstream on `work/canonical-ingredient-intelligence`
+
+A new deterministic **Food Decision Brain** slice is now wired into the recommendation-intelligence module. It builds on the existing Food Operating Loop rather than creating a parallel recipe engine.
+
+### Decision pipeline
+
+```text
+Natural request context
+  ↓
+Food-theme / cuisine-intent inference
+  ↓
+Hard dietary + allergy filters
+  ↓
+Serving-aware recipe + inventory evaluation
+  ↓
+Nutrition fit
+  ↓
+Explicit ingredient/style preference
+  ↓
+Country/cuisine context
+  ↓
+Novelty / recent-meal rotation
+  ↓
+Verification + missing-ingredient quality
+  ↓
+Weighted decision score
+  ↓
+Diverse top-N ranking
+  ↓
+Reasons + score breakdown + rejected candidates
+```
+
+### Current decision signals
+
+- target servings
+- daily nutrition goals with deterministic per-serving targets
+- current household inventory coverage
+- missing ingredients
+- dietary preferences
+- allergy signals
+- disliked ingredients
+- explicit preferred ingredients
+- food-theme intent inferred from category/goal/context
+- country/cuisine context
+- recent-meal novelty
+- verified recipe state
+- diversity/family de-duplication
+
+### Important design boundary
+
+Canonical ingredient identity remains upstream. The decision engine should consume stable food entities rather than trying to create a second synonym/taxonomy layer. This preserves the work in `08_CANONICAL_INGREDIENT_INTELLIGENCE.md` and the final resolver chain.
+
+### Current API surface
+
+```text
+POST /recommendation-intelligence/food
+GET  /recipes/recommendations
+GET  /recipes/meal-plan
+GET  /recipes/:id/food-plan
+POST /recipes/:id/food-plan/shopping
+```
+
+### Current limitations
+
+- Cost/budget is not yet a first-class scoring dimension because verified current market prices are still a separate workstream.
+- Cuisine intent is currently deterministic and conservative; full multilingual cuisine/entity inference should eventually reuse the same canonical food intelligence layer rather than relying on name regex alone.
+- Allergy/diet checks are candidate safety signals, not medical clearance.
+- Recommendation engine currently samples up to 500 latest recipes before ranking; production scale should move toward database-side candidate retrieval/filtering before scoring the whole corpus.
+- Final local typecheck/build/test validation for the latest recommendation commits is still required before calling this slice 100% green.
+
 ## Latest fully green local checkpoint — 2026-08-18
 
 ```text
