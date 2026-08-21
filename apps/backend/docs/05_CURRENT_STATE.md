@@ -24,6 +24,70 @@ Prisma migrate status:               Database schema is up to date
 
 The non-fatal E2E worker teardown warning remains, but all E2E suites/tests pass.
 
+## Current unvalidated change — Food Decision Brain
+
+A new deterministic food-decision layer has now been wired into the backend as the next intelligence slice. It is intentionally built on top of the existing Food Operating Loop and Canonical Ingredient Intelligence rather than creating a parallel recipe-ranking system.
+
+### Decision pipeline
+
+```text
+User food intent
+  ↓
+Personal context
+  ↓
+Hard dietary/allergy filters
+  ↓
+Serving-aware Food Operating Loop
+  ↓
+Inventory coverage / missing ingredients
+  ↓
+Nutrition fit
+  ↓
+Preference fit
+  ↓
+Novelty / recent-meal avoidance
+  ↓
+Country / cuisine context
+  ↓
+Recipe verification + missing-ingredient quality
+  ↓
+Weighted decision score
+  ↓
+Diversified ranking
+  ↓
+Reasons + score breakdown + rejected candidates
+```
+
+### Implemented
+
+- `RecommendationEngineService` now performs deterministic multi-signal food decisions.
+- `PersonalizationService` builds food context from profile, health, nutrition and recent meals.
+- `RecommendationRankingService` applies score ordering plus near-top recipe-family diversification.
+- Food recommendation endpoint exists under `POST /recommendation-intelligence/food`.
+- Recommendation Intelligence is wired into `AppModule`.
+- Existing Recipe APIs and Food Operating Loop remain the canonical recipe/serving/inventory execution path.
+- Canonical Ingredient Intelligence remains the upstream identity source; it is not duplicated by the recommendation engine.
+
+### Important design boundaries
+
+- Country is a relevance signal, not a cuisine restriction. A user in Iran asking for Indian food must still receive Indian options.
+- Dietary/allergy hard blocks run before ranking. Uncertainty remains conservative.
+- Missing ingredients are a ranking penalty by default; a caller can explicitly set a maximum missing-ingredient threshold when a strict pantry-only decision is required.
+- Live price values are not fabricated. Budget-aware ranking should be added only after verified market-price coverage is available.
+- Recommendation explanations are derived from the actual scoring evidence, not invented after the decision.
+
+### Current validation state
+
+**Not yet fully validated locally.** The next local checkpoint must include:
+
+1. backend `pnpm install` / dependency state is synchronized;
+2. `pnpm run typecheck` passes;
+3. `pnpm run build` passes;
+4. full Jest passes;
+5. recommendation-engine focused tests cover hard filters, intent/cuisine matching, personalization, missing-ingredient threshold and diversification;
+6. API integration/E2E validation covers `POST /recommendation-intelligence/food`;
+7. only then should this slice be marked fully green.
+
 ## New Slice — Food Operating Loop + Meal Planning + Recipe Scaling Metadata
 
 ### Implemented on `main`
@@ -112,26 +176,6 @@ Focused tests:
 - `recipes.service.scaling.spec.ts`
 
 Focused result: **5/5 suites, 14/14 tests — PASS**.
-
-## Recipe Serving Scaling — 100% for mature current slice
-
-Previously validated and now strengthened with persisted ingredient policies:
-
-- Recipe `servings` persistence.
-- DTO validation.
-- Deterministic scaling engine.
-- `linear`, `sublinear`, `fixed`, `per_batch`, `manual_review` policies.
-- Policy-specific exponent/batch/max-multiplier metadata.
-- Kitchen-friendly quantity rounding.
-- Full-batch nutrition.
-- Per-serving nutrition.
-- Scaled recipe API.
-- Unit/service/controller coverage.
-- Edge-case coverage.
-- Target-serving validation.
-- Explicit non-linear policy test coverage.
-
-Current local focused tests are green as part of the 14-test Food Operating Loop checkpoint above.
 
 ## Global Food Intelligence — major slice on main
 
