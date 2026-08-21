@@ -43,8 +43,9 @@ model User {
   userBehaviors UserBehavior[]
   userInsights UserInsight[]
   planExecutionStates PlanExecutionState[]
-  fitnessProfileState FitnessProfileState?
   decisionAudits DecisionAuditEntry[]
+  fitnessProfileState FitnessProfileState?
+  healthDataPoints HealthDataPoint[]
 }
 
 model AuthAccount {
@@ -115,7 +116,7 @@ model UserOnboarding {
 }
 
 model AssistantProfile {
-  id String @id @default(uuid())
+  id String @id @unique @default(uuid())
   userId String @unique
   healthGoal String?
   fitnessGoal String?
@@ -486,4 +487,24 @@ model FitnessProfileState {
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@index([updatedAt])
+}
+
+model HealthDataPoint {
+  id String @id @default(uuid())
+  userId String
+  provider String
+  deviceId String?
+  dataType String
+  value Float
+  unit String
+  startAt DateTime
+  endAt DateTime
+  sourceRecordId String?
+  metadata Json?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, provider, dataType, sourceRecordId])
+  @@index([userId, dataType, startAt])
+  @@index([userId, provider, startAt])
 }
