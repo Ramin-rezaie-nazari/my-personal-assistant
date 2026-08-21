@@ -116,7 +116,7 @@ model UserOnboarding {
 }
 
 model AssistantProfile {
-  id String @id @unique @default(uuid())
+  id String @id @default(uuid())
   userId String @unique
   healthGoal String?
   fitnessGoal String?
@@ -145,7 +145,7 @@ model HealthProfile {
 }
 
 model NutritionProfile {
-  id String @id @default(uuid())
+  id String @id @unique
   userId String @unique
   dailyCaloriesGoal Int?
   proteinGoalGrams Int?
@@ -480,7 +480,7 @@ model DecisionAuditEntry {
 }
 
 model FitnessProfileState {
-  id String @id @default(uuid())
+  id String @id @unique
   userId String @unique
   profile Json
   createdAt DateTime @default(now())
