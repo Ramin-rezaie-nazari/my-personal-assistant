@@ -74,7 +74,7 @@ function buildService(recipeOverrides: Record<string, unknown> = {}) {
     ranking,
   );
 
-  return { service, prisma, countryFood };
+  return { service, prisma, foodLoop, countryFood };
 }
 
 describe('RecommendationEngineService food decision brain', () => {
@@ -119,8 +119,7 @@ describe('RecommendationEngineService food decision brain', () => {
   });
 
   it('only treats missing-ingredient count as a hard blocker when explicitly requested', async () => {
-    const { service } = buildService();
-    const foodLoop = service['foodLoop'] as unknown as { recommend: jest.Mock };
+    const { service, foodLoop } = buildService();
     foodLoop.recommend.mockResolvedValue([
       {
         recipeId: 'r1',
