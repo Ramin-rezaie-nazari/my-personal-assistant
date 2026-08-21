@@ -106,7 +106,7 @@ export class RecommendationEngineService {
       const allergyPenalty = overlapScore(ingredients, context.allergySignals.map(normalize));
       const noveltyScore = novelty(recipe.name, context.recentMealNames);
       const countryScore = countryFit(recipe.name, joined, countrySignature, countryGuidance?.cuisineFamily || null);
-      const themeScore = themeFit(joined, themes.foodThemes);
+      const themeScore = themeFit(joined, ingredients, themes.foodThemes);
       const verifiedScore = recipe.verified ? 1 : 0.55;
       const missingScore = 1 - Math.min(1, missingCount / Math.max(1, recipe.ingredients.length));
       const coverageBonus = inventoryScore >= 0.8 ? 1 : inventoryScore >= 0.5 ? 0.7 : inventoryScore;
@@ -159,7 +159,7 @@ export class RecommendationEngineService {
         context: request.context || '',
         foodThemes: themes.foodThemes,
       },
-      decisionPolicy: 'intent → hard safety/dietary filters → inventory/scaling → nutrition → explicit preference → cuisine/country → novelty/diversity → verification → explanation',
+      decisionPolicy: 'intent → hard safety/dietary filters → inventory/scaling → nutrition → explicit preference → ingredient-aware cuisine/country → novelty/diversity → verification → explanation',
       constraints: {
         targetServings,
         countryCode: context.countryCode,
@@ -261,11 +261,34 @@ function countryFit(name: string, searchable: string, signature: Set<string>, cu
   return signature.size ? 0.58 : 0.5;
 }
 
-function themeFit(searchable: string, themes: string[]): number {
+function themeFit(searchable: string, ingredients: string[], themes: string[]): number {
   if (!themes.length) return 0.5;
   const text = normalize(searchable);
-  const matched = themes.filter((theme) => text.includes(theme.replace('_', ' ')) || themeAliases(theme).some((alias) => text.includes(alias)));
-  return Math.min(1, 0.45 + matched.length * 0.2);
+  const ingredientText = ingredients.join(' ');
+  const scores = themes.map((theme) => {
+    const direct = text.includes(theme.replace('_', ' ')) || themeAliases(theme).some((alias) => text.includes(alias));
+    const ingredientSignals = themeIngredientSignals(theme);
+    const hits = ingredientSignals.filter((signal) => ingredients.some((item) => item.includes(signal) || signal.includes(item)));
+    const ingredientScore = ingredientSignals.length ? Math.min(1, hits.length / Math.min(4, ingredientSignals.length)) : 0;
+    return direct ? 1 : ingredientScore;
+  });
+  return Math.min(1, 0.4 + Math.max(...scores) * 0.6);
+}
+
+function themeIngredientSignals(theme: string): string[] {
+  const map: Record<string, string[]> = {
+    seafood: ['fish', 'salmon', 'tuna', 'shrimp', 'prawn', 'crab', 'shellfish', 'anchovy'],
+    indian: ['cumin', 'turmeric', 'coriander', 'garam masala', 'cardamom', 'curry', 'lentil', 'chickpea'],
+    italian: ['olive oil', 'tomato', 'basil', 'parmesan', 'mozzarella', 'pasta', 'risotto'],
+    mexican: ['corn', 'bean', 'chili', 'lime', 'avocado', 'jalapeno', 'cilantro'],
+    persian: ['rice', 'saffron', 'dill', 'mint', 'parsley', 'chickpea', 'barberry', 'walnut'],
+    mediterranean: ['olive oil', 'tomato', 'feta', 'chickpea', 'lentil', 'eggplant', 'fish'],
+    asian: ['rice', 'soy', 'ginger', 'sesame', 'tofu', 'miso', 'noodle'],
+    high_protein: ['chicken', 'fish', 'egg', 'beef', 'turkey', 'lentil', 'yogurt'],
+    light: ['vegetable', 'fish', 'salad', 'legume', 'spinach', 'cucumber'],
+    comfort: ['potato', 'cheese', 'butter', 'cream', 'stew', 'soup'],
+  };
+  return map[theme] || [];
 }
 
 function themeAliases(theme: string): string[] {
@@ -320,16 +343,6 @@ function confidenceFor(recommendations: RankedFoodRecommendation[], candidates: 
   return Number(clamp01(0.48 + Math.min(0.15, spread) + evidence + (hasCountry ? 0.08 : 0) + (hasIntent ? 0.08 : 0) + (recommendations.length >= 5 ? 0.08 : 0) + guardrail).toFixed(2));
 }
 
-function validServings(value: number): number {
-  if (!Number.isInteger(value) || value < 1 || value > 10000) throw new Error('targetServings must be an integer between 1 and 10000');
-  return value;
-}
-
-function clamp01(value: number): number {
-  return Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0));
-}
-
-function round(value: number, digits = 3): number {
-  const factor = 10 ** digits;
-  return Math.round(value * factor) / factor;
-}
+function clamp01(value: number): number { return Math.max(0, Math.min(1, value)); }
+function round(value: number, digits = 3): number { const factor = 10 ** digits; return Math.round(value * factor) / factor; }
+function validServings(value: number): number { const parsed = Number(value); if (!Number.isFinite(parsed)) return 2; return Math.min(10000, Math.max(1, Math.floor(parsed))); }
