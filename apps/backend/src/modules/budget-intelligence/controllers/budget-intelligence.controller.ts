@@ -1,4 +1,4 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Query, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { BudgetIntelligenceService } from '../services/budget-intelligence.service';
 import { GlobalCountryFinanceService } from '../services/global-country-finance.service';
@@ -15,6 +15,34 @@ export class BudgetIntelligenceController {
   @Get()
   getPlan() {
     return this.budgetService.createPlan();
+  }
+
+  @Post('weekly-plan')
+  @UseGuards(JwtAuthGuard)
+  weeklyPlan(
+    @Request() req: { user: { id: string } },
+    @Query('monthlyBudget') monthlyBudgetText?: string,
+    @Query('familySize') familySizeText?: string,
+    @Query('goal') goal = 'healthy affordable meals',
+    @Query('countryCode') countryCode = '',
+    @Query('weeklyBudget') weeklyBudgetText?: string,
+    @Query('days') daysText?: string,
+    @Query('mealsPerDay') mealsPerDayText?: string,
+    @Query('currency') currency?: string,
+  ) {
+    return this.budgetService.createWeeklyPlan(
+      req.user.id,
+      {
+        monthlyBudget: Number(monthlyBudgetText),
+        familySize: Number(familySizeText),
+        goal,
+        ...(weeklyBudgetText ? { weeklyBudget: Number(weeklyBudgetText) } : {}),
+        ...(daysText ? { days: Number(daysText) } : {}),
+        ...(mealsPerDayText ? { mealsPerDay: Number(mealsPerDayText) } : {}),
+        ...(currency ? { currency } : {}),
+      },
+      countryCode,
+    );
   }
 
   @Get('meal-plan')
