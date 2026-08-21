@@ -8,7 +8,7 @@ import { RecommendationRankingService, RankedFoodRecommendation } from './recomm
 
 export type FoodDecisionResult = {
   status: 'complete';
-  intent: { category: string; goal: string; context: string };
+  intent: { category: string; goal: string; context: string; cuisineHint: string | null };
   decisionPolicy: string;
   constraints: {
     targetServings: number;
@@ -18,14 +18,11 @@ export type FoodDecisionResult = {
     dietaryPreferences: string[];
     allergySignals: string[];
     dislikedIngredients: string[];
+    maxMissingIngredients?: number;
   };
   recommendations: RankedFoodRecommendation[];
   rejected: Array<{ recipeId: string; name: string; reason: string }>;
-  meta: {
-    candidates: number;
-    returned: number;
-    confidence: number;
-  };
+  meta: { candidates: number; returned: number; confidence: number };
 };
 
 @Injectable()
@@ -51,25 +48,30 @@ export class RecommendationEngineService {
       minProteinGrams: request.minProteinGrams,
     });
 
-    const maxMissingIngredients = Math.max(0, request.maxMissingIngredients ?? 6);
     const maxResults = Math.min(Math.max(request.maxResults ?? 10, 1), 30);
-    const recipes = await this.prisma.recipe.findMany({
-      where: { OR: [{ userId: null }, { userId }] },
-      include: { ingredients: { include: { food: true } } },
-      orderBy: { updatedAt: 'desc' },
-      take: 500,
-    });
+    const explicitMissingCap = request.maxMissingIngredients !== undefined;
+    const maxMissingIngredients = explicitMissingCap ? Math.max(0, request.maxMissingIngredients ?? 0) : undefined;
 
-    const base = await this.foodLoop.recommend(
-      userId,
-      targetServings,
-      context.countryCode,
-      context.targetCaloriesPerServing,
-      context.targetProteinPerServing,
-    );
+    const [recipes, inventory, base] = await Promise.all([
+      this.prisma.recipe.findMany({
+        where: { OR: [{ userId: null }, { userId }] },
+        include: { ingredients: { include: { food: true } } },
+        orderBy: { updatedAt: 'desc' },
+        take: 500,
+      }),
+      this.prisma.inventoryItem.findMany({ where: { userId }, select: { foodId: true, quantity: true } }),
+      this.foodLoop.recommend(userId, targetServings, context.countryCode, context.targetCaloriesPerServing, context.targetProteinPerServing),
+    ]);
+
+    const inventoryByFood = new Map(inventory.map((item) => [item.foodId, item.quantity]));
     const baseById = new Map(base.map((item) => [item.recipeId, item]));
-    const countryGuidance = context.countryCode ? this.countryFood.getLocalRecipeGuidance(context.countryCode) : null;
-    const countrySignature = new Set((countryGuidance?.preferredRecipes ?? []).map((name) => normalize(name)));
+    const cuisineHint = detectCuisineHint(`${request.goal || ''} ${request.context || ''}`);
+    const countryGuidance = context.countryCode
+      ? this.countryFood.getLocalRecipeGuidance(context.countryCode)
+      : cuisineHint
+        ? this.countryFood.getGuidanceForCuisine(cuisineHint)
+        : null;
+    const countrySignature = new Set((countryGuidance?.preferredRecipes ?? []).map(normalize));
     const preferredIngredients = (request.preferredIngredients ?? []).map(normalize).filter(Boolean);
 
     const ranked: RankedFoodRecommendation[] = [];
@@ -77,26 +79,37 @@ export class RecommendationEngineService {
 
     for (const recipe of recipes) {
       const baseItem = baseById.get(recipe.id);
-      const ingredients = recipe.ingredients.map((item) => normalize(item.food.name));
-      const hardBlock = findHardBlock(ingredients, context.allergySignals, context.dietaryPreferences, recipe.ingredients.map((item) => item.food.category));
+      const ingredientNames = recipe.ingredients.map((item) => normalize(item.food.name));
+      const hardBlock = findHardBlock(ingredientNames, context.allergySignals, context.dietaryPreferences);
       if (hardBlock) {
         rejected.push({ recipeId: recipe.id, name: recipe.name, reason: hardBlock });
         continue;
       }
 
-      const missingCount = baseItem?.missingCount ?? recipe.ingredients.length;
-      if (missingCount > maxMissingIngredients) {
+      const availableIngredientCount = recipe.ingredients.filter((ingredient) => Number(inventoryByFood.get(ingredient.foodId) ?? 0) > 0).length;
+      const presenceInventoryScore = recipe.ingredients.length ? availableIngredientCount / recipe.ingredients.length : 0.5;
+      const inventoryScore = baseItem ? (baseItem.coveragePercent / 100) : presenceInventoryScore;
+      const missingCount = baseItem?.missingCount ?? Math.max(0, recipe.ingredients.length - availableIngredientCount);
+
+      if (explicitMissingCap && missingCount > maxMissingIngredients!) {
         rejected.push({ recipeId: recipe.id, name: recipe.name, reason: `too many missing ingredients (${missingCount})` });
         continue;
       }
 
-      const inventoryScore = (baseItem?.coveragePercent ?? 0) / 100;
-      const nutritionScore = scoreNutrition(recipe.calories / Math.max(recipe.servings, 1), recipe.protein / Math.max(recipe.servings, 1), context.targetCaloriesPerServing, context.targetProteinPerServing);
-      const preferenceScore = preferredIngredients.length ? overlapScore(ingredients, preferredIngredients) : 0.5;
-      const dislikePenalty = overlapScore(ingredients, context.dislikedIngredients.map(normalize));
-      const allergyPenalty = overlapScore(ingredients, context.allergySignals.map(normalize));
+      const nutritionScore = scoreNutrition(
+        recipe.calories / Math.max(recipe.servings, 1),
+        recipe.protein / Math.max(recipe.servings, 1),
+        context.targetCaloriesPerServing,
+        context.targetProteinPerServing,
+      );
+      const preferenceScore = preferredIngredients.length ? overlapScore(ingredientNames, preferredIngredients) : 0.5;
+      const dislikePenalty = overlapScore(ingredientNames, context.dislikedIngredients.map(normalize));
+      const allergyPenalty = overlapScore(ingredientNames, context.allergySignals.map(normalize));
       const noveltyScore = novelty(recipe.name, context.recentMealNames);
-      const countryScore = countrySignature.has(normalize(recipe.name)) ? 1 : countryGuidance ? 0.62 : 0.5;
+      const signatureScore = countrySignature.size
+        ? (countrySignature.has(normalize(recipe.name)) ? 1 : 0.55)
+        : (countryGuidance ? 0.62 : 0.5);
+      const cuisineScore = cuisineHint ? cuisineMatchScore(recipe.name, countrySignature, cuisineHint, countryGuidance?.cuisineFamily) : signatureScore;
       const verifiedScore = recipe.verified ? 1 : 0.55;
       const missingScore = 1 - Math.min(1, missingCount / Math.max(1, recipe.ingredients.length));
 
@@ -105,7 +118,7 @@ export class RecommendationEngineService {
         nutrition: nutritionScore,
         preference: preferenceScore,
         novelty: noveltyScore,
-        country: countryScore,
+        country: cuisineScore,
         verified: verifiedScore,
         missing: missingScore,
         dislike: dislikePenalty,
@@ -117,11 +130,16 @@ export class RecommendationEngineService {
         name: recipe.name,
         score: Number(score.toFixed(2)),
         decision: score >= 72 ? 'strong_match' : score >= 55 ? 'good_match' : 'fallback',
-        reasons: buildReasons({ inventoryScore, nutritionScore, preferenceScore, noveltyScore, countryScore, verifiedScore, missingCount, maxMissingIngredients }),
+        reasons: buildReasons({ inventoryScore, nutritionScore, preferenceScore, noveltyScore, cuisineScore, verifiedScore, missingCount }),
         breakdown: {
-          inventory: round(inventoryScore), nutrition: round(nutritionScore), preference: round(preferenceScore),
-          novelty: round(noveltyScore), country: round(countryScore), verified: round(verifiedScore),
-          missing: round(missingScore), penalties: round((dislikePenalty + allergyPenalty) / 2),
+          inventory: round(inventoryScore),
+          nutrition: round(nutritionScore),
+          preference: round(preferenceScore),
+          novelty: round(noveltyScore),
+          cuisine: round(cuisineScore),
+          verified: round(verifiedScore),
+          missing: round(missingScore),
+          penalties: round((dislikePenalty + allergyPenalty) / 2),
         },
         targetServings,
         caloriesPerServing: round(recipe.calories / Math.max(recipe.servings, 1), 1),
@@ -131,12 +149,17 @@ export class RecommendationEngineService {
     }
 
     const recommendations = this.ranking.rankRecommendations(ranked, maxResults);
-    const confidence = confidenceFor(recommendations, recipes.length, countryGuidance !== null);
+    const confidence = confidenceFor(recommendations, recipes.length, countryGuidance !== null || cuisineHint !== null);
 
     return {
       status: 'complete',
-      intent: { category: request.category || 'food', goal: request.goal || 'choose_meal', context: request.context || '' },
-      decisionPolicy: 'hard-safety-filters → inventory → nutrition → preference → novelty → country-context → verification',
+      intent: {
+        category: request.category || 'food',
+        goal: request.goal || 'choose_meal',
+        context: request.context || '',
+        cuisineHint,
+      },
+      decisionPolicy: 'hard safety filters → nutrition → inventory → explicit preferences → novelty → cuisine/country routing → verification → diversification',
       constraints: {
         targetServings,
         countryCode: context.countryCode,
@@ -145,6 +168,7 @@ export class RecommendationEngineService {
         dietaryPreferences: context.dietaryPreferences,
         allergySignals: context.allergySignals,
         dislikedIngredients: context.dislikedIngredients,
+        ...(explicitMissingCap ? { maxMissingIngredients } : {}),
       },
       recommendations,
       rejected: rejected.slice(0, 100),
@@ -157,13 +181,42 @@ function normalize(value: string): string {
   return String(value || '').toLowerCase().normalize('NFKD').replace(/\p{Diacritic}/gu, '').replace(/[–—]/g, '-').replace(/[^a-z0-9آ-ی]+/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
+function detectCuisineHint(value: string): string | null {
+  const text = normalize(value);
+  const hints: Array<[string, string[]]> = [
+    ['Indian', ['indian', 'hindi', 'hindu']],
+    ['Japanese', ['japanese', 'japan']],
+    ['Korean', ['korean', 'korea']],
+    ['Thai', ['thai', 'thailand']],
+    ['Chinese', ['chinese', 'china']],
+    ['Mexican', ['mexican', 'mexico']],
+    ['Italian', ['italian', 'italy']],
+    ['French', ['french', 'france']],
+    ['Persian', ['persian', 'iranian', 'irani']],
+    ['Mediterranean', ['mediterranean']],
+    ['Turkish', ['turkish', 'turkey']],
+    ['Spanish', ['spanish', 'spain']],
+    ['Levantine', ['levantine', 'lebanese', 'levant']],
+  ];
+  return hints.find(([, aliases]) => aliases.some((alias) => text.includes(alias)))?.[0] ?? null;
+}
+
+function cuisineMatchScore(recipeName: string, signature: Set<string>, hint: string, family?: string): number {
+  const normalizedName = normalize(recipeName);
+  if (signature.has(normalizedName)) return 1;
+  const normalizedFamily = normalize(family || '');
+  const normalizedHint = normalize(hint);
+  if (normalizedFamily.includes(normalizedHint) || normalizedHint.includes(normalizedFamily)) return 0.95;
+  return 0.5;
+}
+
 function overlapScore(values: string[], targets: string[]): number {
   if (!targets.length) return 0.5;
   const hits = targets.filter((target) => values.some((value) => value.includes(target) || target.includes(value)));
   return hits.length / targets.length;
 }
 
-function findHardBlock(ingredients: string[], allergies: string[], diets: string[], categories: string[]): string | null {
+function findHardBlock(ingredients: string[], allergies: string[], diets: string[]): string | null {
   const joined = ingredients.join(' ');
   for (const allergy of allergies.map(normalize).filter(Boolean)) {
     if (joined.includes(allergy)) return `allergy signal: ${allergy}`;
@@ -173,7 +226,6 @@ function findHardBlock(ingredients: string[], allergies: string[], diets: string
   if (normalizedDiets.includes('vegetarian') && /chicken|beef|pork|lamb|turkey|fish|shrimp|shellfish/.test(joined)) return 'not vegetarian-compatible';
   if (normalizedDiets.includes('dairy free') && /milk|cheese|yogurt|butter|cream|whey/.test(joined)) return 'contains dairy signal';
   if (normalizedDiets.includes('gluten free') && /wheat|barley|rye|pasta|bread|flour|seitan/.test(joined)) return 'contains gluten signal';
-  if (categories.some((category) => /alcohol/i.test(category))) return null;
   return null;
 }
 
@@ -196,23 +248,23 @@ function weightedScore(input: { inventory:number; nutrition:number; preference:n
   return clamp01(positive - penalties) * 100;
 }
 
-function buildReasons(input: { inventoryScore:number; nutritionScore:number; preferenceScore:number; noveltyScore:number; countryScore:number; verifiedScore:number; missingCount:number; maxMissingIngredients:number }): string[] {
+function buildReasons(input: { inventoryScore:number; nutritionScore:number; preferenceScore:number; noveltyScore:number; cuisineScore:number; verifiedScore:number; missingCount:number }): string[] {
   const reasons: string[] = [];
   if (input.inventoryScore >= 0.7) reasons.push('uses a large share of what you already have');
   if (input.nutritionScore >= 0.75) reasons.push('fits your nutrition target well');
   if (input.preferenceScore >= 0.75) reasons.push('matches ingredients you prefer');
-  if (input.countryScore >= 0.9) reasons.push('fits your selected country context');
+  if (input.cuisineScore >= 0.9) reasons.push('matches the requested food culture');
   if (input.noveltyScore >= 0.95) reasons.push('adds variety instead of repeating a recent meal');
   if (input.verifiedScore >= 1) reasons.push('uses a verified recipe');
   if (input.missingCount === 0) reasons.push('everything needed is already available');
-  else if (input.missingCount <= Math.min(3, input.maxMissingIngredients)) reasons.push(`only ${input.missingCount} ingredient${input.missingCount === 1 ? '' : 's'} missing`);
+  else if (input.missingCount <= 3) reasons.push(`only ${input.missingCount} ingredient${input.missingCount === 1 ? '' : 's'} missing`);
   return reasons.slice(0, 5);
 }
 
-function confidenceFor(recommendations: RankedFoodRecommendation[], candidates: number, hasCountry: boolean): number {
+function confidenceFor(recommendations: RankedFoodRecommendation[], candidates: number, hasContext: boolean): number {
   if (!recommendations.length || candidates === 0) return 0;
   const spread = recommendations.length > 1 ? Math.abs(recommendations[0].score - recommendations[1].score) / 100 : 0.2;
-  return Number(clamp01(0.55 + Math.min(0.2, spread) + (hasCountry ? 0.1 : 0) + (recommendations.length >= 5 ? 0.1 : 0)).toFixed(2));
+  return Number(clamp01(0.55 + Math.min(0.2, spread) + (hasContext ? 0.1 : 0) + (recommendations.length >= 5 ? 0.1 : 0)).toFixed(2));
 }
 
 function validServings(value: number): number {
