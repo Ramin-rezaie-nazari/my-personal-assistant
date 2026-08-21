@@ -105,6 +105,7 @@ describe('BudgetIntelligenceService weekly optimizer', () => {
     expect(result.budget.plannedEstimatedCost).not.toBeNull();
     expect(result.budget.currency).toBe('IRR');
     expect(result.meals.some((meal) => meal.recipeId === 'r1')).toBe(true);
+    expect(result.meals.some((meal) => (meal.ingredientReuseScore ?? 0) > 0)).toBe(true);
     expect(result.shopping.length).toBeGreaterThan(0);
     expect(result.shopping.some((item) => item.name === 'rice' && item.quantity > 0)).toBe(true);
   });
