@@ -43,6 +43,7 @@
     "platforms": [
       "ios",
       "android"
-    ]
+    ],
+    "owner": "ramin.rezaie"
   }
 }
