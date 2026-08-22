@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   android:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     timeout-minutes: 45
     defaults:
       run:
@@ -58,7 +58,6 @@ jobs:
         run: npx expo prebuild --platform android --non-interactive
 
       - name: Build installable debug APK
-        id: gradle-build
         working-directory: apps/mobile/android
         shell: bash
         run: |
