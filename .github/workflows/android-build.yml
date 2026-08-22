@@ -58,18 +58,31 @@ jobs:
         run: npx expo prebuild --platform android --non-interactive
 
       - name: Build installable debug APK
+        id: gradle-build
         working-directory: apps/mobile/android
-        run: ./gradlew assembleDebug --no-daemon
+        shell: bash
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug --no-daemon 2>&1 | tee gradle-build.log
 
       - name: Verify APK
         working-directory: apps/mobile/android
         run: test -s app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: my-personal-assistant-android-apk
           path: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
 
-# Trigger latest APK build validation 2.
+      - name: Upload Gradle diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-personal-assistant-android-build-diagnostics
+          path: |
+            apps/mobile/android/gradle-build.log
+            apps/mobile/android/app/build/outputs/logs/**
+          if-no-files-found: warn
