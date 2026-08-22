@@ -71,3 +71,5 @@ jobs:
           name: my-personal-assistant-android-apk
           path: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+
+# Trigger latest APK build validation 2.
