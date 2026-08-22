@@ -55,16 +55,16 @@ export const healthKitProvider: HealthProvider = {
       const mapped = mapQuantityType(identifier);
       if (!mapped) continue;
       try {
-        const result = await HealthKit.queryQuantitySamples(identifier as never, {
+        const samples = await HealthKit.queryQuantitySamples(identifier as never, {
           limit: -1,
           filter: { date: { startDate: since, endDate: now } },
           unit: mapped.unit,
         } as never);
-        const samples = Array.isArray(result) ? result : result?.samples ?? [];
-        for (const sample of samples as Array<Record<string, any>>) {
-          const startAt = new Date(sample.startDate ?? sample.startAt);
-          const endAt = new Date(sample.endDate ?? sample.endAt);
-          const value = Number(sample.quantity);
+        for (const sample of samples) {
+          const item = sample as Record<string, any>;
+          const startAt = new Date(item.startDate ?? item.startAt);
+          const endAt = new Date(item.endDate ?? item.endAt);
+          const value = Number(item.quantity);
           if (!Number.isFinite(value) || !Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime())) continue;
           points.push({
             dataType: mapped.dataType,
@@ -72,7 +72,7 @@ export const healthKitProvider: HealthProvider = {
             unit: mapped.unit,
             startAt: startAt.toISOString(),
             endAt: endAt.toISOString(),
-            sourceRecordId: String(sample.uuid ?? sample.metadata?.HKExternalUUID ?? `${identifier}:${startAt.toISOString()}:${endAt.toISOString()}:${value}`),
+            sourceRecordId: String(item.uuid ?? item.metadata?.HKExternalUUID ?? `${identifier}:${startAt.toISOString()}:${endAt.toISOString()}:${value}`),
             metadata: { source: 'HealthKit', identifier },
           });
         }
@@ -86,10 +86,10 @@ export const healthKitProvider: HealthProvider = {
         limit: -1,
         filter: { date: { startDate: since, endDate: now } },
       } as never);
-      const samples = Array.isArray(sleepSamples) ? sleepSamples : sleepSamples?.samples ?? [];
-      for (const sample of samples as Array<Record<string, any>>) {
-        const startAt = new Date(sample.startDate ?? sample.startAt);
-        const endAt = new Date(sample.endDate ?? sample.endAt);
+      for (const sample of sleepSamples) {
+        const item = sample as Record<string, any>;
+        const startAt = new Date(item.startDate ?? item.startAt);
+        const endAt = new Date(item.endDate ?? item.endAt);
         if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime())) continue;
         points.push({
           dataType: 'sleep_duration',
@@ -97,8 +97,8 @@ export const healthKitProvider: HealthProvider = {
           unit: 'h',
           startAt: startAt.toISOString(),
           endAt: endAt.toISOString(),
-          sourceRecordId: String(sample.uuid ?? `sleep:${startAt.toISOString()}:${endAt.toISOString()}`),
-          metadata: { source: 'HealthKit', identifier: 'HKCategoryTypeIdentifierSleepAnalysis', value: sample.value },
+          sourceRecordId: String(item.uuid ?? `sleep:${startAt.toISOString()}:${endAt.toISOString()}`),
+          metadata: { source: 'HealthKit', identifier: 'HKCategoryTypeIdentifierSleepAnalysis', value: item.value },
         });
       }
     } catch {
@@ -106,21 +106,23 @@ export const healthKitProvider: HealthProvider = {
     }
 
     try {
-      const workouts = await HealthKit.queryWorkouts({
+      const workouts = await HealthKit.queryWorkoutSamples({
         ascending: false,
         limit: -1,
+        filter: { date: { startDate: since, endDate: now } },
       } as never);
-      for (const workout of (workouts ?? []) as Array<Record<string, any>>) {
+      for (const workout of workouts as Array<Record<string, any>>) {
         const startAt = new Date(workout.startDate);
         const endAt = new Date(workout.endDate);
         if (!Number.isFinite(startAt.getTime()) || !Number.isFinite(endAt.getTime()) || endAt < since) continue;
+        const workoutId = String(workout.uuid ?? `workout:${startAt.toISOString()}:${endAt.toISOString()}`);
         points.push({
           dataType: 'workout_duration',
           value: Math.max(0, (endAt.getTime() - startAt.getTime()) / 60_000),
           unit: 'min',
           startAt: startAt.toISOString(),
           endAt: endAt.toISOString(),
-          sourceRecordId: String(workout.uuid ?? `workout:${startAt.toISOString()}:${endAt.toISOString()}`),
+          sourceRecordId: workoutId,
           metadata: {
             source: 'HealthKit',
             identifier: 'HKWorkoutTypeIdentifier',
@@ -135,7 +137,7 @@ export const healthKitProvider: HealthProvider = {
             unit: 'kcal',
             startAt: startAt.toISOString(),
             endAt: endAt.toISOString(),
-            sourceRecordId: `${String(workout.uuid ?? `workout:${startAt.toISOString()}:${endAt.toISOString()}`)}:energy`,
+            sourceRecordId: `${workoutId}:energy`,
             metadata: { source: 'HealthKit', identifier: 'HKWorkoutTypeIdentifier' },
           });
         }
