@@ -3,9 +3,12 @@ name: Android APK Build
 on:
   workflow_dispatch:
   push:
+    branches:
+      - work/canonical-ingredient-intelligence
     paths:
       - 'apps/mobile/**'
       - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
       - '.github/workflows/android-build.yml'
 
 permissions:
@@ -54,15 +57,17 @@ jobs:
       - name: Expo prebuild
         run: npx expo prebuild --platform android --non-interactive
 
-      - name: Gradle assemble debug APK
+      - name: Build installable debug APK
         working-directory: apps/mobile/android
         run: ./gradlew assembleDebug --no-daemon
+
+      - name: Verify APK
+        working-directory: apps/mobile/android
+        run: test -s app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: my-personal-assistant-debug-apk
+          name: my-personal-assistant-android-apk
           path: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-
-# Force a fresh standalone APK validation after the EAS upload issue.
