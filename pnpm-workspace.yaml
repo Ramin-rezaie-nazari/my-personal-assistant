@@ -1,8 +1,13 @@
 packages:
   - "apps/*"
   - "packages/*"
+
 allowBuilds:
   '@prisma/engines': true
   argon2: true
   prisma: true
   unrs-resolver: true
+
+overrides:
+  '@types/react': 19.0.10
+  '@types/react-dom': 19.0.3
