@@ -20,3 +20,5 @@ The mobile app keeps the selected language locally and uses Persian RTL when `fa
 ```bash
 npm run typecheck
 ```
+
+<!-- Trigger standalone Android APK validation via GitHub Actions. -->
