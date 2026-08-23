@@ -2,7 +2,38 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Latest fully validated locally: 2026-08-18 11:26+03:30. The Food Operating Loop, Meal Planner and Recipe Scaling Metadata slice is fully green on the user's local runtime.
+> Latest fully validated local checkpoint: **2026-08-23 13:15+03:30**. The repository quality gate is green on the user's local runtime, including backend unit/E2E, typecheck, lint, build, Prisma migrations, and mobile Android/iOS validation.
+
+## Progress map
+
+```mermaid
+flowchart LR
+    A[Foundation & Backend\n90%] --> B[Food Operating Loop\n100%]
+    B --> C[Food Decision Brain\nIMPLEMENTED / NEXT TO VALIDATE]
+    C --> D[Verified Recipe Corpus\nNEXT]
+    D --> E[Live Market Pricing\nSTACKED]
+    E --> F[Mobile Product Journey\n20%]
+    F --> G[Production Hardening\n50%]
+    G --> H[Monetization\n0%]
+
+    Q[QUALITY GATE\n100% LOCAL GREEN] --> A
+    Q --> B
+    Q --> C
+```
+
+### Current position at a glance
+
+| Area | Status | What it means |
+|---|---|---|
+| Local quality gate | 🟢 **100%** | Unit + E2E + typecheck + lint + build + Prisma + Android/iOS export all green locally |
+| GitHub Actions | 🟠 **Blocked externally** | Latest jobs fail before any step is recorded; GitHub log blob is unavailable |
+| Food Operating Loop | 🟢 **100%** | Validated serving/scaling/inventory/shopping/meal-planning slice |
+| Food Decision Brain | 🟡 **Next** | Implemented on `main`, now needs full local validation |
+| Verified recipe corpus | 🟡 Planned | Provenance, allergens, dietary constraints, full quantities/instructions |
+| Live market pricing | 🟠 Stacked | Infrastructure exists in separate stacked PRs; conflict/dependency review required |
+| Mobile product | 🔵 20% | Core shell exists; real end-to-end user journey still needs major work |
+| Production hardening | 🔵 50% | Security, observability, reliability, deployment and privacy remain |
+| Monetization | ⚪ 0% | Not started |
 
 ## Executive status
 
@@ -10,23 +41,40 @@
 
 This is a weighted engineering/product-completion index, not a claim that 65% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans scaling, inventory, shopping handoff, recommendations and daily meal planning. Major unfinished product work remains in the verified global recipe corpus, live market pricing, mobile UX, production hardening, and monetization.
 
-## Latest fully green local checkpoint — 2026-08-18
+## Latest fully green local checkpoint — 2026-08-23
 
 ```text
-Focused Food Operating Loop slice:  5/5 suites, 14/14 tests — PASS
-Full backend Jest:                  152/152 suites, 408/408 tests — PASS
-Backend E2E:                         4/4 suites, 24/24 tests — PASS
-Typecheck:                            PASS
-Build:                                PASS
-Prisma migrate deploy:               PASS
+Backend unit tests:                 153/153 suites, 410/410 tests — PASS
+Backend E2E:                          4/4 suites, 24/24 tests — PASS
+Backend typecheck:                    PASS
+Backend lint:                         0 errors — PASS
+Backend build:                        PASS
+Prisma validate:                     PASS
+Prisma migrate deploy:               PASS (37 migrations)
 Prisma migrate status:               Database schema is up to date
+Mobile typecheck:                    PASS
+Android JS export:                   PASS
+iOS JS export:                       PASS
+
+LOCAL QUALITY GATE:                  100% GREEN
 ```
 
-The non-fatal E2E worker teardown warning remains, but all E2E suites/tests pass.
+The E2E suite now exits cleanly after closing the Prisma connection. There is no remaining Jest open-handle warning in the validated run.
+
+## GitHub Actions validation state
+
+GitHub Actions remains a separate infrastructure blocker and is **not** counted against local code/test completion:
+
+- Latest Backend CI job: failed before any executable step was recorded.
+- Latest Mobile CI job: failed before any executable step was recorded.
+- GitHub job-log download returned `BlobNotFound` for both jobs.
+- Because the user's GitHub Actions budget is exhausted, do not consume more minutes on blind reruns.
+
+The repository is therefore considered **locally validated 100% for this slice**, while GitHub runner validation remains externally blocked.
 
 ## Current unvalidated change — Food Decision Brain
 
-A new deterministic food-decision layer has now been wired into the backend as the next intelligence slice. It is intentionally built on top of the existing Food Operating Loop and Canonical Ingredient Intelligence rather than creating a parallel recipe-ranking system.
+A deterministic food-decision layer is wired into the backend as the next intelligence slice. It is intentionally built on top of the existing Food Operating Loop and Canonical Ingredient Intelligence rather than creating a parallel recipe-ranking system.
 
 ### Decision pipeline
 
@@ -60,7 +108,7 @@ Reasons + score breakdown + rejected candidates
 
 ### Implemented
 
-- `RecommendationEngineService` now performs deterministic multi-signal food decisions.
+- `RecommendationEngineService` performs deterministic multi-signal food decisions.
 - `PersonalizationService` builds food context from profile, health, nutrition and recent meals.
 - `RecommendationRankingService` applies score ordering plus near-top recipe-family diversification.
 - Food recommendation endpoint exists under `POST /recommendation-intelligence/food`.
@@ -78,15 +126,18 @@ Reasons + score breakdown + rejected candidates
 
 ### Current validation state
 
-**Not yet fully validated locally.** The next local checkpoint must include:
+**Not yet fully validated locally.** This is the next slice to take to 100%.
 
-1. backend `pnpm install` / dependency state is synchronized;
-2. `pnpm run typecheck` passes;
-3. `pnpm run build` passes;
-4. full Jest passes;
-5. recommendation-engine focused tests cover hard filters, intent/cuisine matching, personalization, missing-ingredient threshold and diversification;
-6. API integration/E2E validation covers `POST /recommendation-intelligence/food`;
-7. only then should this slice be marked fully green.
+Required checkpoint:
+
+1. dependency/lockfile synchronization;
+2. backend typecheck;
+3. backend lint;
+4. backend build;
+5. full Jest;
+6. recommendation-engine focused tests for hard filters, intent/cuisine matching, personalization, missing-ingredient threshold and diversification;
+7. API integration/E2E for `POST /recommendation-intelligence/food`;
+8. documentation + progress update only after all tests are green.
 
 ## New Slice — Food Operating Loop + Meal Planning + Recipe Scaling Metadata
 
@@ -275,7 +326,6 @@ Remaining:
 - Migration-history review.
 - Production deployment runbook.
 - Cost controls and external-API fallback policy.
-- Clean up the non-fatal E2E worker teardown warning.
 
 ## Business / Monetization — not implemented
 
@@ -297,25 +347,34 @@ Remaining:
 | Personal Brain / deterministic intelligence | 65% |
 | Nutrition foundations | 74% |
 | Fitness / Yoga / Calisthenics / Gym | 75% |
-| Recipe & Food Intelligence | 64% |
+| Recipe & Food Intelligence | 66% |
 | Inventory / Shopping / Price Intelligence | 68% |
 | Mobile product / UX | 20% |
 | AI orchestration / voice / globalization | 40% |
-| QA / Security / Production hardening | 50% |
+| QA / Security / Production hardening | 55% |
 | Business / Monetization | 0% |
 
-**Weighted overall index: ~65%.**
+**Weighted overall index: ~66%.**
+
+> The index is intentionally approximate. The stronger signal is the per-workstream status and the explicit 100% validation checkpoints above.
 
 ## Immediate next priorities
 
-1. Add canonical ingredient/region/cuisine normalization.
-2. Expand verified recipe corpus with provenance, allergens and dietary constraints.
-3. Integrate the stacked Global Market workstream after conflict/dependency review.
-4. Connect verified live price data into Food Operating Loop and budget recommendations.
-5. Build the real mobile food journey around these APIs.
-6. Add production hardening and observability.
-7. Add monetization after the core user journey is genuinely strong.
+1. **Validate Food Decision Brain to 100%** — this is the selected next slice.
+2. Canonical ingredient/region/cuisine normalization and merge-review of the existing stacked work.
+3. Expand verified recipe corpus with provenance, allergens and dietary constraints.
+4. Integrate the stacked Global Market workstream after conflict/dependency review.
+5. Connect verified live price data into Food Operating Loop and budget recommendations.
+6. Build the real mobile food journey around these APIs.
+7. Add production hardening and observability.
+8. Add monetization after the core user journey is genuinely strong.
 
 ## Working rule
 
 A slice is 100% only when architecture, implementation, database changes, focused tests, integration/E2E tests, documentation, and required environment validation are all green. Do not weaken assertions to obtain green tests.
+
+## Latest completed checkpoint
+
+**2026-08-23 — Quality Gate / Local Full Validation: 100% ✅**
+
+This checkpoint is complete and should not be repeated unless the underlying branch changes.
