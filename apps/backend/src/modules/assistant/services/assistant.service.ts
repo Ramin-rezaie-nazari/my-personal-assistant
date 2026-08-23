@@ -5,7 +5,7 @@ import { NaturalActionExecutionService } from './natural-action-execution.servic
 import { ContextualCommandService } from './contextual-command.service';
 import { ConversationContextService } from './conversation-context.service';
 import { LocalLanguageUnderstandingService } from './local-language-understanding.service';
-import { PlanningService } from './planning.service';
+import { LocalActionPlan, PlanningService } from './planning.service';
 import { BrainResponse } from '../../personal-brain/types';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class AssistantService {
     @Optional() private readonly planningService?: PlanningService,
   ) {}
 
-  async getStatus() {
+  getStatus() {
     return { name: 'My Personal Assistant', status: 'brain foundation active' };
   }
 
@@ -61,16 +61,16 @@ export class AssistantService {
       input,
     );
     const local = this.localLanguageUnderstandingService?.understand(input);
-    const plan = this.planningService
-      ? await this.planningService.createPlan({
+    const plan: LocalActionPlan = this.planningService
+      ? this.planningService.createPlan({
           clauses: contextualCommand.clauses,
           intents: contextualCommand.intents,
           contradictions: contextualCommand.contradictions,
           confidence: contextualCommand.confidence,
         })
-      : ({ requiresClarification: false, reason: 'not_available' } as any);
+      : { requiresClarification: false, reason: 'not_available', steps: [] };
     const response = plan.requiresClarification
-      ? ({
+      ? {
           intent: 'assistant',
           nextAction: undefined,
           message:
@@ -79,7 +79,7 @@ export class AssistantService {
               : 'برای اینکه درست انجامش بدم، یه بخش از درخواستت نیاز به توضیح بیشتر داره.',
           confidence: contextualCommand.confidence,
           metadata: { local: true, clarification: true },
-        } as BrainResponse)
+        }
       : ((local ? this.responseForLocalIntent(local) : undefined) ??
         (await this.brainOrchestratorService.processRequest(input, userId)));
     const executionResponse = this.resolveContextualExecution(

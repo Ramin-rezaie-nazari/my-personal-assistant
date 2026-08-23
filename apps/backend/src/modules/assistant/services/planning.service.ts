@@ -16,12 +16,12 @@ export type LocalActionPlan = {
 
 @Injectable()
 export class PlanningService {
-  async createPlan(input?: {
+  createPlan(input?: {
     clauses?: string[];
     intents?: Array<'create' | 'update' | 'cancel' | 'unknown'>;
     contradictions?: string[];
     confidence?: number;
-  }): Promise<LocalActionPlan> {
+  }): LocalActionPlan {
     const clauses = input?.clauses ?? [];
     const intents = input?.intents ?? [];
     const contradictions = input?.contradictions ?? [];

@@ -15,17 +15,31 @@ type Candidate = {
   score: number;
   reasons: string[];
 };
+
 type TaskRow = {
   id: string;
   title: string;
   priority: number;
   estimatedMinutes: number;
-  energyLevel: string;
+  energyLevel?: string | null;
+  energy?: string | null;
   dueAt: Date | null;
   scheduledAt: Date | null;
   goalId: string | null;
-  goalTitle: string | null;
-  dependencyStatus: string[];
+  goalTitle?: string | null;
+  goal?: { title?: string | null } | null;
+  dependencyStatus?: string[] | null;
+  dependencies?: Array<{
+    dependsOnTask?: { status?: string | null } | null;
+  }>;
+};
+
+type PrismaTaskQueryArgs = Record<string, unknown>;
+type PrismaTaskUpdateArgs = Record<string, unknown>;
+
+type LifeTaskDelegate = {
+  findMany: (args: PrismaTaskQueryArgs) => Promise<TaskRow[]>;
+  update: (args: PrismaTaskUpdateArgs) => Promise<TaskRow>;
 };
 
 @Injectable()
@@ -42,9 +56,9 @@ export class SmartPlanningService {
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
     const prismaRecord = this.prisma as unknown as {
-      lifeTask?: { findMany?: Function };
+      lifeTask?: LifeTaskDelegate;
     };
-    const taskQuery = prismaRecord.lifeTask?.findMany
+    const taskQuery: Promise<TaskRow[]> = prismaRecord.lifeTask
       ? prismaRecord.lifeTask.findMany({
           where: {
             userId,
@@ -72,18 +86,19 @@ export class SmartPlanningService {
           AND (t."scheduledAt" >= ${start} AND t."scheduledAt" < ${end} OR t."scheduledAt" IS NULL)
         GROUP BY t."id", g."title"
         ORDER BY t."priority" ASC, t."dueAt" ASC NULLS LAST`;
+
     const [tasks, adaptive] = await Promise.all([
       taskQuery,
       this.learning.buildProfile(userId),
     ]);
     const now = new Date(date);
     const currentHour = now.getHours();
-    const candidates: Candidate[] = tasks.map((task: any) => {
+    const candidates: Candidate[] = tasks.map((task) => {
       const dependencyStatus: string[] =
         task.dependencyStatus ??
         task.dependencies
-          ?.map((d: any) => d.dependsOnTask?.status)
-          .filter(Boolean) ??
+          ?.map((dependency) => dependency.dependsOnTask?.status)
+          .filter((status): status is string => Boolean(status)) ??
         [];
       const goalTitle = task.goalTitle ?? task.goal?.title ?? null;
       const reasons: string[] = [];
@@ -169,15 +184,15 @@ export class SmartPlanningService {
 
     candidates.sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     const actionable = candidates.filter(
-      (c) => !c.reasons.includes('blocked by another task'),
+      (candidate) => !candidate.reasons.includes('blocked by another task'),
     );
     const best = actionable[0] ?? null;
     return {
       date: start.toISOString().slice(0, 10),
       bestAction: best,
-      alternatives: actionable.filter((c) => c.id !== best?.id).slice(0, 4),
+      alternatives: actionable.filter((candidate) => candidate.id !== best?.id).slice(0, 4),
       blocked: candidates
-        .filter((c) => c.reasons.includes('blocked by another task'))
+        .filter((candidate) => candidate.reasons.includes('blocked by another task'))
         .slice(0, 10),
       adaptive: {
         bestHours: adaptive.bestHours,
@@ -193,16 +208,16 @@ export class SmartPlanningService {
     if (!plan.bestAction) return plan;
     if (!plan.bestAction.scheduledAt) {
       const preferred =
-        plan.adaptive.bestHours.find((h) => h > new Date().getHours()) ??
+        plan.adaptive.bestHours.find((hour) => hour > new Date().getHours()) ??
         plan.adaptive.bestHours[0];
       if (preferred !== undefined) {
         const scheduled = new Date(date);
         scheduled.setHours(preferred, 0, 0, 0);
         if (scheduled > new Date()) {
           const prismaRecord = this.prisma as unknown as {
-            lifeTask?: { update?: Function };
+            lifeTask?: LifeTaskDelegate;
           };
-          if (prismaRecord.lifeTask?.update)
+          if (prismaRecord.lifeTask)
             await prismaRecord.lifeTask.update({
               where: { id: plan.bestAction.id },
               data: { scheduledAt: scheduled },
