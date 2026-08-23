@@ -46,3 +46,6 @@ jobs:
 
       - name: Bundle Android JavaScript
         run: pnpm --filter @my-personal-assistant/mobile exec expo export --platform android --output-dir /tmp/mobile-export
+
+      - name: Bundle iOS JavaScript
+        run: pnpm --filter @my-personal-assistant/mobile exec expo export --platform ios --output-dir /tmp/mobile-export-ios
