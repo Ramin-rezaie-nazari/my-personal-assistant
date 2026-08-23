@@ -20,7 +20,7 @@
     "forceConsistentCasingInFileNames": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false,
-    "exclude": ["prisma.config.ts"]
-  }
+    "noFallthroughCasesInSwitch": false
+  },
+  "exclude": ["prisma.config.ts"]
 }
