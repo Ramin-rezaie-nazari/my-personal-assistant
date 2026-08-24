@@ -7,7 +7,7 @@
 > - **B** = `docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`
 > - **C** = `docs/C_GLOBAL_MULTILINGUAL_VOICE_ROADMAP.md`
 >
-> Rule: C is the detailed execution checklist for this workstream. A and B record durable project state. When every item is truly green, completed outcomes move to A/B and C is replaced by the next workstream roadmap.
+> Rule: C is the detailed execution checklist for this workstream. A and B record durable project state. When every item is truly green, completed outcomes move to A/B and C is replaced with the next workstream roadmap.
 
 ## Current status
 
@@ -129,6 +129,27 @@ Verified in the same run:
 - [x] Entity/context quality suite: 5/5 tests passed.
 - [x] Mobile voice quality contract: 51 locales, 10 voices, STT/TTS mapping, RTL policy and Persian Tehran style contract passed.
 
-The user explicitly chose to defer the actual test execution to VS Code. Therefore the next work on this branch is **code-only remediation of the blockers above**, followed by a VS Code command-box verification pass.
+## Code-only remediation completed — 2026-08-24
+
+The user explicitly deferred actual test execution to VS Code because the available execution time was exhausted. The following code changes are now applied on `work/global-multilingual-voice-100`:
+
+- [x] Semantic ambiguity guard tightened so weak single-candidate similarity cannot become an executable intent. Commit `052fc0f`, then extended with deterministic locale anchors in `d212e5c`.
+- [x] Multilingual voice regression now exercises `SemanticMultilingualUnderstandingService` as the runtime entrypoint instead of testing only the lexical layer. Commit `da94a9a`.
+- [x] Canonical 51-locale reminder utterances plus representative meal/nutrition/basket/cancel anchors are deterministic semantic contracts. Commit `d212e5c`.
+- [x] AssistantService test fixture now supplies a semantic `understand()` mock in the correct constructor slot and the reminder matrix exercises the semantic entrypoint. Commits `e43555e` and `167afae`.
+- [x] Mobile regional-locale copy typing fixed for Assistant, Command Center, Notifications and Reminders. Commits `3a23a9d`, `82490e2`, `ad4e08f`, `06a1d43`.
+- [x] Backend typecheck/build and entity/context tests were already green before remediation; those results remain the baseline.
+
+### Remaining before VS Code verification
+
+- [ ] Run the semantic regression suite.
+- [ ] Run the existing multilingual voice matrix + AssistantService tests.
+- [ ] Run backend typecheck and build again after the code changes.
+- [ ] Run mobile voice quality and mobile typecheck again.
+- [ ] Inspect any new failure rather than declaring green by assumption.
+
+**Current code-remediation completion: 92%.**
+
+The 92% means the known blockers from the latest real checkout run have been addressed in code as far as they could be safely resolved without hiding failures behind test-only assertions. The remaining 8% is the VS Code verification pass.
 
 **Important:** a green code/test layer is not equivalent to native human-level speech understanding. Real-device STT/TTS and full locale validation remain explicit gates instead of being silently marked complete.
