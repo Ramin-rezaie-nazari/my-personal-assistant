@@ -90,13 +90,13 @@ const NEGATION_MARKERS = [
   'non', 'senza', 'sem', 'без', 'не', 'не хочу', 'не треба',
   'iptal değil', 'değil', 'لا', 'ليس', 'لا أريد', 'אל', 'לא',
   'नहीं', 'मत', 'আমি চাই না', 'না', 'نہیں', 'مانا نمی',
-  'キャンセルしない', 'ない', '不要', '不想', '不要', '不是', '别', '不',
+  'キャンセルしない', 'ない', '不要', '不想', '不是', '别', '不',
   '안', '않', '싫어', 'không', 'chưa', 'ไม่', 'jangan', 'tidak',
-  'hindi', 'ne', 'ikke', 'ingen', 'ei', 'ne', 'nincs', 'nu',
+  'hindi', 'ne', 'ikke', 'ingen', 'ei', 'nincs', 'nu',
 ];
 
 const NON_ACTION_MARKERS = [
-  'why', 'about', 'tell me', 'talk about', 'story', 'history', 'yesterday', 'last night', 'i had', 'i ate',
+  'why', 'tell me', 'talk about', 'story', 'history', 'yesterday', 'last night', 'i had', 'i ate',
   'درباره', 'چرا', 'دیروز', 'دیشب', 'خوردم', 'خورده بودم', 'فقط',
   'por qué', 'sobre', 'ayer', 'anoche', 'comí',
   'pourquoi', 'à propos', 'hier', 'j ai mangé',
@@ -164,7 +164,6 @@ export class SemanticMultilingualUnderstandingService {
   private rankExplicitParaphrases(language: SupportedLocalLanguage, normalized: string): IntentCandidate[] {
     const lexicon = PARAPHRASES[language];
     if (!lexicon) return [];
-
     const candidates: IntentCandidate[] = [];
     for (const [intent, phrases] of Object.entries(lexicon) as Array<[IntentCandidate['intent'], readonly string[]]>) {
       let best = 0;
@@ -178,7 +177,6 @@ export class SemanticMultilingualUnderstandingService {
     const lexicalApi = this.lexical as unknown as { lexicon?: (language: SupportedLocalLanguage) => RuntimeLexicon };
     const lexicon = lexicalApi.lexicon?.(language);
     if (!lexicon) return [];
-
     const candidates: IntentCandidate[] = [];
     for (const [intent, phrases] of Object.entries(lexicon) as Array<[IntentCandidate['intent'], readonly string[]]>) {
       let best = 0;
@@ -191,20 +189,15 @@ export class SemanticMultilingualUnderstandingService {
   private lexicalSemanticSimilarity(text: string, phrase: string): number {
     if (!text || !phrase) return 0;
     if (text.includes(phrase)) return 1;
-
     const textTokens = this.tokens(text);
     const phraseTokens = this.tokens(phrase);
     if (!textTokens.length || !phraseTokens.length) return 0;
-
-    const matched = phraseTokens.filter((phraseToken) =>
-      textTokens.some((textToken) => this.tokenSimilarity(textToken, phraseToken)),
-    );
+    const matched = phraseTokens.filter((phraseToken) => textTokens.some((textToken) => this.tokenSimilarity(textToken, phraseToken)));
     const minimumRequired = Math.min(2, phraseTokens.length);
     if (matched.length < minimumRequired) {
       const cjkLike = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/u.test(text + phrase);
       if (!cjkLike || this.characterSimilarity(text, phrase) < 0.84) return 0;
     }
-
     const coverage = matched.length / phraseTokens.length;
     const inputCoverage = matched.length / Math.max(1, textTokens.length);
     return coverage * 0.75 + inputCoverage * 0.25;
@@ -231,7 +224,6 @@ export class SemanticMultilingualUnderstandingService {
   private repairSingleSpeechError(input: string, preferredLanguage: string | undefined, base: LocalUnderstanding): LocalUnderstanding {
     const normalized = base.normalizedText;
     if (normalized.length < 4 || normalized.length > 160) return base;
-
     const seen = new Set<string>();
     for (let index = 0; index < normalized.length; index += 1) {
       const repaired = normalized.slice(0, index) + normalized.slice(index + 1);
@@ -240,7 +232,6 @@ export class SemanticMultilingualUnderstandingService {
       const result = this.lexical.understand(repaired, preferredLanguage);
       if (result.intent !== 'UNKNOWN') return { ...result, confidence: Math.min(result.confidence, REPAIR_CONFIDENCE) };
     }
-
     for (let index = 0; index < normalized.length - 1; index += 1) {
       if (normalized[index] === normalized[index + 1]) continue;
       const chars = [...normalized];
@@ -249,7 +240,6 @@ export class SemanticMultilingualUnderstandingService {
       const result = this.lexical.understand(repaired, preferredLanguage);
       if (result.intent !== 'UNKNOWN') return { ...result, confidence: Math.min(result.confidence, REPAIR_CONFIDENCE) };
     }
-
     void input;
     return base;
   }
@@ -257,19 +247,15 @@ export class SemanticMultilingualUnderstandingService {
   private similarity(text: string, phrase: string): number {
     if (!text || !phrase) return 0;
     if (text.includes(phrase)) return 1;
-
     const textTokens = this.tokens(text);
     const phraseTokens = this.tokens(phrase);
     if (!textTokens.length || !phraseTokens.length) return 0;
-
     const overlap = phraseTokens.filter((token) => textTokens.includes(token)).length;
     if (overlap === 0) return 0;
-
     const coverage = overlap / phraseTokens.length;
     const reverse = overlap / textTokens.length;
     const tokenScore = coverage * 0.72 + reverse * 0.28;
     if (tokenScore >= MIN_FUZZY_SCORE) return tokenScore;
-
     const characterScore = this.characterSimilarity(text, phrase);
     return characterScore >= MIN_CHARACTER_MATCH_SCORE ? characterScore : 0;
   }
