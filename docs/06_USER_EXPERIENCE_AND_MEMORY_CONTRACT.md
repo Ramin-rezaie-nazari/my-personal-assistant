@@ -85,6 +85,16 @@ Animation communicates state and must be responsive and purposeful. Voice profil
 
 Downstream decision/planning/recommendation/response layers should not repeatedly ask for the same stable facts.
 
+## Deep multilingual semantic UX contract — current repository milestone
+
+The assistant should tolerate natural conversational speech instead of requiring exact command wording. For the implemented semantic layer, this includes colloquial paraphrases, common spoken contractions/fillers, short/incomplete utterances where intent can still be established safely, and natural multi-clause requests.
+
+Follow-up language such as “that”, “the same one”, previous-item references, relative dates/times and simple confirmations/negations can bind to the active conversational context. The binding must preserve explicit current-user wording and must not silently replace stored facts.
+
+When a request remains semantically ambiguous, the assistant should refuse to guess and ask for clarification rather than execute a weak match. This remains a core safety rule.
+
+The internal intent model remains language-agnostic. Locale-specific understanding, normalization and response phrasing may vary, but business logic, memory and plans are not duplicated per language.
+
 ## Global language architecture boundary — current green milestone
 
 The multilingual foundation is now **fully green for its defined deterministic engineering contract**:
@@ -95,15 +105,16 @@ The multilingual foundation is now **fully green for its defined deterministic e
 - Semantic understanding foundation with paraphrase recovery, intent ranking, ambiguity refusal and multi-intent clause splitting.
 - Entity/context regression foundation: **5/5 tests passed**.
 - Multilingual voice quality matrix: **5/5 tests passed**, including 51-locale reminders, representative meal/nutrition/basket/cancellation intents, code-switching, determinism and reminder-vs-dinner disambiguation.
-- Full backend Jest validation: **160/160 suites, 432/432 tests passed**.
-- Backend typecheck and build green.
-- Mobile voice-quality contract and mobile typecheck green.
+- Full backend Jest validation after the latest semantic/context implementation pass: **160/160 suites, 432/432 tests passed**.
+- Mobile voice-quality contract: **51 locales / 10 voice profiles passed**.
 
-This is a durable engineering milestone, not a claim of native-level understanding of arbitrary human speech. Real-device speech quality, deeper semantic coverage, native response quality, fallback/privacy routing and full conversation coverage remain future gates.
+This is a durable engineering milestone, not a claim of native-level understanding of arbitrary human speech. Real-device speech quality, local/offline provider routing, accent/noise robustness, fully language-native responses and full conversation coverage remain future gates.
 
 ## Current implementation boundary
 
-The persistent-context layer and voice-first shell are established. The deterministic multilingual foundation is green and should not be reopened unless later architecture/behavior changes invalidate it. The next stage is deeper semantic understanding, richer entity/context handling, local/offline provider routing and real-world speech validation.
+The persistent-context layer, voice-first shell, deterministic multilingual foundation and the latest repository-side semantic/context implementation pass are established. The deterministic foundation should not be reopened unless later architecture/behavior changes invalidate it.
+
+The remaining work is deeper entity/locale breadth, local/offline provider capability and fallback routing, complete native response coverage, representative all-locale conversations, real-device speech validation and robustness under accents/noise/slang/long utterances.
 
 ## Progress rule
 
