@@ -43,6 +43,8 @@ Global Voice + Multilingual Understanding
 ✅ Locale-aware deterministic intent lexicons added for the supported global language matrix
 ✅ Explicit preferred locale can override automatic language detection for code-switched text
 ✅ Basic multilingual normalization/number/time/meal vocabulary support expanded
+✅ Existing AssistantService spec now contains a representative native-language reminder matrix
+⬜ Run the multilingual AssistantService matrix test and fix every failing locale
 ⬜ Validate multilingual language picker and voice flow on a real development build / device
 ⬜ Add a tested local/offline STT model provider behind the STT contract
 ⬜ Add a tested local/offline TTS model provider behind the TTS contract
@@ -126,6 +128,7 @@ Food Decision Brain
 - Final local backend validation pass reached **156/156 unit suites, 414/414 unit tests, and 5/5 E2E suites, 26/26 E2E tests green**.
 - Persistent user-context foundation was validated: **UserContextService 2/2 tests green**, **BrainStateService 1/1 test green**, **backend typecheck green**, **backend build green**.
 - Multilingual implementation now has locale-aware STT routing, replaceable speech-provider contracts, language detection, and a deterministic intent lexicon spanning the supported locale catalog.
+- A representative native-language reminder matrix is now encoded in the existing AssistantService test suite; it has **not yet been executed in this session**.
 - **Important:** the current ~55% score is an architecture/coverage score, not proof of native-level speech understanding or native-quality speech output. Real device/provider validation is still required before 100%.
 
 ## Product direction — permanent architectural constraints
