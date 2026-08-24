@@ -34,16 +34,10 @@ export class ContextualCommandService {
     const previous = (await this.context.get(userId)).lastAction;
     const referencesPrevious = this.referencesPrevious(normalized);
     const clauses = this.splitClauses(normalized);
-    const intents = clauses.map((clause) =>
-      this.detectOperation(clause, referencesPrevious),
-    );
+    const intents = clauses.map((clause) => this.detectOperation(clause, referencesPrevious));
     const operation = this.pickPrimaryIntent(intents, referencesPrevious);
     const entities = this.extractEntities(normalized);
-    const contradictions = this.detectContradictions(
-      normalized,
-      intents,
-      entities,
-    );
+    const contradictions = this.detectContradictions(normalized, intents, entities);
 
     return {
       text,
@@ -57,58 +51,19 @@ export class ContextualCommandService {
       clauses,
       intents,
       contradictions,
-      confidence: this.scoreConfidence(
-        normalized,
-        referencesPrevious,
-        operation,
-        entities,
-        contradictions,
-      ),
+      confidence: this.scoreConfidence(normalized, referencesPrevious, operation, entities, contradictions),
     };
   }
 
-  private detectOperation(
-    text: string,
-    referencesPrevious: boolean,
-  ): ContextualCommand['operation'] {
-    if (
-      this.matches(text, [
-        'cancel', 'delete', 'remove', 'annule', 'anuleaza', 'annul', 'cancela',
-        'elimina', 'annulla', 'annuler', 'отмени', 'отмена', '取消', '취소',
-        'لغو', 'حذف', 'پاک کن', 'بردار', 'کنسل', 'بیخیال', 'ألغِ',
-      ])
-    )
-      return 'cancel';
-    if (
-      this.matches(text, [
-        'change', 'edit', 'move', 'update', 'make it', 'instead',
-        'cambia', 'actualiza', 'modifica', 'mets à jour', 'modifie', 'ändern',
-        'измени', 'измени', 'обнови', 'değiştir', 'güncelle', '変更', '更新', '修改',
-        'تغيير', 'غيّر', 'تعديل', 'تغییر', 'ویرایش', 'جابجا', 'عوض', 'اصلاح', 'به جاش', 'بجاش',
-      ])
-    )
-      return 'update';
-    if (
-      referencesPrevious &&
-      this.matches(text, ['نه', 'نخیر', 'نمیخوام', 'نمی خوام', 'no', 'nope', 'non', 'nein', 'não', 'no quiero', 'いいえ'])
-    )
-      return 'update';
-    if (
-      this.matches(text, [
-        'remind', 'remember me', 'schedule', 'create', 'add', 'set', 'put', 'buy',
-        'rappelle', 'recuerda', 'recuérdame', 'erinnere', 'ricordami', 'lembra', 'napomni',
-        'hatırlat', '思い出させて', '提醒', 'ذكرني', 'เตือน', 'ingatkan', 'paalalahanan',
-        'یادم بنداز', 'یادآوری', 'قرار بده', 'اضافه', 'بساز', 'ثبت کن', 'بخر',
-      ])
-    )
-      return 'create';
+  private detectOperation(text: string, referencesPrevious: boolean): ContextualCommand['operation'] {
+    if (this.matches(text, ['cancel', 'delete', 'remove', 'annule', 'anuleaza', 'annul', 'cancela', 'elimina', 'annulla', 'annuler', 'отмени', 'отмена', '取消', '취소', 'لغو', 'حذف', 'پاک کن', 'بردار', 'کنسل', 'بیخیال', 'ألغِ'])) return 'cancel';
+    if (this.matches(text, ['change', 'edit', 'move', 'update', 'make it', 'instead', 'cambia', 'actualiza', 'modifica', 'mets à jour', 'modifie', 'ändern', 'измени', 'обнови', 'değiştir', 'güncelle', '変更', '更新', '修改', 'تغيير', 'غيّر', 'تعديل', 'تغییر', 'ویرایش', 'جابجا', 'عوض', 'اصلاح', 'به جاش', 'بجاش'])) return 'update';
+    if (referencesPrevious && this.matches(text, ['نه', 'نخیر', 'نمیخوام', 'نمی خوام', 'no', 'nope', 'non', 'nein', 'não', 'no quiero', 'いいえ'])) return 'update';
+    if (this.matches(text, ['remind', 'remember me', 'schedule', 'create', 'add', 'set', 'put', 'buy', 'rappelle', 'recuerda', 'recuérdame', 'erinnere', 'ricordami', 'lembra', 'napomni', 'hatırlat', '思い出させて', '提醒', 'ذكرني', 'เตือน', 'ingatkan', 'paalalahanan', 'یادم بنداز', 'یادآوری', 'قرار بده', 'اضافه', 'بساز', 'ثبت کن', 'بخر'])) return 'create';
     return 'unknown';
   }
 
-  private pickPrimaryIntent(
-    intents: ContextualCommand['operation'][],
-    referencesPrevious: boolean,
-  ): ContextualCommand['operation'] {
+  private pickPrimaryIntent(intents: ContextualCommand['operation'][], referencesPrevious: boolean): ContextualCommand['operation'] {
     if (intents.includes('cancel')) return 'cancel';
     if (intents.includes('update')) return 'update';
     if (intents.includes('create')) return 'create';
@@ -116,27 +71,11 @@ export class ContextualCommandService {
   }
 
   private normalize(input: string): string {
-    return input
-      .trim()
-      .toLowerCase()
-      .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
-      .replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
-      .replace(/ي/g, 'ی')
-      .replace(/ك/g, 'ک')
-      .replace(/[’‘`]/g, "'")
-      .replace(/‌/g, ' ')
-      .replace(/[؟?!،؛,.。]/g, ' ')
-      .replace(/\s+/g, ' ');
+    return input.trim().toLowerCase().replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))).replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit))).replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[’‘`]/g, "'").replace(/‌/g, ' ').replace(/[؟?!،؛,.。]/g, ' ').replace(/\s+/g, ' ');
   }
 
   private referencesPrevious(text: string): boolean {
-    return this.matches(text, [
-      'that', 'it', 'this', 'same', 'previous', 'earlier', 'the last one', 'that one', 'the one before',
-      'lo mismo', 'eso', 'esa', 'el anterior', 'ça', 'celui-là', 'la même', 'das', 'dasselbe', 'der letzte',
-      'quello', 'lo stesso', 'isso', 'o mesmo', 'это', 'тот же', 'bunu', 'aynısı', 'それ', '同じ',
-      '这个', '那个', '一样的', 'ذلك', 'نفسه',
-      'همون', 'همون قبلی', 'همون یکی', 'همین', 'اینو', 'این یکی', 'قبلی', 'اونو', 'اون یکی', 'دوباره', 'باز هم', 'به جاش', 'بجاش', 'همونی که',
-    ]);
+    return this.matches(text, ['that', 'it', 'this', 'same', 'previous', 'earlier', 'the last one', 'that one', 'the one before', 'lo mismo', 'eso', 'esa', 'el anterior', 'ça', 'celui-là', 'la même', 'das', 'dasselbe', 'der letzte', 'quello', 'lo stesso', 'isso', 'o mesmo', 'это', 'тот же', 'bunu', 'aynısı', 'それ', '同じ', '这个', '那个', '一样的', 'ذلك', 'نفسه', 'همون', 'همون قبلی', 'همون یکی', 'همین', 'اینو', 'این یکی', 'قبلی', 'اونو', 'اون یکی', 'دوباره', 'باز هم', 'به جاش', 'بجاش', 'همونی که']);
   }
 
   private extractEntities(text: string): ContextualCommand['entities'] {
@@ -144,9 +83,7 @@ export class ContextualCommandService {
     const quantity = text.match(/(?:^|\s)(\d+(?:\.\d+)?)(?=\s*(?:تا|عدد|مورد|بار|x)?(?:\s|$))/i);
     if (quantity) entities.quantity = Number(quantity[1]);
     else {
-      const wordQuantity: Record<string, number> = {
-        یک: 1, یه: 1, یکی: 1, دو: 2, سه: 3, چهار: 4, پنج: 5, شش: 6, هفت: 7, هشت: 8, نه: 9, ده: 10,
-      };
+      const wordQuantity: Record<string, number> = { یک: 1, یه: 1, یکی: 1, دو: 2, سه: 3, چهار: 4, پنج: 5, شش: 6, هفت: 7, هشت: 8, نه: 9, ده: 10 };
       for (const [word, value] of Object.entries(wordQuantity)) {
         if (new RegExp(`(?:^|\\s)${word}(?=\\s*(?:تا|عدد|مورد)?(?:\\s|$))`).test(text)) {
           entities.quantity = value;
@@ -168,35 +105,22 @@ export class ContextualCommandService {
     else if (this.matches(text, ['پس فردا', 'پس‌فردا', 'day after tomorrow', 'après-demain', 'pasado mañana', 'übermorgen', 'dopodomani', 'depois de amanhã', 'послезавтра', 'öbür gün', '明後日', '后天', 'بعد غد'])) entities.date = 'day_after_tomorrow';
     if (this.matches(text, ['نه', 'نخیر', 'نه ممنون', 'نمیخوام', 'نمی خوام', 'no', 'nope', 'non', 'nein', 'não', 'no quiero', 'нет', 'いいえ', '不'])) entities.confirmation = 'no';
     else if (this.matches(text, ['بله', 'آره', 'اره', 'حتما', 'باشه', 'اوکی', 'yes', 'sure', 'oui', 'ja', 'sim', 'sí', 'да', 'はい', '好'])) entities.confirmation = 'yes';
-    if (this.matches(text, ['نه', 'بدون', 'نذار', 'نمیخوام', 'نمی خوام', 'without', 'without any', 'sin', 'sans', 'ohne', 'senza', 'sem', 'без', 'olmadan', 'なし', '不含', 'بدون'])) entities.negated = true;
+    if (this.matches(text, ['نه', 'بدون', 'نذار', 'نمیخوام', 'نمی خوام', 'without', 'without any', 'sin', 'sans', 'ohne', 'senza', 'sem', 'без', 'olmadan', 'なし', '不含'])) entities.negated = true;
     return entities;
   }
 
   private splitClauses(text: string): string[] {
-    return text
-      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|but|then|also|plus|or|rappelle-moi.*?et|et puis|y luego|y|luego|und dann|und|und danach|e poi|e|depois|и потом|и|sonra|ve|ve sonra|そして|それから|然后|之后|و بعدش|و همچنین|و بعد|بعد|سپس|هم|یا|ولی|اما|و|ثم)\s+)/iu)
-      .map((part) => part.trim())
-      .filter(Boolean);
+    return text.split(/(?:[.;؛。]+\s*|\s+(?:and then|and|but|then|also|plus|or|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e|depois|e depois|и потом|и|sonra|ve sonra|ve|そして|それから|然后|之后|و بعدش|و همچنین|و بعد|بعد|سپس|هم|یا|ولی|اما|و|ثم)\s+)/iu).map((part) => part.trim()).filter(Boolean);
   }
 
-  private detectContradictions(
-    text: string,
-    intents: ContextualCommand['operation'][],
-    entities: ContextualCommand['entities'],
-  ): string[] {
+  private detectContradictions(text: string, intents: ContextualCommand['operation'][], entities: ContextualCommand['entities']): string[] {
     const issues: string[] = [];
     if (intents.includes('cancel') && intents.includes('create')) issues.push('create_and_cancel_same_turn');
     if (entities.negated && intents.includes('create') && !this.matches(text, ['بدون', 'نذار', 'نمیخوام', 'without', 'sin', 'sans', 'ohne', 'sem', 'без', 'なし', '不含'])) issues.push('negation_create_ambiguity');
     return issues;
   }
 
-  private scoreConfidence(
-    text: string,
-    referencesPrevious: boolean,
-    operation: ContextualCommand['operation'],
-    entities: ContextualCommand['entities'],
-    contradictions: string[],
-  ): number {
+  private scoreConfidence(text: string, referencesPrevious: boolean, operation: ContextualCommand['operation'], entities: ContextualCommand['entities'], contradictions: string[]): number {
     let score = operation === 'unknown' ? 0.35 : 0.65;
     if (text.length > 3) score += 0.05;
     if (referencesPrevious) score += 0.1;
