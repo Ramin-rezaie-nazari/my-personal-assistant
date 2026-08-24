@@ -15,6 +15,12 @@ export type VoiceProfile = {
   nativeStyle: 'tehran' | 'native';
 };
 
+export type TtsProvider = {
+  supports: (locale: LanguageCode) => boolean;
+  speak: (text: string, profile: VoiceProfile) => Promise<void>;
+  stop: () => Promise<void>;
+};
+
 const STORAGE_KEY = 'mypa.voice.profile.v1';
 
 /** Voice character presets; the contract is vendor-agnostic. */
