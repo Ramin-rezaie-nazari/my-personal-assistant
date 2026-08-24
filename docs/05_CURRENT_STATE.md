@@ -22,9 +22,11 @@ Remember-once user context
 ✅ Relevant durable memory surfaced as known facts
 ✅ Context precedence contract documented: explicit current input > structured profile > durable memory > inference
 ✅ BrainStateService now injects hydrated user context into every Brain request
-✅ Dedicated UserContextService unit coverage added
+✅ Dedicated UserContextService unit coverage added — 2/2 tests passed
+✅ BrainStateService focused coverage added/verified — 1/1 test passed
+✅ Updated branch backend typecheck passed
+✅ Updated branch backend build passed
 ✅ UX contract documented: voice-first, low-manual-input, remember-once, purposeful animation
-⬜ Run local typecheck + focused UserContextService tests on the updated branch
 ⬜ Build the visible voice-first assistant shell around this contract
 ⬜ Add real voice capture / speech pipeline without making paid cloud AI mandatory
 ```
@@ -66,7 +68,8 @@ Food Decision Brain
 - Recommendation E2E passed: **1 suite / 2 tests green** with authentication protection and deterministic ranked food recommendations with explanations.
 - Final local validation pass reached **156/156 unit suites, 414/414 unit tests, and 5/5 E2E suites, 26/26 E2E tests green**.
 - The local validation pass also confirmed Prisma schema validation/generation and backend build success.
-- The current branch includes the persistent user-context hydration work added after the last complete validation pass; rerun the focused checks before calling this new workstream green.
+- Persistent user-context work was then validated on the updated branch `7f5e495a`: **UserContextService 2/2 tests green**, **BrainStateService 1/1 test green**, **backend typecheck green**, and **backend build green**.
+- This means the persistent context foundation is no longer only documented; the updated implementation and its focused validation are green and ready for the visible assistant-shell layer.
 
 ## Product direction — permanent architectural constraints
 
