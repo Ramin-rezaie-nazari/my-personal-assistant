@@ -1,5 +1,5 @@
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
-import { getVoiceLanguage } from './voice-language';
+import { getVoiceLanguage, type LanguageCode } from './voice-language';
 
 export type SpeechRecognitionResult = {
   transcript: string;
@@ -10,6 +10,20 @@ export type SpeechRecognitionHandle = {
   stop: () => void;
   remove: () => void;
 };
+
+export type SpeechRecognitionProvider = {
+  supports: (locale: LanguageCode) => boolean;
+  start: (
+    locale: LanguageCode,
+    onResult: (result: SpeechRecognitionResult) => void,
+    onEnd: () => void,
+    onError: (message: string) => void,
+  ) => Promise<SpeechRecognitionHandle | null>;
+};
+
+export function supportsOnDeviceSpeech(locale: string): boolean {
+  return Boolean(getVoiceLanguage(locale));
+}
 
 export async function startRecognition(
   locale: string,
@@ -52,21 +66,9 @@ export async function startRecognition(
       requiresOnDeviceRecognition: onDevice,
       addsPunctuation: true,
       contextualStrings: [
-        'My Personal Assistant',
-        'Personal Brain',
-        'breakfast',
-        'lunch',
-        'dinner',
-        'nutrition',
-        'protein',
-        'calories',
-        'reminder',
-        'shopping cart',
-        'workout',
-        'موجودی خانه',
-        'تمرین',
-        'کالری',
-        'پروتئین',
+        'My Personal Assistant', 'Personal Brain', 'breakfast', 'lunch', 'dinner',
+        'nutrition', 'protein', 'calories', 'reminder', 'shopping cart', 'workout',
+        'موجودی خانه', 'تمرین', 'کالری', 'پروتئین',
       ],
     });
   } catch (error) {
@@ -75,10 +77,7 @@ export async function startRecognition(
     return null;
   }
 
-  return {
-    stop: () => ExpoSpeechRecognitionModule.stop(),
-    remove: cleanup,
-  };
+  return { stop: () => ExpoSpeechRecognitionModule.stop(), remove: cleanup };
 }
 
 export async function startPersianRecognition(
