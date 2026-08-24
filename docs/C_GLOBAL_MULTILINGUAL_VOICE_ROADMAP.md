@@ -123,18 +123,26 @@ This workstream reaches **100%** only when all repository-side capabilities are 
 
 ## Implementation checkpoint — pending verification
 
-The current implementation pass has been applied in the repository:
+The current repository-side implementation pass includes:
 
 - ✅ Semantic paraphrase coverage expanded for 13 representative locales.
 - ✅ Colloquial meal/reminder/basket/nutrition/cancel utterances expanded substantially.
 - ✅ Spoken filler normalization added for representative locale families.
 - ✅ Common English contraction normalization added.
 - ✅ Partial/short utterance similarity scoring strengthened with ordered token overlap.
-- ✅ Clause splitting expanded to punctuation and additional natural conjunctions.
+- ✅ Clause splitting expanded to punctuation and multilingual conjunctions for representative language families.
+- ✅ Contextual command parsing expanded for multilingual create/update/cancel vocabulary.
+- ✅ Multilingual previous-item/reference phrases expanded.
+- ✅ Relative date/ordinal/confirmation/negation extraction expanded across representative locale families.
 - ✅ Dedicated semantic regression cases expanded for colloquial, incomplete and filler-heavy speech.
+- ✅ Contextual-command regression cases expanded for multilingual clauses, relative dates and negated creation requests.
+- ✅ Locale-aware assistant response templates added for representative global locales, while retaining safe fallback behavior.
+- ✅ Speech-recognition contextual strings are now locale-aware for representative locales instead of using one English/Persian-only list.
+- ✅ Mobile voice-quality contract now checks the localized speech-context routing hook.
 - ⬜ Runtime validation still pending.
 - ⬜ Full backend/mobile regression validation still pending.
+- ⬜ Real-device/provider validation still pending.
 
 ## Current checkpoint
 
-**Continue from Phase 1 verification, then move directly into the next repository-side unchecked capability without waiting between phases. Preserve all already-green deterministic multilingual behavior as a regression baseline.**
+**Finish repository-side work that can be safely completed without device access, then return to the user only for the final validation pass. Preserve every already-green deterministic contract as a hard regression baseline.**
