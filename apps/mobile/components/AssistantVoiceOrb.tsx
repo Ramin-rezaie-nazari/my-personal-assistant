@@ -35,7 +35,7 @@ export function AssistantVoiceOrb({ state, label, onPress }: Props) {
           Animated.timing(glow, { toValue: 0.48, duration: 900, useNativeDriver: true }),
           Animated.timing(glow, { toValue: 0.18, duration: 900, useNativeDriver: true }),
         ]),
-      ),
+      ]),
     );
     loop.start();
     return () => loop.stop();
