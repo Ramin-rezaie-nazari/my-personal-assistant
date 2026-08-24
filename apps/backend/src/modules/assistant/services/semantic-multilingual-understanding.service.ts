@@ -75,17 +75,54 @@ const MIN_CHARACTER_MATCH_SCORE = 0.72;
 const MIN_LEXICAL_SEMANTIC_SCORE = 0.64;
 const REPAIR_CONFIDENCE = 0.78;
 
+const ACTION_INTENTS: ReadonlySet<Exclude<LocalIntent, 'UNKNOWN'>> = new Set([
+  'ADD_TO_BASKET',
+  'REMOVE_FROM_BASKET',
+  'CREATE_REMINDER',
+  'UPDATE_REQUEST',
+  'CANCEL_REQUEST',
+]);
+
+const NEGATION_MARKERS = [
+  'do not', "don't", 'dont', 'never', 'not', 'no',
+  'نمی', 'نمیخوام', 'نمی‌خوام', 'نه', 'بدون', 'نذار',
+  'no', 'sin', 'sans', 'ne ... pas', 'pas', 'nicht', 'kein',
+  'non', 'senza', 'sem', 'без', 'не', 'не хочу', 'не треба',
+  'iptal değil', 'değil', 'لا', 'ليس', 'لا أريد', 'אל', 'לא',
+  'नहीं', 'मत', 'আমি চাই না', 'না', 'نہیں', 'مانا نمی',
+  'キャンセルしない', 'ない', '不要', '不想', '不要', '不是', '别', '不',
+  '안', '않', '싫어', 'không', 'chưa', 'ไม่', 'jangan', 'tidak',
+  'hindi', 'ne', 'ikke', 'ingen', 'ei', 'ne', 'nincs', 'nu',
+];
+
+const NON_ACTION_MARKERS = [
+  'why', 'about', 'tell me', 'talk about', 'story', 'history', 'yesterday', 'last night', 'i had', 'i ate',
+  'درباره', 'چرا', 'دیروز', 'دیشب', 'خوردم', 'خورده بودم', 'فقط',
+  'por qué', 'sobre', 'ayer', 'anoche', 'comí',
+  'pourquoi', 'à propos', 'hier', 'j ai mangé',
+  'warum', 'über', 'gestern', 'ich habe gegessen',
+  'なぜ', 'について', '昨日', '食べた',
+  '为什么', '关于', '昨天', '吃过', '只是',
+  'لماذا', 'عن', 'أمس',
+];
+
 @Injectable()
 export class SemanticMultilingualUnderstandingService {
   constructor(private readonly lexical: LocalLanguageUnderstandingService) {}
 
   understand(input: string, preferredLanguage?: string): LocalUnderstanding {
     const base = this.lexical.understand(input, preferredLanguage);
+    const explicit = this.rankExplicitParaphrases(base.language, base.normalizedText);
+    const explicitSemantic = this.resolveCandidate(explicit, base);
+    if (explicitSemantic) return explicitSemantic;
+
+    if (base.intent !== 'UNKNOWN' && this.shouldRefuseBaseIntent(base)) {
+      return { ...base, intent: 'UNKNOWN', confidence: 0 };
+    }
     if (base.intent !== 'UNKNOWN') return base;
 
-    const explicit = this.rankExplicitParaphrases(base.language, base.normalizedText);
     const lexicalSemantic = this.rankExistingLexiconSemantics(base.language, base.normalizedText);
-    const semantic = this.resolveCandidate([...explicit, ...lexicalSemantic], base);
+    const semantic = this.resolveCandidate(lexicalSemantic, base);
     if (semantic) return semantic;
 
     return this.repairSingleSpeechError(input, preferredLanguage, base);
@@ -96,6 +133,32 @@ export class SemanticMultilingualUnderstandingService {
       .split(/\s*(?:and|then|also|plus|و بعدش|و همچنین|بعد|هم|سپس|ثم|然后|之後|之后|それから|そのあと|그리고|또|y luego|ensuite|dann|und dann)\s*/iu)
       .map((part) => part.trim())
       .filter(Boolean);
+  }
+
+  private shouldRefuseBaseIntent(base: LocalUnderstanding): boolean {
+    const text = this.normalize(base.normalizedText);
+    if (!text) return false;
+
+    if (ACTION_INTENTS.has(base.intent as Exclude<LocalIntent, 'UNKNOWN'>)) {
+      const isNegated = NEGATION_MARKERS.some((marker) => text.includes(this.normalize(marker)));
+      if (isNegated && base.intent !== 'CREATE_REMINDER') return true;
+      if (isNegated && base.intent === 'CREATE_REMINDER' && !this.isPositiveReminderForm(text)) return true;
+    }
+
+    if (base.intent === 'RECOMMEND_MEAL' || base.intent === 'CREATE_REMINDER') {
+      if (NON_ACTION_MARKERS.some((marker) => text.includes(this.normalize(marker)))) return true;
+    }
+
+    return false;
+  }
+
+  private isPositiveReminderForm(text: string): boolean {
+    return [
+      'dont let me forget', 'do not let me forget', 'make sure i remember',
+      'نذار یادم بره', 'که یادم بمونه',
+      'no dejes que se me olvide', 'ne me laisse pas oublier',
+      'lass mich das nicht vergessen', '忘れないようにして', '别让我忘了',
+    ].some((phrase) => text.includes(this.normalize(phrase)));
   }
 
   private rankExplicitParaphrases(language: SupportedLocalLanguage, normalized: string): IntentCandidate[] {
@@ -120,9 +183,7 @@ export class SemanticMultilingualUnderstandingService {
     for (const [intent, phrases] of Object.entries(lexicon) as Array<[IntentCandidate['intent'], readonly string[]]>) {
       let best = 0;
       for (const phrase of phrases) best = Math.max(best, this.lexicalSemanticSimilarity(normalized, this.normalize(phrase)));
-      if (best >= MIN_LEXICAL_SEMANTIC_SCORE) {
-        candidates.push({ intent, score: best, source: 'lexical-repair' });
-      }
+      if (best >= MIN_LEXICAL_SEMANTIC_SCORE) candidates.push({ intent, score: best, source: 'lexical-repair' });
     }
     return candidates;
   }
@@ -138,7 +199,6 @@ export class SemanticMultilingualUnderstandingService {
     const matched = phraseTokens.filter((phraseToken) =>
       textTokens.some((textToken) => this.tokenSimilarity(textToken, phraseToken)),
     );
-
     const minimumRequired = Math.min(2, phraseTokens.length);
     if (matched.length < minimumRequired) {
       const cjkLike = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7af]/u.test(text + phrase);
@@ -165,11 +225,7 @@ export class SemanticMultilingualUnderstandingService {
     const singleCandidateIsStrongEnough = !second && best.score >= MIN_SINGLE_CANDIDATE_SCORE;
     const winnerHasMeaningfulLead = !!second && best.score >= MIN_FUZZY_SCORE && best.score - second.score >= MIN_CANDIDATE_MARGIN;
     if (!singleCandidateIsStrongEnough && !winnerHasMeaningfulLead) return undefined;
-    return {
-      ...base,
-      intent: best.intent,
-      confidence: Math.min(MAX_SEMANTIC_CONFIDENCE, 0.72 + best.score * 0.22),
-    };
+    return { ...base, intent: best.intent, confidence: Math.min(MAX_SEMANTIC_CONFIDENCE, 0.72 + best.score * 0.22) };
   }
 
   private repairSingleSpeechError(input: string, preferredLanguage: string | undefined, base: LocalUnderstanding): LocalUnderstanding {
@@ -228,9 +284,7 @@ export class SemanticMultilingualUnderstandingService {
     const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
     for (let i = 1; i <= a.length; i += 1) {
       const current = [i];
-      for (let j = 1; j <= b.length; j += 1) {
-        current[j] = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-      }
+      for (let j = 1; j <= b.length; j += 1) current[j] = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
       for (let j = 0; j <= b.length; j += 1) previous[j] = current[j];
     }
     return previous[b.length];
