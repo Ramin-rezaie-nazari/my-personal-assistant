@@ -1,5 +1,5 @@
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
-import { getVoiceLanguage, type LanguageCode } from './voice-language';
+import { getVoiceLanguage, VOICE_LANGUAGES, type LanguageCode } from './voice-language';
 
 export type SpeechRecognitionResult = {
   transcript: string;
@@ -22,7 +22,7 @@ export type SpeechRecognitionProvider = {
 };
 
 export function supportsOnDeviceSpeech(locale: string): boolean {
-  return Boolean(getVoiceLanguage(locale));
+  return VOICE_LANGUAGES.some((item) => item.code === locale);
 }
 
 export async function startRecognition(
