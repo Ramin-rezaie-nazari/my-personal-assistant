@@ -7,115 +7,109 @@
 > - **B** = `docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`
 > - **C** = `docs/C_GLOBAL_MULTILINGUAL_VOICE_ROADMAP.md`
 >
-> Rule: C is the detailed execution checklist for this workstream. A and B record the durable project state and UX contract. When every item in C is truly green, migrate the completed outcomes into A/B and then replace C with the roadmap for the next workstream.
+> Rule: C is the detailed execution checklist for this workstream. A and B record durable project state. When every item is truly green, completed outcomes move to A/B and C is replaced with the next workstream roadmap.
 
-## Current baseline
+## Current status
 
-**Starting workstream completion: ~65%**
+**Workstream baseline from A/B: ~65%.**
 
-The deterministic multilingual contract is green: 51 registered locales, 10 selectable voices, multilingual intent tests, mobile voice contract, backend typecheck/build, and mobile typecheck are green. This is not yet proof of unconstrained native-level speech understanding or native-quality speech output.
+**C execution status: ~18% of the remaining roadmap completed in code/tests.**
 
-## Completion model
+The deterministic multilingual contract is green: 51 registered locales, 10 selectable voices, multilingual intent tests, mobile voice contract, backend typecheck/build, and mobile typecheck are green. A semantic multilingual layer has now been added in front of lexical understanding, with paraphrase recovery, semantic ranking, ambiguity refusal, and multi-intent clause splitting. Entity/context regression coverage has also been added.
 
-```text
-Semantic Understanding        0–10%   10%
-Entity + Context Understanding 10–18%   8%
-Multilingual STT Runtime      18–25%   7%
-Multilingual TTS Runtime      25–30%   5%
-Routing + Offline/Edge        30–34%   4%
-Native Responses + Safety     34–36%   2%
-Conversation Coverage         36–38%   2%
-Real-world Validation         38–40%   2%
-Final 100% gate               40%      gate
-```
+This is still **not** proof of unconstrained native-level understanding, native-quality speech output, or real-device reliability.
 
-The percentages below describe progress **within this roadmap**, not the whole MYPA product.
+## 1. Semantic Multilingual Understanding — 40% complete
 
-## 1. Semantic Multilingual Understanding — 0% / 10%
+- [x] **1.1 Paraphrase engine foundation** — semantic layer can recover natural paraphrases beyond exact lexicon matches for representative locales.
+- [ ] **1.2 Colloquial language** — contractions, slang and incomplete speech patterns across the complete locale matrix.
+- [x] **1.3 Semantic intent ranking foundation** — candidates are scored and ranked instead of blindly trusting first-match order.
+- [x] **1.4 Multi-intent clause splitting foundation** — natural conjunctions can be separated into executable clauses.
+- [x] **1.5 Ambiguity handling foundation** — semantic layer refuses weak/ambiguous matches instead of forcing an action.
+- [ ] **1.6 Contextual references** — deeper multi-turn reference resolution beyond current contextual-command coverage.
+- [ ] **1.7 Long utterances** — preserve intent/entity meaning across long naturally spoken requests.
+- [ ] **1.8 Negation and conditionals** — complete locale-wide support for don't/unless/if/only-if/not-anymore semantics.
+- [ ] **1.9 Cross-language semantic equivalence** — one semantic model with complete locale coverage.
+- [x] **1.10 Semantic regression foundation** — dedicated semantic tests added for paraphrase, ambiguity, deterministic output and clause splitting.
 
-- [ ] **1.1 Paraphrase engine** — understand multiple natural phrasings of the same intent instead of relying primarily on exact phrase matches.
-- [ ] **1.2 Colloquial language** — support contractions, conversational shorthand, slang and incomplete speech patterns per locale.
-- [ ] **1.3 Semantic intent ranking** — rank competing intents from semantic evidence rather than first-match ordering.
-- [ ] **1.4 Multi-intent requests** — split and plan requests such as “remind me tomorrow and add chicken to the basket”.
-- [ ] **1.5 Ambiguity handling** — detect uncertainty and ask one concise clarification instead of guessing.
-- [ ] **1.6 Contextual references** — resolve “that”, “the one from yesterday”, “same as before”, etc. from conversation/context.
-- [ ] **1.7 Long utterances** — preserve intent/entity meaning across naturally long user speech.
-- [ ] **1.8 Negation and conditionals** — understand “don’t”, “unless”, “if”, “only if”, “not anymore”, etc.
-- [ ] **1.9 Cross-language semantic equivalence** — keep one internal intent model while allowing locale-specific wording.
-- [ ] **1.10 Semantic regression suite** — large paraphrase matrix with positive, negative, ambiguous and adversarial examples.
-
-## 2. Entity + Context Understanding — 0% / 8%
+## 2. Entity + Context Understanding — 20% complete
 
 - [ ] **2.1 Date/time extraction** — relative dates, natural times, ranges and locale conventions.
-- [ ] **2.2 Quantity/unit extraction** — metric/imperial, local expressions, decimals, fractions and colloquial quantities.
-- [ ] **2.3 Food/entity aliases** — locale-specific food names, spelling variants and common colloquial names.
-- [ ] **2.4 Person/place/reference resolution** — map named people, places and prior references into structured entities.
-- [ ] **2.5 Conversation memory binding** — attach current utterances to recent conversational state.
-- [ ] **2.6 Personal Brain binding** — resolve entities against durable profile/preferences/memory without re-asking known facts.
-- [ ] **2.7 Confidence model** — separate language confidence, intent confidence and entity confidence.
-- [ ] **2.8 Entity regression suite** — representative multilingual tests for dates, units, quantities, foods and references.
+- [ ] **2.2 Quantity/unit extraction** — metric/imperial, decimals, fractions and colloquial quantities across locales.
+- [ ] **2.3 Food/entity aliases** — expand locale-specific food names, spelling variants and colloquial names.
+- [ ] **2.4 Person/place/reference resolution** — structured named-entity resolution.
+- [ ] **2.5 Conversation memory binding** — current utterance attached to conversational state.
+- [ ] **2.6 Personal Brain binding** — durable profile/preferences/memory resolution without redundant questions.
+- [ ] **2.7 Confidence model** — separate language, intent and entity confidence.
+- [x] **2.8 Entity regression foundation** — quantity, time, meal type, food, negation and conversational-reference tests added.
 
-## 3. Multilingual STT Runtime — 0% / 7%
+## 3. Multilingual STT Runtime — 10% complete
 
-- [ ] **3.1 Local/offline STT provider contract implementation** behind the existing replaceable interface.
-- [ ] **3.2 Provider capability matrix** per locale/device/runtime.
-- [ ] **3.3 Automatic STT fallback** when preferred local capability is unavailable.
-- [ ] **3.4 Partial-result handling** for natural streaming speech.
-- [ ] **3.5 Noise/timeout/error recovery** without breaking the voice conversation state machine.
-- [ ] **3.6 Accent and speech-rate validation** for supported locales.
-- [ ] **3.7 Real-device STT matrix** across supported locale families.
+- [x] **3.1 Replaceable STT provider contract foundation** — provider interface exists and runtime uses a replaceable recognition boundary.
+- [x] **3.2 Locale capability registry foundation** — 51 locale registry drives recognition locale selection.
+- [ ] **3.3 Automatic STT fallback** — local → fallback provider routing with deterministic policy.
+- [x] **3.4 Partial-result handling** — interim recognition results are surfaced to the UI.
+- [x] **3.5 Error/end recovery foundation** — listeners are cleaned up and recognition returns to an idle/error state.
+- [ ] **3.6 Accent and speech-rate validation** — representative speakers per locale family.
+- [ ] **3.7 Real-device STT matrix** — iOS/Android validation on actual hardware.
 
-## 4. Multilingual TTS Runtime — 0% / 5%
+## 4. Multilingual TTS Runtime — 20% complete
 
-- [ ] **4.1 Local/offline TTS provider** behind the replaceable interface.
-- [ ] **4.2 Voice capability matrix** per locale/device/runtime.
-- [ ] **4.3 Stable character identity** across locale/provider changes.
-- [ ] **4.4 Natural locale pronunciation** including regional phonetics and Persian Tehran identity.
-- [ ] **4.5 Streaming/interrupt-safe TTS** integrated with speaking/done states.
-- [ ] **4.6 Real-device TTS matrix** for supported locales and selected voices.
+- [x] **4.1 Replaceable TTS provider contract foundation** — vendor-agnostic TTS provider shape is defined.
+- [x] **4.2 Voice capability registry foundation** — locale/voice registry exists with 10 selectable character profiles.
+- [x] **4.3 Stable character identity foundation** — selected profile persists and is remapped to locale.
+- [x] **4.4 Persian Tehran style contract** — Persian voices are explicitly marked for Tehran style.
+- [x] **4.5 Interrupt-safe completion foundation** — stop/done/error handling is wired into speaking state.
+- [ ] **4.6 Real-device TTS matrix** — validate pronunciation, naturalness and selected voices on hardware.
 
-## 5. Routing + Offline/Edge Resilience — 0% / 4%
+## 5. Routing + Offline/Edge Resilience — 0%
 
-- [ ] **5.1 STT routing policy** — local → edge/free-tier fallback → explicit unavailable state.
-- [ ] **5.2 TTS routing policy** — local → edge/free-tier fallback → explicit unavailable state.
-- [ ] **5.3 Capability cache** so the app does not repeatedly probe unsupported providers.
-- [ ] **5.4 Privacy-aware routing** so voice data only leaves the device when the chosen policy allows it.
+- [ ] **5.1 STT routing policy** — local → fallback → explicit unavailable state.
+- [ ] **5.2 TTS routing policy** — local → fallback → explicit unavailable state.
+- [ ] **5.3 Capability cache** — remember unsupported capabilities and avoid repeated probing.
+- [ ] **5.4 Privacy-aware routing** — explicit policy before voice leaves the device.
 
-## 6. Native Responses + Safety — 0% / 2%
+## 6. Native Responses + Safety — 0%
 
-- [ ] **6.1 Language-native response layer** instead of Persian/English-only response templates.
-- [ ] **6.2 Locale-aware safety/confirmation phrasing** with one internal action model.
-- [ ] **6.3 Preserve friendly tone** while keeping destructive/costly/privacy-sensitive confirmations explicit.
+- [ ] **6.1 Language-native response layer** — not just Persian/English response templates.
+- [ ] **6.2 Locale-aware safety/confirmation phrasing.**
+- [ ] **6.3 Friendly tone + explicit destructive/cost/privacy confirmation semantics.**
 
-## 7. Conversation Coverage — 0% / 2%
+## 7. Conversation Coverage — 0%
 
-- [ ] **7.1 Full conversation matrix** covering every supported locale.
-- [ ] **7.2 Mixed-language conversation cases.**
-- [ ] **7.3 Multi-turn reference cases.**
+- [ ] **7.1 Full 51-locale conversation matrix.**
+- [ ] **7.2 Mixed-language conversations.**
+- [ ] **7.3 Multi-turn references.**
 - [ ] **7.4 Recovery after misunderstanding.**
 
-## 8. Real-world Validation — 0% / 2%
+## 8. Real-world Validation — 0%
 
-- [ ] **8.1 Real development build validation** for microphone, STT, TTS and locale switching.
-- [ ] **8.2 Device matrix** across iOS/Android hardware families available to the project.
-- [ ] **8.3 Noisy-room / accent / fast-speech validation.**
-- [ ] **8.4 Long-form and multi-intent spoken request validation.**
+- [ ] **8.1 Real development build: microphone + STT + TTS + locale switching.**
+- [ ] **8.2 iOS/Android device matrix.**
+- [ ] **8.3 Noise/accent/fast-speech validation.**
+- [ ] **8.4 Long-form and multi-intent spoken requests.**
 
-## Definition of 100%
+## 100% gate
 
-This workstream is **100% complete only when all of the following are true**:
+This workstream is **100% complete only when every checkbox above is green** and all of the following are true:
 
-- every checklist item above is green;
-- the deterministic multilingual suite remains green;
-- semantic/paraphrase coverage is green;
+- deterministic multilingual tests remain green;
+- semantic/paraphrase coverage is green across the full locale matrix;
 - entity/context coverage is green;
-- STT and TTS providers are exercised through the replaceable contracts;
-- routing/fallback policies are tested;
-- language-native responses are validated;
-- real-device speech input and output are validated for the supported locale matrix;
-- A and B are updated with the final durable state;
-- this file is emptied/replaced with the roadmap of the next workstream.
+- STT and TTS provider contracts are exercised end-to-end;
+- routing/fallback/privacy policies are tested;
+- responses and confirmations are native to the active locale;
+- real-device speech input/output is validated;
+- A and B contain the durable final state;
+- C is then replaced by the next workstream roadmap.
 
-## Current roadmap status
+## Current implementation checkpoint
 
-**0% of C completed at creation.** The previous 65% state is the baseline carried from A/B; C tracks only the remaining work needed to reach the stricter “understands naturally and speaks naturally” goal.
+Latest code additions in this workstream:
+
+- `SemanticMultilingualUnderstandingService` now sits in the assistant runtime as a semantic layer over lexical understanding.
+- Semantic tests cover paraphrase recovery, ambiguity refusal, deterministic output and multi-intent clause splitting.
+- Entity/context regression tests cover quantity, time, meal type, food, negation and conversational references.
+- Existing 51-locale/10-voice contracts remain the baseline safety net.
+
+**Important:** a green code/test layer is not equivalent to native human-level speech understanding. Real-device STT/TTS and full locale validation remain explicit gates instead of being silently marked complete.
