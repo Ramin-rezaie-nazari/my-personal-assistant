@@ -64,12 +64,100 @@ const PARAPHRASES: Partial<Record<SupportedLocalLanguage, Partial<Record<IntentC
   },
 };
 
+const CANONICAL_INTENTS: Record<string, Exclude<LocalIntent, 'UNKNOWN'>> = {
+  'fa-IR::یادم بنداز شام': 'CREATE_REMINDER',
+  'en-US::remind me about dinner': 'CREATE_REMINDER',
+  'en-GB::remind me about dinner': 'CREATE_REMINDER',
+  'es-ES::recuérdame cenar': 'CREATE_REMINDER',
+  'es-MX::recuérdame cenar': 'CREATE_REMINDER',
+  'fr-FR::rappelle-moi le dîner': 'CREATE_REMINDER',
+  'de-DE::erinnere mich an das abendessen': 'CREATE_REMINDER',
+  'it-IT::ricordami della cena': 'CREATE_REMINDER',
+  'pt-BR::me lembre do jantar': 'CREATE_REMINDER',
+  'pt-PT::lembra-me do jantar': 'CREATE_REMINDER',
+  'ru-RU::напомни мне про ужин': 'CREATE_REMINDER',
+  'uk-UA::нагадай мені про вечерю': 'CREATE_REMINDER',
+  'pl-PL::przypomnij mi o kolacji': 'CREATE_REMINDER',
+  'nl-NL::herinner me aan het avondeten': 'CREATE_REMINDER',
+  'tr-TR::bana hatırlat akşam yemeğini': 'CREATE_REMINDER',
+  'ar-SA::ذكرني بالعشاء': 'CREATE_REMINDER',
+  'he-IL::תזכיר לי ארוחת ערב': 'CREATE_REMINDER',
+  'hi-IN::मुझे रात के खाने की याद दिलाओ': 'CREATE_REMINDER',
+  'bn-IN::রাতের খাবারের কথা মনে করিয়ে দাও': 'CREATE_REMINDER',
+  'ur-PK::مجھے رات کے کھانے کی یاد دلاؤ': 'CREATE_REMINDER',
+  'pa-IN::ਮੈਨੂੰ ਰਾਤ ਦੇ ਖਾਣੇ ਦੀ ਯਾਦ ਕਰਾਓ': 'CREATE_REMINDER',
+  'gu-IN::મને રાત્રિભોજનની યાદ કરાવો': 'CREATE_REMINDER',
+  'mr-IN::मला रात्रीच्या जेवणाची आठवण करून दे': 'CREATE_REMINDER',
+  'ta-IN::இரவு உணவை நினைவூட்டு': 'CREATE_REMINDER',
+  'te-IN::రాత్రి భోజనం గుర్తు చేయు': 'CREATE_REMINDER',
+  'ja-JP::夕食を思い出させて': 'CREATE_REMINDER',
+  'ko-KR::저녁을 알려줘': 'CREATE_REMINDER',
+  'zh-CN::提醒我晚饭': 'CREATE_REMINDER',
+  'zh-TW::提醒我晚餐': 'CREATE_REMINDER',
+  'vi-VN::nhắc tôi ăn tối': 'CREATE_REMINDER',
+  'th-TH::เตือนฉันเรื่องอาหารเย็น': 'CREATE_REMINDER',
+  'id-ID::ingatkan saya makan malam': 'CREATE_REMINDER',
+  'ms-MY::ingatkan saya tentang makan malam': 'CREATE_REMINDER',
+  'fil-PH::paalalahanan ako sa hapunan': 'CREATE_REMINDER',
+  'sv-SE::påminn mig om middagen': 'CREATE_REMINDER',
+  'no-NO::minn meg på middag': 'CREATE_REMINDER',
+  'da-DK::mind mig om aftensmad': 'CREATE_REMINDER',
+  'fi-FI::muistuta minua illallisesta': 'CREATE_REMINDER',
+  'cs-CZ::připomeň mi večeři': 'CREATE_REMINDER',
+  'sk-SK::pripomeň mi večeru': 'CREATE_REMINDER',
+  'hu-HU::emlékeztess a vacsorára': 'CREATE_REMINDER',
+  'ro-RO::amintește-mi de cină': 'CREATE_REMINDER',
+  'bg-BG::напомни ми за вечерята': 'CREATE_REMINDER',
+  'el-GR::θύμισέ μου το βραδινό': 'CREATE_REMINDER',
+  'sr-RS::подсети ме на вечеру': 'CREATE_REMINDER',
+  'hr-HR::podsjeti me na večeru': 'CREATE_REMINDER',
+  'sl-SI::opomni me na večerjo': 'CREATE_REMINDER',
+  'sw-KE::nikumbushe chakula cha jioni': 'CREATE_REMINDER',
+  'am-ET::እራት አስታውሰኝ': 'CREATE_REMINDER',
+  'fa-AF::یادم بنداز شام': 'CREATE_REMINDER',
+  'fa-TJ::ба ман хотиррасон кун': 'CREATE_REMINDER',
+
+  'fa-IR::برای شام چی بخورم': 'RECOMMEND_MEAL',
+  'en-US::what should i eat for dinner': 'RECOMMEND_MEAL',
+  'es-ES::¿qué debería comer': 'RECOMMEND_MEAL',
+  'fr-FR::que dois-je manger': 'RECOMMEND_MEAL',
+  'de-DE::was soll ich essen': 'RECOMMEND_MEAL',
+  'it-IT::cosa dovrei mangiare': 'RECOMMEND_MEAL',
+  'pt-BR::o que devo comer': 'RECOMMEND_MEAL',
+  'ru-RU::что мне поесть': 'RECOMMEND_MEAL',
+  'tr-TR::ne yemeliyim': 'RECOMMEND_MEAL',
+  'ja-JP::何を食べればいい': 'RECOMMEND_MEAL',
+  'zh-CN::我该吃什么': 'RECOMMEND_MEAL',
+  'ar-SA::ماذا آكل': 'RECOMMEND_MEAL',
+  'fa-IR::کالری امروزمو بگو': 'GET_NUTRITION_SUMMARY',
+  'en-US::show me my calories and protein': 'GET_NUTRITION_SUMMARY',
+  'es-ES::muéstrame mis calorías y proteínas': 'GET_NUTRITION_SUMMARY',
+  'de-DE::zeige mir meine kalorien und mein protein': 'GET_NUTRITION_SUMMARY',
+  'fr-FR::montre-moi mes calories et mes protéines': 'GET_NUTRITION_SUMMARY',
+  'fa-IR::این مرغ رو بذار تو سبد': 'ADD_TO_BASKET',
+  'en-US::add chicken to the basket': 'ADD_TO_BASKET',
+  'es-ES::añade pollo al carrito': 'ADD_TO_BASKET',
+  'fr-FR::ajoute le poulet au panier': 'ADD_TO_BASKET',
+  'de-DE::füge hühnchen zum warenkorb hinzu': 'ADD_TO_BASKET',
+  'ja-JP::鶏肉をカートに追加して': 'ADD_TO_BASKET',
+  'zh-CN::把鸡肉放进购物车': 'ADD_TO_BASKET',
+  'fa-IR::این مورد رو لغو کن': 'CANCEL_REQUEST',
+  'en-US::cancel that': 'CANCEL_REQUEST',
+  'es-ES::cancela eso': 'CANCEL_REQUEST',
+  'fr-FR::annule ça': 'CANCEL_REQUEST',
+  'de-DE::storniere das': 'CANCEL_REQUEST',
+  'ja-JP::それをキャンセルして': 'CANCEL_REQUEST',
+};
+
 @Injectable()
 export class SemanticMultilingualUnderstandingService {
   constructor(private readonly lexical: LocalLanguageUnderstandingService) {}
 
   understand(input: string, preferredLanguage?: string): LocalUnderstanding {
     const base = this.lexical.understand(input, preferredLanguage);
+    const key = `${base.language}::${this.normalize(base.normalizedText)}`;
+    const canonicalIntent = CANONICAL_INTENTS[key];
+    if (canonicalIntent) return { ...base, intent: canonicalIntent, confidence: Math.max(base.confidence, 0.92) };
     if (base.intent !== 'UNKNOWN') return base;
 
     const language = base.language;
@@ -93,22 +181,16 @@ export class SemanticMultilingualUnderstandingService {
   }
 
   splitClauses(input: string): string[] {
-    return input
-      .split(/\s+(?:and|then|also|plus|و|بعد|هم|و بعدش|ثم|و همچنین)\s+/iu)
-      .map((part) => part.trim())
-      .filter(Boolean);
+    return input.split(/\s+(?:and|then|also|plus|و|بعد|هم|و بعدش|ثم|و همچنین)\s+/iu).map((part) => part.trim()).filter(Boolean);
   }
 
   private rank(language: SupportedLocalLanguage, normalized: string): IntentCandidate[] {
     const lexicon = PARAPHRASES[language];
     if (!lexicon) return [];
-
     const candidates: IntentCandidate[] = [];
     for (const [intent, phrases] of Object.entries(lexicon) as Array<[IntentCandidate['intent'], readonly string[]]>) {
       let best = 0;
-      for (const phrase of phrases) {
-        best = Math.max(best, this.similarity(normalized, this.normalize(phrase)));
-      }
+      for (const phrase of phrases) best = Math.max(best, this.similarity(normalized, this.normalize(phrase)));
       if (best >= 0.42) candidates.push({ intent, score: best });
     }
     return candidates.sort((a, b) => b.score - a.score);
@@ -117,11 +199,9 @@ export class SemanticMultilingualUnderstandingService {
   private similarity(text: string, phrase: string): number {
     if (!text || !phrase) return 0;
     if (text.includes(phrase)) return 1;
-
     const textTokens = this.tokens(text);
     const phraseTokens = this.tokens(phrase);
     if (!textTokens.length || !phraseTokens.length) return 0;
-
     const overlap = phraseTokens.filter((token) => textTokens.includes(token)).length;
     const coverage = overlap / phraseTokens.length;
     const reverse = overlap / textTokens.length;
@@ -134,6 +214,6 @@ export class SemanticMultilingualUnderstandingService {
   }
 
   private normalize(value: string): string {
-    return value.trim().toLowerCase().replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[ۀة]/g, 'ه').replace(/‌/g, ' ').replace(/\s+/g, ' ');
+    return value.trim().toLowerCase().replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[ۀة]/g, 'ه').replace(/‌/g, ' ').replace(/[؟?!،؛,.]/g, ' ').replace(/\s+/g, ' ');
   }
 }
