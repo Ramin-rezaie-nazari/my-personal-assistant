@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, I18nManager, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { AppLocale, getStoredLocale, isRTL, setStoredLocale, t } from '../lib/i18n';
+import { AppLocale, getLanguageOptions, getStoredLocale, isRTL, setStoredLocale, t } from '../lib/i18n';
 
 function BrandMark() {
   return (
@@ -20,9 +20,18 @@ export default function LanguageScreen() {
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => { void getStoredLocale().then((stored) => { if (stored) setLocale(stored); setReady(true); }); }, []);
+  useEffect(() => {
+    void getStoredLocale().then((stored) => {
+      if (stored) setLocale(stored);
+      setReady(true);
+    });
+  }, []);
 
-  const choose = async (next: AppLocale) => { setLocale(next); await setStoredLocale(next); };
+  const choose = async (next: AppLocale) => {
+    setLocale(next);
+    await setStoredLocale(next);
+  };
+
   const continueToApp = async () => {
     setBusy(true);
     await setStoredLocale(locale);
@@ -32,6 +41,7 @@ export default function LanguageScreen() {
 
   if (!ready) return <View style={styles.loading}><BrandMark /><ActivityIndicator color="#7C3AED" style={styles.loadingSpinner} /></View>;
   const rtl = isRTL(locale);
+  const options = getLanguageOptions();
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -41,19 +51,26 @@ export default function LanguageScreen() {
         <Text style={styles.title}>{t(locale, 'languageTitle')}</Text>
         <Text style={styles.subtitle}>{t(locale, 'languageSubtitle')}</Text>
 
-        <View style={styles.options}>
-          <Pressable onPress={() => void choose('fa')} style={[styles.option, locale === 'fa' && styles.selected]}>
-            <Text style={styles.flag}>🇮🇷</Text><View style={styles.copy}><Text style={styles.optionTitle}>فارسی</Text><Text style={styles.optionSub}>دستیار فارسی</Text></View><Text style={styles.check}>{locale === 'fa' ? '✓' : ''}</Text>
-          </Pressable>
-          <Pressable onPress={() => void choose('en')} style={[styles.option, locale === 'en' && styles.selected]}>
-            <Text style={styles.flag}>🇬🇧</Text><View style={styles.copy}><Text style={styles.optionTitle}>English</Text><Text style={styles.optionSub}>English assistant</Text></View><Text style={styles.check}>{locale === 'en' ? '✓' : ''}</Text>
-          </Pressable>
-        </View>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.options} showsVerticalScrollIndicator={false}>
+          {options.map((option) => {
+            const selected = locale === option.code || (locale === 'fa' && option.code === 'fa-IR') || (locale === 'en' && option.code === 'en-US');
+            return (
+              <Pressable key={option.code} onPress={() => void choose(option.code)} style={[styles.option, selected && styles.selected]}>
+                <View style={styles.languageCode}><Text style={styles.languageCodeText}>{option.code}</Text></View>
+                <View style={styles.copy}>
+                  <Text style={styles.optionTitle}>{option.label}</Text>
+                  <Text style={styles.optionSub}>{option.region}</Text>
+                </View>
+                <Text style={styles.check}>{selected ? '✓' : ''}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
 
         <Pressable disabled={busy} onPress={() => void continueToApp()} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
           {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t(locale, 'continue')} →</Text>}
         </Pressable>
-        <Text style={styles.footer}>هوشمند، همراه، همیشه کنارت</Text>
+        <Text style={styles.footer}>{locale === 'fa' || locale.startsWith('fa-') ? 'هوشمند، همراه، همیشه کنارت' : 'Smart, personal, always with you'}</Text>
       </View>
     </SafeAreaView>
   );
@@ -71,17 +88,19 @@ const styles = StyleSheet.create({
   brandEmoji: { fontSize: 38 },
   eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: '#6B7280', marginBottom: 10, textAlign: 'center' },
   title: { fontSize: 30, fontWeight: '900', color: '#111827', marginBottom: 8, textAlign: 'center' },
-  subtitle: { fontSize: 15, lineHeight: 23, color: '#6B7280', marginBottom: 26, textAlign: 'center' },
-  options: { gap: 12, marginBottom: 22 },
-  option: { flexDirection: 'row', alignItems: 'center', padding: 17, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
+  subtitle: { fontSize: 15, lineHeight: 23, color: '#6B7280', marginBottom: 20, textAlign: 'center' },
+  scroll: { flexGrow: 0, maxHeight: 430 },
+  options: { gap: 10, paddingBottom: 14 },
+  option: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
   selected: { borderColor: '#7C3AED', borderWidth: 2, backgroundColor: '#FAF8FF' },
-  flag: { fontSize: 27, marginRight: 14 },
+  languageCode: { minWidth: 64, alignItems: 'center', marginRight: 12 },
+  languageCodeText: { fontSize: 11, fontWeight: '900', color: '#7C3AED' },
   copy: { flex: 1 },
-  optionTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
+  optionTitle: { fontSize: 17, fontWeight: '800', color: '#111827' },
   optionSub: { fontSize: 12, color: '#6B7280', marginTop: 3 },
   check: { fontSize: 21, fontWeight: '900', color: '#7C3AED' },
-  button: { minHeight: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#6D28D9' },
+  button: { minHeight: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#6D28D9', marginTop: 14 },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
   pressed: { opacity: 0.82 },
-  footer: { marginTop: 18, textAlign: 'center', color: '#9CA3AF', fontSize: 11 },
+  footer: { marginTop: 14, textAlign: 'center', color: '#9CA3AF', fontSize: 11 },
 });
