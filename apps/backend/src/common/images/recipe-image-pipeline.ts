@@ -10,8 +10,10 @@ export type ImageVariant = {
 
 export const RECIPE_IMAGE_MAX_BYTES = 60 * 1024;
 
-const DIMENSION_STEPS = [960, 800, 720, 640, 576, 512, 448, 384, 320];
-const QUALITY_STEPS = [70, 45, 30, 22];
+// Keep the fallback ladder intentionally small: image compression is on a hot
+// path and the hard byte limit is more important than trying dozens of encodes.
+const DIMENSION_STEPS = [768, 640, 512, 448, 384, 320];
+const QUALITY_STEPS = [60, 40, 25];
 
 export async function compressRecipeImage(input: Buffer): Promise<ImageVariant> {
   if (!Buffer.isBuffer(input) || input.length === 0) {
@@ -23,7 +25,7 @@ export async function compressRecipeImage(input: Buffer): Promise<ImageVariant> 
       const buffer = await sharp(input)
         .rotate()
         .resize({ width, height: width, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality, effort: 6 })
+        .webp({ quality, effort: 4 })
         .toBuffer();
 
       if (buffer.byteLength > RECIPE_IMAGE_MAX_BYTES) continue;
