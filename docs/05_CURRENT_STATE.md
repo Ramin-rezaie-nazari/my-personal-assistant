@@ -17,9 +17,10 @@
 
 ```text
 Global Voice + Multilingual Understanding
-██████████████░░░░░░  ~65%
+██████████████░░░░░░  ~65% baseline
 
 Deterministic multilingual foundation: 100% green
+Deep semantic implementation pass: repository-side milestone green
 Full global voice workstream: NOT complete
 ```
 
@@ -35,11 +36,26 @@ Validated on `work/global-multilingual-voice-100`:
 - ✅ Multilingual voice quality matrix is green: 1/1 suite, 5/5 tests, including 51-locale reminder coverage, representative meal/nutrition/basket/cancellation cases, code-switching, determinism and dinner-recommendation-vs-reminder disambiguation.
 - ✅ Dinner recommendation false-negative fixed in `semantic-multilingual-understanding.service.ts` (commit `169682f`); the dedicated multilingual voice suite is now 5/5 green.
 - ✅ Full backend Jest validation is green: 160/160 test suites and 432/432 tests passed.
-- ✅ Backend typecheck and build are green after multilingual fixes.
+- ✅ Backend typecheck and build were previously green after the multilingual foundation fixes.
 - ✅ Mobile voice quality contract is green: 51 locales, 10 voices, STT/TTS mapping, RTL policy, Tehran-style Persian behavior and safe TTS completion.
-- ✅ Mobile typecheck is green after locale/voice fixes.
+- ⬜ Mobile typecheck exit status was not captured by the latest user-side filtered command; no TypeScript error text was surfaced. Keep this gate open until an explicit zero-exit validation is observed.
 
-**Important boundary:** the green milestone proves the defined deterministic engineering contract. It does **not** prove unconstrained native-level speech understanding, native-quality TTS, real-device reliability, accent/noise robustness or full conversational coverage.
+### New repository-side milestone — Deep semantic implementation pass
+
+The latest implementation pass has now been user-validated through the full backend suite:
+
+- ✅ Natural/colloquial semantic paraphrase coverage expanded across representative locale families.
+- ✅ Spoken fillers, common English contractions and short/incomplete utterances receive safer normalization/scoring.
+- ✅ Multilingual clause splitting was expanded for natural punctuation/conjunction patterns while preserving deterministic ordering.
+- ✅ Contextual follow-ups retain previous action/resource references, operations, quantities, relative time, date and confirmation/negation signals.
+- ✅ Locale-aware response routing was expanded with safe fallbacks instead of duplicating business logic.
+- ✅ Mobile speech-recognition contextual vocabulary remains locale/provider-contract driven.
+- ✅ Full backend Jest after these changes: **160/160 suites passed, 432/432 tests passed**.
+- ✅ Mobile voice-quality contract after these changes: **51 locales, 10 voice profiles, STT/TTS mapping, RTL policy, Persian Tehran style and safe TTS completion**.
+- ⬜ Real-device validation is still required for language picker, microphone → STT → understanding → TTS, accent/noise/slang behavior and provider quality.
+- ⬜ Local/offline STT/TTS provider implementation and capability/fallback routing remain future repository-side gates.
+
+**Important boundary:** the green repository milestone proves the defined deterministic engineering contract plus the latest semantic/context implementation changes under the automated backend suite. It does **not** prove unconstrained native-level speech understanding, native-quality TTS, real-device reliability, accent/noise robustness, local/offline provider readiness or full conversational coverage.
 
 ## Next unchecked capabilities
 
@@ -48,11 +64,12 @@ Validated on `work/global-multilingual-voice-100`:
 - ⬜ Add tested local/offline TTS model provider behind the TTS contract.
 - ⬜ Add multilingual local/edge STT capability detection and fallback policy.
 - ⬜ Add multilingual local/edge TTS capability detection and fallback policy.
-- ⬜ Expand semantic entity extraction for dates, units, food aliases, quantities and colloquial language.
+- ✅ Expand semantic/paraphrase coverage beyond deterministic phrase anchors for the current representative locale families.
+- ✅ Strengthen repository-side conversational context and follow-up routing.
+- ⬜ Expand semantic entity extraction further for dates, units, food aliases, quantities and colloquial language across the full locale matrix.
 - ⬜ Add country-aware language/locale policy for regional behavior differences.
-- ⬜ Add language-native safety/confirmation phrasing while preserving one internal intent model.
-- ⬜ Make intent response messages language-native instead of Persian/English-only.
-- ⬜ Expand semantic/paraphrase coverage beyond deterministic phrase anchors.
+- ✅ Add repository-side locale-aware intent response routing with safe fallback behavior.
+- ⬜ Make every intent response fully language-native across the entire 51-locale matrix.
 - ⬜ Run representative conversations across all supported locales.
 - ⬜ Validate real-device speech input/output for supported locale/provider combinations.
 - ⬜ Validate accents, ASR noise, slang, mixed-language speech, ambiguity and long multi-intent utterances.
@@ -91,14 +108,19 @@ Validated on `work/global-multilingual-voice-100`:
 
 ## Latest validation evidence
 
-- **Full backend Jest:** 160/160 suites passed, 432/432 tests passed.
+### User-side validation — latest pass
+
+- **Full backend Jest:** 160/160 suites passed, 432/432 tests passed, 35.816s.
+- **Mobile voice quality:** contract pass for 51 locales / 10 voice profiles.
+- **Mobile typecheck:** no TypeScript error output was surfaced by the user's filtered command; explicit command exit status was not captured, so the gate remains open.
+
+### Previous validation evidence
+
 - **Multilingual voice quality:** 1 suite, 5/5 tests passed.
 - **Entity/context quality:** 5/5 tests passed.
 - **Semantic multilingual regression foundation:** green.
 - **Backend typecheck:** green.
 - **Backend build:** green.
-- **Mobile voice quality contract:** green for 51 locales / 10 voice profiles.
-- **Mobile typecheck:** green.
 
 For long test runs, use the compact failure-only validation pattern: run the complete test suite, but surface only failures/errors plus the final summary.
 
