@@ -10,7 +10,7 @@ import { VOICE_PROFILES, getStoredVoiceProfile, setStoredVoiceProfile, speakAssi
 
 type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; meta?: string };
 
-type CopyEntry = typeof copy.en;
+type CopyEntry = Record<keyof typeof copy.en, string>;
 
 const copy = {
   en: {
