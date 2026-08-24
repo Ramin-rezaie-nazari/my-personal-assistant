@@ -1,4 +1,5 @@
 import { ExpoSpeechRecognitionModule } from 'expo-speech-recognition';
+import { getVoiceLanguage } from './voice-language';
 
 export type SpeechRecognitionResult = {
   transcript: string;
@@ -10,7 +11,8 @@ export type SpeechRecognitionHandle = {
   remove: () => void;
 };
 
-export async function startPersianRecognition(
+export async function startRecognition(
+  locale: string,
   onResult: (result: SpeechRecognitionResult) => void,
   onEnd: () => void,
   onError: (message: string) => void,
@@ -21,6 +23,7 @@ export async function startPersianRecognition(
     return null;
   }
 
+  const language = getVoiceLanguage(locale);
   const resultListener = ExpoSpeechRecognitionModule.addListener('result', (event) => {
     const first = event.results?.[0];
     if (first?.transcript) {
@@ -42,22 +45,28 @@ export async function startPersianRecognition(
   try {
     const onDevice = ExpoSpeechRecognitionModule.supportsOnDeviceRecognition();
     ExpoSpeechRecognitionModule.start({
-      lang: 'fa-IR',
+      lang: language.speechRecognitionLocale,
       interimResults: true,
       maxAlternatives: 1,
       continuous: false,
       requiresOnDeviceRecognition: onDevice,
       addsPunctuation: true,
       contextualStrings: [
-        'دستیار من',
-        'مای پرسنال اسیستنت',
-        'صبحانه',
-        'ناهار',
-        'شام',
+        'My Personal Assistant',
+        'Personal Brain',
+        'breakfast',
+        'lunch',
+        'dinner',
+        'nutrition',
+        'protein',
+        'calories',
+        'reminder',
+        'shopping cart',
+        'workout',
+        'موجودی خانه',
         'تمرین',
         'کالری',
         'پروتئین',
-        'موجودی خانه',
       ],
     });
   } catch (error) {
@@ -70,4 +79,12 @@ export async function startPersianRecognition(
     stop: () => ExpoSpeechRecognitionModule.stop(),
     remove: cleanup,
   };
+}
+
+export async function startPersianRecognition(
+  onResult: (result: SpeechRecognitionResult) => void,
+  onEnd: () => void,
+  onError: (message: string) => void,
+): Promise<SpeechRecognitionHandle | null> {
+  return startRecognition('fa-IR', onResult, onEnd, onError);
 }
