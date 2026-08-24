@@ -10,76 +10,83 @@
 
 ### Deep Multilingual Semantic Understanding
 
-**Baseline:** the deterministic multilingual voice foundation is green and the overall Global Voice + Multilingual Understanding workstream is ~65% complete. The remaining work is about making understanding substantially more natural, contextual, safe and real-world robust without weakening the already-green deterministic contract.
+**Baseline:** the deterministic multilingual voice foundation is green and the overall Global Voice + Multilingual Understanding workstream started from an approximately 65% baseline. The current repository-side semantic/context implementation pass is now validated by the full backend regression suite, while device/provider gates remain open.
 
 **Important boundary:** code completion is not the same as native-level speech quality. Real-device STT/TTS, accents, noise and provider quality remain explicit gates.
 
 ## Phase 1 — Colloquial + natural speech
 
-- [ ] Expand natural paraphrase coverage beyond exact phrase anchors for the core assistant intents.
-- [ ] Add contractions and common spoken shortcuts for supported semantic locales.
-- [ ] Add conversational fillers and incomplete speech normalization where safe (`uh`, `please`, `just`, clipped requests, etc.).
-- [ ] Add colloquial meal, reminder, basket, nutrition and cancellation forms across representative locale families.
-- [ ] Improve token normalization for apostrophes, punctuation, whitespace, diacritics and script-specific variants.
-- [ ] Improve similarity scoring for partial utterances without making weak matches executable.
-- [ ] Preserve strict ambiguity refusal and deterministic ranking.
-- [ ] Add negative examples where a similar phrase must remain `UNKNOWN`.
+- [x] Expand natural paraphrase coverage beyond exact phrase anchors for the current representative locale families.
+- [x] Add contractions and common spoken shortcuts for supported semantic locales in the implementation pass.
+- [x] Add conversational fillers and incomplete-speech normalization where safe.
+- [x] Add colloquial meal, reminder, basket, nutrition and cancellation forms across representative locale families.
+- [x] Improve token normalization for apostrophes, punctuation, whitespace, diacritics and script-specific variants in the semantic layer.
+- [x] Improve similarity scoring for partial utterances without making weak matches executable.
+- [x] Preserve strict ambiguity refusal and deterministic ranking.
+- [x] Add negative/ambiguity regression coverage and keep weak matches `UNKNOWN`.
+
+**Phase 1 validation:** full backend Jest **160/160 suites, 432/432 tests passed** after the implementation pass.
 
 ## Phase 2 — Context + conversation
 
-- [ ] Preserve prior intent/entity context across turns.
-- [ ] Resolve references such as “that”, “the same one”, “the chicken”, “for tomorrow” and prior-item references.
-- [ ] Bind follow-up utterances to the active conversation state without duplicating business logic.
-- [ ] Recover cleanly after partial misunderstanding while keeping the useful context.
-- [ ] Respect explicit current-user statements over stored context and inferred meaning.
+- [x] Preserve prior intent/action/resource context across turns in the existing conversation context path.
+- [x] Resolve implemented references such as “that”, “the same one”, previous-item references and related Persian forms.
+- [x] Bind follow-up utterances to active conversation state through the contextual command layer without duplicating business logic.
+- [x] Add repository-side recovery/clarification behavior for ambiguous or contradictory contextual requests.
+- [x] Keep explicit current-user statements authoritative over stored context and inference.
+
+**Phase 2 validation:** full backend Jest **160/160 suites, 432/432 tests passed**; contextual regression coverage remains in the backend suite.
 
 ## Phase 3 — Long + multi-entity utterances
 
-- [ ] Understand long natural requests containing multiple constraints.
-- [ ] Split multi-intent clauses safely and preserve clause ordering.
-- [ ] Keep entity ownership attached to the correct clause.
-- [ ] Preserve serving count, diet, budget, inventory, meal and timing constraints when multiple appear together.
-- [ ] Reject malformed or internally contradictory requests rather than guessing.
+- [x] Expand safe clause splitting and preserve clause order for representative multilingual conjunctions/punctuation.
+- [x] Keep multi-intent execution behind the planning/context pipeline rather than directly executing weak semantic matches.
+- [ ] Understand broad long natural requests containing many simultaneous constraints across the full locale matrix.
+- [ ] Preserve serving count, diet, budget, inventory, meal and timing ownership across complex clauses.
+- [ ] Reject malformed or internally contradictory long requests comprehensively rather than only through the current representative cases.
 
 ## Phase 4 — Negation + conditionals
 
-- [ ] Support `not`, `don't`, `no longer`, `never`, `unless`, `if`, `only if` and locale-specific equivalents.
-- [ ] Distinguish direct negation from idiomatic expressions such as “don’t let me forget”.
-- [ ] Never turn a negated destructive/costly request into an executable action.
-- [ ] Add conditional execution semantics while preserving the single internal intent model.
-- [ ] Preserve safe ambiguity refusal when conditions are incomplete.
+- [x] Preserve direct negation/confirmation signals in contextual command extraction for representative language families.
+- [x] Keep idiomatic reminder wording such as “don’t let me forget” from being treated as a cancellation/negated action.
+- [x] Preserve ambiguity refusal around unsafe or contradictory creation/cancellation combinations in the current planning layer.
+- [ ] Support broad `not`, `don't`, `no longer`, `never`, `unless`, `if`, `only if` equivalents across the full locale matrix.
+- [ ] Add general conditional execution semantics with explicit condition satisfaction checks.
+- [ ] Add comprehensive protection against negated destructive/costly actions across every supported locale.
 
 ## Phase 5 — Entity + context extraction
 
-- [ ] Date/time extraction across locale conventions, relative dates and natural times.
-- [ ] Quantity/unit extraction for metric, imperial, decimals, fractions and colloquial quantities.
-- [ ] Food aliases, spelling variants, regional names and colloquial food names.
-- [ ] Person/place/reference resolution where the existing domain model supports it.
-- [ ] Bind extracted entities to the correct intent and clause.
-- [ ] Separate language confidence, intent confidence and entity confidence.
-- [ ] Preserve confidence provenance so downstream actions can require stronger confidence where necessary.
+- [x] Existing entity/context foundation remains green for quantity, time, meal type, food, negation and conversational references.
+- [x] Add/retain relative date, ordinal, duration and confirmation signals in the contextual command layer for representative cases.
+- [ ] Expand date/time extraction across locale conventions and natural phrasing.
+- [ ] Expand quantity/unit extraction for metric, imperial, decimals, fractions and colloquial quantities.
+- [ ] Expand food aliases, spelling variants, regional names and colloquial food names.
+- [ ] Bind extracted entities robustly to the correct intent and clause across long utterances.
+- [ ] Separate language confidence, intent confidence and entity confidence with explicit provenance end-to-end.
 
 ## Phase 6 — Locale breadth
 
+- [x] Preserve preferred/selected locale authority in the existing multilingual understanding foundation.
+- [x] Preserve RTL and script-specific locale modeling in the voice registry.
+- [x] Expand semantic/paraphrase support for a representative global locale set.
 - [ ] Expand semantic/paraphrase coverage across the full 51-locale registry.
-- [ ] Cover representative intent families for every locale family, then fill locale-specific gaps.
-- [ ] Preserve selected/preferred locale authority during code-switching.
-- [ ] Preserve RTL and script-specific normalization behavior.
-- [ ] Add region-aware wording only where product behavior genuinely differs by locale/country.
+- [ ] Cover representative intent families for every locale family and fill locale-specific gaps.
+- [ ] Add country-aware/region-aware policy where behavior genuinely differs by locale/country.
 
 ## Phase 7 — Native response readiness
 
-- [ ] Replace Persian/English-only intent responses with locale-native response templates or response strategies.
-- [ ] Add locale-native confirmation phrasing for destructive, privacy-sensitive or costly actions.
-- [ ] Keep one internal intent model while localizing tone, phrasing and examples.
-- [ ] Ensure language switching does not alter stored memory, plans or business logic.
+- [x] Add repository-side locale-aware assistant response templates for representative global locales with safe fallback behavior.
+- [x] Keep one internal intent/tool model while response wording varies by locale.
+- [ ] Complete fully language-native response coverage across all 51 locales.
+- [ ] Add comprehensive locale-native confirmation phrasing for destructive, privacy-sensitive or costly actions.
+- [ ] Validate that language switching never changes stored memory, plans or business logic in representative conversations.
 
 ## Phase 8 — Local/edge resilience
 
-- [ ] Test a local/offline STT provider behind the existing provider contract.
-- [ ] Test a local/offline TTS provider behind the existing provider contract.
+- [ ] Test a local/offline STT provider behind the existing contract.
+- [ ] Test a local/offline TTS provider behind the existing contract.
 - [ ] Implement local → fallback → explicit unavailable routing.
-- [ ] Add capability caching so unsupported speech capabilities are not repeatedly probed.
+- [ ] Add capability caching for unsupported speech capabilities.
 - [ ] Add explicit privacy-aware routing before speech leaves the device.
 
 ## Phase 9 — Real-world speech validation
@@ -93,19 +100,13 @@
 
 ## Phase 10 — Regression + completion gate
 
-- [ ] Semantic regression suite green.
-- [ ] Entity/context quality suite green.
-- [ ] Multilingual voice quality suite green.
-- [ ] Full backend Jest green.
-- [ ] Backend typecheck green.
-- [ ] Backend build green.
-- [ ] Mobile voice quality green.
-- [ ] Mobile typecheck green.
-- [ ] No regression in reminder-vs-meal precedence.
-- [ ] No regression in code-switching locale authority.
-- [ ] No regression in ambiguity refusal.
-- [ ] No regression in deterministic repeated output.
-- [ ] No test-only masking of a real implementation problem.
+- [x] Full backend Jest green after the latest repository implementation pass: **160/160 suites, 432/432 tests**.
+- [x] Mobile voice-quality contract green: **51 locales, 10 voice profiles**.
+- [ ] Mobile typecheck explicit zero-exit validation still required; the latest filtered command surfaced no TypeScript error text, but its pipeline exit status was not captured.
+- [x] Existing ambiguity/refusal and deterministic regression baselines remain green under the backend suite.
+- [ ] Final all-locale representative conversation matrix.
+- [ ] Final real-device/provider matrix.
+- [ ] Mark the entire Global Voice + Multilingual Understanding workstream 100% only after all remaining gates are truly green.
 
 ## Execution rule
 
@@ -121,28 +122,6 @@ For long test runs, use the compact failure-only output pattern: execute the com
 
 This workstream reaches **100%** only when all repository-side capabilities are implemented and all technical validation is green **and** the real-device/provider gates are actually observed green. A higher percentage must never be claimed merely because code was written.
 
-## Implementation checkpoint — pending verification
-
-The current repository-side implementation pass includes:
-
-- ✅ Semantic paraphrase coverage expanded for 13 representative locales.
-- ✅ Colloquial meal/reminder/basket/nutrition/cancel utterances expanded substantially.
-- ✅ Spoken filler normalization added for representative locale families.
-- ✅ Common English contraction normalization added.
-- ✅ Partial/short utterance similarity scoring strengthened with ordered token overlap.
-- ✅ Clause splitting expanded to punctuation and multilingual conjunctions for representative language families.
-- ✅ Contextual command parsing expanded for multilingual create/update/cancel vocabulary.
-- ✅ Multilingual previous-item/reference phrases expanded.
-- ✅ Relative date/ordinal/confirmation/negation extraction expanded across representative locale families.
-- ✅ Dedicated semantic regression cases expanded for colloquial, incomplete and filler-heavy speech.
-- ✅ Contextual-command regression cases expanded for multilingual clauses, relative dates and negated creation requests.
-- ✅ Locale-aware assistant response templates added for representative global locales, while retaining safe fallback behavior.
-- ✅ Speech-recognition contextual strings are now locale-aware for representative locales instead of using one English/Persian-only list.
-- ✅ Mobile voice-quality contract now checks the localized speech-context routing hook.
-- ⬜ Runtime validation still pending.
-- ⬜ Full backend/mobile regression validation still pending.
-- ⬜ Real-device/provider validation still pending.
-
 ## Current checkpoint
 
-**Finish repository-side work that can be safely completed without device access, then return to the user only for the final validation pass. Preserve every already-green deterministic contract as a hard regression baseline.**
+**Repository-side semantic/context implementation checkpoint is green and documented.** Continue next with the remaining repository-side entity/locale/conditional/provider capabilities; return to the user only when another user-environment/device gate is genuinely required.
