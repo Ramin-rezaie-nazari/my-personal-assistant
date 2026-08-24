@@ -196,7 +196,7 @@ describe('AssistantService', () => {
       ['sk-SK', 'pripomeň mi večeru'], ['hu-HU', 'emlékeztess a vacsorára'], ['ro-RO', 'amintește-mi de cină'],
       ['bg-BG', 'напомни ми за вечерята'], ['el-GR', 'θύμισέ μου το βραδινό'], ['sr-RS', 'подсети ме на вечеру'],
       ['hr-HR', 'podsjeti me na večeru'], ['sl-SI', 'opomni me na večerjo'], ['sw-KE', 'nikumbushe chakula cha jioni'],
-      ['am-ET', 'እራት አስታውሰኝ'], ['fa-AF', 'یادم بنداز شام'], ['fa-TJ', 'лағв кун'], ['en-GB', 'remind me about dinner'],
+      ['am-ET', 'እራት አስታውሰኝ'], ['fa-AF', 'یادم بنداز شام'], ['fa-TJ', 'ба ман хотиррасон кун'], ['en-GB', 'remind me about dinner'],
       ['es-MX', 'recuérdame cenar'], ['uk-UA', 'нагадай мені про вечерю'], ['pl-PL', 'przypomnij mi o kolacji'],
       ['nl-NL', 'herinner me aan het avondeten'], ['gu-IN', 'મને રાત્રિભોજનની યાદ કરાવો'], ['mr-IN', 'मला रात्रीच्या जेवणाची आठवण करून दे'],
     ];
