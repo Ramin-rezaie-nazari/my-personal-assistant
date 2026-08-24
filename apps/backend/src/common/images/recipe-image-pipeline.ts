@@ -11,7 +11,7 @@ export type ImageVariant = {
 export const RECIPE_IMAGE_MAX_BYTES = 60 * 1024;
 
 const DIMENSION_STEPS = [960, 800, 720, 640, 576, 512, 448, 384, 320];
-const QUALITY_STEPS = [70, 64, 58, 52, 46, 40, 34, 30, 26, 22];
+const QUALITY_STEPS = [70, 45, 30, 22];
 
 export async function compressRecipeImage(input: Buffer): Promise<ImageVariant> {
   if (!Buffer.isBuffer(input) || input.length === 0) {
