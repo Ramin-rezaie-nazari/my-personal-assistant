@@ -4,6 +4,7 @@ const path = require('node:path');
 const root = path.resolve(__dirname, '..');
 const languageFile = fs.readFileSync(path.join(root, 'lib/voice-language.ts'), 'utf8');
 const voiceFile = fs.readFileSync(path.join(root, 'lib/voice.ts'), 'utf8');
+const speechFile = fs.readFileSync(path.join(root, 'lib/speech-recognition.ts'), 'utf8');
 
 const expectedLocales = [
   'fa-IR','en-US','en-GB','es-ES','es-MX','fr-FR','de-DE','it-IT','pt-BR','pt-PT',
@@ -34,10 +35,15 @@ assert(languageFile.includes('ttsLocale: code'), 'TTS locale mapping is missing'
 assert(voiceFile.includes('nativeStyle: language.code === \'fa-IR\' ? \'tehran\' : \'native\''), 'native voice-style policy is missing');
 assert(voiceFile.includes('language: profile.locale'), 'TTS provider does not receive the selected locale');
 assert(voiceFile.includes('onError: () => resolve()'), 'TTS error completion handler is not safe');
+assert(speechFile.includes('getSpeechContextualTerms'), 'localized speech-context helper is missing');
+assert(speechFile.includes("'de-DE'"), 'German contextual speech terms are missing');
+assert(speechFile.includes("'ja-JP'"), 'Japanese contextual speech terms are missing');
+assert(speechFile.includes("'zh-CN'"), 'Chinese contextual speech terms are missing');
+assert(speechFile.includes('contextualStrings: getSpeechContextualTerms(locale)'), 'recognition does not route locale-aware contextual strings');
 
 const rtlLocales = ['fa-IR','fa-AF','ar-SA','he-IL','ur-PK'];
 for (const locale of rtlLocales) {
   assert(languageFile.includes(`['${locale}'`), `RTL locale ${locale} is not registered in the voice table`);
 }
 
-console.log(`VOICE QUALITY CONTRACT PASS: ${expectedLocales.length} locales, ${voiceProfileIds.length} voice profiles, STT/TTS mapping, RTL policy, Persian Tehran style and safe TTS completion.`);
+console.log(`VOICE QUALITY CONTRACT PASS: ${expectedLocales.length} locales, ${voiceProfileIds.length} voice profiles, STT/TTS mapping, localized speech context, RTL policy, Persian Tehran style and safe TTS completion.`);
