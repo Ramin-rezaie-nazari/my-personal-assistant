@@ -1,0 +1,47 @@
+name: Multilingual Certification
+
+on:
+  push:
+    branches:
+      - 'work/global-multilingual-voice-100-cert'
+  pull_request:
+    branches:
+      - 'work/**'
+      - main
+    paths:
+      - 'apps/backend/**'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/multilingual-certification.yml'
+  workflow_dispatch:
+
+jobs:
+  multilingual-certification:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+        working-directory: .
+      - name: Semantic certification
+        run: pnpm exec jest src/modules/assistant/services/semantic-multilingual-understanding.spec.ts src/modules/assistant/services/semantic-multilingual-adversarial.spec.ts src/modules/assistant/services/global-multilingual-understanding-certification.spec.ts src/modules/assistant/services/entity-context-quality.spec.ts --runInBand
+      - name: Existing multilingual contract
+        run: pnpm exec jest src/modules/assistant/services/multilingual-voice-quality.spec.ts src/modules/assistant/services/assistant.service.spec.ts --runInBand
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Build
+        run: pnpm build
