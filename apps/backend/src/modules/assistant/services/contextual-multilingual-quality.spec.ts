@@ -1,9 +1,6 @@
 import { ContextualCommandService } from './contextual-command.service';
 
-type Case = {
-  locale: string;
-  reference: string;
-};
+type Case = [string, string];
 
 const REFERENCE_MATRIX: Case[] = [
   ['fa-IR', 'همون قبلی رو ساعت ۸ بذار'], ['en-US', 'change that one to 8 pm'], ['en-GB', 'update the previous one'],
@@ -23,7 +20,7 @@ const REFERENCE_MATRIX: Case[] = [
   ['bg-BG', 'промени предишното'], ['el-GR', 'άλλαξε το προηγούμενο'], ['sr-RS', 'promeni prethodno'],
   ['hr-HR', 'promijeni prethodno'], ['sl-SI', 'spremeni prejšnje'], ['sw-KE', 'badilisha ya awali'],
   ['am-ET', 'ቀድሞውን ቀይር'], ['fa-AF', 'قبلی را تغییر بده'], ['fa-TJ', 'қаблиро тағйир деҳ'],
-].map(([locale, reference]) => ({ locale, reference }));
+];
 
 const makeService = () => {
   const context = {
@@ -45,13 +42,15 @@ describe('ContextualCommandService multilingual context quality', () => {
     const service = makeService();
     expect(REFERENCE_MATRIX).toHaveLength(51);
 
-    for (const { locale, reference } of REFERENCE_MATRIX) {
+    for (const [locale, reference] of REFERENCE_MATRIX) {
       const result = await service.resolve('u1', reference);
       expect(result.referencesPrevious).toBe(true);
       expect(result.operation).toBe('update');
       expect(result.targetAction).toBe('create_reminder');
       expect(result.targetExecutionId).toBe('rem-123');
       expect(result.targetResourceId).toBe('resource-123');
+      expect(result.confidence).toBeGreaterThanOrEqual(0.75);
+      void locale;
     }
   });
 
