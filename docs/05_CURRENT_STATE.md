@@ -7,8 +7,9 @@
 > **Fixed file aliases:**
 > - **A** = `docs/05_CURRENT_STATE.md`
 > - **B** = `docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`
+> - **C** = `docs/C_GLOBAL_MULTILINGUAL_VOICE_ROADMAP.md`
 >
-> Every work session must read **A and B first**.
+> Every work session starts by reading A and B first.
 
 ## Current workstream
 
@@ -18,140 +19,94 @@
 Global Voice + Multilingual Understanding
 ██████████████░░░░░░  ~65%
 
-✅ Existing persistent user context reused by the assistant layer
-✅ UX contract: voice-first, low-manual-input, remember-once, purposeful animation
-✅ Animated interaction state machine: idle → listening → thinking → speaking → done
-✅ Voice-first assistant shell added to the mobile assistant screen
-✅ Text input retained only as a fallback path
-✅ Ten persistent voice character presets: 5 feminine + 5 masculine
-✅ Tehran-style Persian voice identity encoded as a product contract
-✅ Voice selection persisted locally and restored automatically
-✅ Persian contextual vocabulary supplied to speech recognition
-✅ Device TTS response path added through Expo Speech
-✅ Voice provider remains replaceable; no paid cloud voice is required by the base flow
-✅ Duplicate voice-submit race guarded in the assistant shell
-✅ Global voice-language capability registry introduced
-✅ Language, region, RTL direction, STT locale and TTS locale are modeled independently
-✅ Voice profiles can resolve their locale without coupling character identity to a vendor voice ID
-✅ Language picker now exposes the global voice-language catalog
-✅ Mobile voice TypeScript issues fixed in the implementation branch
-✅ Speech recognition now accepts the selected locale instead of being hard-wired to Persian
-✅ Replaceable STT provider contract added
-✅ Replaceable TTS provider contract added
-✅ On-device speech recognition remains the preferred runtime path when supported by the device
-✅ LocalLanguageUnderstandingService now carries detected language + language confidence
-✅ Locale-aware deterministic intent lexicons added for the supported global language matrix
-✅ Explicit preferred locale can override automatic language detection for code-switched text
-✅ Basic multilingual normalization/number/time/meal vocabulary support expanded
-✅ Existing AssistantService spec contains a representative native-language reminder matrix
-✅ Comprehensive multilingual quality test added for the 51 registered locales, representative core intents, code-switching, determinism and reminder-vs-meal disambiguation
-✅ Mobile voice quality contract check added without introducing a new test framework dependency
-✅ Mobile voice quality command exposed as `pnpm --filter @my-personal-assistant/mobile voice:quality`
-✅ Corrected comprehensive multilingual AssistantService quality suite is green: 13/13 tests passed
-✅ Representative multilingual intent matrix is green across meal recommendation, nutrition summary, basket and cancellation cases
-✅ Reminder-vs-meal precedence is green, including native-language and code-switched cases
-✅ Determinism coverage is green for repeated identical utterances
-✅ Mobile voice quality contract is green: 51 locales + 10 selectable voices + STT/TTS mapping + RTL policy + Tehran-style Persian policy + safe TTS completion
-✅ Backend typecheck is green after multilingual fixes
-✅ Backend build is green after multilingual fixes
-✅ Mobile typecheck is green after localized-copy, voice registry and locale nullability fixes
-🟡 The current green gate validates the defined deterministic multilingual quality contract; it does not prove unconstrained native-level understanding of every possible utterance
-⬜ Validate multilingual language picker and voice flow on a real development build / device
-⬜ Add a tested local/offline STT model provider behind the STT contract
-⬜ Add a tested local/offline TTS model provider behind the TTS contract
-⬜ Add multilingual local/edge STT capability detection and fallback policy validation
-⬜ Add multilingual local/edge TTS capability detection and fallback policy validation
-⬜ Expand locale-aware semantic entity extraction for dates, units, food aliases, quantities and colloquial speech across the matrix
-⬜ Add country-aware locale and language policy so one language can map to multiple regional behaviors
-⬜ Add language-specific safety/confirmation phrasing while preserving one internal intent model
-⬜ Make local intent response messages language-native instead of Persian/English-only
-⬜ Add broad semantic/paraphrase coverage beyond the deterministic phrase matrix
-⬜ Run a representative conversation matrix covering every supported locale
-⬜ Run real-device speech input/output validation for each supported locale where the selected STT/TTS provider reports support
-⬜ Validate speech understanding under accents, ASR noise, slang, mixed-language speech, ambiguity and long multi-intent utterances
-⬜ Mark Global Voice + Multilingual Understanding 100% only after real speech understanding + speech output are validated across the supported language matrix
+Deterministic multilingual foundation: 100% green
+Full global voice workstream: NOT complete
 ```
+
+### Durable completed milestone — Deterministic Multilingual Voice Foundation
+
+Validated on `work/global-multilingual-voice-100`:
+
+- ✅ Global voice-language registry and regional locale model remain the baseline: 51 registered locales and 10 selectable voice profiles.
+- ✅ Language, country/region, timezone, units, currency, RTL direction, STT locale and TTS locale remain independently modeled.
+- ✅ Replaceable STT and TTS contracts, device/on-device path, partial-result handling, cleanup/error recovery, voice persistence and Tehran-style Persian policy are green.
+- ✅ `SemanticMultilingualUnderstandingService` is the semantic layer over lexical understanding, with paraphrase recovery, semantic ranking, ambiguity refusal and multi-intent clause splitting.
+- ✅ Entity/context regression foundation is green: quantity, time, meal type, food, negation and conversational-reference coverage — 5/5 tests.
+- ✅ Multilingual voice quality matrix is green: 1/1 suite, 5/5 tests, including 51-locale reminder coverage, representative meal/nutrition/basket/cancellation cases, code-switching, determinism and dinner-recommendation-vs-reminder disambiguation.
+- ✅ Dinner recommendation false-negative fixed in `semantic-multilingual-understanding.service.ts` (commit `169682f`); the dedicated multilingual voice suite is now 5/5 green.
+- ✅ Full backend Jest validation is green: 160/160 test suites and 432/432 tests passed.
+- ✅ Backend typecheck and build are green after multilingual fixes.
+- ✅ Mobile voice quality contract is green: 51 locales, 10 voices, STT/TTS mapping, RTL policy, Tehran-style Persian behavior and safe TTS completion.
+- ✅ Mobile typecheck is green after locale/voice fixes.
+
+**Important boundary:** the green milestone proves the defined deterministic engineering contract. It does **not** prove unconstrained native-level speech understanding, native-quality TTS, real-device reliability, accent/noise robustness or full conversational coverage.
+
+## Next unchecked capabilities
+
+- ⬜ Validate multilingual language picker and voice flow on a real development build/device.
+- ⬜ Add tested local/offline STT model provider behind the STT contract.
+- ⬜ Add tested local/offline TTS model provider behind the TTS contract.
+- ⬜ Add multilingual local/edge STT capability detection and fallback policy.
+- ⬜ Add multilingual local/edge TTS capability detection and fallback policy.
+- ⬜ Expand semantic entity extraction for dates, units, food aliases, quantities and colloquial language.
+- ⬜ Add country-aware language/locale policy for regional behavior differences.
+- ⬜ Add language-native safety/confirmation phrasing while preserving one internal intent model.
+- ⬜ Make intent response messages language-native instead of Persian/English-only.
+- ⬜ Expand semantic/paraphrase coverage beyond deterministic phrase anchors.
+- ⬜ Run representative conversations across all supported locales.
+- ⬜ Validate real-device speech input/output for supported locale/provider combinations.
+- ⬜ Validate accents, ASR noise, slang, mixed-language speech, ambiguity and long multi-intent utterances.
+- ⬜ Mark the entire Global Voice + Multilingual Understanding workstream 100% only after all of the above are truly green.
 
 ## Previous completed work
 
-### Persistent User Context
+### Persistent User Context — 100%
 
-```text
-Persistent User Context
-██████████████████████████  100%
+- ✅ Stable profile and preference hydration
+- ✅ Brain state normalization
+- ✅ Remember-once behavior
+- ✅ Source precedence and durable-memory rules
+- ✅ User context tests green
 
-✅ Stable profile and preference hydration
-✅ Brain state normalization
-✅ Remember-once behavior
-✅ Source precedence and durable-memory rules
-✅ User context tests green
-```
+### Voice-first Assistant Shell — 100% code-complete
 
-### Voice-first Assistant Shell
+- ✅ Voice-first assistant shell
+- ✅ Animated interaction state machine
+- ✅ Ten persistent voice character presets: 5 feminine + 5 masculine
+- ✅ Tehran-style Persian voice identity
+- ✅ Persistent voice selection
+- ✅ Persian and locale-aware recognition adapters
+- ✅ Replaceable STT/TTS contracts
+- ✅ Device TTS response path
 
-```text
-Voice-first Assistant Shell
-██████████████████████████  100% code-complete
+### Food Decision Brain — ~99%
 
-✅ Existing persistent user context reused by the assistant layer
-✅ Voice-first assistant shell
-✅ Animated interaction state machine
-✅ Ten persistent voice character presets: 5 feminine + 5 masculine
-✅ Tehran-style Persian voice identity
-✅ Persistent voice selection
-✅ Persian recognition adapter
-✅ Locale-aware recognition adapter
-✅ Replaceable STT/TTS contracts
-✅ Device TTS response path
-```
-
-## Food Decision Brain status
-
-```text
-Food Decision Brain
-███████████████████████░  ~99%
-
-✅ Prisma schema/client + database foundation
-✅ Recipe scaling / serving intelligence
-✅ Global country / cuisine context
-✅ Inventory-aware recipe operating loop
-✅ Recommendation ranking
-✅ Personalization
-✅ Recommendation engine
-✅ Focused recommendation tests: 3 suites / 4 tests passed
-✅ Backend typecheck passed after Prisma config exclusion fix
-✅ Backend unit suite: 156 / 156 suites passed
-✅ Backend unit tests: 414 / 414 passed
-✅ Recipe image pipeline test: 2 / 2 passed
-✅ Recommendation E2E: 1 suite / 2 tests passed
-✅ Recommendation E2E authentication coverage
-✅ Recommendation E2E deterministic ranking + explanations
-✅ Recommendation E2E Prisma cleanup / process-exit fix verified
-✅ Final local backend validation gate: Prisma validate/generate, build, 156/156 unit suites and 5/5 E2E suites green
-🟡 Final external GitHub Actions runner validation remains blocked by runner/infrastructure failure before job steps
-⬜ Re-run external GitHub Actions when runner/infrastructure is available
-⬜ Mark Food Decision Brain 100% only after the final external CI gate is observable green
-```
+- ✅ Prisma schema/client and database foundation
+- ✅ Recipe scaling, country/cuisine context, inventory-aware recipe loop
+- ✅ Recommendation ranking, personalization and recommendation engine
+- ✅ Prior focused/unit/E2E validation recorded in this file before the current workstream
+- 🟡 Final external GitHub Actions runner validation remains a separate infrastructure gate
+- ⬜ Re-run external GitHub Actions when runner/infrastructure is available
+- ⬜ Mark Food Decision Brain 100% only after that external gate is observable green
 
 ## Latest validation evidence
 
-- Recommendation focused tests passed: `recommendation-ranking`, `personalization`, and `recommendation-engine` — **4/4 tests green**.
-- Full backend unit tests passed: **156/156 suites, 414/414 unit tests green**.
-- Final local backend validation pass reached **156/156 unit suites, 414/414 unit tests, and 5/5 E2E suites, 26/26 E2E tests green**.
-- Persistent user-context foundation was validated: **UserContextService 2/2 tests green**, **BrainStateService 1/1 test green**, **backend typecheck green**, **backend build green**.
-- Multilingual implementation now has locale-aware STT routing, replaceable speech-provider contracts, language detection, and deterministic locale-aware intent lexicons.
-- The comprehensive quality suite is explicitly aligned to the **51 registered locales** in the voice registry and now validates representative reminder, meal recommendation, nutrition, basket and cancellation intents, preferred-locale code-switching, determinism and reminder-vs-dinner disambiguation.
-- The latest multilingual gate is **green**: **2 Jest suites, 13/13 tests passed**.
-- The mobile voice quality contract is **green**: **51 registered locales, 10 selectable voices (5 feminine + 5 masculine), STT/TTS mapping, RTL policy, Tehran-style Persian behavior and safe TTS completion**.
-- Backend **typecheck** and **build** are green after the multilingual fixes.
-- Mobile **typecheck** is green after localized-copy, voice registry and locale nullability fixes.
-- The green gate proves the defined product/engineering contract and representative deterministic language matrix. It does **not** prove native-level understanding of arbitrary speech, all paraphrases, accents, slang, noisy ASR, long multi-intent conversations, or real-device/provider quality.
+- **Full backend Jest:** 160/160 suites passed, 432/432 tests passed.
+- **Multilingual voice quality:** 1 suite, 5/5 tests passed.
+- **Entity/context quality:** 5/5 tests passed.
+- **Semantic multilingual regression foundation:** green.
+- **Backend typecheck:** green.
+- **Backend build:** green.
+- **Mobile voice quality contract:** green for 51 locales / 10 voice profiles.
+- **Mobile typecheck:** green.
+
+For long test runs, use the compact failure-only validation pattern: run the complete test suite, but surface only failures/errors plus the final summary.
 
 ## Product direction — permanent architectural constraints
 
 MYPA is intended to become a **Personal Operating System**, not a collection of unrelated features.
 
-The central intelligence layer must coordinate:
+The central intelligence layer coordinates:
 
 ```text
 Local Brain / AI Core
@@ -171,16 +126,16 @@ Local Brain / AI Core
 ### Non-negotiable product goals
 
 - Premium, highly animated, responsive, friendly mobile UX.
-- Global product: language selection, country selection, locale-aware recommendations, units, currency, timezone, and culturally relevant food guidance.
-- Persian-first voice experience for the Iranian market, including conversational Tehran-style Persian, while keeping the architecture multilingual.
-- Strong offline/local intelligence so the core app remains useful without requiring a paid cloud AI dependency.
-- Provider-agnostic AI routing with free-tier/fallback options; no runtime architecture should depend on a single paid AI vendor.
-- Subscription-ready architecture without requiring subscription payments to function in the free product.
-- Inventory-aware food planning, budget-aware meal planning, scalable recipes, nutrition constraints, allergies/dietary restrictions, and smart shopping deltas.
-- Recipe intelligence must support a large global corpus without repeatedly surfacing near-duplicate recipes.
-- Fitness must understand available equipment and adapt training plans accordingly; future camera coaching should use deterministic movement constraints plus local/on-device vision where practical.
-- Health/wearable integrations should flow into one internal health model instead of coupling business logic to a single device platform.
-- Core stable user facts must be remembered after one-time collection and must not be repeatedly requested by feature-specific screens.
+- Global product with language, country, locale, units, currency, timezone and culturally relevant guidance.
+- Persian-first Tehran-style Persian voice identity for Iran while remaining multilingual.
+- Strong offline/local intelligence so the core app remains useful without a paid cloud AI dependency.
+- Provider-agnostic AI routing; no runtime dependency on one paid vendor.
+- Subscription-ready architecture without requiring payment for core free functionality.
+- Inventory-aware food planning, budgets, scalable recipes, nutrition constraints, allergies/dietary restrictions and smart shopping deltas.
+- Global recipe intelligence without repeatedly surfacing near-duplicate recipes.
+- Equipment-aware fitness with future local/on-device camera coaching where practical.
+- One internal health model for wearable/device integrations.
+- Stable user facts are remembered once and not repeatedly requested by feature screens.
 
 ## Current implementation direction
 
@@ -206,7 +161,7 @@ Language-native response generation
 On-device / local / free-tier TTS provider
 ```
 
-The architecture must preserve one internal intent model while allowing language-specific speech recognition, normalization, culturally appropriate phrasing, and TTS voices.
+The architecture must preserve one internal intent model while allowing language-specific recognition, normalization, culturally appropriate phrasing and TTS voices.
 
 ## Working rule
 
