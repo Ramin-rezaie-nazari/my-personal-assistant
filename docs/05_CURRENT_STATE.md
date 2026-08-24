@@ -1,19 +1,22 @@
 # My Personal Assistant — Current State
 
-> **Single source of truth for project progress.**
+> **A — Single source of truth for project progress.**
 >
 > Rule: do not rebuild or retest a green item unless a later change invalidates it. Continue from the first unchecked item in the current workstream.
+>
+> **Fixed file aliases:**
+> - **A** = `docs/05_CURRENT_STATE.md`
+> - **B** = `docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`
+>
+> Every work session must read **A and B first**.
 
 ## Current workstream
 
-### Voice-first Assistant Shell
+### Global Voice + Multilingual Understanding
 
 ```text
-Persistent User Context
-██████████████████████████  100%
-
-Voice-first Assistant Shell
-██████████████████████████  100% code-complete
+Global Voice + Multilingual Understanding
+███████████░░░░░░░░░░░  ~35%
 
 ✅ Existing persistent user context reused by the assistant layer
 ✅ UX contract: voice-first, low-manual-input, remember-once, purposeful animation
@@ -29,9 +32,54 @@ Voice-first Assistant Shell
 ✅ Device TTS response path added through Expo Speech
 ✅ Voice provider remains replaceable; no paid cloud voice is required by the base flow
 ✅ Duplicate voice-submit race guarded in the assistant shell
-⬜ Validate mobile TypeScript/build on a real development build / device
-⬜ Add a provider interface for offline/local TTS model routing
-⬜ Add higher-quality offline/local Persian TTS model selection behind the provider interface
+✅ Global voice-language capability registry introduced
+✅ Language, region, RTL direction, STT locale and TTS locale are modeled independently
+✅ Voice profiles can resolve their locale without coupling character identity to a vendor voice ID
+✅ Language picker now exposes the global voice-language catalog
+✅ Recent mobile voice TypeScript issues fixed in the implementation branch
+⬜ Validate multilingual language picker and voice flow on a real development build / device
+⬜ Add provider interface for offline/local STT routing
+⬜ Add provider interface for offline/local TTS routing
+⬜ Add multilingual local/edge STT capability detection and fallback policy
+⬜ Add multilingual local/edge TTS capability detection and fallback policy
+⬜ Add language detection for natural speech and code-switching
+⬜ Expand LocalLanguageUnderstandingService from Persian/English patterns to locale-aware intent/entity understanding
+⬜ Add multilingual normalization, numbers, dates, time, units, food terms and colloquial speech handling
+⬜ Add country-aware locale and language policy so one language can map to multiple regional behaviors
+⬜ Add language-specific safety/confirmation phrasing while preserving one internal intent model
+⬜ Validate representative conversations for the supported global language set
+⬜ Mark Global Voice + Multilingual Understanding 100% only after real speech understanding + speech output are validated across the supported language matrix
+```
+
+## Previous completed work
+
+### Persistent User Context
+
+```text
+Persistent User Context
+██████████████████████████  100%
+
+✅ Stable profile and preference hydration
+✅ Brain state normalization
+✅ Remember-once behavior
+✅ Source precedence and durable-memory rules
+✅ User context tests green
+```
+
+### Voice-first Assistant Shell
+
+```text
+Voice-first Assistant Shell
+██████████████████████████  100% code-complete
+
+✅ Existing persistent user context reused by the assistant layer
+✅ Voice-first assistant shell
+✅ Animated interaction state machine
+✅ Ten persistent voice character presets: 5 feminine + 5 masculine
+✅ Tehran-style Persian voice identity
+✅ Persistent voice selection
+✅ Persian recognition adapter
+✅ Device TTS response path
 ```
 
 ## Food Decision Brain status
@@ -69,7 +117,7 @@ Food Decision Brain
 - Recipe image pipeline test passed: **2/2 tests green** after addressing the Jest ESM import mapping and the image-processing test timeout.
 - Final local backend validation pass reached **156/156 unit suites, 414/414 unit tests, and 5/5 E2E suites, 26/26 E2E tests green**.
 - Persistent user-context foundation was validated: **UserContextService 2/2 tests green**, **BrainStateService 1/1 test green**, **backend typecheck green**, **backend build green**.
-- Voice-first shell has now been implemented on top of that persistent context contract: animated state orb, persistent voice choice, Persian recognition adapter, and device TTS are all present in the mobile codebase.
+- Current multilingual implementation adds a global locale capability registry and language-picker catalog, but **this is not yet proof of full multilingual understanding**.
 
 ## Product direction — permanent architectural constraints
 
@@ -106,18 +154,20 @@ Local Brain / AI Core
 - Health/wearable integrations should flow into one internal health model instead of coupling business logic to a single device platform.
 - Core stable user facts must be remembered after one-time collection and must not be repeatedly requested by feature-specific screens.
 
-## Next workstream
+## Current implementation direction
 
-### Offline/Local Voice Intelligence Layer
-
-Build behind the already-defined shell and voice contract:
+### Global Voice + Multilingual Understanding
 
 ```text
 Microphone
    ↓
-On-device STT
+Language / locale detection
    ↓
-Intent / entity understanding
+On-device or free-tier STT provider
+   ↓
+Locale-aware normalization
+   ↓
+Universal intent / entity understanding
    ↓
 Persistent context + memory
    ↓
@@ -125,11 +175,11 @@ Deterministic tools / Personal Brain
    ↓
 Local response generation
    ↓
-On-device / local TTS
+On-device / local / free-tier TTS provider
 ```
 
-The next implementation should **not** replace the working shell. It should add a provider abstraction so local/offline models can be introduced progressively while the device path remains a free fallback.
+The architecture must preserve one internal intent model while allowing language-specific speech recognition, normalization, culturally appropriate phrasing, and TTS voices.
 
 ## Working rule
 
-Every work session starts here. Read this file, inspect the repository, and continue from the **first unchecked item of the current workstream**. When an item becomes green, record the exact validation result here immediately.
+Every work session starts by reading **A and B**, then inspecting the repository. Continue from the **first unchecked item of the current workstream**. When an item becomes green, record the exact validation result in **A** and update **B** when the UX contract changes.
