@@ -10,8 +10,8 @@ export type ImageVariant = {
 
 export const RECIPE_IMAGE_MAX_BYTES = 60 * 1024;
 
-// Keep the fallback ladder intentionally small: image compression is on a hot
-// path and the hard byte limit is more important than trying dozens of encodes.
+// Prefer keeping image quality high and only reduce dimensions when needed.
+// The ladder is intentionally small because compression is on a hot path.
 const DIMENSION_STEPS = [768, 640, 512, 448, 384, 320];
 const QUALITY_STEPS = [60, 40, 25];
 
@@ -20,8 +20,11 @@ export async function compressRecipeImage(input: Buffer): Promise<ImageVariant> 
     throw new Error('Recipe image input must be a non-empty Buffer');
   }
 
-  for (const width of DIMENSION_STEPS) {
-    for (const quality of QUALITY_STEPS) {
+  // Quality is the primary preference: try the largest usable resolution at
+  // quality 60 before falling back to lower quality. This avoids returning a
+  // tiny/blurry image just because a smaller size happened to fit first.
+  for (const quality of QUALITY_STEPS) {
+    for (const width of DIMENSION_STEPS) {
       const buffer = await sharp(input)
         .rotate()
         .resize({ width, height: width, fit: 'inside', withoutEnlargement: true })
