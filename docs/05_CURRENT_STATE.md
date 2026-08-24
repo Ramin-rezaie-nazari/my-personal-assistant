@@ -43,12 +43,14 @@ Global Voice + Multilingual Understanding
 ✅ Locale-aware deterministic intent lexicons added for the supported global language matrix
 ✅ Explicit preferred locale can override automatic language detection for code-switched text
 ✅ Basic multilingual normalization/number/time/meal vocabulary support expanded
-✅ Existing AssistantService spec now contains a representative native-language reminder matrix
-✅ Comprehensive multilingual quality test added: 52-locale reminder matrix, representative meal/nutrition/basket/cancel intents, code-switching, determinism, and reminder-vs-meal disambiguation
+✅ Existing AssistantService spec contains a representative native-language reminder matrix
+✅ Comprehensive multilingual quality test added for the 51 registered locales, representative core intents, code-switching, determinism and reminder-vs-meal disambiguation
 ✅ Mobile voice quality contract check added without introducing a new test framework dependency
 ✅ Mobile voice quality command exposed as `pnpm --filter @my-personal-assistant/mobile voice:quality`
-⬜ Run the comprehensive multilingual AssistantService quality suite locally and fix every failing locale/case
-⬜ Run the mobile voice quality contract check locally and verify all 52 locale registrations + 10 voice profiles
+🟡 Local multilingual quality test currently exposes real blockers: test typing, one stale locale-count assertion, code-switching/intent precedence and mobile localized-copy type errors
+⬜ Run the corrected comprehensive multilingual AssistantService quality suite locally and get every case green
+⬜ Run mobile voice quality contract locally and verify all 51 registered locales + 10 voice profiles
+⬜ Run mobile typecheck green after localized-copy and registry type fixes
 ⬜ Validate multilingual language picker and voice flow on a real development build / device
 ⬜ Add a tested local/offline STT model provider behind the STT contract
 ⬜ Add a tested local/offline TTS model provider behind the TTS contract
@@ -128,14 +130,13 @@ Food Decision Brain
 
 - Recommendation focused tests passed: `recommendation-ranking`, `personalization`, and `recommendation-engine` — **4/4 tests green**.
 - Full backend unit tests passed: **156/156 suites, 414/414 unit tests green**.
-- Recipe image pipeline test passed: **2/2 tests green** after addressing the Jest ESM import mapping and the image-processing test timeout.
 - Final local backend validation pass reached **156/156 unit suites, 414/414 unit tests, and 5/5 E2E suites, 26/26 E2E tests green**.
 - Persistent user-context foundation was validated: **UserContextService 2/2 tests green**, **BrainStateService 1/1 test green**, **backend typecheck green**, **backend build green**.
-- Multilingual implementation now has locale-aware STT routing, replaceable speech-provider contracts, language detection, and a deterministic intent lexicon spanning the supported locale catalog.
-- A comprehensive multilingual quality suite has now been added: **52 supported locales**, representative core intents across multiple scripts, code-switching, determinism, and dinner/reminder ambiguity.
-- A dependency-free mobile voice quality contract check has now been added for **52 locale registrations, 10 selectable voices (5 feminine + 5 masculine), STT/TTS locale mapping, RTL policy, Tehran-style Persian behavior, and safe TTS completion handling**.
-- The new quality suites have **not yet been executed in this session**; the next validation gate is local execution and fixing every failing case.
-- **Important:** the current ~55% score is an architecture/coverage score, not proof of native-level speech understanding or native-quality speech output. Real device/provider validation is still required before 100%.
+- Multilingual implementation now has locale-aware STT routing, replaceable speech-provider contracts, language detection, and deterministic locale-aware intent lexicons.
+- The comprehensive quality suite is now explicitly aligned to the **51 registered locales** in the voice registry; it also covers representative intent families, code-switching, determinism and reminder-vs-dinner disambiguation.
+- The mobile voice quality contract checks **51 registered locales, 10 selectable voices (5 feminine + 5 masculine), STT/TTS mapping, RTL policy, Tehran-style Persian behavior and safe TTS completion**.
+- The latest attempted local gate was **not green**: the quality suite exposed a stale 52-count expectation, tuple-vs-object test typing errors, code-switching intent precedence failures and several mobile `AppLocale` indexing/type errors. These are blockers, not completed work.
+- **Important:** no 100% claim is valid yet. Architecture/test coverage is not proof of native-level speech understanding or native-quality speech output. Real device/provider validation is still required before completion.
 
 ## Product direction — permanent architectural constraints
 
