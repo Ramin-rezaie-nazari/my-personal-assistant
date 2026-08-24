@@ -59,8 +59,8 @@ export default function NotificationsScreen() {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const text = copy[locale];
-  const rtl = locale === 'fa';
+  const text = copy[locale === 'fa' || locale.startsWith('fa-') ? 'fa' : 'en'];
+  const rtl = locale === 'fa' || locale.startsWith('fa-');
 
   const load = useCallback(async (includeRead = showAll) => {
     try {
@@ -227,7 +227,7 @@ export default function NotificationsScreen() {
                   </View>
                   <Text style={[styles.cardTitle, readState && styles.readTitle]}>{item.title}</Text>
                   {item.body ? <Text style={styles.body}>{item.body}</Text> : null}
-                  <Text style={styles.meta}>{new Date(item.scheduledAt ?? item.createdAt).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}</Text>
+                  <Text style={styles.meta}>{new Date(item.scheduledAt ?? item.createdAt).toLocaleString(locale === 'fa' || locale.startsWith('fa-') ? 'fa-IR' : 'en-US')}</Text>
                 </View>
               </View>
               {!readState ? (
