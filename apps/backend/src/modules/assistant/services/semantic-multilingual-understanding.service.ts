@@ -80,9 +80,8 @@ export class SemanticMultilingualUnderstandingService {
     const best = candidates[0];
     const second = candidates[1];
 
-    // Require a meaningful lead over the runner-up. Ambiguous speech must
-    // fall back to clarification rather than a confident wrong action.
-    if (!second || best.score - second.score >= 0.12) {
+    // Do not turn a weak semantic resemblance into an executable action.
+    if (best.score >= 0.78 && (!second || best.score - second.score >= 0.12)) {
       return {
         ...base,
         intent: best.intent,
