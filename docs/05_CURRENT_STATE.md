@@ -6,11 +6,11 @@
 
 ## Current workstream
 
-### Food Decision Brain — final validation phase
+### Food Decision Brain — code-complete / external CI validation blocked
 
 ```text
 Food Decision Brain
-██████████████████████░  ~98%
+███████████████████████░  ~99%
 
 ✅ Prisma schema/client + database foundation
 ✅ Recipe scaling / serving intelligence
@@ -29,35 +29,35 @@ Food Decision Brain
 ✅ Recommendation E2E deterministic ranking + explanations
 ✅ Recommendation E2E Prisma cleanup / process-exit fix verified
 ✅ Final CI validation gates added: Prisma validate/generate/migrate, typecheck, lint, build, unit, E2E
-🟡 CI run on the final branch state pending external GitHub Actions result
-⬜ Full backend E2E validation on the final branch state
-⬜ Final lint/build confirmation on the final branch state
-⬜ Mark Food Decision Brain 100%
+✅ Draft PR created for real GitHub Actions validation: #57
+🟡 GitHub Actions runner validation blocked: job failed before executing any step/log
+⬜ Re-run external GitHub Actions when runner/infrastructure is available
+⬜ Mark Food Decision Brain 100% only after the final CI gate is observable green
 ```
 
-## Important validation history
+## Latest validation evidence
 
 - Recommendation focused tests passed: `recommendation-ranking`, `personalization`, and `recommendation-engine` — **4/4 tests green**.
 - Full backend unit tests passed: **156/156 suites, 414/414 tests green**.
 - Recipe image pipeline test passed: **2/2 tests green** after addressing the Jest ESM import mapping and the image-processing test timeout.
-- Backend typecheck reached green after excluding `prisma.config.ts` at the root level of `tsconfig.json`.
-- Remaining recipe operating-loop lint errors were reduced to warnings and then the remaining unsafe `any` usage / unused helper were removed in the current branch.
-- E2E test setup is now deterministic for clean checkouts: `test/setup/jest.setup.ts` supplies test-only `APP_NAME` and JWT defaults while still allowing caller-provided values. `DATABASE_URL` remains external and required.
-- Recommendation E2E is green: **1 suite / 2 tests passed**. Authentication protection and deterministic ranked food recommendations with explanations both pass.
-- Recommendation E2E seed data was adjusted to satisfy the protein constraint, and Prisma module cleanup was added so the test process exits cleanly without the previous open-connection warning.
-- Latest verified recommendation-validation commit before CI hardening: `7608f63b` (`fix(backend): close prisma connection on module destroy`).
+- Backend typecheck passed after excluding `prisma.config.ts` at the root level of `tsconfig.json`.
+- Recommendation E2E passed: **1 suite / 2 tests green** with authentication protection and deterministic ranked food recommendations with explanations.
+- Recommendation E2E seed data was adjusted to satisfy the protein constraint.
+- Prisma module-destroy cleanup was added and the recommendation E2E no longer reports the previous connection-leak warning.
+- Final backend CI was expanded to cover Prisma validation/generation/migrations, backend typecheck, lint, build, full unit tests, and API E2E tests.
+- A Draft PR #57 was created specifically to obtain an external GitHub Actions validation result; it was not merged.
+- GitHub Actions run `32695926602` was started from PR #57 and failed before any job step executed. The job exposed no steps and no downloadable log, and a direct job rerun reproduced the same pre-step failure. Therefore the CI result is treated as an infrastructure/runner blocker, not as evidence of a code regression.
 
-## Changes made in this validation pass
+## Validation history / changes in this phase
 
 - Removed the remaining `food-operating-loop.service.ts` lint debt by using the recipe-domain measurement/scaling contracts instead of `any` and deleting the unused measurement helper.
 - Added a Jest `moduleNameMapper` so ESM-style `.js` imports resolve correctly against TypeScript sources during unit tests.
-- Increased the deterministic recipe-image compression test timeout to 15 seconds; the test is computationally heavier than a normal unit test and previously hit Jest's default 5-second limit.
-- Hardened Jest E2E setup with deterministic non-secret defaults for `NODE_ENV`, `APP_NAME`, and JWT test configuration, eliminating dependence on an untracked `.env.test` for those values.
-- Restored `supertest` for backend E2E validation and verified the recommendation E2E end-to-end.
-- Fixed the recommendation E2E seed so the intended recommendation survives the protein constraint and is returned by the ranking pipeline.
-- Added Prisma module-destroy cleanup and verified the recommendation E2E no longer reports the previous `Jest did not exit` connection warning.
-- Hardened `.github/workflows/backend-ci.yml` so the backend gate now runs Prisma validation/generation/migrations, backend typecheck, lint, build, full unit tests, and API E2E tests in CI.
-- CI dependency installation was switched to `pnpm install --no-frozen-lockfile` on this branch because the current branch manifest and lockfile are not yet perfectly synchronized; the lockfile still needs a clean generated reconciliation before the branch can return to a strict frozen-lockfile policy.
+- Increased the deterministic recipe-image compression test timeout to 15 seconds because the image-processing workload exceeds Jest's default 5-second timeout on the local environment.
+- Hardened Jest E2E setup with deterministic non-secret defaults for `NODE_ENV`, `APP_NAME`, and JWT test configuration while keeping `DATABASE_URL` external.
+- Restored `supertest` for backend E2E validation.
+- Fixed the recommendation E2E seed so the intended recommendation satisfies the protein constraint and is returned by the ranking pipeline.
+- Added Prisma module-destroy cleanup for deterministic E2E teardown.
+- Hardened `.github/workflows/backend-ci.yml` to exercise the complete backend validation gate in CI.
 
 ## Product direction — permanent architectural constraints
 
@@ -121,11 +121,11 @@ The local model is **not** expected to imitate a frontier chatbot by itself. The
 
 ```text
 [CURRENT]
-Food Decision Brain → ~98%
+Food Decision Brain → ~99%
         ↓
-CI validation result
+External GitHub Actions runner becomes available
         ↓
-Strict lockfile reconciliation
+Full CI gate green
         ↓
 Food Decision Brain → 100%
         ↓
