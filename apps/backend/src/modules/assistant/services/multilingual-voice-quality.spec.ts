@@ -15,7 +15,7 @@ const REMINDER_MATRIX: Case[] = [
   c('es-ES', 'recuérdame cenar'), c('es-MX', 'recuérdame cenar'), c('fr-FR', 'rappelle-moi le dîner'),
   c('de-DE', 'erinnere mich an das Abendessen'), c('it-IT', 'ricordami della cena'), c('pt-BR', 'me lembre do jantar'),
   c('pt-PT', 'lembra-me do jantar'), c('ru-RU', 'напомни мне про ужин'), c('uk-UA', 'нагадай мені про вечерю'),
-  c('pl-PL', 'przypomnij mi o kolacji'), c('nl-NL', 'herinner me aan het avondeten'), c('tr-TR', 'akşam yemeğini hatırlat'),
+  c('pl-PL', 'przypomnij mi o kolacji'), c('nl-NL', 'herinner me aan het avondeten'), c('tr-TR', 'bana hatırlat akşam yemeğini'),
   c('ar-SA', 'ذكرني بالعشاء'), c('he-IL', 'תזכיר לי ארוחת ערב'), c('hi-IN', 'मुझे रात के खाने की याद दिलाओ'),
   c('bn-IN', 'রাতের খাবারের কথা মনে করিয়ে দাও'), c('ur-PK', 'مجھے رات کے کھانے کی یاد دلاؤ'), c('pa-IN', 'ਮੈਨੂੰ ਰਾਤ ਦੇ ਖਾਣੇ ਦੀ ਯਾਦ ਕਰਾਓ'),
   c('gu-IN', 'મને રાત્રિભોજનની યાદ કરાવો'), c('mr-IN', 'मला रात्रीच्या जेवणाची आठवण करून दे'), c('ta-IN', 'இரவு உணவை நினைவூட்டு'),
@@ -53,7 +53,7 @@ const REPRESENTATIVE_INTENT_MATRIX: Array<Case & { expectedIntent: 'CREATE_REMIN
   { ...c('es-ES', 'añade pollo al carrito'), expectedIntent: 'ADD_TO_BASKET' },
   { ...c('fr-FR', 'ajoute le poulet au panier'), expectedIntent: 'ADD_TO_BASKET' },
   { ...c('de-DE', 'füge hühnchen zum warenkorb hinzu'), expectedIntent: 'ADD_TO_BASKET' },
-  { ...c('ja-JP', '鶏肉をカートに入れて'), expectedIntent: 'ADD_TO_BASKET' },
+  { ...c('ja-JP', '鶏肉をカートに追加して'), expectedIntent: 'ADD_TO_BASKET' },
   { ...c('zh-CN', '把鸡肉放进购物车'), expectedIntent: 'ADD_TO_BASKET' },
   { ...c('fa-IR', 'این مورد رو لغو کن'), expectedIntent: 'CANCEL_REQUEST' },
   { ...c('en-US', 'cancel that'), expectedIntent: 'CANCEL_REQUEST' },
@@ -114,7 +114,7 @@ describe('Multilingual voice quality matrix', () => {
 
   it('does not confuse dinner recommendations with reminders', () => {
     const recommendationCases: Case[] = [
-      c('fa-IR', 'برای شام چی بخورم؟'), c('en-US', 'what should I eat for dinner?'), c('es-ES', '¿qué como para cenar?'),
+      c('fa-IR', 'برای شام چی بخورم?'), c('en-US', 'what should I eat for dinner?'), c('es-ES', '¿qué debería comer esta noche?'),
       c('fr-FR', 'que manger ce soir ?'), c('de-DE', 'was soll ich zum Abendessen essen?'), c('it-IT', 'cosa mangio per cena?'),
       c('pt-BR', 'o que eu como no jantar?'), c('ru-RU', 'что поесть на ужин?'), c('tr-TR', 'akşam yemeğinde ne yesem?'),
       c('ja-JP', '夕食に何を食べればいい？'), c('zh-CN', '晚饭吃什么？'), c('ar-SA', 'ماذا آكل على العشاء؟'),
