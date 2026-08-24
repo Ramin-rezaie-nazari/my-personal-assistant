@@ -16,7 +16,7 @@
 
 ```text
 Global Voice + Multilingual Understanding
-███████████░░░░░░░░░░░  ~35%
+█████████████░░░░░░░  ~55%
 
 ✅ Existing persistent user context reused by the assistant layer
 ✅ UX contract: voice-first, low-manual-input, remember-once, purposeful animation
@@ -26,8 +26,6 @@ Global Voice + Multilingual Understanding
 ✅ Ten persistent voice character presets: 5 feminine + 5 masculine
 ✅ Tehran-style Persian voice identity encoded as a product contract
 ✅ Voice selection persisted locally and restored automatically
-✅ Native Persian speech recognition adapter added
-✅ On-device recognition preferred whenever the device reports support
 ✅ Persian contextual vocabulary supplied to speech recognition
 ✅ Device TTS response path added through Expo Speech
 ✅ Voice provider remains replaceable; no paid cloud voice is required by the base flow
@@ -36,18 +34,26 @@ Global Voice + Multilingual Understanding
 ✅ Language, region, RTL direction, STT locale and TTS locale are modeled independently
 ✅ Voice profiles can resolve their locale without coupling character identity to a vendor voice ID
 ✅ Language picker now exposes the global voice-language catalog
-✅ Recent mobile voice TypeScript issues fixed in the implementation branch
+✅ Mobile voice TypeScript issues fixed in the implementation branch
+✅ Speech recognition now accepts the selected locale instead of being hard-wired to Persian
+✅ Replaceable STT provider contract added
+✅ Replaceable TTS provider contract added
+✅ On-device speech recognition remains the preferred runtime path when supported by the device
+✅ LocalLanguageUnderstandingService now carries detected language + language confidence
+✅ Locale-aware deterministic intent lexicons added for the supported global language matrix
+✅ Explicit preferred locale can override automatic language detection for code-switched text
+✅ Basic multilingual normalization/number/time/meal vocabulary support expanded
 ⬜ Validate multilingual language picker and voice flow on a real development build / device
-⬜ Add provider interface for offline/local STT routing
-⬜ Add provider interface for offline/local TTS routing
-⬜ Add multilingual local/edge STT capability detection and fallback policy
-⬜ Add multilingual local/edge TTS capability detection and fallback policy
-⬜ Add language detection for natural speech and code-switching
-⬜ Expand LocalLanguageUnderstandingService from Persian/English patterns to locale-aware intent/entity understanding
-⬜ Add multilingual normalization, numbers, dates, time, units, food terms and colloquial speech handling
+⬜ Add a tested local/offline STT model provider behind the STT contract
+⬜ Add a tested local/offline TTS model provider behind the TTS contract
+⬜ Add multilingual local/edge STT capability detection and fallback policy validation
+⬜ Add multilingual local/edge TTS capability detection and fallback policy validation
+⬜ Expand locale-aware entity extraction for dates, units, food aliases, quantities and colloquial speech across the matrix
 ⬜ Add country-aware locale and language policy so one language can map to multiple regional behaviors
 ⬜ Add language-specific safety/confirmation phrasing while preserving one internal intent model
-⬜ Validate representative conversations for the supported global language set
+⬜ Make local intent response messages language-native instead of Persian/English-only
+⬜ Run a representative conversation matrix covering every supported locale
+⬜ Run real-device speech input/output validation for each supported locale where the selected STT/TTS provider reports support
 ⬜ Mark Global Voice + Multilingual Understanding 100% only after real speech understanding + speech output are validated across the supported language matrix
 ```
 
@@ -79,6 +85,8 @@ Voice-first Assistant Shell
 ✅ Tehran-style Persian voice identity
 ✅ Persistent voice selection
 ✅ Persian recognition adapter
+✅ Locale-aware recognition adapter
+✅ Replaceable STT/TTS contracts
 ✅ Device TTS response path
 ```
 
@@ -113,11 +121,12 @@ Food Decision Brain
 ## Latest validation evidence
 
 - Recommendation focused tests passed: `recommendation-ranking`, `personalization`, and `recommendation-engine` — **4/4 tests green**.
-- Full backend unit tests passed: **156/156 suites, 414/414 tests green**.
+- Full backend unit tests passed: **156/156 suites, 414/414 unit tests green**.
 - Recipe image pipeline test passed: **2/2 tests green** after addressing the Jest ESM import mapping and the image-processing test timeout.
 - Final local backend validation pass reached **156/156 unit suites, 414/414 unit tests, and 5/5 E2E suites, 26/26 E2E tests green**.
 - Persistent user-context foundation was validated: **UserContextService 2/2 tests green**, **BrainStateService 1/1 test green**, **backend typecheck green**, **backend build green**.
-- Current multilingual implementation adds a global locale capability registry and language-picker catalog, but **this is not yet proof of full multilingual understanding**.
+- Multilingual implementation now has locale-aware STT routing, replaceable speech-provider contracts, language detection, and a deterministic intent lexicon spanning the supported locale catalog.
+- **Important:** the current ~55% score is an architecture/coverage score, not proof of native-level speech understanding or native-quality speech output. Real device/provider validation is still required before 100%.
 
 ## Product direction — permanent architectural constraints
 
@@ -161,7 +170,7 @@ Local Brain / AI Core
 ```text
 Microphone
    ↓
-Language / locale detection
+Selected locale / language detection
    ↓
 On-device or free-tier STT provider
    ↓
@@ -173,7 +182,7 @@ Persistent context + memory
    ↓
 Deterministic tools / Personal Brain
    ↓
-Local response generation
+Language-native response generation
    ↓
 On-device / local / free-tier TTS provider
 ```
