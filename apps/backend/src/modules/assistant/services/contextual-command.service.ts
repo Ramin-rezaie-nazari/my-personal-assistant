@@ -26,43 +26,34 @@ export type ContextualCommand = {
 };
 
 const MULTILINGUAL_PREVIOUS_REFERENCES: readonly string[] = [
-  'that', 'it', 'this', 'same', 'previous', 'earlier', 'the last one',
-  'that one', 'the same one', 'again',
-  'همون', 'همون قبلی', 'همون یکی', 'همین', 'اینو', 'این یکی', 'قبلی', 'اونو',
-  'اون یکی', 'دوباره', 'باز هم', 'به جاش', 'بجاش', 'همونی که',
+  'that', 'it', 'this', 'same', 'previous', 'earlier', 'the last one', 'that one', 'the same one', 'again',
+  'همون', 'همون قبلی', 'همون یکی', 'همین', 'اینو', 'این یکی', 'قبلی', 'اونو', 'اون یکی', 'دوباره', 'باز هم', 'به جاش', 'بجاش', 'همونی که',
   'eso', 'esa', 'este', 'esta', 'lo mismo', 'el anterior', 'la anterior', 'el último', 'la última',
   'ça', 'cela', 'celui-là', 'celle-là', 'le même', 'la même', 'le précédent', 'la précédente',
   'das', 'dies', 'dasselbe', 'der gleiche', 'die gleiche', 'das gleiche', 'das vorherige',
   'quello', 'quella', 'lo stesso', 'la stessa', 'quello precedente',
   'isso', 'isso mesmo', 'o mesmo', 'a mesma', 'o anterior', 'a anterior',
-  'это', 'это же', 'то же', 'тот же', 'та же', 'предыдущее', 'предыдущий',
-  'це', 'те саме', 'цей', 'ця', 'попереднє', 'попередній',
-  'to samo', 'ten sam', 'ta sama', 'poprzedni', 'poprzednia',
-  'dat', 'dit', 'hetzelfde', 'dezelfde', 'de vorige',
-  'bunu', 'buna', 'aynısı', 'aynı şey', 'önceki',
-  'ذلك', 'هذا', 'نفسه', 'نفسها', 'السابق', 'السابقة',
-  'זה', 'אותו דבר', 'אותו', 'אותה', 'הקודם', 'הקודמת',
-  'वही', 'उसी', 'पिछला', 'पिछली', 'यह', 'वो',
-  'ওটাই', 'সেটাই', 'আগেরটা', 'এটা',
-  'وہی', 'یہی', 'پچھلا', 'پچھلی',
-  'ਉਹੀ', 'ਇਹੀ', 'ਪਿਛਲਾ', 'ਪਿਛਲੀ',
-  'એજ', 'આ જ', 'પહેલાનું', 'પહેલાની',
-  'तेच', 'हेच', 'मागचे', 'मागची',
-  'அதே', 'இதே', 'முந்தையது', 'అదే', 'ఇదే', 'మునుపటిది',
-  'それ', 'それと同じ', '同じもの', '前のもの', 'もう一度',
-  '그거', '같은 것', '똑같이', '이전 것', '다시',
-  '那个', '同一个', '一样的', '上一个', '之前那个', '再来一次',
-  '那個', '同一個', '一樣的', '上一個', '之前那個', '再一次',
-  'đó', 'cái đó', 'cùng cái đó', 'cái trước', 'lại lần nữa',
-  'นั้น', 'อันเดิม', 'อันก่อน', 'อีกครั้ง',
-  'itu', 'yang sama', 'yang sebelumnya', 'lagi', 'sama', 'ang pareho', 'yung nauna', 'ulit',
-  'den', 'samma', 'den förra', 'igen', 'det', 'det samme', 'den forrige', 'igjen',
-  'samme', 'den samme', 'den forrige', 'același', 'aceeași', 'precedentul', 'din nou',
-  'to isté', 'rovnaké', 'predchádzajúce', 'znova', 'ugyanaz', 'előző', 'megint',
-  'същото', 'предишното', 'пак', 'το ίδιο', 'το προηγούμενο', 'ξανά',
-  'исти', 'претходни', 'поново', 'isto', 'prethodni', 'opet', 'isto', 'prejšnji', 'znova',
-  'hiyo', 'kile kile', 'ya awali', 'tena', 'ያው', 'ቀድሞውን', 'እንደገና',
-  'ҳамон', 'қаблӣ', 'дубора',
+  'это', 'это же', 'то же', 'тот же', 'та же', 'предыдущее', 'предыдущий', 'це', 'те саме', 'цей', 'ця', 'попереднє', 'попередній',
+  'to samo', 'ten sam', 'ta sama', 'poprzedni', 'poprzednia', 'dat', 'dit', 'hetzelfde', 'dezelfde', 'de vorige',
+  'bunu', 'buna', 'aynısı', 'aynı şey', 'önceki', 'ذلك', 'هذا', 'نفسه', 'نفسها', 'السابق', 'السابقة', 'זה', 'אותו דבר', 'אותו', 'אותה', 'הקודם', 'הקודמת',
+  'वही', 'उसी', 'पिछला', 'पिछली', 'यह', 'वो', 'ওটাই', 'সেটাই', 'আগেরটা', 'এটা', 'وہی', 'یہی', 'پچھلا', 'پچھلی', 'ਉਹੀ', 'ਇਹੀ', 'ਪਿਛਲਾ', 'ਪਿਛਲੀ', 'એજ', 'આ જ', 'પહેલાનું', 'પહેલાની',
+  'तेच', 'हेच', 'मागचे', 'मागची', 'அதே', 'இதே', 'முந்தையது', 'అదే', 'ఇదే', 'మునుపటిది',
+  'それ', 'それと同じ', '同じもの', '前のもの', 'もう一度', '그거', '같은 것', '똑같이', '이전 것', '다시',
+  '那个', '同一个', '一样的', '上一个', '之前那个', '再来一次', '那個', '同一個', '一樣的', '上一個', '之前那個', '再一次',
+  'đó', 'cái đó', 'cùng cái đó', 'cái trước', 'lại lần nữa', 'นั้น', 'อันเดิม', 'อันก่อน', 'อีกครั้ง',
+  'itu', 'yang sama', 'yang sebelumnya', 'lagi', 'sama', 'ang pareho', 'yung nauna', 'ulit', 'den', 'samma', 'den förra', 'igen', 'det', 'det samme', 'den forrige', 'igjen',
+  'samme', 'den samme', 'den forrige', 'același', 'aceeași', 'precedentul', 'din nou', 'to isté', 'rovnaké', 'predchádzajúce', 'znova', 'ugyanaz', 'előző', 'megint',
+  'същото', 'предишното', 'пак', 'το ίδιο', 'το προηγούμενο', 'ξανά', 'исти', 'претходни', 'поново', 'isto', 'prethodni', 'opet', 'prejšnji', 'znova',
+  'hiyo', 'kile kile', 'ya awali', 'tena', 'ያው', 'ቀድሞውን', 'እንደገና', 'ҳамон', 'қаблӣ', 'дубора',
+];
+
+const MULTILINGUAL_UPDATE_MARKERS: readonly string[] = [
+  'change', 'edit', 'move', 'update', 'make it', 'instead', 'cambia', 'actualiza', 'modifica', 'modifie', 'mets à jour',
+  'ändere', 'ändren', 'aktualisiere', 'modifica', 'mude', 'altera', 'mudar', 'измени', 'зміни', 'przypomnij',
+  'zmień', 'wijzig', 'verander', 'değiştir', 'güncelle', 'عدّل', 'غيّر', 'שנה', 'עדכן', 'बदलो', 'बदल', 'পরিবর্তন',
+  'بدل', 'تبدیل', 'ਬਦਲੋ', 'બદલો', 'बदला', 'மாற்று', 'మార్చు', '変更', '変えて', '바꿔', '수정', '改', '修改', '改一下', 'đổi', 'เปลี่ยน',
+  'ubah', 'palitan', 'ändra', 'endre', 'ændr', 'muuta', 'změň', 'zmeň', 'változtasd', 'schimbă', 'промени', 'άλλαξε', 'promeni', 'promijeni', 'spremeni', 'badilisha', 'ቀይር', 'тағйир',
+  'تغییر', 'ویرایش', 'جابجا', 'عوض', 'اصلاح', 'به جاش', 'بجاش',
 ];
 
 @Injectable()
@@ -97,7 +88,7 @@ export class ContextualCommandService {
 
   private detectOperation(text: string, referencesPrevious: boolean): ContextualCommand['operation'] {
     if (this.matches(text, ['cancel', 'delete', 'remove', 'لغو', 'حذف', 'پاک کن', 'بردار', 'کنسل', 'بیخیال', 'cancela', 'annule', 'stornieren', 'storniere', 'annulla', '取消', 'キャンセル', '취소'])) return 'cancel';
-    if (this.matches(text, ['change', 'edit', 'move', 'update', 'make it', 'instead', 'تغییر', 'ویرایش', 'جابجا', 'عوض', 'اصلاح', 'به جاش', 'بجاش'])) return 'update';
+    if (this.matches(text, MULTILINGUAL_UPDATE_MARKERS)) return 'update';
     if (referencesPrevious && this.matches(text, ['نه', 'نخیر', 'نمیخوام', 'نمی خوام', 'no', 'non', 'nein', 'não', 'нет', 'いいえ', '아니', '不'])) return 'update';
     if (this.matches(text, ['remind', 'schedule', 'create', 'add', 'یادم بنداز', 'یادآوری', 'قرار بده', 'اضافه', 'بساز', 'ثبت کن', 'بخر'])) return 'create';
     return 'unknown';
