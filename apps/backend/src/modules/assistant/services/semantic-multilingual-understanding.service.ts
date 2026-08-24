@@ -129,6 +129,16 @@ const CANONICAL_INTENTS: Record<string, Exclude<LocalIntent, 'UNKNOWN'>> = {
   'ja-JP::何を食べればいい': 'RECOMMEND_MEAL',
   'zh-CN::我该吃什么': 'RECOMMEND_MEAL',
   'ar-SA::ماذا آكل': 'RECOMMEND_MEAL',
+  'es-ES::¿qué debería comer esta noche': 'RECOMMEND_MEAL',
+  'fr-FR::que manger ce soir': 'RECOMMEND_MEAL',
+  'de-DE::was soll ich zum abendessen essen': 'RECOMMEND_MEAL',
+  'it-IT::cosa mangio per cena': 'RECOMMEND_MEAL',
+  'pt-BR::o que eu como no jantar': 'RECOMMEND_MEAL',
+  'ru-RU::что поесть на ужин': 'RECOMMEND_MEAL',
+  'tr-TR::akşam yemeğinde ne yesem': 'RECOMMEND_MEAL',
+  'ja-JP::夕食に何を食べればいい': 'RECOMMEND_MEAL',
+  'zh-CN::晚饭吃什么': 'RECOMMEND_MEAL',
+  'ar-SA::ماذا آكل على العشاء': 'RECOMMEND_MEAL',
   'fa-IR::کالری امروزمو بگو': 'GET_NUTRITION_SUMMARY',
   'en-US::show me my calories and protein': 'GET_NUTRITION_SUMMARY',
   'es-ES::muéstrame mis calorías y proteínas': 'GET_NUTRITION_SUMMARY',
@@ -168,7 +178,6 @@ export class SemanticMultilingualUnderstandingService {
     const best = candidates[0];
     const second = candidates[1];
 
-    // Do not turn a weak semantic resemblance into an executable action.
     if (best.score >= 0.78 && (!second || best.score - second.score >= 0.12)) {
       return {
         ...base,
