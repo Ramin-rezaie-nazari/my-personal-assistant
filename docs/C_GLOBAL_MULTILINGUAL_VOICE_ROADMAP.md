@@ -7,7 +7,7 @@
 > - **B** = `docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`
 > - **C** = `docs/C_GLOBAL_MULTILINGUAL_VOICE_ROADMAP.md`
 >
-> Rule: C is the detailed execution checklist for this workstream. A and B record durable project state. When every item is truly green, completed outcomes move to A/B and C is replaced with the next workstream roadmap.
+> Rule: C is the detailed execution checklist for this workstream. A and B record durable project state. When every item is truly green, completed outcomes move to A/B and C is replaced by the next workstream roadmap.
 
 ## Current status
 
@@ -47,7 +47,7 @@ This is still **not** proof of unconstrained native-level understanding, native-
 
 - [x] **3.1 Replaceable STT provider contract foundation** — provider interface exists and runtime uses a replaceable recognition boundary.
 - [x] **3.2 Locale capability registry foundation** — 51 locale registry drives recognition locale selection.
-- [ ] **3.3 Automatic STT fallback** — local → fallback provider routing with deterministic policy.
+- [ ] **3.3 Automatic STT fallback** — local → fallback → explicit unavailable state.
 - [x] **3.4 Partial-result handling** — interim recognition results are surfaced to the UI.
 - [x] **3.5 Error/end recovery foundation** — listeners are cleaned up and recognition returns to an idle/error state.
 - [ ] **3.6 Accent and speech-rate validation** — representative speakers per locale family.
@@ -105,11 +105,30 @@ This workstream is **100% complete only when every checkbox above is green** and
 
 ## Current implementation checkpoint
 
-Latest code additions in this workstream:
-
-- `SemanticMultilingualUnderstandingService` now sits in the assistant runtime as a semantic layer over lexical understanding.
+- `SemanticMultilingualUnderstandingService` remains the semantic layer over lexical understanding.
 - Semantic tests cover paraphrase recovery, ambiguity refusal, deterministic output and multi-intent clause splitting.
 - Entity/context regression tests cover quantity, time, meal type, food, negation and conversational references.
 - Existing 51-locale/10-voice contracts remain the baseline safety net.
+
+## Latest local verification report — 2026-08-24
+
+The real checkout was reset to `origin/work/global-multilingual-voice-100` at `a83bbf55`, dependencies installed successfully, backend typecheck passed, backend build passed, and the mobile voice-quality contract passed for all 51 locales / 10 voice profiles.
+
+Observed blockers from the local test run:
+
+- [ ] **Semantic ambiguity regression:** `help me later` was classified as `CREATE_REMINDER` instead of `UNKNOWN`.
+- [ ] **Multilingual reminder matrix regression:** one or more locale-specific reminder phrases still resolve to `UNKNOWN`.
+- [ ] **Multilingual representative intent regression:** one or more meal/basket/cancellation phrases still resolve to `UNKNOWN`.
+- [ ] **AssistantService test fixture regression:** the semantic understanding mock does not expose `understand()`, causing the delegation test to throw before it reaches the orchestrator assertion.
+- [ ] **Mobile locale typing:** `assistant.tsx`, `command-center-v2.tsx`, `notifications.tsx`, and `reminders.tsx` contain locale-indexing/type-widening errors for regional `AppLocale` values such as `fa-IR`.
+
+Verified in the same run:
+
+- [x] Backend typecheck.
+- [x] Backend build.
+- [x] Entity/context quality suite: 5/5 tests passed.
+- [x] Mobile voice quality contract: 51 locales, 10 voices, STT/TTS mapping, RTL policy and Persian Tehran style contract passed.
+
+The user explicitly chose to defer the actual test execution to VS Code. Therefore the next work on this branch is **code-only remediation of the blockers above**, followed by a VS Code command-box verification pass.
 
 **Important:** a green code/test layer is not equivalent to native human-level speech understanding. Real-device STT/TTS and full locale validation remain explicit gates instead of being silently marked complete.
