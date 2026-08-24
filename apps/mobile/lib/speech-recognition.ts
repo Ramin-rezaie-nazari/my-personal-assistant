@@ -21,6 +21,33 @@ export type SpeechRecognitionProvider = {
   ) => Promise<SpeechRecognitionHandle | null>;
 };
 
+const CONTEXTUAL_TERMS: Partial<Record<LanguageCode, readonly string[]>> = {
+  'fa-IR': ['یادآوری', 'یادم بنداز', 'شام', 'ناهار', 'صبحانه', 'غذا', 'کالری', 'پروتئین', 'سبد خرید', 'موجودی خانه', 'تمرین'],
+  'en-US': ['reminder', 'dinner', 'lunch', 'breakfast', 'meal', 'nutrition', 'protein', 'calories', 'shopping cart', 'workout'],
+  'en-GB': ['reminder', 'dinner', 'lunch', 'breakfast', 'meal', 'nutrition', 'protein', 'calories', 'shopping basket', 'workout'],
+  'es-ES': ['recordatorio', 'cena', 'almuerzo', 'desayuno', 'comida', 'nutrición', 'proteína', 'calorías', 'carrito', 'entrenamiento'],
+  'es-MX': ['recordatorio', 'cena', 'comida', 'desayuno', 'nutrición', 'proteína', 'calorías', 'carrito', 'entrenamiento'],
+  'fr-FR': ['rappel', 'dîner', 'déjeuner', 'petit-déjeuner', 'repas', 'nutrition', 'protéines', 'calories', 'panier', 'entraînement'],
+  'de-DE': ['Erinnerung', 'Abendessen', 'Mittagessen', 'Frühstück', 'Essen', 'Ernährung', 'Protein', 'Kalorien', 'Warenkorb', 'Training'],
+  'it-IT': ['promemoria', 'cena', 'pranzo', 'colazione', 'pasto', 'nutrizione', 'proteine', 'calorie', 'carrello', 'allenamento'],
+  'pt-BR': ['lembrete', 'jantar', 'almoço', 'café da manhã', 'refeição', 'nutrição', 'proteína', 'calorias', 'carrinho', 'treino'],
+  'ru-RU': ['напоминание', 'ужин', 'обед', 'завтрак', 'еда', 'питание', 'белок', 'калории', 'корзина', 'тренировка'],
+  'tr-TR': ['hatırlatıcı', 'akşam yemeği', 'öğle yemeği', 'kahvaltı', 'yemek', 'beslenme', 'protein', 'kalori', 'sepet', 'antrenman'],
+  'ja-JP': ['リマインダー', '夕食', '昼食', '朝食', '食事', '栄養', 'タンパク質', 'カロリー', 'カート', 'トレーニング'],
+  'zh-CN': ['提醒', '晚饭', '午饭', '早餐', '食物', '营养', '蛋白质', '卡路里', '购物车', '训练'],
+  'ar-SA': ['تذكير', 'عشاء', 'غداء', 'فطور', 'وجبة', 'تغذية', 'بروتين', 'سعرات', 'سلة التسوق', 'تمرين'],
+};
+
+const DEFAULT_CONTEXTUAL_TERMS = [
+  'My Personal Assistant', 'Personal Brain', 'breakfast', 'lunch', 'dinner',
+  'nutrition', 'protein', 'calories', 'reminder', 'shopping cart', 'workout',
+  'موجودی خانه', 'تمرین', 'کالری', 'پروتئین',
+] as const;
+
+export function getSpeechContextualTerms(locale: string): readonly string[] {
+  return CONTEXTUAL_TERMS[locale as LanguageCode] ?? DEFAULT_CONTEXTUAL_TERMS;
+}
+
 export function supportsOnDeviceSpeech(locale: string): boolean {
   return VOICE_LANGUAGES.some((item) => item.code === locale);
 }
@@ -65,11 +92,7 @@ export async function startRecognition(
       continuous: false,
       requiresOnDeviceRecognition: onDevice,
       addsPunctuation: true,
-      contextualStrings: [
-        'My Personal Assistant', 'Personal Brain', 'breakfast', 'lunch', 'dinner',
-        'nutrition', 'protein', 'calories', 'reminder', 'shopping cart', 'workout',
-        'موجودی خانه', 'تمرین', 'کالری', 'پروتئین',
-      ],
+      contextualStrings: getSpeechContextualTerms(locale) as string[],
     });
   } catch (error) {
     cleanup();
