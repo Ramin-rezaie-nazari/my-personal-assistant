@@ -185,7 +185,7 @@ describe('AssistantService', () => {
     const cases: Array<[string, string]> = [
       ['fa-IR', 'یادم بنداز شام'], ['en-US', 'remind me about dinner'], ['es-ES', 'recuérdame cenar'],
       ['fr-FR', 'rappelle-moi le dîner'], ['de-DE', 'erinnere mich an das Abendessen'], ['it-IT', 'ricordami della cena'],
-      ['pt-BR', 'me lembre do jantar'], ['ru-RU', 'напомни мне про ужин'], ['tr-TR', 'akşam yemeğini hatırlat'],
+      ['pt-BR', 'me lembre do jantar'], ['ru-RU', 'напомни мне про ужин'], ['tr-TR', 'bana hatırlat akşam yemeğini'],
       ['ar-SA', 'ذكرني بالعشاء'], ['he-IL', 'תזכיר לי ארוחת ערב'], ['hi-IN', 'मुझे रात के खाने की याद दिलाओ'],
       ['bn-IN', 'রাতের খাবারের কথা মনে করিয়ে দাও'], ['ur-PK', 'مجھے رات کے کھانے کی یاد دلاؤ'], ['pa-IN', 'ਮੈਨੂੰ ਰਾਤ ਦੇ ਖਾਣੇ ਦੀ ਯਾਦ ਕਰਾਓ'],
       ['ta-IN', 'இரவு உணவை நினைவூட்டு'], ['te-IN', 'రాత్రి భోజనం గుర్తు చేయు'], ['ja-JP', '夕食を思い出させて'],
