@@ -42,6 +42,9 @@ describe('AssistantService', () => {
           .fn()
           .mockReturnValue({ intent: 'UNKNOWN', confidence: 0, entities: {} }),
     } as any;
+    const semanticMultilingualUnderstanding = {
+      understand: overrides.understand ?? localLanguageUnderstanding.understand,
+    } as any;
     const planning = {
       createPlan:
         overrides.createPlan ??
@@ -60,6 +63,7 @@ describe('AssistantService', () => {
       contextual,
       conversation,
       localLanguageUnderstanding,
+      semanticMultilingualUnderstanding,
       planning,
     );
   };
