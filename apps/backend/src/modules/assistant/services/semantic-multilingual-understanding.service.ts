@@ -10,7 +10,7 @@ import {
 type IntentCandidate = {
   intent: Exclude<LocalIntent, 'UNKNOWN'>;
   score: number;
-  source: 'explicit-paraphrase' | 'lexicon-fuzzy';
+  source: 'explicit-paraphrase' | 'lexical-repair';
 };
 
 const PARAPHRASES: Partial<
@@ -125,6 +125,7 @@ const MAX_SEMANTIC_CONFIDENCE = 0.96;
 const MIN_SINGLE_CANDIDATE_SCORE = 0.68;
 const MIN_CANDIDATE_MARGIN = 0.12;
 const MIN_FUZZY_SCORE = 0.58;
+const REPAIR_CONFIDENCE = 0.78;
 
 @Injectable()
 export class SemanticMultilingualUnderstandingService {
@@ -134,38 +135,14 @@ export class SemanticMultilingualUnderstandingService {
     const base = this.lexical.understand(input, preferredLanguage);
     if (base.intent !== 'UNKNOWN') return base;
 
-    const language = base.language;
-    const normalized = base.normalizedText;
-    const candidates = this.rank(language, normalized);
+    const explicit = this.rankExplicitParaphrases(
+      base.language,
+      base.normalizedText,
+    );
+    const semantic = this.resolveCandidate(explicit, base);
+    if (semantic) return semantic;
 
-    if (!candidates.length) return base;
-
-    const best = candidates[0];
-    const second = candidates[1];
-
-    // Never convert weak partial overlap into an actionable intent.
-    // A single candidate must be strong enough on its own; when there is a
-    // runner-up, the winner must also have a meaningful lead.
-    const singleCandidateIsStrongEnough =
-      !second &&
-      best.score >= MIN_SINGLE_CANDIDATE_SCORE;
-    const winnerHasMeaningfulLead =
-      !!second &&
-      best.score >= MIN_FUZZY_SCORE &&
-      best.score - second.score >= MIN_CANDIDATE_MARGIN;
-
-    if (!singleCandidateIsStrongEnough && !winnerHasMeaningfulLead) {
-      return base;
-    }
-
-    return {
-      ...base,
-      intent: best.intent,
-      confidence: Math.min(
-        MAX_SEMANTIC_CONFIDENCE,
-        0.72 + best.score * 0.22,
-      ),
-    };
+    return this.repairSingleSpeechError(input, preferredLanguage, base);
   }
 
   splitClauses(input: string): string[] {
@@ -175,7 +152,7 @@ export class SemanticMultilingualUnderstandingService {
       .filter(Boolean);
   }
 
-  private rank(
+  private rankExplicitParaphrases(
     language: SupportedLocalLanguage,
     normalized: string,
   ): IntentCandidate[] {
@@ -198,6 +175,80 @@ export class SemanticMultilingualUnderstandingService {
     return candidates.sort((a, b) => b.score - a.score);
   }
 
+  private resolveCandidate(
+    candidates: IntentCandidate[],
+    base: LocalUnderstanding,
+  ): LocalUnderstanding | undefined {
+    if (!candidates.length) return undefined;
+
+    const best = candidates[0];
+    const second = candidates[1];
+    const singleCandidateIsStrongEnough =
+      !second && best.score >= MIN_SINGLE_CANDIDATE_SCORE;
+    const winnerHasMeaningfulLead =
+      !!second &&
+      best.score >= MIN_FUZZY_SCORE &&
+      best.score - second.score >= MIN_CANDIDATE_MARGIN;
+
+    if (!singleCandidateIsStrongEnough && !winnerHasMeaningfulLead) {
+      return undefined;
+    }
+
+    return {
+      ...base,
+      intent: best.intent,
+      confidence: Math.min(
+        MAX_SEMANTIC_CONFIDENCE,
+        0.72 + best.score * 0.22,
+      ),
+    };
+  }
+
+  private repairSingleSpeechError(
+    input: string,
+    preferredLanguage: string | undefined,
+    base: LocalUnderstanding,
+  ): LocalUnderstanding {
+    const normalized = base.normalizedText;
+    if (normalized.length < 4 || normalized.length > 160) return base;
+
+    // Common ASR failure mode: one duplicated character/short accidental
+    // insertion. Removing one Unicode code point from the utterance is enough
+    // to recover the original lexical phrase without inventing new semantics.
+    const seen = new Set<string>();
+    for (let index = 0; index < normalized.length; index += 1) {
+      const repaired = normalized.slice(0, index) + normalized.slice(index + 1);
+      if (seen.has(repaired)) continue;
+      seen.add(repaired);
+
+      const result = this.lexical.understand(repaired, preferredLanguage);
+      if (result.intent !== 'UNKNOWN') {
+        return {
+          ...result,
+          confidence: Math.min(result.confidence, REPAIR_CONFIDENCE),
+        };
+      }
+    }
+
+    // A small class of ASR errors is an accidental transposition of adjacent
+    // characters. Try those only after single-character repair fails.
+    for (let index = 0; index < normalized.length - 1; index += 1) {
+      if (normalized[index] === normalized[index + 1]) continue;
+      const chars = [...normalized];
+      [chars[index], chars[index + 1]] = [chars[index + 1], chars[index]];
+      const repaired = chars.join('');
+      const result = this.lexical.understand(repaired, preferredLanguage);
+      if (result.intent !== 'UNKNOWN') {
+        return {
+          ...result,
+          confidence: Math.min(result.confidence, REPAIR_CONFIDENCE),
+        };
+      }
+    }
+
+    return base;
+  }
+
   private similarity(text: string, phrase: string): number {
     if (!text || !phrase) return 0;
     if (text.includes(phrase)) return 1;
@@ -211,21 +262,18 @@ export class SemanticMultilingualUnderstandingService {
     const reverse = overlap / textTokens.length;
     const tokenScore = coverage * 0.72 + reverse * 0.28;
 
-    if (tokenScore < MIN_FUZZY_SCORE) {
-      return this.characterSimilarity(text, phrase);
-    }
-    return tokenScore;
+    if (tokenScore >= MIN_FUZZY_SCORE) return tokenScore;
+    return this.characterSimilarity(text, phrase);
   }
 
   private characterSimilarity(text: string, phrase: string): number {
     const max = Math.max(text.length, phrase.length);
     if (!max) return 0;
-    const distance = this.levenshtein(text, phrase);
-    return 1 - distance / max;
+    return 1 - this.levenshtein(text, phrase) / max;
   }
 
   private levenshtein(a: string, b: string): number {
-    const previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+    const previous = Array.from({ length: b.length + 1 }, (_, index) => index);
     for (let i = 1; i <= a.length; i += 1) {
       const current = [i];
       for (let j = 1; j <= b.length; j += 1) {
