@@ -10,6 +10,8 @@ import { VOICE_PROFILES, getStoredVoiceProfile, setStoredVoiceProfile, speakAssi
 
 type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; meta?: string };
 
+type CopyEntry = typeof copy.en;
+
 const copy = {
   en: {
     title: 'Your Assistant', subtitle: 'Just talk. I use your context, plans and preferences.', placeholder: 'Or type here as a fallback…', send: 'Send', back: 'Back', voice: 'Voice',
@@ -21,7 +23,9 @@ const copy = {
     welcome: 'من اینجام. راحت و طبیعی حرف بزن؛ جزئیات کار رو خودم جمع می‌کنم و چیزهای مهم رو یادت نگه می‌دارم.', error: 'الان نتونستم به دستیار وصل بشم. اتصال رو بررسی کن و دوباره امتحان کن.', done: 'انجام شد', understood: 'متوجه شدم', historyError: 'نتونستم گفت‌وگوی قبلی رو بازیابی کنم.',
     idle: 'هر وقت آماده بودی باهام حرف بزن', listening: 'دارم گوش می‌دم…', thinking: 'دارم فکر می‌کنم…', speaking: 'دارم جواب می‌دم…', saved: 'صدا ذخیره شد', voices: 'صدای منو انتخاب کن', micError: 'فعلاً ورودی صوتی در دسترس نیست.',
   },
-};
+} as const;
+
+const getCopy = (locale: AppLocale): CopyEntry => copy[locale === 'fa' || locale.startsWith('fa-') ? 'fa' : 'en'];
 
 const mapHistory = (turns: AssistantHistoryTurn[]): ChatMessage[] => turns.map((turn) => ({
   id: turn.id,
@@ -52,14 +56,15 @@ export default function AssistantScreen() {
       if (!active) return;
       setLocale(next);
       setVoiceProfile(storedVoice);
+      const nextCopy = getCopy(next);
       try {
         const history = await getAssistantHistory(40);
         if (!active) return;
-        setMessages(history.length ? mapHistory(history) : [{ id: 'welcome', role: 'assistant', text: copy[next].welcome }]);
+        setMessages(history.length ? mapHistory(history) : [{ id: 'welcome', role: 'assistant', text: nextCopy.welcome }]);
       } catch {
         if (!active) return;
         setHistoryNotice(true);
-        setMessages([{ id: 'welcome', role: 'assistant', text: copy[next].welcome }]);
+        setMessages([{ id: 'welcome', role: 'assistant', text: nextCopy.welcome }]);
       } finally {
         if (active) setLoadingHistory(false);
       }
@@ -72,7 +77,7 @@ export default function AssistantScreen() {
     void stopAssistantSpeech();
   }, []);
 
-  const ui = copy[locale];
+  const ui = getCopy(locale);
   const rtl = useMemo(() => isRTL(locale), [locale]);
 
   const submitText = async (text: string, fromVoice = false) => {
@@ -175,12 +180,9 @@ export default function AssistantScreen() {
         ) : null}
 
         <View style={[styles.subHeader, rtl && styles.rtl]}><Text style={styles.subtitle}>{ui.subtitle}</Text></View>
-
         <ScrollView contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled">
-          <Pressable onPress={() => void startVoice()} disabled={sending}>
-            <AssistantVoiceOrb state={voiceState} label={orbLabel} />
-          </Pressable>
-          {loadingHistory ? <View style={styles.loadingHistory}><ActivityIndicator size="small" /><Text style={styles.meta}>{locale === 'fa' ? 'در حال بازیابی گفت‌وگو…' : 'Restoring conversation…'}</Text></View> : null}
+          <Pressable onPress={() => void startVoice()} disabled={sending}><AssistantVoiceOrb state={voiceState} label={orbLabel} /></Pressable>
+          {loadingHistory ? <View style={styles.loadingHistory}><ActivityIndicator size="small" /><Text style={styles.meta}>{locale === 'fa' || locale.startsWith('fa-') ? 'در حال بازیابی گفت‌وگو…' : 'Restoring conversation…'}</Text></View> : null}
           {messages.map((message) => (
             <View key={message.id} style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.assistantBubble, rtl && styles.rtlBubble]}>
               <Text style={[styles.bubbleText, message.role === 'user' ? styles.userText : styles.assistantText, rtl && styles.rtlText]}>{message.text}</Text>
