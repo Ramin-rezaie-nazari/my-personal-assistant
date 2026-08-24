@@ -1,13 +1,160 @@
 import { Injectable, Optional } from '@nestjs/common';
 
 import { BrainOrchestratorService } from '../../personal-brain/services/brain-orchestrator.service';
-import { NaturalActionExecutionService } from './natural-action-execution.service';
+import { BrainResponse } from '../../personal-brain/types';
 import { ContextualCommandService } from './contextual-command.service';
 import { ConversationContextService } from './conversation-context.service';
 import { LocalLanguageUnderstandingService } from './local-language-understanding.service';
-import { SemanticMultilingualUnderstandingService } from './semantic-multilingual-understanding.service';
+import { NaturalActionExecutionService } from './natural-action-execution.service';
 import { PlanningService } from './planning.service';
-import { BrainResponse } from '../../personal-brain/types';
+import { SemanticMultilingualUnderstandingService } from './semantic-multilingual-understanding.service';
+
+type LocalIntentResponse = {
+  intent: string;
+  nextAction: string;
+  messages: Record<string, string>;
+};
+
+const LOCAL_INTENT_RESPONSES: Record<string, LocalIntentResponse> = {
+  ADD_TO_BASKET: {
+    intent: 'shopping',
+    nextAction: 'add_to_basket',
+    messages: {
+      'fa-IR': 'باشه، به سبد خرید اضافه‌اش می‌کنم.',
+      'en-US': 'Sure, I’ll add it to your basket.',
+      'en-GB': 'Sure, I’ll add it to your basket.',
+      'es-ES': 'Claro, lo añadiré a tu cesta.',
+      'es-MX': 'Claro, lo agrego a tu carrito.',
+      'fr-FR': 'Bien sûr, je l’ajoute à ton panier.',
+      'de-DE': 'Klar, ich füge es deinem Warenkorb hinzu.',
+      'it-IT': 'Certo, lo aggiungo al carrello.',
+      'pt-BR': 'Claro, vou adicionar ao seu carrinho.',
+      'ru-RU': 'Хорошо, добавлю это в корзину.',
+      'tr-TR': 'Tabii, bunu sepete ekleyeceğim.',
+      'ja-JP': 'わかりました。カートに追加します。',
+      'zh-CN': '好的，我会把它加入购物车。',
+      'ar-SA': 'بالتأكيد، سأضيفه إلى السلة.',
+    },
+  },
+  REMOVE_FROM_BASKET: {
+    intent: 'shopping',
+    nextAction: 'remove_from_basket',
+    messages: {
+      'fa-IR': 'باشه، از سبد خرید حذفش می‌کنم.',
+      'en-US': 'Sure, I’ll remove it from your basket.',
+      'en-GB': 'Sure, I’ll remove it from your basket.',
+      'es-ES': 'Claro, lo quitaré de tu cesta.',
+      'es-MX': 'Claro, lo quitaré de tu carrito.',
+      'fr-FR': 'Bien sûr, je le retire de ton panier.',
+      'de-DE': 'Klar, ich entferne es aus deinem Warenkorb.',
+      'it-IT': 'Certo, lo rimuovo dal carrello.',
+      'pt-BR': 'Claro, vou remover do seu carrinho.',
+      'ru-RU': 'Хорошо, уберу это из корзины.',
+      'tr-TR': 'Tabii, bunu sepetten çıkaracağım.',
+      'ja-JP': 'わかりました。カートから削除します。',
+      'zh-CN': '好的，我会把它从购物车移除。',
+      'ar-SA': 'بالتأكيد، سأزيله من السلة.',
+    },
+  },
+  RECOMMEND_MEAL: {
+    intent: 'nutrition',
+    nextAction: 'recommend_meal',
+    messages: {
+      'fa-IR': 'حتماً، بر اساس اطلاعات خودت یک گزینه مناسب پیدا می‌کنم.',
+      'en-US': 'Absolutely. I’ll find a good option based on your profile.',
+      'en-GB': 'Absolutely. I’ll find a good option based on your profile.',
+      'es-ES': 'Claro. Buscaré una opción adecuada según tu perfil.',
+      'es-MX': 'Claro. Buscaré una opción adecuada según tu perfil.',
+      'fr-FR': 'Bien sûr. Je vais chercher une option adaptée à ton profil.',
+      'de-DE': 'Klar. Ich suche eine passende Option auf Basis deines Profils.',
+      'it-IT': 'Certo. Cercherò un’opzione adatta al tuo profilo.',
+      'pt-BR': 'Claro. Vou encontrar uma opção adequada ao seu perfil.',
+      'ru-RU': 'Конечно. Подберу подходящий вариант по твоему профилю.',
+      'tr-TR': 'Tabii. Profiline göre uygun bir seçenek bulacağım.',
+      'ja-JP': 'もちろんです。あなたのプロフィールに合うものを探します。',
+      'zh-CN': '当然可以。我会根据你的个人情况找一个合适的选择。',
+      'ar-SA': 'بالتأكيد، سأبحث عن خيار مناسب وفقًا لملفك.',
+    },
+  },
+  GET_NUTRITION_SUMMARY: {
+    intent: 'nutrition',
+    nextAction: 'get_nutrition_summary',
+    messages: {
+      'fa-IR': 'حتماً، خلاصه تغذیه امروزت رو بررسی می‌کنم.',
+      'en-US': 'Sure, I’ll check your nutrition summary for today.',
+      'en-GB': 'Sure, I’ll check your nutrition summary for today.',
+      'es-ES': 'Claro, revisaré tu resumen de nutrición de hoy.',
+      'es-MX': 'Claro, revisaré tu resumen de nutrición de hoy.',
+      'fr-FR': 'Bien sûr, je vais vérifier ton résumé nutritionnel du jour.',
+      'de-DE': 'Klar, ich prüfe deine heutige Ernährungsübersicht.',
+      'it-IT': 'Certo, controllo il riepilogo nutrizionale di oggi.',
+      'pt-BR': 'Claro, vou conferir seu resumo nutricional de hoje.',
+      'ru-RU': 'Конечно, проверю твою сводку питания за сегодня.',
+      'tr-TR': 'Tabii, bugünkü beslenme özetini kontrol edeceğim.',
+      'ja-JP': 'もちろんです。今日の栄養の概要を確認します。',
+      'zh-CN': '好的，我会查看你今天的营养摘要。',
+      'ar-SA': 'بالتأكيد، سأراجع ملخص تغذيتك اليوم.',
+    },
+  },
+  CREATE_REMINDER: {
+    intent: 'reminder',
+    nextAction: 'create_reminder',
+    messages: {
+      'fa-IR': 'حتماً، یادآوری رو برایت آماده می‌کنم.',
+      'en-US': 'Absolutely, I’ll set that reminder up for you.',
+      'en-GB': 'Absolutely, I’ll set that reminder up for you.',
+      'es-ES': 'Claro, prepararé ese recordatorio para ti.',
+      'es-MX': 'Claro, prepararé ese recordatorio para ti.',
+      'fr-FR': 'Bien sûr, je vais préparer ce rappel pour toi.',
+      'de-DE': 'Klar, ich richte die Erinnerung für dich ein.',
+      'it-IT': 'Certo, preparo il promemoria per te.',
+      'pt-BR': 'Claro, vou preparar esse lembrete para você.',
+      'ru-RU': 'Конечно, подготовлю это напоминание для тебя.',
+      'tr-TR': 'Tabii, hatırlatıcıyı senin için hazırlayacağım.',
+      'ja-JP': 'もちろんです。リマインダーを設定します。',
+      'zh-CN': '当然可以，我会帮你设置这个提醒。',
+      'ar-SA': 'بالتأكيد، سأجهز هذا التذكير لك.',
+    },
+  },
+  UPDATE_REQUEST: {
+    intent: 'assistant',
+    nextAction: 'update_contextual_request',
+    messages: {
+      'fa-IR': 'باشه، درخواست قبلی رو با تغییر جدیدت به‌روزرسانی می‌کنم.',
+      'en-US': 'Sure, I’ll update the previous request with that change.',
+      'en-GB': 'Sure, I’ll update the previous request with that change.',
+      'es-ES': 'Claro, actualizaré la solicitud anterior con ese cambio.',
+      'fr-FR': 'Bien sûr, je vais mettre à jour la demande précédente.',
+      'de-DE': 'Klar, ich aktualisiere die vorherige Anfrage entsprechend.',
+      'it-IT': 'Certo, aggiornerò la richiesta precedente con questa modifica.',
+      'pt-BR': 'Claro, vou atualizar o pedido anterior com essa alteração.',
+      'ru-RU': 'Хорошо, обновлю предыдущий запрос с этим изменением.',
+      'tr-TR': 'Tabii, önceki isteği bu değişiklikle güncelleyeceğim.',
+      'ja-JP': 'わかりました。前のリクエストをその変更で更新します。',
+      'zh-CN': '好的，我会按这个变化更新之前的请求。',
+      'ar-SA': 'بالتأكيد، سأحدّث الطلب السابق بهذا التغيير.',
+    },
+  },
+  CANCEL_REQUEST: {
+    intent: 'assistant',
+    nextAction: 'cancel_contextual_request',
+    messages: {
+      'fa-IR': 'باشه، درخواست قبلی رو لغو می‌کنم.',
+      'en-US': 'Okay, I’ll cancel the previous request.',
+      'en-GB': 'Okay, I’ll cancel the previous request.',
+      'es-ES': 'De acuerdo, cancelaré la solicitud anterior.',
+      'fr-FR': 'D’accord, j’annule la demande précédente.',
+      'de-DE': 'Okay, ich storniere die vorherige Anfrage.',
+      'it-IT': 'Va bene, annullo la richiesta precedente.',
+      'pt-BR': 'Tudo bem, vou cancelar o pedido anterior.',
+      'ru-RU': 'Хорошо, отменю предыдущий запрос.',
+      'tr-TR': 'Tamam, önceki isteği iptal edeceğim.',
+      'ja-JP': 'わかりました。前のリクエストをキャンセルします。',
+      'zh-CN': '好的，我会取消之前的请求。',
+      'ar-SA': 'حسنًا، سأُلغي الطلب السابق.',
+    },
+  },
+};
 
 @Injectable()
 export class AssistantService {
@@ -29,23 +176,15 @@ export class AssistantService {
 
   async getHistory(userId: string, limit = 24) {
     const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
-    return (await this.conversationContextService.get(userId)).turns.slice(
-      -safeLimit,
-    );
+    return (await this.conversationContextService.get(userId)).turns.slice(-safeLimit);
   }
 
   async confirm(userId: string, token: string) {
-    const receipt = await this.naturalActionExecutionService.confirm(
-      userId,
-      token,
-    );
+    const receipt = await this.naturalActionExecutionService.confirm(userId, token);
     await this.conversationContextService.append({
       userId,
       role: 'assistant',
-      text:
-        receipt.status === 'completed'
-          ? 'تأیید شد و انجام شد.'
-          : receipt.reason,
+      text: receipt.status === 'completed' ? 'تأیید شد و انجام شد.' : receipt.reason,
       action: receipt.action,
       executionId: receipt.decisionId,
       resourceType: this.resourceTypeFor(receipt.action),
@@ -54,15 +193,8 @@ export class AssistantService {
   }
 
   async process(input: string, userId: string) {
-    await this.conversationContextService.append({
-      userId,
-      role: 'user',
-      text: input,
-    });
-    const contextualCommand = await this.contextualCommandService.resolve(
-      userId,
-      input,
-    );
+    await this.conversationContextService.append({ userId, role: 'user', text: input });
+    const contextualCommand = await this.contextualCommandService.resolve(userId, input);
     const local = this.semanticMultilingualUnderstandingService
       ? this.semanticMultilingualUnderstandingService.understand(input)
       : this.localLanguageUnderstandingService?.understand(input);
@@ -87,35 +219,24 @@ export class AssistantService {
         } as BrainResponse)
       : ((local ? this.responseForLocalIntent(local) : undefined) ??
         (await this.brainOrchestratorService.processRequest(input, userId)));
-    const executionResponse = this.resolveContextualExecution(
-      response,
-      contextualCommand,
-      input,
-    );
+    const executionResponse = this.resolveContextualExecution(response, contextualCommand, input);
     const execution = executionResponse.nextAction
-      ? await this.naturalActionExecutionService.execute(
-          input,
+      ? await this.naturalActionExecutionService.execute(input, userId, executionResponse, {
           userId,
-          executionResponse,
-          {
-            userId,
-            referencesPrevious: contextualCommand.referencesPrevious,
-            previousAction: contextualCommand.targetAction,
-            previousExecutionId: contextualCommand.targetExecutionId,
-            targetResourceType: contextualCommand.targetResourceType,
-            targetResourceId: contextualCommand.targetResourceId,
-            operation: contextualCommand.operation,
-            localUnderstanding: local,
-            localPlan: plan,
-          },
-        )
+          referencesPrevious: contextualCommand.referencesPrevious,
+          previousAction: contextualCommand.targetAction,
+          previousExecutionId: contextualCommand.targetExecutionId,
+          targetResourceType: contextualCommand.targetResourceType,
+          targetResourceId: contextualCommand.targetResourceId,
+          operation: contextualCommand.operation,
+          localUnderstanding: local,
+          localPlan: plan,
+        })
       : undefined;
 
     const finalResponse = {
       ...executionResponse,
-      message: execution?.executed
-        ? execution.message
-        : (execution?.message ?? executionResponse.message),
+      message: execution?.executed ? execution.message : (execution?.message ?? executionResponse.message),
       ...(execution ? { execution } : {}),
       metadata: {
         ...(executionResponse.metadata ?? {}),
@@ -126,18 +247,11 @@ export class AssistantService {
     };
     const receipt = execution?.receipt;
     const resourceId =
-      receipt &&
-      typeof receipt === 'object' &&
-      receipt !== null &&
-      'result' in receipt
-        ? this.extractExecutionEntityId(
-            (receipt as { result?: unknown }).result,
-          )
+      receipt && typeof receipt === 'object' && receipt !== null && 'result' in receipt
+        ? this.extractExecutionEntityId((receipt as { result?: unknown }).result)
         : undefined;
     const executionId = this.extractDecisionId(receipt);
-    const resourceType = this.resourceTypeFor(
-      execution?.action ?? finalResponse.nextAction,
-    );
+    const resourceType = this.resourceTypeFor(execution?.action ?? finalResponse.nextAction);
     await this.conversationContextService.append({
       userId,
       role: 'assistant',
@@ -155,19 +269,16 @@ export class AssistantService {
     local: ReturnType<LocalLanguageUnderstandingService['understand']>,
   ): BrainResponse | undefined {
     if (local.intent === 'UNKNOWN' || local.confidence < 0.7) return undefined;
-    const map: Record<string, { intent: string; nextAction: string; message: string }> = {
-      ADD_TO_BASKET: { intent: 'shopping', nextAction: 'add_to_basket', message: 'باشه، به سبد خرید اضافه‌اش می‌کنم.' },
-      REMOVE_FROM_BASKET: { intent: 'shopping', nextAction: 'remove_from_basket', message: 'باشه، از سبد خرید حذفش می‌کنم.' },
-      RECOMMEND_MEAL: { intent: 'nutrition', nextAction: 'recommend_meal', message: 'حتماً، بر اساس اطلاعات خودت یک گزینه مناسب پیدا می‌کنم.' },
-      GET_NUTRITION_SUMMARY: { intent: 'nutrition', nextAction: 'get_nutrition_summary', message: 'حتماً، خلاصه تغذیه امروزت رو بررسی می‌کنم.' },
-      CREATE_REMINDER: { intent: 'reminder', nextAction: 'create_reminder', message: 'حتماً، یادآوری رو برایت آماده می‌کنم.' },
-      UPDATE_REQUEST: { intent: 'assistant', nextAction: 'update_contextual_request', message: 'باشه، درخواست قبلی رو با تغییر جدیدت به‌روزرسانی می‌کنم.' },
-      CANCEL_REQUEST: { intent: 'assistant', nextAction: 'cancel_contextual_request', message: 'باشه، درخواست قبلی رو لغو می‌کنم.' },
+    const selected = LOCAL_INTENT_RESPONSES[local.intent];
+    if (!selected) return undefined;
+    const message = selected.messages[local.language] ?? selected.messages['en-US'] ?? selected.messages['fa-IR'];
+    return {
+      intent: selected.intent,
+      nextAction: selected.nextAction,
+      message,
+      confidence: local.confidence,
+      metadata: { local: true, entities: local.entities, language: local.language },
     };
-    const selected = map[local.intent];
-    return selected
-      ? { ...selected, confidence: local.confidence, metadata: { local: true, entities: local.entities } }
-      : undefined;
   }
 
   private resolveContextualExecution(
@@ -202,11 +313,13 @@ export class AssistantService {
     const value = (result as { id?: unknown }).id;
     return typeof value === 'string' && value ? value : undefined;
   }
+
   private extractDecisionId(receipt: unknown): string | undefined {
     if (!receipt || typeof receipt !== 'object') return undefined;
     const value = (receipt as { decisionId?: unknown }).decisionId;
     return typeof value === 'string' && value ? value : undefined;
   }
+
   private resourceTypeFor(value?: string): string | undefined {
     const text = (value ?? '').toLowerCase();
     if (text.includes('reminder')) return 'reminder';
