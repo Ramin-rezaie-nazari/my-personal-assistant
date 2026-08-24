@@ -100,4 +100,20 @@ describe('AssistantService', () => {
     expect(result.language).toBe('fa-IR');
     expect(result.intent).toBe('CREATE_REMINDER');
   });
+
+  it('responds in the active locale for locally understood intents', async () => {
+    const understand = jest.fn().mockReturnValue({
+      intent: 'RECOMMEND_MEAL',
+      confidence: 0.93,
+      entities: {},
+      normalizedText: 'dinner ideas',
+      language: 'en-US',
+      languageConfidence: 0.98,
+    });
+    const service = makeService({ understand });
+    const result = await service.process('dinner ideas', 'user-123');
+    expect(result.intent).toBe('nutrition');
+    expect(result.nextAction).toBe('recommend_meal');
+    expect(result.message).toBe('Absolutely. I’ll find a good option based on your profile.');
+  });
 });
