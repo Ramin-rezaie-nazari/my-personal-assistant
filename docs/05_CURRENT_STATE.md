@@ -6,11 +6,11 @@
 
 ## Current workstream
 
-### Food Decision Brain — near complete / validation phase
+### Food Decision Brain — final validation phase
 
 ```text
 Food Decision Brain
-█████████████████████░  ~97%
+██████████████████████░  ~98%
 
 ✅ Prisma schema/client + database foundation
 ✅ Recipe scaling / serving intelligence
@@ -28,7 +28,8 @@ Food Decision Brain
 ✅ Recommendation E2E authentication coverage
 ✅ Recommendation E2E deterministic ranking + explanations
 ✅ Recommendation E2E Prisma cleanup / process-exit fix verified
-🟡 E2E harness hardened; final CI validation pending
+✅ Final CI validation gates added: Prisma validate/generate/migrate, typecheck, lint, build, unit, E2E
+🟡 CI run on the final branch state pending external GitHub Actions result
 ⬜ Full backend E2E validation on the final branch state
 ⬜ Final lint/build confirmation on the final branch state
 ⬜ Mark Food Decision Brain 100%
@@ -42,9 +43,9 @@ Food Decision Brain
 - Backend typecheck reached green after excluding `prisma.config.ts` at the root level of `tsconfig.json`.
 - Remaining recipe operating-loop lint errors were reduced to warnings and then the remaining unsafe `any` usage / unused helper were removed in the current branch.
 - E2E test setup is now deterministic for clean checkouts: `test/setup/jest.setup.ts` supplies test-only `APP_NAME` and JWT defaults while still allowing caller-provided values. `DATABASE_URL` remains external and required.
-- Recommendation E2E is now green: **1 suite / 2 tests passed**. Authentication protection and deterministic ranked food recommendations with explanations both pass.
+- Recommendation E2E is green: **1 suite / 2 tests passed**. Authentication protection and deterministic ranked food recommendations with explanations both pass.
 - Recommendation E2E seed data was adjusted to satisfy the protein constraint, and Prisma module cleanup was added so the test process exits cleanly without the previous open-connection warning.
-- Latest verified recommendation-validation commit: `7608f63b` (`fix(backend): close prisma connection on module destroy`).
+- Latest verified recommendation-validation commit before CI hardening: `7608f63b` (`fix(backend): close prisma connection on module destroy`).
 
 ## Changes made in this validation pass
 
@@ -52,10 +53,11 @@ Food Decision Brain
 - Added a Jest `moduleNameMapper` so ESM-style `.js` imports resolve correctly against TypeScript sources during unit tests.
 - Increased the deterministic recipe-image compression test timeout to 15 seconds; the test is computationally heavier than a normal unit test and previously hit Jest's default 5-second limit.
 - Hardened Jest E2E setup with deterministic non-secret defaults for `NODE_ENV`, `APP_NAME`, and JWT test configuration, eliminating dependence on an untracked `.env.test` for those values.
-- Updated backend CI to run on `main` and `work/**` branches and added manual `workflow_dispatch`, so work branches can be continuously validated instead of relying only on local testing.
 - Restored `supertest` for backend E2E validation and verified the recommendation E2E end-to-end.
 - Fixed the recommendation E2E seed so the intended recommendation survives the protein constraint and is returned by the ranking pipeline.
 - Added Prisma module-destroy cleanup and verified the recommendation E2E no longer reports the previous `Jest did not exit` connection warning.
+- Hardened `.github/workflows/backend-ci.yml` so the backend gate now runs Prisma validation/generation/migrations, backend typecheck, lint, build, full unit tests, and API E2E tests in CI.
+- CI dependency installation was switched to `pnpm install --no-frozen-lockfile` on this branch because the current branch manifest and lockfile are not yet perfectly synchronized; the lockfile still needs a clean generated reconciliation before the branch can return to a strict frozen-lockfile policy.
 
 ## Product direction — permanent architectural constraints
 
@@ -119,11 +121,11 @@ The local model is **not** expected to imitate a frontier chatbot by itself. The
 
 ```text
 [CURRENT]
-Food Decision Brain → ~97%
+Food Decision Brain → ~98%
         ↓
-Full backend E2E validation
+CI validation result
         ↓
-Final lint/build confirmation
+Strict lockfile reconciliation
         ↓
 Food Decision Brain → 100%
         ↓
