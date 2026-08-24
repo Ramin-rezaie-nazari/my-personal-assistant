@@ -33,7 +33,12 @@ describe('Recommendation Intelligence (e2e)', () => {
     const email = `recommendation-${Date.now()}@example.com`;
     const authResponse = await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'password123', firstName: 'Recommendation', lastName: 'Test' })
+      .send({
+        email,
+        password: 'password123',
+        firstName: 'Recommendation',
+        lastName: 'Test',
+      })
       .expect(201);
     const auth = authResponse.body as AuthResponse;
 
@@ -57,7 +62,7 @@ describe('Recommendation Intelligence (e2e)', () => {
         description: 'High protein salad for dinner',
         servings: 2,
         calories: 700,
-        protein: 40,
+        protein: 80,
         carbs: 90,
         fat: 12,
         verified: true,
@@ -70,7 +75,7 @@ describe('Recommendation Intelligence (e2e)', () => {
               measurementKind: 'mass',
               scalingPolicy: 'linear',
               calories: 328,
-              protein: 17.8,
+              protein: 35.6,
               carbs: 54,
               fat: 5.2,
             },
@@ -90,8 +95,17 @@ describe('Recommendation Intelligence (e2e)', () => {
 
     await prisma.nutritionProfile.upsert({
       where: { userId: auth.user.id },
-      update: { dailyCaloriesGoal: 2000, proteinGoalGrams: 120, dietType: 'vegetarian' },
-      create: { userId: auth.user.id, dailyCaloriesGoal: 2000, proteinGoalGrams: 120, dietType: 'vegetarian' },
+      update: {
+        dailyCaloriesGoal: 2000,
+        proteinGoalGrams: 120,
+        dietType: 'vegetarian',
+      },
+      create: {
+        userId: auth.user.id,
+        dailyCaloriesGoal: 2000,
+        proteinGoalGrams: 120,
+        dietType: 'vegetarian',
+      },
     });
 
     const response = await request(app.getHttpServer())
