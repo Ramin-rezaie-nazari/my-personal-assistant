@@ -13,24 +13,40 @@
 
 **Overall workstream: NOT YET 100%.**
 
-The current code has deterministic multilingual intent coverage, a semantic understanding layer, entity/context regression coverage, and an adversarial semantic suite. The remaining certification gap is not cosmetic: we still need broad locale-wide semantic coverage, native response behavior, robust negation/conditionals, end-to-end STT/TTS routing, and real-device speech validation.
+The semantic foundation has now been hardened with locale-aware semantic fallback over the existing 51-locale lexicons, explicit paraphrase ranking, ambiguity refusal, stronger false-positive protection, speech-error repair, adversarial certification coverage, and a dedicated GitHub Actions certification gate. The current certification branch is intentionally stricter than the previous deterministic phrase-only contract.
 
-The product already treats 51 locales as first-class language capabilities and maintains 10 selectable voice profiles. The current green contract is therefore a strong engineering foundation, but it is not proof of unconstrained native-level conversation. fileciteturn566file0L2-L10
+A dedicated certification PR is open as **#59** (`work/global-multilingual-voice-100-cert` → `work/global-multilingual-voice-100`). The certification workflow has been registered and triggered; its latest run is currently **queued**, so this workstream is not being declared green on CI evidence yet.
 
-## 1. Semantic Multilingual Understanding — 50% complete
+The remaining gap is still substantial: complete colloquial coverage, contextual references, long-form semantics, locale-wide negation/conditionals, cross-language equivalence, free conversation, entity/context depth, fallback/routing, native responses, and real-device speech validation.
 
-- [x] **1.1 Paraphrase engine foundation** — semantic layer recovers natural paraphrases for representative locales.
+The product currently models **51 locales** and **10 selectable voice profiles**. The engineering contract is therefore strong, but it is not proof of unconstrained native-level conversation.
+
+## 1. Semantic Multilingual Understanding — foundation substantially hardened
+
+- [x] **1.1 Paraphrase engine foundation** — explicit paraphrase recovery exists for representative locales, and semantic fallback now also evaluates the runtime lexicon for the active locale instead of limiting recovery to a small hard-coded language subset.
 - [ ] **1.2 Colloquial language** — contractions, slang, filler words, fragments and informal speech across all 51 locales.
-- [x] **1.3 Semantic intent ranking foundation** — candidates are scored and ranked instead of trusting first-match order.
+- [x] **1.3 Semantic intent ranking foundation** — candidates are scored and ranked instead of trusting first-match order; candidate-margin rules prevent weak semantic overlap from becoming an action.
 - [x] **1.4 Multi-intent clause splitting foundation** — English, Persian and additional East Asian / European conjunction boundaries are recognized.
-- [x] **1.5 Ambiguity refusal foundation** — weak overlap such as “help me later” is explicitly prevented from becoming an action.
-- [x] **1.6 Adversarial semantic regression foundation** — ambiguity, deterministic behavior, clause order and speech-corruption tests added.
-- [x] **1.7 Single-character ASR repair foundation** — duplicated-character and adjacent-transposition recovery is exercised across the 51-locale reminder matrix.
-- [ ] **1.8 Contextual references** — complete multi-turn reference resolution across all locales.
+- [x] **1.5 Ambiguity refusal foundation** — weak overlap such as “help me later” is explicitly prevented from becoming an action; non-action and negation markers can also veto unsafe base intents.
+- [x] **1.6 Adversarial semantic regression foundation** — ambiguity, deterministic behavior, clause order, lexical false positives and speech-corruption cases are covered by dedicated suites; a global certification matrix now exercises all 51 reminder locales plus representative semantic and free-conversation negatives.
+- [x] **1.7 Single-character ASR repair foundation** — duplicated-character and adjacent-transposition recovery is exercised across the multilingual reminder matrix.
+- [ ] **1.8 Contextual references** — complete multi-turn reference resolution across all locales. **NEXT ACTIVE TARGET.** The current ContextualCommandService only contains a limited reference vocabulary and must be expanded and certified locale-wide.
 - [ ] **1.9 Long utterances** — preserve meaning across long, naturally spoken requests with subordinate clauses and multiple constraints.
 - [ ] **1.10 Negation and conditionals** — complete locale-wide support for don’t / never / unless / if / only-if / not-anymore semantics.
 - [ ] **1.11 Cross-language semantic equivalence** — one semantic model with comparable behavior across the full locale matrix, not just representative locales.
 - [ ] **1.12 Free-conversation semantic coverage** — distinguish questions, statements, opinions, explanations, jokes, follow-ups and commands without forcing every utterance into an action intent.
+
+### Semantic certification completed in this pass
+
+- [x] Dedicated global multilingual certification suite added.
+- [x] 51-locale reminder contract included in certification coverage.
+- [x] Representative dinner/meal semantic cases included across multiple scripts.
+- [x] Free-conversation false-positive cases included as explicit negative tests.
+- [x] Determinism repeated across the full reminder matrix.
+- [x] Semantic matcher hardened against short-word substring collisions while preserving CJK substring behavior.
+- [x] Locale-wide runtime-lexicon semantic fallback added so semantic recovery can use the active locale's existing intent vocabulary.
+- [x] Semantic layer can refuse unsafe lexical results before returning an actionable intent when negation/non-action evidence is present.
+- [ ] Certification CI run must finish green before this foundation is called externally verified.
 
 ## 2. Entity + Context Understanding — 35% complete
 
@@ -125,6 +141,7 @@ The goal is not “make tests green”; the goal is to actively try to make the 
 - Semantic ambiguity refusal now requires materially stronger evidence before converting an unknown request into an actionable intent.
 - Semantic clause splitting now includes additional English, Persian, Chinese, Japanese, Korean and European conjunction forms.
 - Assistant unit-test dependency wiring has been aligned with the semantic layer so constructor mocks cannot silently call the wrong service.
+- `global-multilingual-understanding-certification.spec.ts` now provides a single high-level certification gate for the current semantic foundation.
 
 ## 100% certification gate
 
@@ -145,4 +162,4 @@ C becomes **100%** only when every unchecked item above is green **and**:
 
 ## Honest current checkpoint
 
-The current implementation is substantially stronger than the original deterministic phrase-only baseline, but it is **not** yet a defensible claim of “native-level understanding in all languages.” The repository itself correctly distinguishes a green engineering contract from unconstrained speech understanding and real-device/provider validation. fileciteturn568file0L2-L10
+The current implementation is materially stronger than the original deterministic phrase-only baseline, but it is **not yet** a defensible claim of “native-level understanding in all languages.” The certification branch is deliberately keeping this claim blocked until the semantic gate, context, routing, native responses and real-device speech evidence are all green.
