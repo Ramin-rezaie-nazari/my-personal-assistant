@@ -24,7 +24,7 @@ Food Decision Brain
 ✅ Backend unit suite: 156 / 156 suites passed
 ✅ Backend unit tests: 414 / 414 passed
 ✅ Recipe image pipeline test: 2 / 2 passed
-🟡 Final CI validation on the current branch
+🟡 E2E harness hardened; final CI validation pending
 ⬜ Recommendation E2E validation on the final branch state
 ⬜ Full backend E2E validation on the final branch state
 ⬜ Final lint/build confirmation on the final branch state
@@ -38,12 +38,14 @@ Food Decision Brain
 - Recipe image pipeline test passed: **2/2 tests green** after addressing the Jest ESM import mapping and the image-processing test timeout.
 - Backend typecheck reached green after excluding `prisma.config.ts` at the root level of `tsconfig.json`.
 - Remaining recipe operating-loop lint errors were reduced to warnings and then the remaining unsafe `any` usage / unused helper were removed in the current branch.
+- E2E test setup is now deterministic for clean checkouts: `test/setup/jest.setup.ts` supplies test-only `APP_NAME` and JWT defaults while still allowing caller-provided values. `DATABASE_URL` remains external and required.
 
 ## Changes made in this validation pass
 
 - Removed the remaining `food-operating-loop.service.ts` lint debt by using the recipe-domain measurement/scaling contracts instead of `any` and deleting the unused measurement helper.
 - Added a Jest `moduleNameMapper` so ESM-style `.js` imports resolve correctly against TypeScript sources during unit tests.
 - Increased the deterministic recipe-image compression test timeout to 15 seconds; the test is computationally heavier than a normal unit test and previously hit Jest's default 5-second limit.
+- Hardened Jest E2E setup with deterministic non-secret defaults for `NODE_ENV`, `APP_NAME`, and JWT test configuration, eliminating dependence on an untracked `.env.test` for those values.
 - Updated backend CI to run on `main` and `work/**` branches and added manual `workflow_dispatch`, so work branches can be continuously validated instead of relying only on local testing.
 
 ## Product direction — permanent architectural constraints
