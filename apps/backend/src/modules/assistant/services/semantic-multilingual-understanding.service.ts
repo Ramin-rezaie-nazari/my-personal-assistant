@@ -74,6 +74,7 @@ const MAX_SEMANTIC_CONFIDENCE = 0.96;
 const MIN_SINGLE_CANDIDATE_SCORE = 0.68;
 const MIN_CANDIDATE_MARGIN = 0.12;
 const MIN_FUZZY_SCORE = 0.58;
+const MIN_CHARACTER_MATCH_SCORE = 0.72;
 const REPAIR_CONFIDENCE = 0.78;
 
 @Injectable()
@@ -105,7 +106,9 @@ export class SemanticMultilingualUnderstandingService {
     const candidates: IntentCandidate[] = [];
     for (const [intent, phrases] of Object.entries(lexicon) as Array<[IntentCandidate['intent'], readonly string[]]>) {
       let best = 0;
-      for (const phrase of phrases) best = Math.max(best, this.similarity(normalized, this.normalize(phrase)));
+      for (const phrase of phrases) {
+        best = Math.max(best, this.similarity(normalized, this.normalize(phrase)));
+      }
       if (best >= 0.42) candidates.push({ intent, score: best, source: 'explicit-paraphrase' });
     }
     return candidates.sort((a, b) => b.score - a.score);
@@ -118,7 +121,11 @@ export class SemanticMultilingualUnderstandingService {
     const singleCandidateIsStrongEnough = !second && best.score >= MIN_SINGLE_CANDIDATE_SCORE;
     const winnerHasMeaningfulLead = !!second && best.score >= MIN_FUZZY_SCORE && best.score - second.score >= MIN_CANDIDATE_MARGIN;
     if (!singleCandidateIsStrongEnough && !winnerHasMeaningfulLead) return undefined;
-    return { ...base, intent: best.intent, confidence: Math.min(MAX_SEMANTIC_CONFIDENCE, 0.72 + best.score * 0.22) };
+    return {
+      ...base,
+      intent: best.intent,
+      confidence: Math.min(MAX_SEMANTIC_CONFIDENCE, 0.72 + best.score * 0.22),
+    };
   }
 
   private repairSingleSpeechError(input: string, preferredLanguage: string | undefined, base: LocalUnderstanding): LocalUnderstanding {
@@ -131,7 +138,9 @@ export class SemanticMultilingualUnderstandingService {
       if (seen.has(repaired)) continue;
       seen.add(repaired);
       const result = this.lexical.understand(repaired, preferredLanguage);
-      if (result.intent !== 'UNKNOWN') return { ...result, confidence: Math.min(result.confidence, REPAIR_CONFIDENCE) };
+      if (result.intent !== 'UNKNOWN') {
+        return { ...result, confidence: Math.min(result.confidence, REPAIR_CONFIDENCE) };
+      }
     }
 
     for (let index = 0; index < normalized.length - 1; index += 1) {
@@ -140,7 +149,9 @@ export class SemanticMultilingualUnderstandingService {
       [chars[index], chars[index + 1]] = [chars[index + 1], chars[index]];
       const repaired = chars.join('');
       const result = this.lexical.understand(repaired, preferredLanguage);
-      if (result.intent !== 'UNKNOWN') return { ...result, confidence: Math.min(result.confidence, REPAIR_CONFIDENCE) };
+      if (result.intent !== 'UNKNOWN') {
+        return { ...result, confidence: Math.min(result.confidence, REPAIR_CONFIDENCE) };
+      }
     }
 
     void input;
@@ -150,15 +161,21 @@ export class SemanticMultilingualUnderstandingService {
   private similarity(text: string, phrase: string): number {
     if (!text || !phrase) return 0;
     if (text.includes(phrase)) return 1;
+
     const textTokens = this.tokens(text);
     const phraseTokens = this.tokens(phrase);
     if (!textTokens.length || !phraseTokens.length) return 0;
+
     const overlap = phraseTokens.filter((token) => textTokens.includes(token)).length;
+    if (overlap === 0) return 0;
+
     const coverage = overlap / phraseTokens.length;
     const reverse = overlap / textTokens.length;
     const tokenScore = coverage * 0.72 + reverse * 0.28;
     if (tokenScore >= MIN_FUZZY_SCORE) return tokenScore;
-    return this.characterSimilarity(text, phrase);
+
+    const characterScore = this.characterSimilarity(text, phrase);
+    return characterScore >= MIN_CHARACTER_MATCH_SCORE ? characterScore : 0;
   }
 
   private characterSimilarity(text: string, phrase: string): number {
@@ -172,7 +189,11 @@ export class SemanticMultilingualUnderstandingService {
     for (let i = 1; i <= a.length; i += 1) {
       const current = [i];
       for (let j = 1; j <= b.length; j += 1) {
-        current[j] = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+        current[j] = Math.min(
+          current[j - 1] + 1,
+          previous[j] + 1,
+          previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+        );
       }
       for (let j = 0; j <= b.length; j += 1) previous[j] = current[j];
     }
@@ -185,6 +206,13 @@ export class SemanticMultilingualUnderstandingService {
   }
 
   private normalize(value: string): string {
-    return value.trim().toLowerCase().replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[ۀة]/g, 'ه').replace(/‌/g, ' ').replace(/\s+/g, ' ');
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/ي/g, 'ی')
+      .replace(/ك/g, 'ک')
+      .replace(/[ۀة]/g, 'ه')
+      .replace(/‌/g, ' ')
+      .replace(/\s+/g, ' ');
   }
 }
