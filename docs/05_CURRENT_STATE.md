@@ -16,7 +16,7 @@
 
 ```text
 Global Voice + Multilingual Understanding
-█████████████░░░░░░░  ~55%
+██████████████░░░░░░  ~65%
 
 ✅ Existing persistent user context reused by the assistant layer
 ✅ UX contract: voice-first, low-manual-input, remember-once, purposeful animation
@@ -47,21 +47,28 @@ Global Voice + Multilingual Understanding
 ✅ Comprehensive multilingual quality test added for the 51 registered locales, representative core intents, code-switching, determinism and reminder-vs-meal disambiguation
 ✅ Mobile voice quality contract check added without introducing a new test framework dependency
 ✅ Mobile voice quality command exposed as `pnpm --filter @my-personal-assistant/mobile voice:quality`
-🟡 Local multilingual quality test currently exposes real blockers: test typing, one stale locale-count assertion, code-switching/intent precedence and mobile localized-copy type errors
-⬜ Run the corrected comprehensive multilingual AssistantService quality suite locally and get every case green
-⬜ Run mobile voice quality contract locally and verify all 51 registered locales + 10 voice profiles
-⬜ Run mobile typecheck green after localized-copy and registry type fixes
+✅ Corrected comprehensive multilingual AssistantService quality suite is green: 13/13 tests passed
+✅ Representative multilingual intent matrix is green across meal recommendation, nutrition summary, basket and cancellation cases
+✅ Reminder-vs-meal precedence is green, including native-language and code-switched cases
+✅ Determinism coverage is green for repeated identical utterances
+✅ Mobile voice quality contract is green: 51 locales + 10 selectable voices + STT/TTS mapping + RTL policy + Tehran-style Persian policy + safe TTS completion
+✅ Backend typecheck is green after multilingual fixes
+✅ Backend build is green after multilingual fixes
+✅ Mobile typecheck is green after localized-copy, voice registry and locale nullability fixes
+🟡 The current green gate validates the defined deterministic multilingual quality contract; it does not prove unconstrained native-level understanding of every possible utterance
 ⬜ Validate multilingual language picker and voice flow on a real development build / device
 ⬜ Add a tested local/offline STT model provider behind the STT contract
 ⬜ Add a tested local/offline TTS model provider behind the TTS contract
 ⬜ Add multilingual local/edge STT capability detection and fallback policy validation
 ⬜ Add multilingual local/edge TTS capability detection and fallback policy validation
-⬜ Expand locale-aware entity extraction for dates, units, food aliases, quantities and colloquial speech across the matrix
+⬜ Expand locale-aware semantic entity extraction for dates, units, food aliases, quantities and colloquial speech across the matrix
 ⬜ Add country-aware locale and language policy so one language can map to multiple regional behaviors
 ⬜ Add language-specific safety/confirmation phrasing while preserving one internal intent model
 ⬜ Make local intent response messages language-native instead of Persian/English-only
+⬜ Add broad semantic/paraphrase coverage beyond the deterministic phrase matrix
 ⬜ Run a representative conversation matrix covering every supported locale
 ⬜ Run real-device speech input/output validation for each supported locale where the selected STT/TTS provider reports support
+⬜ Validate speech understanding under accents, ASR noise, slang, mixed-language speech, ambiguity and long multi-intent utterances
 ⬜ Mark Global Voice + Multilingual Understanding 100% only after real speech understanding + speech output are validated across the supported language matrix
 ```
 
@@ -133,10 +140,12 @@ Food Decision Brain
 - Final local backend validation pass reached **156/156 unit suites, 414/414 unit tests, and 5/5 E2E suites, 26/26 E2E tests green**.
 - Persistent user-context foundation was validated: **UserContextService 2/2 tests green**, **BrainStateService 1/1 test green**, **backend typecheck green**, **backend build green**.
 - Multilingual implementation now has locale-aware STT routing, replaceable speech-provider contracts, language detection, and deterministic locale-aware intent lexicons.
-- The comprehensive quality suite is now explicitly aligned to the **51 registered locales** in the voice registry; it also covers representative intent families, code-switching, determinism and reminder-vs-dinner disambiguation.
-- The mobile voice quality contract checks **51 registered locales, 10 selectable voices (5 feminine + 5 masculine), STT/TTS mapping, RTL policy, Tehran-style Persian behavior and safe TTS completion**.
-- The latest attempted local gate was **not green**: the quality suite exposed a stale 52-count expectation, tuple-vs-object test typing errors, code-switching intent precedence failures and several mobile `AppLocale` indexing/type errors. These are blockers, not completed work.
-- **Important:** no 100% claim is valid yet. Architecture/test coverage is not proof of native-level speech understanding or native-quality speech output. Real device/provider validation is still required before completion.
+- The comprehensive quality suite is explicitly aligned to the **51 registered locales** in the voice registry and now validates representative reminder, meal recommendation, nutrition, basket and cancellation intents, preferred-locale code-switching, determinism and reminder-vs-dinner disambiguation.
+- The latest multilingual gate is **green**: **2 Jest suites, 13/13 tests passed**.
+- The mobile voice quality contract is **green**: **51 registered locales, 10 selectable voices (5 feminine + 5 masculine), STT/TTS mapping, RTL policy, Tehran-style Persian behavior and safe TTS completion**.
+- Backend **typecheck** and **build** are green after the multilingual fixes.
+- Mobile **typecheck** is green after localized-copy, voice registry and locale nullability fixes.
+- The green gate proves the defined product/engineering contract and representative deterministic language matrix. It does **not** prove native-level understanding of arbitrary speech, all paraphrases, accents, slang, noisy ASR, long multi-intent conversations, or real-device/provider quality.
 
 ## Product direction — permanent architectural constraints
 
