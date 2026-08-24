@@ -50,7 +50,7 @@ describe('ContextualCommandService', () => {
     const service = makeService();
     const cases = [
       ['u1', 'remind me tomorrow and add chicken to my basket'],
-      ['u1', 'rappelle-moi demain puis ajoute le poulet au panier'],
+      ['u1', 'rappelle-moi demain et puis ajoute le poulet au panier'],
       ['u1', 'erinnere mich morgen und füge hühnchen zum warenkorb hinzu'],
       ['u1', '明天提醒我，然后把鸡肉放进购物车'],
       ['u1', 'یادم بنداز فردا و بعد مرغ رو به سبد اضافه کن'],
@@ -72,7 +72,7 @@ describe('ContextualCommandService', () => {
       'recuérdame mañana',
       'erinnere mich morgen',
       'ricordamelo domani',
-      'napomni zavtra',
+      'напомни завтра',
       'yarın hatırlat',
       '明天提醒我',
       'ذكرني غدًا',
