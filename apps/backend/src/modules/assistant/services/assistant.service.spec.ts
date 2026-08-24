@@ -11,6 +11,7 @@ describe('AssistantService', () => {
       append: jest.Mock;
       get: jest.Mock;
       understand: jest.Mock;
+      semanticUnderstand: jest.Mock;
       createPlan: jest.Mock;
     }> = {},
   ) => {
@@ -42,6 +43,18 @@ describe('AssistantService', () => {
           .fn()
           .mockReturnValue({ intent: 'UNKNOWN', confidence: 0, entities: {} }),
     } as any;
+    const semanticMultilingualUnderstanding = {
+      understand:
+        overrides.semanticUnderstand ??
+        jest.fn().mockReturnValue({
+          intent: 'UNKNOWN',
+          confidence: 0,
+          entities: {},
+          normalizedText: '',
+          language: 'en-US',
+          languageConfidence: 0,
+        }),
+    } as any;
     const planning = {
       createPlan:
         overrides.createPlan ??
@@ -60,6 +73,7 @@ describe('AssistantService', () => {
       contextual,
       conversation,
       localLanguageUnderstanding,
+      semanticMultilingualUnderstanding,
       planning,
     );
   };
