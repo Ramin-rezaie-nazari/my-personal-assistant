@@ -1,6 +1,5 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { createTestApp } from './helpers/create-test-app';
 import { PrismaService } from '../src/common/database/prisma.service';
 
@@ -10,7 +9,7 @@ type AuthResponse = {
 };
 
 describe('Recommendation Intelligence (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
   let prisma: PrismaService;
 
   beforeAll(async () => {

@@ -1,10 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { App } from 'supertest/types';
 import { createTestApp } from './helpers/create-test-app';
 
 describe('Nutrition API (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
   let accessToken: string;
 
   beforeAll(async () => {
