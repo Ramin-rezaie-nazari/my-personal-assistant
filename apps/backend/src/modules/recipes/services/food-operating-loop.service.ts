@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { RecipeServingScalingService } from '../../nutrition/recipe-intelligence/recipe-serving-scaling.service';
+import {
+  IngredientMeasurementKind,
+  IngredientScalingPolicy,
+} from '../../nutrition/recipe-intelligence/recipe-domain.types';
 import { ShoppingService } from '../../shopping/shopping.service';
 import { GlobalCountryFoodService } from './global-country-food.service';
 import { GlobalCountryFinanceService } from '../../budget-intelligence/services/global-country-finance.service';
@@ -129,8 +133,8 @@ export class FoodOperatingLoopService {
         role: 'other',
         quantity: ingredient.quantity,
         unit: ingredient.unit,
-        measurementKind: ingredient.measurementKind as any,
-        scalingPolicy: ingredient.scalingPolicy as any,
+        measurementKind: ingredient.measurementKind as IngredientMeasurementKind,
+        scalingPolicy: ingredient.scalingPolicy as IngredientScalingPolicy,
         scalingExponent: ingredient.scalingExponent ?? undefined,
         batchSize: ingredient.batchSize ?? undefined,
         maxLinearMultiplier: ingredient.maxLinearMultiplier ?? undefined,
@@ -146,15 +150,6 @@ export class FoodOperatingLoopService {
       status: recipe.verified ? 'verified' : 'draft', sourceType: recipe.userId ? 'user' : 'internal', version: 1,
     }, { targetServings, kitchenFriendlyRounding: true });
   }
-}
-
-function inferMeasurementKind(unit: string): 'mass' | 'volume' | 'count' | 'package' | 'unitless' {
-  const normalized = unit.trim().toLowerCase();
-  if (['g', 'kg', 'mg', 'oz', 'lb', 'gr', 'کیلو', 'گرم'].includes(normalized)) return 'mass';
-  if (['ml', 'l', 'tsp', 'tbsp', 'cup', 'cups', 'ml.'].includes(normalized)) return 'volume';
-  if (['piece', 'pieces', 'pcs', 'count', 'عدد'].includes(normalized)) return 'count';
-  if (['package', 'pack', 'box', 'بسته'].includes(normalized)) return 'package';
-  return 'unitless';
 }
 
 type NormalizedUnit = { kind: ComparableUnitKind; value: number } | null;
