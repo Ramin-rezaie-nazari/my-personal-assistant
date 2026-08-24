@@ -1,0 +1,1 @@
+Temporary validation marker for the current multilingual workstream. This file can be removed after CI evidence is captured.
