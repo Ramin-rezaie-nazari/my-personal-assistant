@@ -121,6 +121,20 @@ For long test runs, use the compact failure-only output pattern: execute the com
 
 This workstream reaches **100%** only when all repository-side capabilities are implemented and all technical validation is green **and** the real-device/provider gates are actually observed green. A higher percentage must never be claimed merely because code was written.
 
+## Implementation checkpoint — pending verification
+
+The current implementation pass has been applied in the repository:
+
+- ✅ Semantic paraphrase coverage expanded for 13 representative locales.
+- ✅ Colloquial meal/reminder/basket/nutrition/cancel utterances expanded substantially.
+- ✅ Spoken filler normalization added for representative locale families.
+- ✅ Common English contraction normalization added.
+- ✅ Partial/short utterance similarity scoring strengthened with ordered token overlap.
+- ✅ Clause splitting expanded to punctuation and additional natural conjunctions.
+- ✅ Dedicated semantic regression cases expanded for colloquial, incomplete and filler-heavy speech.
+- ⬜ Runtime validation still pending.
+- ⬜ Full backend/mobile regression validation still pending.
+
 ## Current checkpoint
 
-**Start now at Phase 1 — Colloquial + natural speech. Preserve all already-green deterministic multilingual behavior as a regression baseline.**
+**Continue from Phase 1 verification, then move directly into the next repository-side unchecked capability without waiting between phases. Preserve all already-green deterministic multilingual behavior as a regression baseline.**
