@@ -45,7 +45,7 @@ export function getVoiceProfileForLocale(
   locale: string | null | undefined,
 ): VoiceProfile {
   const profile = getVoiceProfile(id);
-  const language = getVoiceLanguage(locale);
+  const language = getVoiceLanguage(locale ?? 'en-US');
   return {
     ...profile,
     locale: language.code,
