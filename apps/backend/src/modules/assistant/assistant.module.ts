@@ -17,6 +17,7 @@ import { ConversationContextService } from './services/conversation-context.serv
 import { ContextualCommandService } from './services/contextual-command.service';
 import { AiProviderRouterService } from './services/ai-provider-router.service';
 import { LocalLanguageUnderstandingService } from './services/local-language-understanding.service';
+import { SemanticMultilingualUnderstandingService } from './services/semantic-multilingual-understanding.service';
 import { LocalIntelligenceProvider } from './providers/local-intelligence.provider';
 import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter';
 
@@ -38,6 +39,7 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     ContextualCommandService,
     AiProviderRouterService,
     LocalLanguageUnderstandingService,
+    SemanticMultilingualUnderstandingService,
     LocalIntelligenceProvider,
     LocalBasketActionAdapter,
   ],
@@ -53,6 +55,7 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     ContextualCommandService,
     AiProviderRouterService,
     LocalLanguageUnderstandingService,
+    SemanticMultilingualUnderstandingService,
   ],
 })
 export class AssistantModule {}
