@@ -13,11 +13,11 @@
 
 **Overall workstream: NOT YET 100%.**
 
-The current code has deterministic multilingual intent coverage, a semantic understanding layer, entity/context regression coverage, and an adversarial semantic suite. The remaining certification gap is not cosmetic: we still need broad locale-wide semantic coverage, native response behavior, robust negation/conditionals, end-to-end STT/TTS routing, and real-device speech validation.
+The current code has deterministic multilingual intent coverage, a semantic understanding layer, entity/context regression coverage, and an adversarial semantic suite. Contextual multilingual reference resolution has now been expanded to the 51 registered locale families with a dedicated regression matrix. The remaining certification gap is broad semantic breadth, native response behavior, robust negation/conditionals, end-to-end STT/TTS routing, and real-device speech validation.
 
-The product already treats 51 locales as first-class language capabilities and maintains 10 selectable voice profiles. The current green contract is therefore a strong engineering foundation, but it is not proof of unconstrained native-level conversation. fileciteturn566file0L2-L10
+The product treats 51 locales as first-class language capabilities and maintains 10 selectable voice profiles. The green engineering contracts are strong foundations, but they are not proof of unconstrained native-level conversation.
 
-## 1. Semantic Multilingual Understanding — 50% complete
+## 1. Semantic Multilingual Understanding — 65% complete
 
 - [x] **1.1 Paraphrase engine foundation** — semantic layer recovers natural paraphrases for representative locales.
 - [ ] **1.2 Colloquial language** — contractions, slang, filler words, fragments and informal speech across all 51 locales.
@@ -26,20 +26,21 @@ The product already treats 51 locales as first-class language capabilities and m
 - [x] **1.5 Ambiguity refusal foundation** — weak overlap such as “help me later” is explicitly prevented from becoming an action.
 - [x] **1.6 Adversarial semantic regression foundation** — ambiguity, deterministic behavior, clause order and speech-corruption tests added.
 - [x] **1.7 Single-character ASR repair foundation** — duplicated-character and adjacent-transposition recovery is exercised across the 51-locale reminder matrix.
-- [ ] **1.8 Contextual references** — complete multi-turn reference resolution across all locales.
+- [x] **1.8 Contextual references foundation** — previous-action references are now recognized across the 51 registered locales and bound to the stored prior action by contract test.
+- [ ] **1.8b Full context semantics** — multilingual pronoun resolution, discourse focus, multi-turn ambiguity and locale-specific reference edge cases still require broader certification.
 - [ ] **1.9 Long utterances** — preserve meaning across long, naturally spoken requests with subordinate clauses and multiple constraints.
 - [ ] **1.10 Negation and conditionals** — complete locale-wide support for don’t / never / unless / if / only-if / not-anymore semantics.
 - [ ] **1.11 Cross-language semantic equivalence** — one semantic model with comparable behavior across the full locale matrix, not just representative locales.
 - [ ] **1.12 Free-conversation semantic coverage** — distinguish questions, statements, opinions, explanations, jokes, follow-ups and commands without forcing every utterance into an action intent.
 
-## 2. Entity + Context Understanding — 35% complete
+## 2. Entity + Context Understanding — 45% complete
 
 - [x] **2.1 Regression foundation** — quantity, time, meal type, food, negation and conversational-reference cases are covered.
 - [ ] **2.2 Date/time extraction** — relative dates, natural times, ranges, timezone and locale conventions.
 - [ ] **2.3 Quantity/unit extraction** — metric/imperial, decimals, fractions, spoken quantities and locale forms.
 - [ ] **2.4 Food/entity aliases** — large locale-specific food vocabulary, spelling variants and colloquial names.
-- [ ] **2.5 Person/place/reference resolution** — structured named-entity resolution.
-- [ ] **2.6 Conversation memory binding** — bind current language-specific references to prior turns.
+- [x] **2.5 Person/place/reference foundation** — previous-action target metadata remains bound through contextual resolution.
+- [x] **2.6 Conversation memory binding foundation** — previous action/resource/execution IDs are attached to contextual follow-ups; full semantic discourse memory remains open.
 - [ ] **2.7 Personal Brain binding** — resolve durable profile/preferences/memory without redundant questions.
 - [ ] **2.8 Conflict reasoning** — reconcile contradictory constraints before execution.
 
@@ -82,11 +83,12 @@ The product already treats 51 locales as first-class language capabilities and m
 - [ ] **6.4 Native clarification questions for ambiguity.**
 - [ ] **6.5 Tone preservation** — friendly, natural and culturally appropriate without pretending certainty.
 
-## 7. Conversation Coverage — 10% complete
+## 7. Conversation Coverage — 20% complete
 
 - [ ] **7.1 Full 51-locale conversation matrix.**
 - [ ] **7.2 Mixed-language / code-switched conversations.**
-- [ ] **7.3 Multi-turn references.**
+- [x] **7.3 Multi-turn reference foundation** — 51-locale previous-reference regression contract added.
+- [ ] **7.3b Multi-turn discourse resolution** — pronouns, elliptical follow-ups, discourse focus and ambiguous antecedents across all locales.
 - [ ] **7.4 Recovery after misunderstanding.**
 - [ ] **7.5 Topic shifts and free-form follow-up questions.**
 - [ ] **7.6 Conversation-level safety and confirmation persistence.**
@@ -114,23 +116,16 @@ The goal is not “make tests green”; the goal is to actively try to make the 
 - long utterances → preserve the primary action and entities;
 - multiple intents → preserve clause boundaries and order;
 - mixed-language utterances → preferred locale remains authoritative while embedded language is understood;
-- conversational references → “that one / same one / previous” resolves to the correct context;
+- conversational references → previous-action references resolve to the correct context;
 - ambiguity after context → still ask instead of guessing;
 - repeated requests → deterministic output;
 - unsupported semantics → return a truthful unknown/clarification result instead of hallucinating intent.
-
-### Current adversarial implementation
-
-- `semantic-multilingual-adversarial.spec.ts` exercises the 51-locale reminder matrix for duplicated-character speech corruption.
-- Semantic ambiguity refusal now requires materially stronger evidence before converting an unknown request into an actionable intent.
-- Semantic clause splitting now includes additional English, Persian, Chinese, Japanese, Korean and European conjunction forms.
-- Assistant unit-test dependency wiring has been aligned with the semantic layer so constructor mocks cannot silently call the wrong service.
 
 ## 100% certification gate
 
 C must **not** be marked 100% merely because deterministic tests or local CI are green.
 
-C becomes **100%** only when every unchecked item above is green **and**:
+C becomes **100%** only when every unchecked item above is green and:
 
 1. semantic intent + entity coverage passes across all 51 locales;
 2. ambiguity, negation, conditional, typo, noise, slang and long-utterance tests are green;
@@ -140,9 +135,9 @@ C becomes **100%** only when every unchecked item above is green **and**:
 6. responses, clarification and confirmations are genuinely native to the active locale;
 7. real-device speech input/output has been validated on iOS/Android where supported;
 8. unprompted free-form conversations have been sampled and reviewed for false positives and false negatives;
-9. A and B contain the durable final state and evidence;
+9. A and B contain durable final state and evidence;
 10. C is then replaced by the next workstream roadmap.
 
 ## Honest current checkpoint
 
-The current implementation is substantially stronger than the original deterministic phrase-only baseline, but it is **not** yet a defensible claim of “native-level understanding in all languages.” The repository itself correctly distinguishes a green engineering contract from unconstrained speech understanding and real-device/provider validation. fileciteturn568file0L2-L10
+The contextual reference foundation is implemented for all 51 registered locale families and has a dedicated 51-case regression matrix. The broader workstream remains intentionally uncertified until discourse semantics, native responses, runtime speech routing and real-device evidence are green.
