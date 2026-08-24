@@ -44,10 +44,15 @@ export async function setStoredVoiceProfile(id: string): Promise<void> {
 
 export async function speakAssistantText(text: string, profile: VoiceProfile): Promise<void> {
   await Speech.stop();
-  Speech.speak(text, {
-    language: profile.locale,
-    rate: profile.rate,
-    pitch: profile.pitch,
+  await new Promise<void>((resolve) => {
+    Speech.speak(text, {
+      language: profile.locale,
+      rate: profile.rate,
+      pitch: profile.pitch,
+      onDone: resolve,
+      onStopped: resolve,
+      onError: resolve,
+    });
   });
 }
 
