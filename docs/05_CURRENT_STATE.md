@@ -6,29 +6,32 @@
 
 ## Current workstream
 
-### Post-Food Decision Brain — Persistent User Context + UX foundation
+### Voice-first Assistant Shell
 
 ```text
-Remember-once user context
+Persistent User Context
+██████████████████████████  100%
+
+Voice-first Assistant Shell
 ██████████████████████████  100% code-complete
 
-✅ Structured profile facts are already persisted in existing UserProfile / HealthProfile / NutritionProfile / AssistantProfile models
-✅ Existing durable memory layer reused instead of creating a parallel memory system
-✅ UserContextService upgraded from placeholder to real persistent-context hydration
-✅ Age / gender / height / weight / activity / target weight hydration
-✅ Nutrition goals / diet type / water / fitness / exercise / sleep context hydration
-✅ Language / timezone / notification / reminder preference hydration
-✅ Stable constraints and active life areas derived centrally
-✅ Relevant durable memory surfaced as known facts
-✅ Context precedence contract documented: explicit current input > structured profile > durable memory > inference
-✅ BrainStateService now injects hydrated user context into every Brain request
-✅ Dedicated UserContextService unit coverage added — 2/2 tests passed
-✅ BrainStateService focused coverage added/verified — 1/1 test passed
-✅ Updated branch backend typecheck passed
-✅ Updated branch backend build passed
-✅ UX contract documented: voice-first, low-manual-input, remember-once, purposeful animation
-⬜ Build the visible voice-first assistant shell around this contract
-⬜ Add real voice capture / speech pipeline without making paid cloud AI mandatory
+✅ Existing persistent user context reused by the assistant layer
+✅ UX contract: voice-first, low-manual-input, remember-once, purposeful animation
+✅ Animated interaction state machine: idle → listening → thinking → speaking → done
+✅ Voice-first assistant shell added to the mobile assistant screen
+✅ Text input retained only as a fallback path
+✅ Ten persistent voice character presets: 5 feminine + 5 masculine
+✅ Tehran-style Persian voice identity encoded as a product contract
+✅ Voice selection persisted locally and restored automatically
+✅ Native Persian speech recognition adapter added
+✅ On-device recognition preferred whenever the device reports support
+✅ Persian contextual vocabulary supplied to speech recognition
+✅ Device TTS response path added through Expo Speech
+✅ Voice provider remains replaceable; no paid cloud voice is required by the base flow
+✅ Duplicate voice-submit race guarded in the assistant shell
+⬜ Validate mobile TypeScript/build on a real development build / device
+⬜ Add a provider interface for offline/local TTS model routing
+⬜ Add higher-quality offline/local Persian TTS model selection behind the provider interface
 ```
 
 ## Food Decision Brain status
@@ -64,12 +67,9 @@ Food Decision Brain
 - Recommendation focused tests passed: `recommendation-ranking`, `personalization`, and `recommendation-engine` — **4/4 tests green**.
 - Full backend unit tests passed: **156/156 suites, 414/414 tests green**.
 - Recipe image pipeline test passed: **2/2 tests green** after addressing the Jest ESM import mapping and the image-processing test timeout.
-- Backend typecheck passed after excluding `prisma.config.ts` at the root level of `tsconfig.json` during the earlier validation pass.
-- Recommendation E2E passed: **1 suite / 2 tests green** with authentication protection and deterministic ranked food recommendations with explanations.
-- Final local validation pass reached **156/156 unit suites, 414/414 unit tests, and 5/5 E2E suites, 26/26 E2E tests green**.
-- The local validation pass also confirmed Prisma schema validation/generation and backend build success.
-- Persistent user-context work was then validated on the updated branch `7f5e495a`: **UserContextService 2/2 tests green**, **BrainStateService 1/1 test green**, **backend typecheck green**, and **backend build green**.
-- This means the persistent context foundation is no longer only documented; the updated implementation and its focused validation are green and ready for the visible assistant-shell layer.
+- Final local backend validation pass reached **156/156 unit suites, 414/414 unit tests, and 5/5 E2E suites, 26/26 E2E tests green**.
+- Persistent user-context foundation was validated: **UserContextService 2/2 tests green**, **BrainStateService 1/1 test green**, **backend typecheck green**, **backend build green**.
+- Voice-first shell has now been implemented on top of that persistent context contract: animated state orb, persistent voice choice, Persian recognition adapter, and device TTS are all present in the mobile codebase.
 
 ## Product direction — permanent architectural constraints
 
@@ -108,25 +108,27 @@ Local Brain / AI Core
 
 ## Next workstream
 
-### Voice-first Assistant Shell
+### Offline/Local Voice Intelligence Layer
 
-Build the visible interaction layer around the persistent context contract:
+Build behind the already-defined shell and voice contract:
 
 ```text
-Listening
+Microphone
    ↓
-Understanding
+On-device STT
    ↓
-Thinking
+Intent / entity understanding
    ↓
-Acting
+Persistent context + memory
    ↓
-Done
+Deterministic tools / Personal Brain
+   ↓
+Local response generation
+   ↓
+On-device / local TTS
 ```
 
-The shell should make the app feel alive without making the feature graph visible. Users should be able to accomplish common tasks by speaking naturally, with manual controls available only as fallback.
-
-The local model is **not** expected to imitate a frontier chatbot by itself. The intelligence should come from the combination of deterministic engines, structured data, retrieval, memory, rules, personalization, tool calling, and a small local model.
+The next implementation should **not** replace the working shell. It should add a provider abstraction so local/offline models can be introduced progressively while the device path remains a free fallback.
 
 ## Working rule
 
