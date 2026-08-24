@@ -134,19 +134,24 @@ The assistant should orchestrate reminders using the existing life context rathe
 
 ## Global language architecture boundary
 
-The current implementation has introduced a global voice-language registry containing regional locale metadata, RTL metadata, speech-recognition locale and TTS locale. The language picker consumes this catalog rather than hard-coding only Persian and English.
+The global voice-language registry now provides regional locale metadata, RTL metadata, speech-recognition locale and TTS locale. The language picker consumes this catalog rather than hard-coding only Persian and English.
 
-This is an architectural foundation, not completion of multilingual understanding. Full completion requires:
+The current multilingual quality gate is green for the defined engineering contract: **51 registered locales**, **10 selectable voice profiles**, **13/13 multilingual Jest tests**, green backend typecheck/build, green mobile voice-quality contract, and green mobile typecheck.
 
-- multilingual speech recognition coverage;
-- language detection and code-switching;
-- locale-aware normalization;
-- multilingual intent and entity understanding;
-- language-specific dates, numbers, units and colloquial expressions;
-- culturally and regionally appropriate response generation;
-- local/free-tier TTS/STT fallback routing;
-- representative real-device validation across the supported language matrix.
+This green gate is an important completion milestone for the deterministic capability foundation. It is **not** the claim that arbitrary human speech in all 51 locales is understood at native level. Full product completion still requires:
+
+- robust speech recognition across real devices and accents;
+- deeper semantic/paraphrase understanding beyond the deterministic phrase matrix;
+- multilingual speech entity extraction for dates, numbers, units, food aliases, quantities and colloquial language;
+- language-native response generation rather than translation-like output;
+- tested local/offline or free-tier STT/TTS providers and fallback routing;
+- real-device speech input/output validation across supported locales;
+- validation under noise, slang, code-switching, ambiguous phrasing and long multi-intent conversations.
 
 ## Current implementation boundary
 
-The persistent context hydration layer is complete for the current backend contract. The voice-first shell is implemented. The current multilingual stage is the capability foundation and language selection layer; the next stage is deeper offline/local multilingual STT/TTS provider routing and locale-aware natural-language understanding.
+The persistent context hydration layer is complete for the current backend contract. The voice-first shell is implemented. The multilingual capability foundation and deterministic quality contract are green. The next stage is deeper multilingual semantic understanding plus real speech/provider validation, with local/offline STT/TTS remaining behind replaceable provider contracts.
+
+## Progress rule for this contract
+
+When the multilingual quality gate is green, do not reopen the green contract tests unless a later architecture or behavior change invalidates them. Continue from the first unchecked multilingual capability in **A** and keep the distinction between **contract-tested capability** and **real-world native speech quality** explicit.
