@@ -13,13 +13,13 @@ type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; meta?
 const copy = {
   en: {
     title: 'Your Assistant', subtitle: 'Just talk. I use your context, plans and preferences.', placeholder: 'Or type here as a fallback…', send: 'Send', back: 'Back', voice: 'Voice',
-    welcome: 'I’m here. Talk to me naturally. I’ll handle the details and remember what matters.', error: 'I could not reach the assistant right now. Check your connection and try again.', done: 'Done', understood: 'Understood', historyError: 'I could not restore the previous conversation. You can still start a new message.',
-    idle: 'I’m listening whenever you are', listening: 'Listening…', thinking: 'Thinking…', speaking: 'Speaking…', saved: 'Voice saved', voices: 'Choose my voice', micError: 'Voice input is not available right now. You can still type.',
+    welcome: 'I’m here. Talk to me naturally. I’ll handle the details and remember what matters.', error: 'I could not reach the assistant right now.', done: 'Done', understood: 'Understood', historyError: 'I could not restore the previous conversation.',
+    idle: 'I’m listening whenever you are', listening: 'Listening…', thinking: 'Thinking…', speaking: 'Speaking…', saved: 'Voice saved', voices: 'Choose my voice', micError: 'Voice input is not available right now.',
   },
   fa: {
     title: 'دستیار تو', subtitle: 'فقط حرف بزن؛ من از context، برنامه‌ها و ترجیحاتت استفاده می‌کنم.', placeholder: 'اگر خواستی اینجا تایپ کن…', send: 'ارسال', back: 'برگشت', voice: 'صدا',
-    welcome: 'من اینجام. راحت و طبیعی حرف بزن؛ جزئیات کار رو خودم جمع می‌کنم و چیزهای مهم رو یادت نگه می‌دارم.', error: 'الان نتونستم به دستیار وصل بشم. اتصال اینترنت رو بررسی کن و دوباره امتحان کن.', done: 'انجام شد', understood: 'متوجه شدم', historyError: 'نتونستم گفت‌وگوی قبلی رو بازیابی کنم؛ ولی می‌تونی همین الان ادامه بدی.',
-    idle: 'هر وقت آماده بودی باهام حرف بزن', listening: 'دارم گوش می‌دم…', thinking: 'دارم فکر می‌کنم…', speaking: 'دارم جواب می‌دم…', saved: 'صدا ذخیره شد', voices: 'صدای منو انتخاب کن', micError: 'فعلاً ورودی صوتی در دسترس نیست؛ می‌تونی تایپ کنی.',
+    welcome: 'من اینجام. راحت و طبیعی حرف بزن؛ جزئیات کار رو خودم جمع می‌کنم و چیزهای مهم رو یادت نگه می‌دارم.', error: 'الان نتونستم به دستیار وصل بشم. اتصال رو بررسی کن و دوباره امتحان کن.', done: 'انجام شد', understood: 'متوجه شدم', historyError: 'نتونستم گفت‌وگوی قبلی رو بازیابی کنم.',
+    idle: 'هر وقت آماده بودی باهام حرف بزن', listening: 'دارم گوش می‌دم…', thinking: 'دارم فکر می‌کنم…', speaking: 'دارم جواب می‌دم…', saved: 'صدا ذخیره شد', voices: 'صدای منو انتخاب کن', micError: 'فعلاً ورودی صوتی در دسترس نیست.',
   },
 };
 
@@ -42,7 +42,8 @@ export default function AssistantScreen() {
   const [voiceMenuOpen, setVoiceMenuOpen] = useState(false);
   const [voiceState, setVoiceState] = useState<VoiceInteractionState>('idle');
   const recognitionRef = useRef<SpeechRecognitionHandle | null>(null);
-  const voiceTranscriptRef = useRef('');
+  const transcriptRef = useRef('');
+  const submittedRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -77,24 +78,24 @@ export default function AssistantScreen() {
   const submitText = async (text: string, fromVoice = false) => {
     const trimmed = text.trim();
     if (!trimmed || sending) return;
+    submittedRef.current = true;
     setDraft('');
-    voiceTranscriptRef.current = '';
+    transcriptRef.current = '';
+    setSending(true);
     setError(null);
     setHistoryNotice(false);
-    setSending(true);
     if (fromVoice) setVoiceState('thinking');
     setMessages((current) => [...current, { id: `u-${Date.now()}`, role: 'user', text: trimmed }]);
     try {
       const response = await sendAssistantMessage(trimmed);
-      const executionMeta = response.execution
-        ? response.execution.executed ? ui.done : ui.understood
-        : null;
+      const executionMeta = response.execution ? (response.execution.executed ? ui.done : ui.understood) : null;
       const meta = [executionMeta, response.intent, typeof response.confidence === 'number' ? `confidence ${Math.round(response.confidence * 100)}%` : null].filter(Boolean).join(' · ');
       setMessages((current) => [...current, { id: `a-${Date.now()}`, role: 'assistant', text: response.message, meta: meta || undefined }]);
       if (fromVoice) {
         setVoiceState('speaking');
         await speakAssistantText(response.message, voiceProfile);
         setVoiceState('done');
+        setTimeout(() => setVoiceState('idle'), 600);
       }
     } catch {
       setError(ui.error);
@@ -104,39 +105,29 @@ export default function AssistantScreen() {
     }
   };
 
-  const send = async () => submitText(draft, false);
-
   const startVoice = async () => {
     if (voiceState === 'listening') {
       recognitionRef.current?.stop();
       return;
     }
-
     if (sending) return;
+    submittedRef.current = false;
+    transcriptRef.current = '';
     setError(null);
     setVoiceState('listening');
-    voiceTranscriptRef.current = '';
     recognitionRef.current?.remove();
     recognitionRef.current = await startPersianRecognition(
       ({ transcript, isFinal }) => {
-        voiceTranscriptRef.current = transcript;
+        transcriptRef.current = transcript;
         setDraft(transcript);
-        if (isFinal) {
-          recognitionRef.current?.stop();
-          setVoiceState('thinking');
-          void submitText(transcript, true);
-        }
+        if (isFinal && !submittedRef.current) void submitText(transcript, true);
       },
       () => {
-        const transcript = voiceTranscriptRef.current.trim();
+        const transcript = transcriptRef.current.trim();
         recognitionRef.current?.remove();
         recognitionRef.current = null;
-        if (transcript && !sending) {
-          setVoiceState('thinking');
-          void submitText(transcript, true);
-        } else if (!sending) {
-          setVoiceState('idle');
-        }
+        if (transcript && !submittedRef.current && !sending) void submitText(transcript, true);
+        else if (!sending && !submittedRef.current) setVoiceState('idle');
       },
       (message) => {
         recognitionRef.current?.remove();
@@ -185,10 +176,9 @@ export default function AssistantScreen() {
         <View style={[styles.subHeader, rtl && styles.rtl]}><Text style={styles.subtitle}>{ui.subtitle}</Text></View>
 
         <ScrollView contentContainerStyle={styles.messages} keyboardShouldPersistTaps="handled">
-          <Pressable onPress={() => void startVoice()} disabled={sending && voiceState !== 'speaking'}>
+          <Pressable onPress={() => void startVoice()} disabled={sending}>
             <AssistantVoiceOrb state={voiceState} label={orbLabel} />
           </Pressable>
-
           {loadingHistory ? <View style={styles.loadingHistory}><ActivityIndicator size="small" /><Text style={styles.meta}>{locale === 'fa' ? 'در حال بازیابی گفت‌وگو…' : 'Restoring conversation…'}</Text></View> : null}
           {messages.map((message) => (
             <View key={message.id} style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.assistantBubble, rtl && styles.rtlBubble]}>
@@ -202,13 +192,9 @@ export default function AssistantScreen() {
         </ScrollView>
 
         <View style={[styles.composer, rtl && styles.rtl]}>
-          <TextInput value={draft} onChangeText={setDraft} onSubmitEditing={() => void send()} placeholder={ui.placeholder} placeholderTextColor="#9CA3AF" style={[styles.input, rtl && styles.rtlInput]} multiline maxLength={1000} />
-          <Pressable onPress={() => void startVoice()} style={({ pressed }) => [styles.micButton, voiceState === 'listening' && styles.micButtonActive, pressed && styles.pressed]}>
-            <Text style={styles.micText}>⌕</Text>
-          </Pressable>
-          <Pressable disabled={!draft.trim() || sending} onPress={() => void send()} style={({ pressed }) => [styles.sendButton, (!draft.trim() || sending) && styles.disabled, pressed && styles.pressed]}>
-            <Text style={styles.sendText}>{sending ? '…' : ui.send}</Text>
-          </Pressable>
+          <TextInput value={draft} onChangeText={setDraft} onSubmitEditing={() => void submitText(draft)} placeholder={ui.placeholder} placeholderTextColor="#9CA3AF" style={[styles.input, rtl && styles.rtlInput]} multiline maxLength={1000} />
+          <Pressable onPress={() => void startVoice()} style={({ pressed }) => [styles.micButton, voiceState === 'listening' && styles.micButtonActive, pressed && styles.pressed]}><Text style={styles.micText}>⌕</Text></Pressable>
+          <Pressable disabled={!draft.trim() || sending} onPress={() => void submitText(draft)} style={({ pressed }) => [styles.sendButton, (!draft.trim() || sending) && styles.disabled, pressed && styles.pressed]}><Text style={styles.sendText}>{sending ? '…' : ui.send}</Text></Pressable>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
