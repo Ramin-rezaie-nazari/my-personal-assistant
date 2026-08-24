@@ -6,7 +6,30 @@
 
 ## Current workstream
 
-### Food Decision Brain — code-complete / external CI validation blocked
+### Post-Food Decision Brain — Persistent User Context + UX foundation
+
+```text
+Remember-once user context
+██████████████████████████  100% code-complete
+
+✅ Structured profile facts are already persisted in existing UserProfile / HealthProfile / NutritionProfile / AssistantProfile models
+✅ Existing durable memory layer reused instead of creating a parallel memory system
+✅ UserContextService upgraded from placeholder to real persistent-context hydration
+✅ Age / gender / height / weight / activity / target weight hydration
+✅ Nutrition goals / diet type / water / fitness / exercise / sleep context hydration
+✅ Language / timezone / notification / reminder preference hydration
+✅ Stable constraints and active life areas derived centrally
+✅ Relevant durable memory surfaced as known facts
+✅ Context precedence contract documented: explicit current input > structured profile > durable memory > inference
+✅ BrainStateService now injects hydrated user context into every Brain request
+✅ Dedicated UserContextService unit coverage added
+✅ UX contract documented: voice-first, low-manual-input, remember-once, purposeful animation
+⬜ Run local typecheck + focused UserContextService tests on the updated branch
+⬜ Build the visible voice-first assistant shell around this contract
+⬜ Add real voice capture / speech pipeline without making paid cloud AI mandatory
+```
+
+## Food Decision Brain status
 
 ```text
 Food Decision Brain
@@ -28,11 +51,10 @@ Food Decision Brain
 ✅ Recommendation E2E authentication coverage
 ✅ Recommendation E2E deterministic ranking + explanations
 ✅ Recommendation E2E Prisma cleanup / process-exit fix verified
-✅ Final CI validation gates added: Prisma validate/generate/migrate, typecheck, lint, build, unit, E2E
-✅ Draft PR created for real GitHub Actions validation: #57
-🟡 GitHub Actions runner validation blocked: job failed before executing any step/log
+✅ Final local backend validation gate: Prisma validate/generate, build, 156/156 unit suites and 5/5 E2E suites green
+🟡 Final external GitHub Actions runner validation remains blocked by runner/infrastructure failure before job steps
 ⬜ Re-run external GitHub Actions when runner/infrastructure is available
-⬜ Mark Food Decision Brain 100% only after the final CI gate is observable green
+⬜ Mark Food Decision Brain 100% only after the final external CI gate is observable green
 ```
 
 ## Latest validation evidence
@@ -40,24 +62,11 @@ Food Decision Brain
 - Recommendation focused tests passed: `recommendation-ranking`, `personalization`, and `recommendation-engine` — **4/4 tests green**.
 - Full backend unit tests passed: **156/156 suites, 414/414 tests green**.
 - Recipe image pipeline test passed: **2/2 tests green** after addressing the Jest ESM import mapping and the image-processing test timeout.
-- Backend typecheck passed after excluding `prisma.config.ts` at the root level of `tsconfig.json`.
+- Backend typecheck passed after excluding `prisma.config.ts` at the root level of `tsconfig.json` during the earlier validation pass.
 - Recommendation E2E passed: **1 suite / 2 tests green** with authentication protection and deterministic ranked food recommendations with explanations.
-- Recommendation E2E seed data was adjusted to satisfy the protein constraint.
-- Prisma module-destroy cleanup was added and the recommendation E2E no longer reports the previous connection-leak warning.
-- Final backend CI was expanded to cover Prisma validation/generation/migrations, backend typecheck, lint, build, full unit tests, and API E2E tests.
-- A Draft PR #57 was created specifically to obtain an external GitHub Actions validation result; it was not merged.
-- GitHub Actions run `32695926602` was started from PR #57 and failed before any job step executed. The job exposed no steps and no downloadable log, and a direct job rerun reproduced the same pre-step failure. Therefore the CI result is treated as an infrastructure/runner blocker, not as evidence of a code regression.
-
-## Validation history / changes in this phase
-
-- Removed the remaining `food-operating-loop.service.ts` lint debt by using the recipe-domain measurement/scaling contracts instead of `any` and deleting the unused measurement helper.
-- Added a Jest `moduleNameMapper` so ESM-style `.js` imports resolve correctly against TypeScript sources during unit tests.
-- Increased the deterministic recipe-image compression test timeout to 15 seconds because the image-processing workload exceeds Jest's default 5-second timeout on the local environment.
-- Hardened Jest E2E setup with deterministic non-secret defaults for `NODE_ENV`, `APP_NAME`, and JWT test configuration while keeping `DATABASE_URL` external.
-- Restored `supertest` for backend E2E validation.
-- Fixed the recommendation E2E seed so the intended recommendation satisfies the protein constraint and is returned by the ranking pipeline.
-- Added Prisma module-destroy cleanup for deterministic E2E teardown.
-- Hardened `.github/workflows/backend-ci.yml` to exercise the complete backend validation gate in CI.
+- Final local validation pass reached **156/156 unit suites, 414/414 unit tests, and 5/5 E2E suites, 26/26 E2E tests green**.
+- The local validation pass also confirmed Prisma schema validation/generation and backend build success.
+- The current branch includes the persistent user-context hydration work added after the last complete validation pass; rerun the focused checks before calling this new workstream green.
 
 ## Product direction — permanent architectural constraints
 
@@ -92,63 +101,29 @@ Local Brain / AI Core
 - Recipe intelligence must support a large global corpus without repeatedly surfacing near-duplicate recipes.
 - Fitness must understand available equipment and adapt training plans accordingly; future camera coaching should use deterministic movement constraints plus local/on-device vision where practical.
 - Health/wearable integrations should flow into one internal health model instead of coupling business logic to a single device platform.
+- Core stable user facts must be remembered after one-time collection and must not be repeatedly requested by feature-specific screens.
 
-## Next workstream after Food Decision Brain reaches 100%
+## Next workstream
 
-### Local Brain / AI Core
+### Voice-first Assistant Shell
 
-Build the central orchestration layer before expanding major user-facing AI features.
+Build the visible interaction layer around the persistent context contract:
 
 ```text
-Voice / Text
-    ↓
-Intent + Entity Understanding
-    ↓
-User Context + Memory
-    ↓
-Decision / Planning
-    ↓
-Tool Orchestration
-    ↓
-Nutrition | Food | Fitness | Health | Life | Finance
-    ↓
-Local / Free Provider Router
+Listening
+   ↓
+Understanding
+   ↓
+Thinking
+   ↓
+Acting
+   ↓
+Done
 ```
+
+The shell should make the app feel alive without making the feature graph visible. Users should be able to accomplish common tasks by speaking naturally, with manual controls available only as fallback.
 
 The local model is **not** expected to imitate a frontier chatbot by itself. The intelligence should come from the combination of deterministic engines, structured data, retrieval, memory, rules, personalization, tool calling, and a small local model.
-
-## Longer-term roadmap
-
-```text
-[CURRENT]
-Food Decision Brain → ~99%
-        ↓
-External GitHub Actions runner becomes available
-        ↓
-Full CI gate green
-        ↓
-Food Decision Brain → 100%
-        ↓
-Local Brain / AI Core
-        ↓
-Voice-first Persian + multilingual voice architecture
-        ↓
-Globalization / country-aware UX
-        ↓
-Inventory + budget + live price intelligence
-        ↓
-Global recipe intelligence / deduplication / provenance
-        ↓
-Health + wearable data layer
-        ↓
-Fitness coach + camera movement analysis
-        ↓
-Premium mobile UX / animation polish
-        ↓
-Production hardening + privacy/security
-        ↓
-Subscription activation (without redesigning the core)
-```
 
 ## Working rule
 
