@@ -57,15 +57,9 @@ describe('Semantic multilingual adversarial quality', () => {
   });
 
   it('recovers adjacent-character transposition for supported semantic locales', () => {
-    expect(
-      service.understand('hilf mir beim abendessen', 'de-DE').intent,
-    ).toBe('RECOMMEND_MEAL');
-    expect(
-      service.understand('quoi mger ce soir', 'fr-FR').intent,
-    ).toBe('RECOMMEND_MEAL');
-    expect(
-      service.understand('what woud i eat', 'en-US').intent,
-    ).toBe('RECOMMEND_MEAL');
+    expect(service.understand('what cna i eat', 'en-US').intent).toBe('RECOMMEND_MEAL');
+    expect(service.understand('que mnager ce soir', 'fr-FR').intent).toBe('RECOMMEND_MEAL');
+    expect(service.understand('hilf mir beim abendessen', 'de-DE').intent).toBe('RECOMMEND_MEAL');
   });
 
   it('keeps multi-intent clauses separable without changing clause order', () => {
@@ -78,7 +72,12 @@ describe('Semantic multilingual adversarial quality', () => {
       'مرغ رو به سبد اضافه کن',
     ]);
     expect(service.splitClauses('提醒我明天吃饭 然后 把鸡肉放进购物车')).toEqual([
-      '提醒我明天吃饭 然后 把鸡肉放进购物车',
+      '提醒我明天吃饭',
+      '把鸡肉放进购物车',
+    ]);
+    expect(service.splitClauses('それから夕食を決めて そして 買い物に追加して')).toEqual([
+      'それから夕食を決めて',
+      '買い物に追加して',
     ]);
   });
 
