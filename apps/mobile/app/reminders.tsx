@@ -16,7 +16,7 @@ const copy = {
 } as const;
 
 function formatTime(value: string, locale: AppLocale) {
-  return new Date(value).toLocaleTimeString(locale === 'fa' ? 'fa-IR' : undefined, { hour: '2-digit', minute: '2-digit' });
+  return new Date(value).toLocaleTimeString(locale === 'fa' || locale.startsWith('fa-') ? 'fa-IR' : undefined, { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function RemindersScreen() {
@@ -35,7 +35,7 @@ export default function RemindersScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const text = copy[locale];
+  const text = copy[locale === 'fa' || locale.startsWith('fa-') ? 'fa' : 'en'];
   const rtl = isRTL(locale);
 
   const load = useCallback(async (includeCompleted = showAll) => {
@@ -113,7 +113,7 @@ export default function RemindersScreen() {
 
   const pendingCount = items.filter((item) => !item.completed).length;
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={colors.ink} /><Text style={styles.loadingText}>{locale === 'fa' ? 'در حال بارگذاری…' : 'Loading…'}</Text></View>;
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={colors.ink} /><Text style={styles.loadingText}>{rtl ? 'در حال بارگذاری…' : 'Loading…'}</Text></View>;
 
   return (
     <View style={styles.screen}>
@@ -144,7 +144,7 @@ export default function RemindersScreen() {
 
         <AnimatedIn delay={180}>
           <View style={[styles.sectionHeader, rtl && styles.rtl]}>
-            <View><Text style={[styles.sectionTitle, rtl && styles.textRight]}>{text.upcoming}</Text><Text style={[styles.countText, rtl && styles.textRight]}>{showAll ? items.length : pendingCount} {locale === 'fa' ? 'مورد' : 'items'}</Text></View>
+            <View><Text style={[styles.sectionTitle, rtl && styles.textRight]}>{text.upcoming}</Text><Text style={[styles.countText, rtl && styles.textRight]}>{showAll ? items.length : pendingCount} {rtl ? 'مورد' : 'items'}</Text></View>
             <View style={styles.filters}>
               <MotionPress onPress={() => { setShowAll(false); setLoading(true); void load(false); }} style={[styles.filter, ...(showAll ? [] : [styles.filterActive])]}><Text style={[styles.filterText, ...(showAll ? [] : [styles.filterTextActive])]}>{text.pending}</Text></MotionPress>
               <MotionPress onPress={() => { setShowAll(true); setLoading(true); void load(true); }} style={[styles.filter, ...(showAll ? [styles.filterActive] : [])]}><Text style={[styles.filterText, ...(showAll ? [styles.filterTextActive] : [])]}>{text.all}</Text></MotionPress>
