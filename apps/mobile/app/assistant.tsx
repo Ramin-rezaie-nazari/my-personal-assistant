@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
 import { AssistantHistoryTurn, getAssistantHistory, sendAssistantMessage } from '../lib/assistant-api';
 import { AssistantVoiceOrb, VoiceInteractionState } from '../components/AssistantVoiceOrb';
-import { startPersianRecognition, SpeechRecognitionHandle } from '../lib/speech-recognition';
+import { startRecognition, SpeechRecognitionHandle } from '../lib/speech-recognition';
 import { VOICE_PROFILES, getStoredVoiceProfile, setStoredVoiceProfile, speakAssistantText, stopAssistantSpeech, VoiceProfile } from '../lib/voice';
 
 type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; meta?: string };
@@ -116,7 +116,8 @@ export default function AssistantScreen() {
     setError(null);
     setVoiceState('listening');
     recognitionRef.current?.remove();
-    recognitionRef.current = await startPersianRecognition(
+    recognitionRef.current = await startRecognition(
+      voiceProfile.locale,
       ({ transcript, isFinal }) => {
         transcriptRef.current = transcript;
         setDraft(transcript);
