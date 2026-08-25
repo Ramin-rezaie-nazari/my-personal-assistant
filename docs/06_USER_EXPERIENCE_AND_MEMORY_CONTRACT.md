@@ -20,7 +20,7 @@ User speaks naturally
         ↓
 Detect language / locale
         ↓
-Understand intent + entities
+Understand intent + entities + constraints
         ↓
 Load persistent context + relevant memory
         ↓
@@ -85,37 +85,42 @@ Animation communicates state and must be responsive and purposeful. Voice profil
 
 Downstream decision/planning/recommendation/response layers should not repeatedly ask for the same stable facts.
 
-## Deep multilingual semantic UX contract — current repository milestone
+## Deep multilingual semantic + constraint UX contract — completed repository milestone
 
 The assistant should tolerate natural conversational speech instead of requiring exact command wording. For the implemented semantic layer, this includes colloquial paraphrases, common spoken contractions/fillers, short/incomplete utterances where intent can still be established safely, and natural multi-clause requests.
 
 Follow-up language such as “that”, “the same one”, previous-item references, relative dates/times and simple confirmations/negations can bind to the active conversational context. The binding must preserve explicit current-user wording and must not silently replace stored facts.
 
+The understanding layer can also extract structured constraints from natural language, including conditions, negation, dates, dietary constraints, quantities, units, clock time, duration and simple budgets, while normalizing Persian and Arabic digits where applicable. Contradictory add/remove style requests must remain detectable instead of being silently executed as a guess.
+
 When a request remains semantically ambiguous, the assistant should refuse to guess and ask for clarification rather than execute a weak match. This remains a core safety rule.
 
-The internal intent model remains language-agnostic. Locale-specific understanding, normalization and response phrasing may vary, but business logic, memory and plans are not duplicated per language.
+The internal intent model remains language-agnostic. Locale-specific understanding, normalization, constraint vocabulary and response phrasing may vary, but business logic, memory and plans are not duplicated per language.
 
-## Global language architecture boundary — current green milestone
+## Global language architecture boundary — repository milestone green
 
-The multilingual foundation is now **fully green for its defined deterministic engineering contract**:
+The repository-side multilingual voice and semantic foundation is **fully green for its defined engineering scope**:
 
 - **51 registered locales** in the global voice registry.
 - **10 selectable voice profiles** with stable character identity.
 - Locale-aware STT/TTS mapping, RTL policy and Tehran-style Persian behavior.
-- Semantic understanding foundation with paraphrase recovery, intent ranking, ambiguity refusal and multi-intent clause splitting.
+- Semantic understanding with paraphrase recovery, safer normalization/scoring, intent ranking, ambiguity refusal and multi-intent clause splitting.
+- Context-aware follow-ups for prior references, operations, quantities, relative time/date and confirmation/negation signals.
+- Structured multilingual constraint extraction for conditions, negation, dates, diet, quantities, units, time, duration and budgets.
 - Entity/context regression foundation: **5/5 tests passed**.
 - Multilingual voice quality matrix: **5/5 tests passed**, including 51-locale reminders, representative meal/nutrition/basket/cancellation intents, code-switching, determinism and reminder-vs-dinner disambiguation.
-- Full backend Jest validation after the latest semantic/context implementation pass: **160/160 suites, 432/432 tests passed**.
-- Mobile voice-quality contract: **51 locales / 10 voice profiles passed**.
+- Full backend Jest validation: **160/160 suites, 432/432 tests passed**.
+- Mobile voice-quality contract: **51 locales / 10 voice profiles passed** with STT/TTS mapping, RTL policy, Persian Tehran style and safe TTS completion.
+- Mobile TypeScript validation completed with **no TypeScript errors surfaced**.
 
-This is a durable engineering milestone, not a claim of native-level understanding of arbitrary human speech. Real-device speech quality, local/offline provider routing, accent/noise robustness, fully language-native responses and full conversation coverage remain future gates.
+This is a durable engineering milestone, not a claim of native-level understanding of arbitrary human speech. Real-device speech quality, local/offline provider routing, accent/noise robustness, fully language-native responses and full end-to-end conversation coverage remain separate gates.
 
 ## Current implementation boundary
 
-The persistent-context layer, voice-first shell, deterministic multilingual foundation and the latest repository-side semantic/context implementation pass are established. The deterministic foundation should not be reopened unless later architecture/behavior changes invalidate it.
+The persistent-context layer, voice-first shell, deterministic multilingual foundation and the deep repository-side semantic/context/constraint implementation pass are established and green. These completed layers should not be reopened unless a later architecture or behavior change invalidates them.
 
-The remaining work is deeper entity/locale breadth, local/offline provider capability and fallback routing, complete native response coverage, representative all-locale conversations, real-device speech validation and robustness under accents/noise/slang/long utterances.
+The next work should start from runtime evidence: real-device microphone/STT/understanding/TTS validation, local/offline provider capability and fallback routing, full native response coverage, representative all-locale conversations and robustness under accents/noise/slang/mixed-language/long utterances.
 
 ## Progress rule
 
-When an item becomes truly green, record its durable result in A and update B when the user-visible UX contract changes. C is temporary execution state; after a workstream milestone is complete, move the verified outcomes into A/B and replace C with the next roadmap.
+When an item becomes truly green, record its durable result in A and update B when the user-visible UX contract changes. **C is temporary execution state only: after a milestone is completed and documented in A/B, clear C completely and use it for the next roadmap.**
