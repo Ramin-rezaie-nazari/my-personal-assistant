@@ -48,6 +48,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 ## Phase 5 — Navigation + information architecture
 - [x] Global assistant remains reachable through a compact persistent command dock.
 - [x] Main entry route points to the redesigned Command Center.
+- [x] Command dock now reserves a direct settings entry while keeping the assistant visually central.
 - [ ] Audit every route and remove unnecessary navigation complexity.
 - [ ] Establish one coherent small navigation model for domain areas.
 - [ ] Preserve direct voice-first access to every major capability.
@@ -72,14 +73,16 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Notification inbox moved onto the premium visual language.
 - [x] Onboarding rewritten as a guided premium setup with animated progress/aura and stronger option states.
 - [x] Authentication rewritten as a premium entry experience with animated brand presence and bilingual copy.
-- [ ] Apply same quality to remaining settings/detail routes.
+- [x] Settings rewritten as a premium personal control center with profile, experience controls, quick links and privacy emphasis.
+- [x] Meal Builder rewritten as a premium nutrition composition flow with portion controls and live nutrition snapshot.
+- [ ] Apply same quality to remaining detail routes.
 - [ ] Haptic-ready interaction boundaries where supported.
 
 ## Phase 8 — Persian + global
 - [x] RTL-aware Command Center and Assistant surfaces.
 - [x] Mature conversational Persian copy preserved.
 - [x] Language remains independent from stored data/business logic.
-- [x] Locale selection now follows the premium shell and keeps RTL-aware state.
+- [x] Locale selection follows the premium shell and keeps RTL-aware state.
 - [x] Onboarding/auth preserve Persian/English copy paths and RTL layout mode.
 - [ ] Full RTL audit across every feature route.
 - [ ] Locale-aware dates/numbers/units audit across all redesigned surfaces.
@@ -90,6 +93,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Reduced-motion behavior implemented for primary animated voice surfaces.
 - [x] Loading/error fallbacks preserved across redesigned route families.
 - [x] Onboarding option controls expose radio semantics and selected state.
+- [x] Settings command controls expose standard switch/button semantics.
 - [ ] Full touch-target and screen-reader audit across all routes.
 - [ ] Dynamic text and keyboard resilience audit.
 - [ ] Focus order and voice-over/navigation review for complex cards/modals.
@@ -109,7 +113,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 
 ## Progress estimate
 
-**Approximate UI roadmap completion: ~82%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. Remaining work is concentrated in remaining settings/detail routes, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
+**Approximate UI roadmap completion: ~85%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. Remaining work is concentrated in remaining detail routes, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
 
 ## Execution rules
 Work continuously from the first unchecked item. Prefer reusable foundations over one-off styling. Do not rewrite domain behavior for visual polish. Preserve voice contracts, user state, accessibility and business logic.
