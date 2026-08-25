@@ -18,10 +18,9 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   useEffect(() => {
     pulse.stopAnimation(); ring.stopAnimation(); rotation.stopAnimation();
     if (reduced || state === 'idle') {
-      Animated.parallel([
-        Animated.spring(pulse, { toValue: 1, useNativeDriver: true, friction: 8 }),
-        Animated.timing(ring, { toValue: 0.8, duration: reduced ? 0 : PREMIUM.motion.normal, useNativeDriver: true }),
-      ]).start();
+      pulse.setValue(1);
+      ring.setValue(0.8);
+      rotation.setValue(0);
       return;
     }
     const loop = Animated.loop(Animated.parallel([
@@ -53,7 +52,7 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   </>;
 
   return <View style={styles.wrap}>
-    {onPress ? <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={styles.hitArea}>{core}</Pressable> : core}
+    {onPress ? <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={({ pressed }) => [styles.hitArea, pressed && styles.pressed]}>{core}</Pressable> : core}
     {label ? <Text style={styles.label}>{label}</Text> : null}
     {onPress && hint ? <Text style={styles.hint}>{hint}</Text> : null}
   </View>;
@@ -68,4 +67,5 @@ const styles = StyleSheet.create({
   coreInner: { width: 94, height: 94, borderRadius: 47, alignItems: 'center', justifyContent: 'center', backgroundColor: '#121A2D', shadowOpacity: 0.34, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 8 },
   label: { marginTop: 12, color: PREMIUM.colors.ink, fontSize: 14, fontWeight: '800' },
   hint: { marginTop: 5, color: PREMIUM.colors.muted, fontSize: 10, letterSpacing: 0.2 },
+  pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
 });
