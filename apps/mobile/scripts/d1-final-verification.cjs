@@ -6,7 +6,7 @@ const commands = [
   ['Mobile UI quality', ['--filter', '@my-personal-assistant/mobile', 'ui:quality']],
   ['D1 repository readiness', ['--filter', '@my-personal-assistant/mobile', 'd1:readiness']],
   ['Backend typecheck', ['--filter', 'backend', 'typecheck']],
-  ['Backend unit tests', ['--filter', 'backend', 'test', '--', '--runInBand']],
+  ['Backend unit tests', ['--filter', 'backend', 'test', '--runInBand']],
   ['Backend lint', ['--filter', 'backend', 'lint']],
   ['Backend build', ['--filter', 'backend', 'build']],
 ];
