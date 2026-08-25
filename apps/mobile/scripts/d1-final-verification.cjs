@@ -11,14 +11,35 @@ const commands = [
   ['Backend build', ['--filter', 'backend', 'build']],
 ];
 
+function conciseFailureOutput(stdout, stderr) {
+  const output = `${stderr}\n${stdout}`.replace(/\r/g, '');
+  const lines = output.split('\n');
+  const filtered = lines.filter((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+    if (/^PASS\s|^Test Suites:|^Tests:\s|^Snapshots:\s|^Time:\s/.test(trimmed)) return false;
+    if (/VOICE QUALITY CONTRACT PASS|UI QUALITY CONTRACT PASS|D1 VOICE READINESS CONTRACT PASS/.test(trimmed)) return false;
+    return /FAIL|failed|FAILED|Error|error|Expected:|Received:|Assertion|TypeError|TS\d+|Cannot find|not found|Module|at .*\.(ts|js):\d+/.test(line) || line.includes('●');
+  });
+
+  return filtered.slice(0, 120).join('\n');
+}
+
 for (const [label, args] of commands) {
-  console.log(`\n===== ${label} =====`);
-  const result = spawnSync('pnpm', args, { stdio: 'inherit', shell: process.platform === 'win32' });
+  const result = spawnSync('pnpm', args, {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    shell: process.platform === 'win32',
+  });
+
   if (result.error) throw result.error;
+
   if (result.status !== 0) {
-    console.error(`\nD1 FINAL VERIFICATION FAILED: ${label}`);
+    console.error(`D1 FINAL VERIFICATION FAILED: ${label}`);
+    const concise = conciseFailureOutput(result.stdout ?? '', result.stderr ?? '');
+    if (concise) console.error(concise);
     process.exit(result.status ?? 1);
   }
 }
 
-console.log('\nD1 FINAL REPOSITORY VERIFICATION PASS: all deterministic mobile + backend gates completed successfully.');
+console.log('D1 FINAL REPOSITORY VERIFICATION PASS');
