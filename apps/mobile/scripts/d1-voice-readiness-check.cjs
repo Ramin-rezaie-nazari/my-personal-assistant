@@ -29,6 +29,9 @@ assert(assistant.includes('speakAssistantText(response.message, voice)'), 'assis
 assert(assistant.includes("setVoiceState('acting')"), 'acting state transition is missing');
 assert(assistant.includes("setVoiceState('speaking')"), 'speaking state transition is missing');
 assert(assistant.includes("setVoiceState('done')"), 'done state transition is missing');
+assert(assistant.includes('sessionRef'), 'assistant voice session isolation is missing');
+assert(assistant.includes('if (session !== sessionRef.current) return'), 'stale voice session responses are not ignored');
+assert(assistant.includes('recognitionRef.current?.abort()'), 'assistant session replacement must abort native recognition');
 assert(assistant.includes('stopAssistantSpeech()'), 'assistant speech cleanup is missing');
 assert(speech.includes('requestPermissionsAsync()'), 'microphone/speech permission request missing');
 assert(speech.includes('contextualStrings: getSpeechContextualTerms(locale)'), 'locale-aware speech context missing');
@@ -42,7 +45,9 @@ assert(speech.includes('resultListener.remove()'), 'recognition result listener 
 assert(speech.includes('endListener.remove()'), 'recognition end listener cleanup missing');
 assert(speech.includes('errorListener.remove()'), 'recognition error listener cleanup missing');
 assert(voice.includes('language: profile.locale'), 'TTS locale is not passed to the speech provider');
-assert(voice.includes('onError: () => resolve()'), 'TTS failure cannot safely complete the promise');
+assert(voice.includes('onError: finish'), 'TTS failure cannot strand the completion promise');
+assert(voice.includes('const timeoutMs = Math.min('), 'TTS completion timeout policy is missing');
+assert(voice.includes('try {') && voice.includes('Speech.speak'), 'TTS invocation must be guarded against synchronous native failures');
 assert((languages.match(/\['[a-z]{2}(?:-[A-Z]{2}|-[A-Z][a-z]{2})',/g) || []).length >= 51, 'expected the registered global locale table to remain broad');
 
-console.log('D1 VOICE READINESS CONTRACT PASS: permissions, Expo voice wiring, active-locale STT/TTS binding, state transitions, provider fallback and abort-safe listener cleanup are present.');
+console.log('D1 VOICE READINESS CONTRACT PASS: permissions, Expo voice wiring, active-locale STT/TTS binding, session isolation, state transitions, timeout-safe TTS and abort-safe listener cleanup are present.');
