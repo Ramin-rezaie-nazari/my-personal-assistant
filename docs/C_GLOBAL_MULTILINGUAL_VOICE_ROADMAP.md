@@ -74,6 +74,9 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Inventory moved onto premium visual language.
 - [x] Recipe Intelligence moved onto premium visual language.
 - [x] Personal Brain moved onto premium visual language.
+- [x] Supplements / Health Routine moved onto premium visual language.
+- [x] Yoga / Movement Coach moved onto premium visual language.
+- [x] Habits / Daily Rhythm moved onto premium visual language.
 - [ ] Apply same quality to remaining domain/settings screens.
 - [ ] Haptic-ready interaction boundaries where supported.
 
@@ -108,7 +111,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 
 ## Progress estimate
 
-**Approximate UI roadmap completion: ~68%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. The remaining work is concentrated in the remaining routes/settings, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
+**Approximate UI roadmap completion: ~74%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. The remaining work is concentrated in remaining routes/settings, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
 
 ## Execution rules
 Work continuously from the first unchecked item. Prefer reusable foundations over one-off styling. Do not rewrite domain behavior for visual polish. Preserve voice contracts, user state, accessibility and business logic.
