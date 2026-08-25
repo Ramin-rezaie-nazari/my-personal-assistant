@@ -138,6 +138,7 @@ export async function getAssistantHistory(
 export async function sendAssistantMessage(
   message: string,
   signal?: AbortSignal,
+  locale?: string,
 ): Promise<AssistantResponse> {
   const normalizedMessage = message.trim();
   if (!normalizedMessage) throw new AssistantNetworkError('INVALID_RESPONSE', 'MESSAGE_REQUIRED');
@@ -148,7 +149,10 @@ export async function sendAssistantMessage(
   const response = await authorizedFetch('/assistant', {
     method: 'POST',
     signal,
-    body: JSON.stringify({ message: normalizedMessage }),
+    body: JSON.stringify({
+      message: normalizedMessage,
+      ...(locale ? { locale } : {}),
+    }),
   });
 
   if (!response.ok) throw await responseError(response);
