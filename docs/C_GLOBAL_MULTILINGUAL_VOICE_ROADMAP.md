@@ -49,6 +49,8 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Global assistant remains reachable through a compact persistent command dock.
 - [x] Main entry route points to the redesigned Command Center.
 - [x] Command dock now reserves a direct settings entry while keeping the assistant visually central.
+- [x] Settings uses a dedicated modal-like bottom transition and intentionally omits the persistent dock for focus.
+- [x] Meal Builder and Price Intelligence now route through premium presentation surfaces.
 - [ ] Audit every route and remove unnecessary navigation complexity.
 - [ ] Establish one coherent small navigation model for domain areas.
 - [ ] Preserve direct voice-first access to every major capability.
@@ -75,6 +77,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Authentication rewritten as a premium entry experience with animated brand presence and bilingual copy.
 - [x] Settings rewritten as a premium personal control center with profile, experience controls, quick links and privacy emphasis.
 - [x] Meal Builder rewritten as a premium nutrition composition flow with portion controls and live nutrition snapshot.
+- [x] Price Intelligence rewritten as a premium source-aware price movement surface.
 - [ ] Apply same quality to remaining detail routes.
 - [ ] Haptic-ready interaction boundaries where supported.
 
@@ -113,7 +116,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 
 ## Progress estimate
 
-**Approximate UI roadmap completion: ~85%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. Remaining work is concentrated in remaining detail routes, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
+**Approximate UI roadmap completion: ~87%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. Remaining work is concentrated in remaining detail routes, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
 
 ## Execution rules
 Work continuously from the first unchecked item. Prefer reusable foundations over one-off styling. Do not rewrite domain behavior for visual polish. Preserve voice contracts, user state, accessibility and business logic.
