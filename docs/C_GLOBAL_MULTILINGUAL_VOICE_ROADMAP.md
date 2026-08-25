@@ -70,7 +70,9 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Personal Insights moved onto the premium visual language.
 - [x] Locale selection moved onto the premium visual language.
 - [x] Notification inbox moved onto the premium visual language.
-- [ ] Apply same quality to remaining domain/settings/onboarding screens.
+- [x] Onboarding rewritten as a guided premium setup with animated progress/aura and stronger option states.
+- [x] Authentication rewritten as a premium entry experience with animated brand presence and bilingual copy.
+- [ ] Apply same quality to remaining settings/detail routes.
 - [ ] Haptic-ready interaction boundaries where supported.
 
 ## Phase 8 — Persian + global
@@ -78,6 +80,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Mature conversational Persian copy preserved.
 - [x] Language remains independent from stored data/business logic.
 - [x] Locale selection now follows the premium shell and keeps RTL-aware state.
+- [x] Onboarding/auth preserve Persian/English copy paths and RTL layout mode.
 - [ ] Full RTL audit across every feature route.
 - [ ] Locale-aware dates/numbers/units audit across all redesigned surfaces.
 - [ ] Long-text/translation-resilience review for premium components.
@@ -86,6 +89,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Semantic button roles/labels on major redesigned actions.
 - [x] Reduced-motion behavior implemented for primary animated voice surfaces.
 - [x] Loading/error fallbacks preserved across redesigned route families.
+- [x] Onboarding option controls expose radio semantics and selected state.
 - [ ] Full touch-target and screen-reader audit across all routes.
 - [ ] Dynamic text and keyboard resilience audit.
 - [ ] Focus order and voice-over/navigation review for complex cards/modals.
@@ -105,7 +109,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 
 ## Progress estimate
 
-**Approximate UI roadmap completion: ~79%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. Remaining work is concentrated in remaining onboarding/settings/detail routes, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
+**Approximate UI roadmap completion: ~82%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. Remaining work is concentrated in remaining settings/detail routes, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
 
 ## Execution rules
 Work continuously from the first unchecked item. Prefer reusable foundations over one-off styling. Do not rewrite domain behavior for visual polish. Preserve voice contracts, user state, accessibility and business logic.
