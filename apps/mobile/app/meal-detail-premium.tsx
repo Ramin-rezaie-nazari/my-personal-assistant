@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { getMeals, hasAuthSession, Meal } from '../lib/api';
 import { PREMIUM } from '../lib/premium-ui';
@@ -67,14 +67,14 @@ export default function MealDetailPremiumScreen() {
       </View>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.content}>
         <View style={styles.top}>
-          <Pressable onPress={() => router.back()} style={styles.icon} accessibilityRole="button" accessibilityLabel="Back">
+          <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.icon}>
             <Ionicons name="arrow-back" size={18} color={PREMIUM.colors.inkSoft} />
           </Pressable>
           <View style={styles.titleWrap}>
             <Text style={styles.kicker}>NUTRITION MOMENT</Text>
             <Text style={styles.topType}>{meal.type}</Text>
           </View>
-          <Pressable onPress={() => router.push('/assistant')} style={styles.icon} accessibilityRole="button" accessibilityLabel="Ask MYPA">
+          <Pressable accessibilityRole="button" accessibilityLabel="Open assistant" onPress={() => router.push('/assistant')} style={styles.icon}>
             <Ionicons name="mic-outline" size={18} color={PREMIUM.colors.primaryBright} />
           </Pressable>
         </View>
@@ -104,6 +104,7 @@ export default function MealDetailPremiumScreen() {
           <Text style={styles.sectionTitle}>What went into it</Text>
           <Text style={styles.sectionMeta}>{meal.items.length} items</Text>
         </View>
+
         <View style={styles.ingredients}>
           {meal.items.map((item, index) => (
             <View key={item.id} style={[styles.ingredient, index === meal.items.length - 1 && styles.lastIngredient]}>
@@ -133,12 +134,7 @@ export default function MealDetailPremiumScreen() {
 }
 
 function Metric({ label, value, tone }: { label: string; value: string; tone: 'mint' | 'cyan' | 'amber' }) {
-  return (
-    <View style={styles.metric}>
-      <Text style={styles.metricLabel}>{label}</Text>
-      <Text style={[styles.metricValue, { color: PREMIUM.colors[tone] }]}>{value}</Text>
-    </View>
-  );
+  return <View style={styles.metric}><Text style={styles.metricLabel}>{label}</Text><Text style={[styles.metricValue, { color: PREMIUM.colors[tone] }]}>{value}</Text></View>;
 }
 
 const styles = StyleSheet.create({
@@ -157,12 +153,12 @@ const styles = StyleSheet.create({
   time: { color: PREMIUM.colors.muted, fontSize: 11, marginTop: -9 },
   hero: { borderRadius: 26, padding: 20, backgroundColor: PREMIUM.colors.ink, overflow: 'hidden' },
   heroGlow: { position: 'absolute', width: 240, height: 240, borderRadius: 120, right: -120, top: -100, backgroundColor: PREMIUM.colors.cyan, opacity: 0.10 },
-  heroKicker: { color: PREMIUM.colors.inkSoft, fontSize: 8, fontWeight: '900', letterSpacing: 1.2 },
+  heroKicker: { color: PREMIUM.colors.muted, fontSize: 8, fontWeight: '900', letterSpacing: 1.2 },
   heroCalories: { color: PREMIUM.colors.white, fontSize: 42, lineHeight: 48, fontWeight: '900', marginTop: 7 },
-  heroUnit: { fontSize: 14, color: PREMIUM.colors.inkSoft, fontWeight: '800' },
+  heroUnit: { fontSize: 14, color: PREMIUM.colors.muted, fontWeight: '800' },
   macroRow: { flexDirection: 'row', gap: 22, marginTop: 17 },
   metric: { minWidth: 72 },
-  metricLabel: { color: PREMIUM.colors.inkSoft, fontSize: 9, fontWeight: '800' },
+  metricLabel: { color: PREMIUM.colors.muted, fontSize: 9, fontWeight: '800' },
   metricValue: { fontSize: 13, fontWeight: '900', marginTop: 4 },
   sectionHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
   sectionTitle: { color: PREMIUM.colors.ink, fontSize: 18, fontWeight: '900' },
