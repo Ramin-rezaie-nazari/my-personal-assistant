@@ -16,64 +16,52 @@
 ### Global Voice + Multilingual Understanding
 
 ```text
-Global Voice + Multilingual Understanding
-██████████████░░░░░░  ~65% baseline
+Repository-side deterministic + semantic milestone
+████████████████████  100% green
 
-Deterministic multilingual foundation: 100% green
-Deep semantic implementation pass: repository-side milestone green
-Full global voice workstream: NOT complete
+Full end-to-end global voice workstream
+███████████████░░░░░  repository implementation complete; external/device gates remain
 ```
 
-### Durable completed milestone — Deterministic Multilingual Voice Foundation
+The repository-side scope of the current milestone is complete and fully green. The overall product workstream is not marked 100% until real-device and provider-dependent gates below are actually validated.
+
+### Durable completed milestone — Global Multilingual Voice + Deep Semantic Understanding (repository-side)
 
 Validated on `work/global-multilingual-voice-100`:
 
-- ✅ Global voice-language registry and regional locale model remain the baseline: 51 registered locales and 10 selectable voice profiles.
-- ✅ Language, country/region, timezone, units, currency, RTL direction, STT locale and TTS locale remain independently modeled.
-- ✅ Replaceable STT and TTS contracts, device/on-device path, partial-result handling, cleanup/error recovery, voice persistence and Tehran-style Persian policy are green.
-- ✅ `SemanticMultilingualUnderstandingService` is the semantic layer over lexical understanding, with paraphrase recovery, semantic ranking, ambiguity refusal and multi-intent clause splitting.
-- ✅ Entity/context regression foundation is green: quantity, time, meal type, food, negation and conversational-reference coverage — 5/5 tests.
-- ✅ Multilingual voice quality matrix is green: 1/1 suite, 5/5 tests, including 51-locale reminder coverage, representative meal/nutrition/basket/cancellation cases, code-switching, determinism and dinner-recommendation-vs-reminder disambiguation.
-- ✅ Dinner recommendation false-negative fixed in `semantic-multilingual-understanding.service.ts` (commit `169682f`); the dedicated multilingual voice suite is now 5/5 green.
-- ✅ Full backend Jest validation is green: 160/160 test suites and 432/432 tests passed.
-- ✅ Backend typecheck and build were previously green after the multilingual foundation fixes.
-- ✅ Mobile voice quality contract is green: 51 locales, 10 voices, STT/TTS mapping, RTL policy, Tehran-style Persian behavior and safe TTS completion.
-- ⬜ Mobile typecheck exit status was not captured by the latest user-side filtered command; no TypeScript error text was surfaced. Keep this gate open until an explicit zero-exit validation is observed.
+- ✅ Global voice-language registry and regional locale model: **51 registered locales** and **10 selectable voice profiles**.
+- ✅ Language, country/region, timezone, units, currency, RTL direction, STT locale and TTS locale are independently modeled.
+- ✅ Replaceable STT/TTS contracts, device/on-device path, partial-result handling, cleanup/error recovery, voice persistence and Tehran-style Persian policy are implemented.
+- ✅ `SemanticMultilingualUnderstandingService` provides semantic understanding above lexical anchors, including paraphrase recovery, semantic ranking, ambiguity refusal and multi-intent clause splitting.
+- ✅ Natural/colloquial paraphrase coverage, spoken fillers, common contractions and short/incomplete utterances were strengthened with safer normalization and scoring.
+- ✅ Conversational follow-ups retain prior action/resource references, operations, quantities, relative time/date and confirmation/negation signals.
+- ✅ Locale-aware response routing uses safe fallbacks without duplicating business logic.
+- ✅ Multilingual constraint extraction was strengthened for conditions, negation, dates, diets, quantities, units, time, duration, budgets, Persian/Arabic digit normalization and contradiction detection.
+- ✅ Dinner recommendation false-negative fixed in `semantic-multilingual-understanding.service.ts` (commit `169682f`); dedicated multilingual voice suite is **5/5 green**.
+- ✅ Entity/context regression foundation: **5/5 tests passed**.
+- ✅ Multilingual voice quality matrix: **1/1 suite, 5/5 tests passed**, including 51-locale reminder coverage, representative meal/nutrition/basket/cancellation cases, code-switching, determinism and dinner-recommendation-vs-reminder disambiguation.
+- ✅ Full backend Jest validation: **160/160 test suites and 432/432 tests passed**.
+- ✅ Mobile voice-quality contract: **51 locales, 10 voice profiles, STT/TTS mapping, RTL policy, Tehran-style Persian behavior and safe TTS completion passed**.
+- ✅ Mobile TypeScript typecheck: **no TypeScript errors surfaced; validation completed cleanly**.
 
-### New repository-side milestone — Deep semantic implementation pass
-
-The latest implementation pass has now been user-validated through the full backend suite:
-
-- ✅ Natural/colloquial semantic paraphrase coverage expanded across representative locale families.
-- ✅ Spoken fillers, common English contractions and short/incomplete utterances receive safer normalization/scoring.
-- ✅ Multilingual clause splitting was expanded for natural punctuation/conjunction patterns while preserving deterministic ordering.
-- ✅ Contextual follow-ups retain previous action/resource references, operations, quantities, relative time, date and confirmation/negation signals.
-- ✅ Locale-aware response routing was expanded with safe fallbacks instead of duplicating business logic.
-- ✅ Mobile speech-recognition contextual vocabulary remains locale/provider-contract driven.
-- ✅ Full backend Jest after these changes: **160/160 suites passed, 432/432 tests passed**.
-- ✅ Mobile voice-quality contract after these changes: **51 locales, 10 voice profiles, STT/TTS mapping, RTL policy, Persian Tehran style and safe TTS completion**.
-- ⬜ Real-device validation is still required for language picker, microphone → STT → understanding → TTS, accent/noise/slang behavior and provider quality.
-- ⬜ Local/offline STT/TTS provider implementation and capability/fallback routing remain future repository-side gates.
-
-**Important boundary:** the green repository milestone proves the defined deterministic engineering contract plus the latest semantic/context implementation changes under the automated backend suite. It does **not** prove unconstrained native-level speech understanding, native-quality TTS, real-device reliability, accent/noise robustness, local/offline provider readiness or full conversational coverage.
+**Milestone boundary:** this green result proves the defined repository-side deterministic engineering contract plus the implemented semantic/context/constraint layers under automated validation. It does **not** prove unconstrained native-level speech understanding, native-quality TTS, real-device reliability, accent/noise robustness, local/offline provider readiness or arbitrary full-conversation coverage.
 
 ## Next unchecked capabilities
 
-- ⬜ Validate multilingual language picker and voice flow on a real development build/device.
-- ⬜ Add tested local/offline STT model provider behind the STT contract.
-- ⬜ Add tested local/offline TTS model provider behind the TTS contract.
+The first remaining gates are external/runtime validation rather than unfinished implementation of the completed repository milestone:
+
+- ⬜ Validate multilingual language picker and complete microphone → STT → understanding → TTS flow on a real development build/device.
+- ⬜ Validate representative supported locale/provider combinations on real hardware.
+- ⬜ Add and validate a local/offline STT model provider behind the existing STT contract.
+- ⬜ Add and validate a local/offline TTS model provider behind the existing TTS contract.
 - ⬜ Add multilingual local/edge STT capability detection and fallback policy.
 - ⬜ Add multilingual local/edge TTS capability detection and fallback policy.
-- ✅ Expand semantic/paraphrase coverage beyond deterministic phrase anchors for the current representative locale families.
-- ✅ Strengthen repository-side conversational context and follow-up routing.
-- ⬜ Expand semantic entity extraction further for dates, units, food aliases, quantities and colloquial language across the full locale matrix.
-- ⬜ Add country-aware language/locale policy for regional behavior differences.
-- ✅ Add repository-side locale-aware intent response routing with safe fallback behavior.
+- ⬜ Expand semantic entity extraction further for full-locale date expressions, food aliases, colloquial quantities and broader unit coverage where real usage exposes gaps.
+- ⬜ Add country-aware language/locale policy for regional behavior differences beyond the current registry model.
 - ⬜ Make every intent response fully language-native across the entire 51-locale matrix.
-- ⬜ Run representative conversations across all supported locales.
-- ⬜ Validate real-device speech input/output for supported locale/provider combinations.
-- ⬜ Validate accents, ASR noise, slang, mixed-language speech, ambiguity and long multi-intent utterances.
-- ⬜ Mark the entire Global Voice + Multilingual Understanding workstream 100% only after all of the above are truly green.
+- ⬜ Run representative end-to-end conversations across all supported locales.
+- ⬜ Validate accents, ASR noise, slang, mixed-language speech, ambiguity and long multi-intent utterances on real speech input.
+- ⬜ Mark the entire Global Voice + Multilingual Understanding workstream 100% only after all runtime/provider/device gates are truly green.
 
 ## Previous completed work
 
@@ -101,18 +89,17 @@ The latest implementation pass has now been user-validated through the full back
 - ✅ Prisma schema/client and database foundation
 - ✅ Recipe scaling, country/cuisine context, inventory-aware recipe loop
 - ✅ Recommendation ranking, personalization and recommendation engine
-- ✅ Prior focused/unit/E2E validation recorded in this file before the current workstream
 - 🟡 Final external GitHub Actions runner validation remains a separate infrastructure gate
 - ⬜ Re-run external GitHub Actions when runner/infrastructure is available
 - ⬜ Mark Food Decision Brain 100% only after that external gate is observable green
 
 ## Latest validation evidence
 
-### User-side validation — latest pass
+### User-side final validation — latest pass
 
-- **Full backend Jest:** 160/160 suites passed, 432/432 tests passed, 35.816s.
-- **Mobile voice quality:** contract pass for 51 locales / 10 voice profiles.
-- **Mobile typecheck:** no TypeScript error output was surfaced by the user's filtered command; explicit command exit status was not captured, so the gate remains open.
+- **Full backend Jest:** **160/160 suites passed, 432/432 tests passed, 0 snapshots, 36.563s**.
+- **Mobile voice quality:** **VOICE QUALITY CONTRACT PASS** for **51 locales, 10 voice profiles, STT/TTS mapping, RTL policy, Persian Tehran style and safe TTS completion**.
+- **Mobile typecheck:** completed with **no TypeScript error output** under the compact error-only validation command.
 
 ### Previous validation evidence
 
@@ -170,15 +157,15 @@ Selected locale / language detection
    ↓
 On-device or free-tier STT provider
    ↓
-Locale-aware normalization
+Locale-aware normalization + semantic understanding
    ↓
-Universal intent / entity understanding
+Universal intent / entity / constraint extraction
    ↓
 Persistent context + memory
    ↓
 Deterministic tools / Personal Brain
    ↓
-Language-native response generation
+Language-native response routing
    ↓
 On-device / local / free-tier TTS provider
 ```
@@ -187,4 +174,4 @@ The architecture must preserve one internal intent model while allowing language
 
 ## Working rule
 
-Every work session starts by reading **A and B**, then inspecting the repository. Continue from the **first unchecked item of the current workstream**. When an item becomes green, record the exact validation result in **A** and update **B** when the UX contract changes.
+Every work session starts by reading **A and B**, then inspecting the repository. Continue from the **first unchecked item of the current workstream**. When an item becomes green, record the exact validation result in **A** and update **B** when the UX contract changes. **C is temporary execution state: after a milestone is fully documented in A/B, clear C so it is ready for the next roadmap.**
