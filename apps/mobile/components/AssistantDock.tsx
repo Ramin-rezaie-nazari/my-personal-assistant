@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 import { PREMIUM } from '../lib/premium-ui';
 import { BrandMark } from './BrandMark';
 
-export function AssistantDock({ accessibilityLabel = 'Open MYPA assistant' }: { accessibilityLabel?: string }) {
+export function AssistantDock({ onPress, accessibilityLabel = 'Open MYPA assistant' }: { onPress?: () => void; accessibilityLabel?: string }) {
   const pulse = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     const loop = Animated.loop(Animated.sequence([
@@ -15,13 +15,13 @@ export function AssistantDock({ accessibilityLabel = 'Open MYPA assistant' }: { 
     loop.start();
     return () => loop.stop();
   }, [pulse]);
-
+  const openAssistant = onPress ?? (() => router.push('/assistant'));
   return (
     <Animated.View style={[styles.shell, { transform: [{ scale: pulse }] }]}>
       <View style={styles.dock}>
         <Pressable accessibilityRole="button" accessibilityLabel="Open daily view" onPress={() => router.push('/daily')} style={styles.item}><Ionicons name="today-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Open reminders" onPress={() => router.push('/reminders')} style={styles.item}><Ionicons name="notifications-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={() => router.push('/assistant')} style={styles.core}><BrandMark size={46} /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={openAssistant} style={styles.core}><BrandMark size={46} /></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Open calendar" onPress={() => router.push('/calendar')} style={styles.item}><Ionicons name="calendar-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
         <Pressable accessibilityRole="button" accessibilityLabel="Open brain overview" onPress={() => router.push('/brain-overview')} style={styles.item}><Ionicons name="sparkles-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
       </View>
