@@ -192,12 +192,12 @@ export class AssistantService {
     return receipt;
   }
 
-  async process(input: string, userId: string) {
+  async process(input: string, userId: string, preferredLanguage?: string) {
     await this.conversationContextService.append({ userId, role: 'user', text: input });
     const contextualCommand = await this.contextualCommandService.resolve(userId, input);
     const local = this.semanticMultilingualUnderstandingService
-      ? this.semanticMultilingualUnderstandingService.understand(input)
-      : this.localLanguageUnderstandingService?.understand(input);
+      ? this.semanticMultilingualUnderstandingService.understand(input, preferredLanguage)
+      : this.localLanguageUnderstandingService?.understand(input, preferredLanguage);
     const plan = this.planningService
       ? await this.planningService.createPlan({
           clauses: contextualCommand.clauses,
@@ -243,6 +243,7 @@ export class AssistantService {
         localUnderstanding: local,
         contextualCommand,
         localPlan: plan,
+        preferredLanguage: preferredLanguage ?? null,
       },
     };
     const receipt = execution?.receipt;
