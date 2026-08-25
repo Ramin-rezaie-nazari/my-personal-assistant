@@ -274,6 +274,20 @@ export class SemanticMultilingualUnderstandingService {
     const canonicalIntent = CANONICAL_INTENTS[key];
     if (canonicalIntent) return { ...base, intent: canonicalIntent, confidence: Math.max(base.confidence, 0.92) };
 
+    if (base.intent === 'CANCEL_REQUEST') {
+      const normalizedForRecovery = this.semanticNormalize(base.normalizedText, base.language);
+      const recovery = this.rank(base.language, normalizedForRecovery).find((candidate) => candidate.intent === 'RECOMMEND_MEAL');
+      if (recovery && recovery.score >= 0.9) {
+        return {
+          ...base,
+          normalizedText: normalizedForRecovery,
+          intent: 'RECOMMEND_MEAL',
+          confidence: Math.min(0.96, 0.72 + recovery.score * 0.22),
+        };
+      }
+      return base;
+    }
+
     if (base.intent !== 'UNKNOWN') return base;
 
     const normalized = this.semanticNormalize(base.normalizedText, base.language);
@@ -297,7 +311,7 @@ export class SemanticMultilingualUnderstandingService {
 
   splitClauses(input: string): string[] {
     return input
-      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|then|also|plus|و بعدش|و همچنین|و بعد|بعد|هم|ثم)\s+)/iu)
+      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|then|also|plus|و بعدش|و همچنین|و بعد|بعد|هم|ثم)\s+|\s+(?=بعد\s+))/iu)
       .map((part) => part.trim())
       .filter(Boolean);
   }
