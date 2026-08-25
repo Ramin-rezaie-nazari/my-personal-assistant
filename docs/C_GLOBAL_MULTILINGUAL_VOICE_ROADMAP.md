@@ -40,6 +40,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Structured execution metadata remains compact.
 - [x] Reusable premium result-card primitive with contextual action chips added.
 - [x] Daily surface now uses premium result cards and contextual actions.
+- [x] Meals/Nutrition surface now uses premium result cards, contextual actions and premium meal cards.
 - [ ] Integrate rich result cards/chips into Assistant responses for action-specific outcomes.
 
 ## Phase 5 — Navigation + information architecture
@@ -63,7 +64,8 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Expo Vector Icons introduced for major command-center/assistant actions.
 - [x] Prototype-like text markers reduced in redesigned primary surfaces.
 - [x] Daily experience moved onto the premium visual language.
-- [ ] Apply the same polish to nutrition, recipe, inventory, shopping, fitness, reminder and settings screens.
+- [x] Meals/Nutrition experience moved onto the premium visual language.
+- [ ] Apply the same polish to recipe, inventory, shopping, fitness, reminder and settings screens.
 - [ ] Haptic-ready interaction boundaries where supported.
 
 ## Phase 8 — Persian + global
@@ -76,7 +78,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 ## Phase 9 — Accessibility + resilience
 - [x] Semantic button roles/labels on major redesigned actions.
 - [x] Reduced-motion behavior implemented for primary animated voice surfaces.
-- [x] Loading/error fallbacks preserved in redesigned Command Center and Assistant.
+- [x] Loading/error fallbacks preserved in redesigned Command Center, Assistant, Daily and Meals.
 - [ ] Full touch-target and screen-reader audit across all routes.
 - [ ] Dynamic text and keyboard resilience audit.
 
