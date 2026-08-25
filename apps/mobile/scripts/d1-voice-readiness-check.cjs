@@ -33,6 +33,11 @@ assert(assistant.includes('stopAssistantSpeech()'), 'assistant speech cleanup is
 assert(speech.includes('requestPermissionsAsync()'), 'microphone/speech permission request missing');
 assert(speech.includes('contextualStrings: getSpeechContextualTerms(locale)'), 'locale-aware speech context missing');
 assert(speech.includes('requiresOnDeviceRecognition: false'), 'D1 should not force on-device recognition for every locale');
+assert(speech.includes('abort: () => void'), 'recognition handle must expose explicit abort');
+assert(speech.includes('const abort = () =>'), 'recognition abort implementation is missing');
+assert(speech.includes('ExpoSpeechRecognitionModule.abort()'), 'native recognizer abort is missing');
+assert(speech.includes('requestPermissionsAsync();'), 'permission request must remain inside the guarded lifecycle');
+assert(speech.includes('catch (error)'), 'permission/start failures must be guarded');
 assert(speech.includes('resultListener.remove()'), 'recognition result listener cleanup missing');
 assert(speech.includes('endListener.remove()'), 'recognition end listener cleanup missing');
 assert(speech.includes('errorListener.remove()'), 'recognition error listener cleanup missing');
@@ -40,4 +45,4 @@ assert(voice.includes('language: profile.locale'), 'TTS locale is not passed to 
 assert(voice.includes('onError: () => resolve()'), 'TTS failure cannot safely complete the promise');
 assert((languages.match(/\['[a-z]{2}(?:-[A-Z]{2}|-[A-Z][a-z]{2})',/g) || []).length >= 51, 'expected the registered global locale table to remain broad');
 
-console.log('D1 VOICE READINESS CONTRACT PASS: permissions, Expo voice wiring, active-locale STT/TTS binding, state transitions, provider fallback and listener cleanup are present.');
+console.log('D1 VOICE READINESS CONTRACT PASS: permissions, Expo voice wiring, active-locale STT/TTS binding, state transitions, provider fallback and abort-safe listener cleanup are present.');
