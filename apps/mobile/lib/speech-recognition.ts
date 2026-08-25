@@ -74,7 +74,8 @@ export function getSpeechContextualTerms(locale: string): readonly string[] {
 }
 
 export function supportsOnDeviceSpeech(locale: string): boolean {
-  return VOICE_LANGUAGES.some((item) => item.code === locale);
+  if (!VOICE_LANGUAGES.some((item) => item.code === locale)) return false;
+  return ExpoSpeechRecognitionModule.supportsOnDeviceRecognition();
 }
 
 export async function startRecognition(
@@ -87,16 +88,16 @@ export async function startRecognition(
   let cleaned = false;
   let ended = false;
 
-  const removeListeners = (listeners: {
-    result: { remove: () => void };
-    end: { remove: () => void };
-    error: { remove: () => void };
-  }) => {
+  let resultListener: { remove: () => void } | null = null;
+  let endListener: { remove: () => void } | null = null;
+  let errorListener: { remove: () => void } | null = null;
+
+  const removeListeners = () => {
     if (cleaned) return;
     cleaned = true;
-    listeners.result.remove();
-    listeners.end.remove();
-    listeners.error.remove();
+    resultListener?.remove();
+    endListener?.remove();
+    errorListener?.remove();
   };
 
   try {
@@ -107,30 +108,30 @@ export async function startRecognition(
     }
 
     const language = getVoiceLanguage(locale);
-    const resultListener = ExpoSpeechRecognitionModule.addListener('result', (event) => {
+    resultListener = ExpoSpeechRecognitionModule.addListener('result', (event) => {
       const first = event.results?.[0];
       if (first?.transcript) onResult({ transcript: first.transcript, isFinal: Boolean(event.isFinal) });
     });
 
-    const endListener = ExpoSpeechRecognitionModule.addListener('end', () => {
+    endListener = ExpoSpeechRecognitionModule.addListener('end', () => {
       ended = true;
-      removeListeners({ result: resultListener, end: endListener, error: errorListener });
+      removeListeners();
       onEnd();
     });
 
-    const errorListener = ExpoSpeechRecognitionModule.addListener('error', (event) => {
+    errorListener = ExpoSpeechRecognitionModule.addListener('error', (event) => {
       if (event.error === 'aborted') return;
-      removeListeners({ result: resultListener, end: endListener, error: errorListener });
+      removeListeners();
       onError(event.message || messages.recognition);
     });
 
     const stop = () => ExpoSpeechRecognitionModule.stop();
     const abort = () => {
       if (ended) return;
-      removeListeners({ result: resultListener, end: endListener, error: errorListener });
+      removeListeners();
       ExpoSpeechRecognitionModule.abort();
     };
-    const remove = () => removeListeners({ result: resultListener, end: endListener, error: errorListener });
+    const remove = () => removeListeners();
 
     try {
       ExpoSpeechRecognitionModule.start({
@@ -143,14 +144,14 @@ export async function startRecognition(
         contextualStrings: getSpeechContextualTerms(locale) as string[],
       });
     } catch (error) {
-      remove();
-      ExpoSpeechRecognitionModule.abort();
+      abort();
       onError(error instanceof Error ? error.message : messages.start);
       return null;
     }
 
     return { stop, abort, remove };
   } catch (error) {
+    removeListeners();
     onError(error instanceof Error ? error.message : messages.start);
     return null;
   }
