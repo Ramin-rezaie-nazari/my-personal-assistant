@@ -43,13 +43,24 @@ const premiumRouteAliases = [
   ['yoga.tsx', "export { default } from './yoga-premium';"],
 ];
 
+const directRouteExceptions = new Set([
+  '_layout.tsx',
+  'index.tsx',
+  'command-center.tsx',
+  'command-center-v2.tsx',
+  'auth.tsx',
+  'onboarding.tsx',
+  'settings.tsx',
+];
+
 const requiredTokens = [
   ['app/_layout.tsx', ['AssistantDock', 'PREMIUM.colors.canvas', 'ErrorBoundary']],
   ['app/command-center-v2.tsx', ['AssistantVoiceOrb', 'PremiumGlow', 'PREMIUM', 'rtl']],
   ['app/assistant-premium.tsx', ['AssistantVoiceOrb', 'startRecognition', 'speakAssistantText', 'PremiumGlow', 'PREMIUM']],
   ['app/smart-meals-premium.tsx', ['PremiumResultCard', 'buildSmartMealSuggestions', 'PremiumGlow', 'PREMIUM']],
   ['app/meal-detail-premium.tsx', ['PremiumResultCard', 'getMeals', 'PremiumGlow', 'PREMIUM']],
-  ['components/AssistantVoiceOrb.tsx', ['listening', 'thinking', 'speaking', 'done']],
+  ['components/AssistantVoiceOrb.tsx', ['listening', 'thinking', 'acting', 'speaking', 'done']],
+  ['components/PremiumResultCard.tsx', ['I18nManager', 'rtlActions', 'useReducedMotion']],
 ];
 
 const failures = [];
@@ -67,6 +78,13 @@ for (const [file, expected] of premiumRouteAliases) {
   }
   const content = fs.readFileSync(full, 'utf8');
   if (!content.includes(expected)) failures.push(`route is not wired to premium surface: app/${file}`);
+}
+
+const directFiles = fs.readdirSync(appDir).filter((name) => name.endsWith('.tsx') && !name.endsWith('-premium.tsx'));
+for (const file of directFiles) {
+  if (directRouteExceptions.has(file) || premiumRouteAliases.some(([name]) => name === file)) continue;
+  const content = fs.readFileSync(path.join(appDir, file), 'utf8');
+  if (!content.includes('export { default }')) failures.push(`unclassified non-premium direct route: app/${file}`);
 }
 
 const detailRoute = path.join(appDir, 'meal', '[id].tsx');
