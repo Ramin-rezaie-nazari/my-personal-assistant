@@ -44,6 +44,31 @@ const DEFAULT_CONTEXTUAL_TERMS = [
   'موجودی خانه', 'تمرین', 'کالری', 'پروتئین',
 ] as const;
 
+const ERROR_COPY: Partial<Record<LanguageCode, { permission: string; recognition: string; start: string }>> = {
+  'fa-IR': {
+    permission: 'برای استفاده از گفت‌وگوی صوتی، اجازهٔ میکروفن و تشخیص گفتار لازمه.',
+    recognition: 'تشخیص صدا با مشکل مواجه شد.',
+    start: 'شروع تشخیص صدا ناموفق بود.',
+  },
+  'en-US': { permission: 'Microphone and speech recognition permission is required.', recognition: 'Speech recognition failed.', start: 'Could not start speech recognition.' },
+  'en-GB': { permission: 'Microphone and speech recognition permission is required.', recognition: 'Speech recognition failed.', start: 'Could not start speech recognition.' },
+  'es-ES': { permission: 'Se necesita permiso para el micrófono y el reconocimiento de voz.', recognition: 'El reconocimiento de voz ha fallado.', start: 'No se pudo iniciar el reconocimiento de voz.' },
+  'fr-FR': { permission: 'L’accès au microphone et à la reconnaissance vocale est requis.', recognition: 'La reconnaissance vocale a échoué.', start: 'Impossible de démarrer la reconnaissance vocale.' },
+  'de-DE': { permission: 'Mikrofon- und Spracherkennungsberechtigung ist erforderlich.', recognition: 'Die Spracherkennung ist fehlgeschlagen.', start: 'Die Spracherkennung konnte nicht gestartet werden.' },
+  'it-IT': { permission: 'È necessario il permesso per microfono e riconoscimento vocale.', recognition: 'Il riconoscimento vocale non è riuscito.', start: 'Impossibile avviare il riconoscimento vocale.' },
+  'pt-BR': { permission: 'É necessária a permissão do microfone e do reconhecimento de fala.', recognition: 'O reconhecimento de fala falhou.', start: 'Não foi possível iniciar o reconhecimento de fala.' },
+  'ru-RU': { permission: 'Требуется доступ к микрофону и распознаванию речи.', recognition: 'Не удалось распознать речь.', start: 'Не удалось запустить распознавание речи.' },
+  'tr-TR': { permission: 'Mikrofon ve konuşma tanıma izni gerekli.', recognition: 'Konuşma tanıma başarısız oldu.', start: 'Konuşma tanıma başlatılamadı.' },
+  'ja-JP': { permission: 'マイクと音声認識の権限が必要です。', recognition: '音声認識に失敗しました。', start: '音声認識を開始できませんでした。' },
+  'zh-CN': { permission: '需要麦克风和语音识别权限。', recognition: '语音识别失败。', start: '无法启动语音识别。' },
+  'ar-SA': { permission: 'يلزم السماح بالميكروفون والتعرف على الكلام.', recognition: 'فشل التعرف على الكلام.', start: 'تعذر بدء التعرف على الكلام.' },
+};
+
+function getErrorCopy(locale: string) {
+  const code = locale as LanguageCode;
+  return ERROR_COPY[code] ?? ERROR_COPY['en-US'];
+}
+
 export function getSpeechContextualTerms(locale: string): readonly string[] {
   return CONTEXTUAL_TERMS[locale as LanguageCode] ?? DEFAULT_CONTEXTUAL_TERMS;
 }
@@ -58,23 +83,22 @@ export async function startRecognition(
   onEnd: () => void,
   onError: (message: string) => void,
 ): Promise<SpeechRecognitionHandle | null> {
+  const messages = getErrorCopy(locale);
   const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
   if (!permission.granted) {
-    onError('برای استفاده از گفت‌وگوی صوتی، اجازهٔ میکروفن و تشخیص گفتار لازمه.');
+    onError(messages?.permission ?? 'Microphone permission is required.');
     return null;
   }
 
   const language = getVoiceLanguage(locale);
   const resultListener = ExpoSpeechRecognitionModule.addListener('result', (event) => {
     const first = event.results?.[0];
-    if (first?.transcript) {
-      onResult({ transcript: first.transcript, isFinal: Boolean(event.isFinal) });
-    }
+    if (first?.transcript) onResult({ transcript: first.transcript, isFinal: Boolean(event.isFinal) });
   });
 
   const endListener = ExpoSpeechRecognitionModule.addListener('end', onEnd);
   const errorListener = ExpoSpeechRecognitionModule.addListener('error', (event) => {
-    onError(event.message || 'تشخیص صدا با مشکل مواجه شد.');
+    onError(event.message || messages?.recognition || 'Speech recognition failed.');
   });
 
   const cleanup = () => {
@@ -84,19 +108,18 @@ export async function startRecognition(
   };
 
   try {
-    const onDevice = ExpoSpeechRecognitionModule.supportsOnDeviceRecognition();
     ExpoSpeechRecognitionModule.start({
       lang: language.speechRecognitionLocale,
       interimResults: true,
       maxAlternatives: 1,
       continuous: false,
-      requiresOnDeviceRecognition: onDevice,
+      requiresOnDeviceRecognition: false,
       addsPunctuation: true,
       contextualStrings: getSpeechContextualTerms(locale) as string[],
     });
   } catch (error) {
     cleanup();
-    onError(error instanceof Error ? error.message : 'شروع تشخیص صدا ناموفق بود.');
+    onError(error instanceof Error ? error.message : messages?.start || 'Could not start speech recognition.');
     return null;
   }
 
