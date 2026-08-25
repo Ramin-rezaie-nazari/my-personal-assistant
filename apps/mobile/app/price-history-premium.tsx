@@ -32,6 +32,7 @@ export default function PriceHistoryPremiumScreen() {
   }, [key, days]);
 
   const points = useMemo(() => history.slice(-24), [history]);
+  const changeVs7d = analysis?.changeVs7d ?? null;
   const min = Math.min(...history.map((item) => item.amount), 0);
   const max = Math.max(...history.map((item) => item.amount), 0);
   const range = Math.max(1, max - min);
@@ -41,7 +42,7 @@ export default function PriceHistoryPremiumScreen() {
   return <SafeAreaView style={styles.safe}>
     <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
       <View style={styles.nav}><Pressable accessibilityRole="button" onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>←</Text></Pressable><View><Text style={styles.eyebrow}>PRICE INTELLIGENCE</Text><Text style={styles.navTitle}>{params.name ?? key.replace(/-/g, ' ')}</Text></View><View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>LIVE</Text></View></View>
-      <View style={styles.hero}><View style={styles.heroGlow} /><Text style={styles.heroLabel}>CURRENT SIGNAL</Text><Text style={styles.heroValue}>{money(analysis?.current ?? null)}</Text><Text style={styles.heroMeta}>{analysis?.changeVs7d === null ? 'داده کافی برای مقایسه نداریم' : `${analysis.changeVs7d > 0 ? '↑' : '↓'} ${Math.abs(analysis.changeVs7d).toFixed(1)}٪ نسبت به ۷ روز قبل`}</Text></View>
+      <View style={styles.hero}><View style={styles.heroGlow} /><Text style={styles.heroLabel}>CURRENT SIGNAL</Text><Text style={styles.heroValue}>{money(analysis?.current ?? null)}</Text><Text style={styles.heroMeta}>{changeVs7d === null ? 'داده کافی برای مقایسه نداریم' : `${changeVs7d > 0 ? '↑' : '↓'} ${Math.abs(changeVs7d).toFixed(1)}٪ نسبت به ۷ روز قبل`}</Text></View>
       <View style={styles.periods}>{[7, 30, 90, 365].map((item) => <Pressable key={item} onPress={() => setDays(item)} style={[styles.period, item === days && styles.periodActive]}><Text style={[styles.periodText, item === days && styles.periodTextActive]}>{item === 365 ? '۱ سال' : `${item} روز`}</Text></Pressable>)}</View>
       {error ? <View style={styles.error}><Text style={styles.errorTitle}>Price data needs attention</Text><Text style={styles.errorText}>{error}</Text></View> : null}
       <View style={styles.card}><View style={styles.cardHeader}><View><Text style={styles.cardTitle}>Price movement</Text><Text style={styles.cardSubtitle}>Recent observations from available sources.</Text></View><View style={styles.metricBubble}><Text style={styles.metricBubbleText}>{history.length}</Text><Text style={styles.metricBubbleLabel}>points</Text></View></View>
