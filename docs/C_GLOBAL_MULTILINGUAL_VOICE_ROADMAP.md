@@ -14,6 +14,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Reusable PremiumGlow / PremiumSurface / PremiumResultCard primitives.
 - [x] Reduced-motion support at the shared interaction primitive level.
 - [x] Living Voice Core with idle/listening/thinking/acting/speaking/done states.
+- [x] Voice Core is a real semantic Pressable interaction instead of a visual-only affordance.
 - [x] Persistent voice-first assistant dock reduced to Today / MYPA Core / Settings.
 - [x] Command Center rewritten around the assistant as the primary visual anchor.
 - [x] Assistant rewritten as a premium voice-first experience with execution moments and follow-up actions.
@@ -22,7 +23,10 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Meal Builder, Price Intelligence, Smart Meals and Meal Detail rewritten as premium experiences.
 - [x] All currently known direct feature routes are either premium implementations or explicit shell/entry exceptions.
 - [x] UI Quality Contract added for foundation, route wiring, RTL hooks, voice states and future-route drift detection.
+- [x] UI Quality Contract explicitly checks the Voice Core remains tappable and semantic.
 - [x] CI workflow added for UI quality contract, voice quality contract and mobile typecheck on push/PR.
+- [x] Startup entrance shortened so the daily-use premium feel does not become a recurring delay.
+- [x] Implicit English Voice Core hint removed so Persian/global UI does not silently mix copy.
 
 ## Final validation gates — only remaining
 - [ ] Run mobile `typecheck` on the user's current workspace and confirm zero exit.
