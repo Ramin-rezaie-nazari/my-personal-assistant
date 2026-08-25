@@ -11,6 +11,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Native reduced-motion preference hook.
 - [x] Premium dark surface language established for the Command Center and Assistant.
 - [x] Reusable premium surface primitive.
+- [x] Premium result-card primitive for contextual outputs and deep-link actions.
 - [ ] Expand the surface/button/progress/empty-state library across every feature screen.
 
 ## Phase 2 — Command Center
@@ -37,7 +38,9 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Clear user vs assistant result presentation.
 - [x] Animated voice state transitions are represented through the shared core.
 - [x] Structured execution metadata remains compact.
-- [ ] Rich result cards/chips and contextual deep-link actions still need implementation.
+- [x] Reusable premium result-card primitive with contextual action chips added.
+- [x] Daily surface now uses premium result cards and contextual actions.
+- [ ] Integrate rich result cards/chips into Assistant responses for action-specific outcomes.
 
 ## Phase 5 — Navigation + information architecture
 - [x] Global assistant remains reachable through a compact persistent command dock.
@@ -51,6 +54,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Shared press/entry motion used in redesigned surfaces and dock.
 - [x] Reduced-motion support for the primary animated voice surface.
 - [x] Reduced-motion preference is read from native accessibility settings.
+- [x] Animated entry support exists for premium result surfaces.
 - [ ] Shared transitions for result cards, domain navigation and data changes.
 - [ ] Meaningful number/progress transitions across the product.
 
@@ -58,7 +62,8 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Premium typography hierarchy, spacing rhythm, depth, shadows and restrained luminous accents established in the new shell.
 - [x] Expo Vector Icons introduced for major command-center/assistant actions.
 - [x] Prototype-like text markers reduced in redesigned primary surfaces.
-- [ ] Apply the same polish to daily, nutrition, recipe, inventory, shopping, fitness, reminder and settings screens.
+- [x] Daily experience moved onto the premium visual language.
+- [ ] Apply the same polish to nutrition, recipe, inventory, shopping, fitness, reminder and settings screens.
 - [ ] Haptic-ready interaction boundaries where supported.
 
 ## Phase 8 — Persian + global
