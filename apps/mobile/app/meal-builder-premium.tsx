@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -67,6 +67,7 @@ export default function MealBuilderPremiumScreen() {
       setSaving(true);
       setError(null);
       await createMeal({
+        name: `${type.charAt(0).toUpperCase()}${type.slice(1)} meal`,
         type,
         eatenAt: new Date().toISOString(),
         items: selected.map((food) => ({ foodId: food.id, quantity: food.quantity })),
@@ -95,7 +96,7 @@ export default function MealBuilderPremiumScreen() {
         <View style={styles.searchHeader}><Text style={styles.label}>Find a food</Text><TextInput value={query} onChangeText={setQuery} placeholder="Search foods…" placeholderTextColor={BRAND.colors.muted} style={styles.input}/></View>
         <View style={styles.foodList}>{filtered.map((food) => <Pressable key={food.id} onPress={() => addFood(food)} style={styles.foodRow}><View style={styles.foodOrb}><Text style={styles.foodOrbText}>{food.name.slice(0, 1).toUpperCase()}</Text></View><View style={styles.foodCopy}><Text style={styles.foodName}>{food.name}</Text><Text style={styles.foodMeta}>{Math.round(food.calories)} kcal · {Math.round(food.protein)}g protein</Text></View><Text style={styles.addText}>+</Text></Pressable>)}</View>
 
-        <View style={styles.selectedCard}><View style={styles.cardHeader}><View><Text style={styles.cardTitle}>Your plate</Text><Text style={styles.cardSubtitle}>{selected.length} ingredients</Text></View><View style={styles.totalBadge}><Text style={styles.totalBadgeValue}>{Math.round(totals.calories)}</Text><Text style={styles.totalBadgeLabel}>kcal</Text></View></View>{selected.length ? selected.map((food) => <View key={food.id} style={styles.selectedRow}><View style={styles.selectedCopy}><Text style={styles.foodName}>{food.name}</Text><Text style={styles.foodMeta}>{Math.round(food.calories * food.quantity)} kcal</Text></View><View style={styles.stepper}><Pressable onPress={() => changeQuantity(food.id, -1)} style={styles.step}><Text style={styles.stepText}>−</Text></Pressable><Text style={styles.quantity}>{food.quantity}</Text><Pressable onPress={() => changeQuantity(food.id, 1)} style={styles.step}><Text style={styles.stepText}>+</Text></Pressable></View></View>) : <View style={styles.empty}><Text style={styles.emptyMark}>＋</Text><Text style={styles.emptyTitle}>Your plate is waiting.</Text><Text style={styles.emptyText}>Pick a food and the nutrition story will appear here.</Text></View>}</View>
+        <View style={styles.selectedCard}><View style={styles.cardHeader}><View><Text style={styles.cardTitle}>Your plate</Text><Text style={styles.cardSubtitle}>{selected.length} ingredients</Text></View><View style={styles.totalBadge}><Text style={styles.totalBadgeValue}>{Math.round(totals.calories)}</Text><Text style={styles.totalBadgeLabel}>kcal</Text></View></View>{selected.length ? selected.map((food) => <View key={food.id} style={styles.selectedRow}><View style={styles.selectedCopy}><Text style={styles.foodName}>{food.name}</Text><Text style={styles.foodMeta}>{Math.round(food.calories * food.quantity)} kcal</Text></View><View style={styles.stepper}><Pressable onPress={() => changeQuantity(food.id, -1)} style={styles.step}><Text style={styles.stepControlText}>−</Text></Pressable><Text style={styles.quantity}>{food.quantity}</Text><Pressable onPress={() => changeQuantity(food.id, 1)} style={styles.step}><Text style={styles.stepControlText}>+</Text></Pressable></View></View>) : <View style={styles.empty}><Text style={styles.emptyMark}>＋</Text><Text style={styles.emptyTitle}>Your plate is waiting.</Text><Text style={styles.emptyText}>Pick a food and the nutrition story will appear here.</Text></View>}</View>
 
         <View style={styles.nutritionCard}><Text style={styles.nutritionTitle}>Nutrition snapshot</Text><View style={styles.nutritionGrid}><Total label="Calories" value={`${Math.round(totals.calories)} kcal`} /><Total label="Protein" value={`${Math.round(totals.protein)} g`} /><Total label="Carbs" value={`${Math.round(totals.carbs)} g`} /><Total label="Fat" value={`${Math.round(totals.fat)} g`} /></View></View>
         {error ? <View style={styles.error}><Text style={styles.errorTitle}>Couldn’t save this yet</Text><Text style={styles.errorText}>{error}</Text></View> : null}
@@ -156,7 +157,7 @@ const styles = StyleSheet.create({
   selectedCopy:{flex:1},
   stepper:{flexDirection:'row',alignItems:'center',gap:8},
   step:{width:30,height:30,borderRadius:10,backgroundColor:BRAND.colors.surfaceWarm,alignItems:'center',justifyContent:'center'},
-  stepText:{fontSize:17,fontWeight:'900',color:BRAND.colors.ink},
+  stepControlText:{fontSize:17,fontWeight:'900',color:BRAND.colors.ink},
   quantity:{minWidth:14,textAlign:'center',fontSize:12,fontWeight:'900',color:BRAND.colors.ink},
   empty:{paddingVertical:18,alignItems:'center'},
   emptyMark:{fontSize:24,color:BRAND.colors.primaryStrong},
