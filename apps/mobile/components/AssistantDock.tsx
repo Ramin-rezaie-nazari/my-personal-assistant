@@ -6,9 +6,14 @@ import { PREMIUM } from '../lib/premium-ui';
 import { BrandMark } from './BrandMark';
 import { useReducedMotion } from '../lib/use-reduced-motion';
 
-export function AssistantDock({ onPress, accessibilityLabel = 'Open MYPA assistant' }: { onPress?: () => void; accessibilityLabel?: string }) {
+export function AssistantDock({ onPress, accessibilityLabel }: { onPress?: () => void; accessibilityLabel?: string }) {
   const reduced = useReducedMotion();
   const pulse = useRef(new Animated.Value(1)).current;
+  const rtl = I18nManager.isRTL;
+  const labels = rtl
+    ? { today: 'باز کردن امروز', assistant: 'باز کردن دستیار MYPA', settings: 'باز کردن تنظیمات' }
+    : { today: 'Open today', assistant: 'Open MYPA assistant', settings: 'Open settings' };
+
   useEffect(() => {
     pulse.stopAnimation();
     if (reduced) {
@@ -27,20 +32,20 @@ export function AssistantDock({ onPress, accessibilityLabel = 'Open MYPA assista
 
   return (
     <Animated.View style={[styles.shell, { transform: [{ scale: pulse }] }]}>
-      <View style={[styles.dock, I18nManager.isRTL && styles.rtlRow]}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open today" onPress={() => router.push('/daily')} style={({ pressed }) => [styles.sideItem, pressed && styles.pressed]}>
+      <View style={[styles.dock, rtl && styles.rtlRow]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={labels.today} onPress={() => router.push('/daily')} style={({ pressed }) => [styles.sideItem, pressed && styles.pressed]}>
           <Ionicons name="today-outline" size={19} color={PREMIUM.colors.inkSoft} />
           <View style={styles.activeLine} />
         </Pressable>
 
         <View style={styles.centerSlot}>
-          <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={openAssistant} style={({ pressed }) => [styles.coreOuter, pressed && styles.corePressed]}>
+          <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel ?? labels.assistant} onPress={openAssistant} style={({ pressed }) => [styles.coreOuter, pressed && styles.corePressed]}>
             <View style={styles.coreGlow} />
             <View style={styles.coreInner}><BrandMark size={48} /></View>
           </Pressable>
         </View>
 
-        <Pressable accessibilityRole="button" accessibilityLabel="Open settings" onPress={() => router.push('/settings')} style={({ pressed }) => [styles.sideItem, pressed && styles.pressed]}>
+        <Pressable accessibilityRole="button" accessibilityLabel={labels.settings} onPress={() => router.push('/settings')} style={({ pressed }) => [styles.sideItem, pressed && styles.pressed]}>
           <Ionicons name="options-outline" size={19} color={PREMIUM.colors.inkSoft} />
           <View style={styles.activeLine} />
         </Pressable>
