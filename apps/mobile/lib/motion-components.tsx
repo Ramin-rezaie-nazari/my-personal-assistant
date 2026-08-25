@@ -5,7 +5,8 @@ import { useReducedMotion } from './use-reduced-motion';
 
 export function AnimatedIn({ children, delay = 0, style }: { children: React.ReactNode; delay?: number; style?: ViewStyle | ViewStyle[] }) {
   const reduced = useReducedMotion();
-  return <Animated.View style={[reduced ? undefined : useEntrance(delay), style]}>{children}</Animated.View>;
+  const entrance = useEntrance(delay);
+  return <Animated.View style={[reduced ? undefined : entrance, style]}>{children}</Animated.View>;
 }
 
 export function MotionPress({ children, onPress, onPressIn, onPressOut, style, disabled }: { children: React.ReactNode; onPress?: () => void; onPressIn?: () => void; onPressOut?: () => void; style?: ViewStyle | ViewStyle[]; disabled?: boolean }) {
