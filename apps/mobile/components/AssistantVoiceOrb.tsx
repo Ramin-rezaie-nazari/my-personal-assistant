@@ -9,7 +9,7 @@ type Props = { state: VoiceInteractionState; label: string; hint?: string; onPre
 
 const stateAccent = (state: VoiceInteractionState) => state === 'listening' ? PREMIUM.colors.cyan : state === 'thinking' ? PREMIUM.colors.primaryBright : state === 'acting' ? PREMIUM.colors.amber : state === 'speaking' ? PREMIUM.colors.mint : state === 'done' ? PREMIUM.colors.amber : PREMIUM.colors.primary;
 
-export function AssistantVoiceOrb({ state, label, hint = 'Tap to speak', onPress }: Props) {
+export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const reduced = useReducedMotion();
   const pulse = useRef(new Animated.Value(1)).current;
   const ring = useRef(new Animated.Value(0.8)).current;
@@ -55,7 +55,7 @@ export function AssistantVoiceOrb({ state, label, hint = 'Tap to speak', onPress
   return <View style={styles.wrap}>
     {onPress ? <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={styles.hitArea}>{core}</Pressable> : core}
     {label ? <Text style={styles.label}>{label}</Text> : null}
-    {onPress ? <Text style={styles.hint}>{hint}</Text> : null}
+    {onPress && hint ? <Text style={styles.hint}>{hint}</Text> : null}
   </View>;
 }
 
