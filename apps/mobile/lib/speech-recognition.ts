@@ -8,6 +8,7 @@ export type SpeechRecognitionResult = {
 
 export type SpeechRecognitionHandle = {
   stop: () => void;
+  abort: () => void;
   remove: () => void;
 };
 
@@ -65,8 +66,7 @@ const ERROR_COPY: Partial<Record<LanguageCode, { permission: string; recognition
 };
 
 function getErrorCopy(locale: string) {
-  const code = locale as LanguageCode;
-  return ERROR_COPY[code] ?? ERROR_COPY['en-US'];
+  return ERROR_COPY[locale as LanguageCode] ?? ERROR_COPY['en-US']!;
 }
 
 export function getSpeechContextualTerms(locale: string): readonly string[] {
@@ -84,46 +84,76 @@ export async function startRecognition(
   onError: (message: string) => void,
 ): Promise<SpeechRecognitionHandle | null> {
   const messages = getErrorCopy(locale);
-  const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-  if (!permission.granted) {
-    onError(messages?.permission ?? 'Microphone permission is required.');
-    return null;
-  }
+  let cleaned = false;
+  let ended = false;
 
-  const language = getVoiceLanguage(locale);
-  const resultListener = ExpoSpeechRecognitionModule.addListener('result', (event) => {
-    const first = event.results?.[0];
-    if (first?.transcript) onResult({ transcript: first.transcript, isFinal: Boolean(event.isFinal) });
-  });
-
-  const endListener = ExpoSpeechRecognitionModule.addListener('end', onEnd);
-  const errorListener = ExpoSpeechRecognitionModule.addListener('error', (event) => {
-    onError(event.message || messages?.recognition || 'Speech recognition failed.');
-  });
-
-  const cleanup = () => {
-    resultListener.remove();
-    endListener.remove();
-    errorListener.remove();
+  const removeListeners = (listeners: {
+    result: { remove: () => void };
+    end: { remove: () => void };
+    error: { remove: () => void };
+  }) => {
+    if (cleaned) return;
+    cleaned = true;
+    listeners.result.remove();
+    listeners.end.remove();
+    listeners.error.remove();
   };
 
   try {
-    ExpoSpeechRecognitionModule.start({
-      lang: language.speechRecognitionLocale,
-      interimResults: true,
-      maxAlternatives: 1,
-      continuous: false,
-      requiresOnDeviceRecognition: false,
-      addsPunctuation: true,
-      contextualStrings: getSpeechContextualTerms(locale) as string[],
+    const permission = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
+    if (!permission.granted) {
+      onError(messages.permission);
+      return null;
+    }
+
+    const language = getVoiceLanguage(locale);
+    const resultListener = ExpoSpeechRecognitionModule.addListener('result', (event) => {
+      const first = event.results?.[0];
+      if (first?.transcript) onResult({ transcript: first.transcript, isFinal: Boolean(event.isFinal) });
     });
+
+    const endListener = ExpoSpeechRecognitionModule.addListener('end', () => {
+      ended = true;
+      removeListeners({ result: resultListener, end: endListener, error: errorListener });
+      onEnd();
+    });
+
+    const errorListener = ExpoSpeechRecognitionModule.addListener('error', (event) => {
+      if (event.error === 'aborted') return;
+      removeListeners({ result: resultListener, end: endListener, error: errorListener });
+      onError(event.message || messages.recognition);
+    });
+
+    const stop = () => ExpoSpeechRecognitionModule.stop();
+    const abort = () => {
+      if (ended) return;
+      removeListeners({ result: resultListener, end: endListener, error: errorListener });
+      ExpoSpeechRecognitionModule.abort();
+    };
+    const remove = () => removeListeners({ result: resultListener, end: endListener, error: errorListener });
+
+    try {
+      ExpoSpeechRecognitionModule.start({
+        lang: language.speechRecognitionLocale,
+        interimResults: true,
+        maxAlternatives: 1,
+        continuous: false,
+        requiresOnDeviceRecognition: false,
+        addsPunctuation: true,
+        contextualStrings: getSpeechContextualTerms(locale) as string[],
+      });
+    } catch (error) {
+      remove();
+      ExpoSpeechRecognitionModule.abort();
+      onError(error instanceof Error ? error.message : messages.start);
+      return null;
+    }
+
+    return { stop, abort, remove };
   } catch (error) {
-    cleanup();
-    onError(error instanceof Error ? error.message : messages?.start || 'Could not start speech recognition.');
+    onError(error instanceof Error ? error.message : messages.start);
     return null;
   }
-
-  return { stop: () => ExpoSpeechRecognitionModule.stop(), remove: cleanup };
 }
 
 export async function startPersianRecognition(
