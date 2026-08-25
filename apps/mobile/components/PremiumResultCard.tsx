@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from 'react';
+import { useEffect, useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { PREMIUM } from '../lib/premium-ui';
@@ -8,10 +9,10 @@ export type PremiumResultAction = { label: string; icon?: keyof typeof Ionicons.
 
 export function PremiumResultCard({ title, eyebrow, value, detail, accent = 'primary', actions = [], children }: PropsWithChildren<{ title: string; eyebrow?: string; value?: string; detail?: string; accent?: 'primary' | 'cyan' | 'mint' | 'amber' | 'rose'; actions?: PremiumResultAction[] }>) {
   const reduced = useReducedMotion();
-  const appear = React.useRef(new Animated.Value(reduced ? 1 : 0)).current;
-  const translate = React.useRef(new Animated.Value(reduced ? 0 : 12)).current;
+  const appear = useRef(new Animated.Value(reduced ? 1 : 0)).current;
+  const translate = useRef(new Animated.Value(reduced ? 0 : 12)).current;
 
-  React.useEffect(() => {
+  useEffect(() => {
     Animated.parallel([
       Animated.timing(appear, { toValue: 1, duration: reduced ? 0 : PREMIUM.motion.normal, useNativeDriver: true }),
       Animated.timing(translate, { toValue: 0, duration: reduced ? 0 : PREMIUM.motion.normal, useNativeDriver: true }),
