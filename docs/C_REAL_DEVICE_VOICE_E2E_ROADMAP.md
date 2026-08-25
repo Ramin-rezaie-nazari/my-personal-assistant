@@ -33,6 +33,9 @@ Certify the real mobile path from language selection and microphone capture thro
 - [x] Bound mobile assistant message size and history limits before transport.
 - [x] Bound backend assistant input size and validate locale-shaped request metadata.
 - [x] Validate confirmation token payloads with a dedicated DTO instead of accepting raw request bodies.
+- [x] Verify reduced-motion behavior is wired to system accessibility settings and cancels animation loops safely.
+- [x] Improve Voice Orb accessibility semantics for busy state, live status updates and activation hints.
+- [x] Audit planning/ambiguity guards: contradictory, low-confidence and partially understood requests are designed to stop rather than guess.
 
 ### D1.2 Real-device smoke path — PENDING DEVICE
 - [ ] Run a Persian/Tehran-style voice command on a real development build.
@@ -78,6 +81,7 @@ Certify the real mobile path from language selection and microphone capture thro
 - `apps/mobile/lib/speech-recognition.ts`: locale-aware contextual terms and error copy, guarded permission/start failures, explicit native abort semantics, listener cleanup and actual device capability reporting.
 - `apps/mobile/lib/voice.ts`: locale-bound voice profiles, defensive stored-profile recovery, timeout-safe TTS completion, synchronous speech failure protection, cleanup that cannot strand the voice state machine.
 - `apps/mobile/lib/assistant-api.ts`: bounded assistant payloads, cancellable fetches, bounded request timeouts, typed network failure categories and automatic propagation of the stored app locale.
+- `apps/mobile/components/AssistantVoiceOrb.tsx`: reduced-motion-safe animation lifecycle and explicit accessibility state semantics.
 - `apps/mobile/app/assistant-premium.tsx`: explicit session versioning, stale async continuation guards, native abort on unmount/session replacement, locale-bound STT/TTS flow.
 - `apps/mobile/scripts/d1-voice-readiness-check.cjs`: enforces permissions, locale binding, state transitions, session isolation, abort cleanup, TTS safety and assistant locale propagation.
 - `apps/mobile/scripts/voice-quality-check.cjs`: enforces multilingual voice contracts plus abort-safe STT and timeout-safe TTS regression guards.
@@ -89,9 +93,9 @@ Certify the real mobile path from language selection and microphone capture thro
 
 ## Deep review evidence
 
-Review 1 — architecture/diff: verified that locale propagation adds only the necessary transport/service wiring; it reuses the existing semantic `preferredLanguage` contract, preserves all existing intent/execution paths, and does not introduce a second locale state store.
+Review 1 — architecture/diff: verified that locale propagation adds only the necessary transport/service wiring; it reuses the existing semantic `preferredLanguage` contract, preserves all existing intent/execution paths, and does not introduce a second locale state store. Planning guards and accessibility changes remain isolated from execution semantics.
 
-Review 2 — implementation/contracts: verified mobile source-of-truth locale normalization, request payload locale, DTO validation, controller forwarding, `AssistantService.process(..., preferredLanguage)`, and semantic multilingual understanding consumption are all aligned. Backend controller regression coverage now asserts the exact locale handoff.
+Review 2 — implementation/contracts: verified mobile source-of-truth locale normalization, request payload locale, DTO validation, controller forwarding, `AssistantService.process(..., preferredLanguage)`, semantic multilingual understanding consumption, reduced-motion wiring and Voice Orb accessibility semantics. Backend controller regression coverage asserts the exact locale handoff.
 
 ## Current evidence
 
