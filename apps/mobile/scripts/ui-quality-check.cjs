@@ -51,7 +51,7 @@ const directRouteExceptions = new Set([
   'auth.tsx',
   'onboarding.tsx',
   'settings.tsx',
-];
+]);
 
 const requiredTokens = [
   ['app/_layout.tsx', ['AssistantDock', 'PREMIUM.colors.canvas', 'ErrorBoundary']],
@@ -59,7 +59,7 @@ const requiredTokens = [
   ['app/assistant-premium.tsx', ['AssistantVoiceOrb', 'startRecognition', 'speakAssistantText', 'PremiumGlow', 'PREMIUM']],
   ['app/smart-meals-premium.tsx', ['PremiumResultCard', 'buildSmartMealSuggestions', 'PremiumGlow', 'PREMIUM']],
   ['app/meal-detail-premium.tsx', ['PremiumResultCard', 'getMeals', 'PremiumGlow', 'PREMIUM']],
-  ['components/AssistantVoiceOrb.tsx', ['listening', 'thinking', 'acting', 'speaking', 'done']],
+  ['components/AssistantVoiceOrb.tsx', ['Pressable', 'accessibilityRole="button"', 'onPress', 'listening', 'thinking', 'acting', 'speaking', 'done']],
   ['components/PremiumResultCard.tsx', ['I18nManager', 'rtlActions', 'useReducedMotion']],
 ];
 
@@ -114,4 +114,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log('UI QUALITY CONTRACT PASS: premium foundations, route wiring, voice states, RTL hooks and shared motion surfaces are present.');
+console.log('UI QUALITY CONTRACT PASS: premium foundations, route wiring, tappable voice core, RTL hooks and shared motion surfaces are present.');
