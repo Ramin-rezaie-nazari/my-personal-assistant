@@ -17,8 +17,8 @@ function StartupScreen() {
   const scale = useRef(new Animated.Value(0.94)).current;
   useEffect(() => {
     const loop = Animated.loop(Animated.parallel([
-      Animated.sequence([Animated.timing(glow, { toValue: 0.85, duration: 1100, useNativeDriver: true }), Animated.timing(glow, { toValue: 0.35, duration: 1100, useNativeDriver: true })]),
-      Animated.sequence([Animated.timing(scale, { toValue: 1.02, duration: 1100, useNativeDriver: true }), Animated.timing(scale, { toValue: 0.94, duration: 1100, useNativeDriver: true })]),
+      Animated.sequence([Animated.timing(glow, { toValue: 0.85, duration: 820, useNativeDriver: true }), Animated.timing(glow, { toValue: 0.35, duration: 820, useNativeDriver: true })]),
+      Animated.sequence([Animated.timing(scale, { toValue: 1.02, duration: 820, useNativeDriver: true }), Animated.timing(scale, { toValue: 0.94, duration: 820, useNativeDriver: true })]),
     ]));
     loop.start();
     return () => loop.stop();
@@ -35,7 +35,7 @@ export default function RootLayout() {
   const currentSegment = segments[0];
   useEffect(() => {
     let mounted = true;
-    const timeoutId = setTimeout(() => { if (mounted) { setTargetRoute('/language'); setBootReady(true); } }, 1800);
+    const timeoutId = setTimeout(() => { if (mounted) { setTargetRoute('/language'); setBootReady(true); } }, 700);
     void Promise.all([getStoredLocale(), hasAuthSession(), getOnboardingState()]).then(([locale, authenticated, onboarding]) => {
       if (!mounted) return;
       clearTimeout(timeoutId);
