@@ -47,6 +47,8 @@ assert(speech.includes('let endListener:') && speech.includes('endListener?.remo
 assert(speech.includes('let errorListener:') && speech.includes('errorListener?.remove();'), 'recognition error listener cleanup missing');
 assert(voice.includes('language: profile.locale'), 'TTS locale is not passed to the speech provider');
 assert(voice.includes('onError: () => resolve()') || voice.includes('onError: finish'), 'TTS failure cannot safely complete the promise');
-assert((languages.match(/\['[a-z]{2}(?:-[A-Z]{2}|-[A-Z][a-z]{2})',/g) || []).length >= 51, 'expected the registered global locale table to remain broad');
+const localeTable = languages.slice(languages.indexOf('export const VOICE_LANGUAGES'), languages.indexOf('export function getVoiceLanguage'));
+const localeCount = (localeTable.match(/\['[a-z]{2}(?:-[A-Z]{2}|-[A-Z][a-z]{2})',/g) || []).length;
+assert(localeCount >= 51, `expected at least 51 registered voice locales, found ${localeCount}`);
 
 console.log('D1 VOICE READINESS CONTRACT PASS: permissions, Expo voice wiring, active-locale STT/TTS binding, assistant locale propagation, state transitions, provider fallback and abort-safe listener cleanup are present.');
