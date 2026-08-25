@@ -28,6 +28,7 @@ Certify the real mobile path from language selection and microphone capture thro
 - [x] Make TTS completion timeout-safe so a missing native callback cannot strand the UI in `speaking`.
 - [x] Make stored voice IDs self-healing to a known profile.
 - [x] Make native on-device speech capability detection report actual device support, not only locale-table membership.
+- [x] Isolate sequential voice sessions so stale STT/API/TTS continuations cannot overwrite the active session state.
 
 ### D1.2 Real-device smoke path — PENDING DEVICE
 - [ ] Run a Persian/Tehran-style voice command on a real development build.
@@ -52,6 +53,7 @@ Certify the real mobile path from language selection and microphone capture thro
 - [ ] STT timeout or failure recovery on device.
 - [x] TTS failure/completion cleanup is guarded in repository code.
 - [x] Recognition cancellation now has explicit native abort semantics.
+- [x] Session replacement aborts the previous native recognizer and invalidates stale async continuations.
 - [ ] Cancellation/interruption behavior observed on device while listening or speaking.
 - [ ] Multi-intent utterance reaching the correct execution boundary on device.
 - [ ] Ambiguous request refuses to guess instead of executing a weak match.
@@ -67,15 +69,21 @@ Certify the real mobile path from language selection and microphone capture thro
 
 ## Repository-side changes in this workstream
 
-- `apps/mobile/lib/speech-recognition.ts`: abort-safe lifecycle, locale-aware contextual terms, guarded permission/start failures, real native on-device capability reporting.
+- `apps/mobile/lib/speech-recognition.ts`: locale-aware contextual terms and error copy, guarded permission/start failures, explicit native abort semantics, listener cleanup and actual device capability reporting.
 - `apps/mobile/lib/voice.ts`: locale-bound voice profiles, defensive stored-profile recovery, timeout-safe TTS completion, synchronous speech failure protection, cleanup that cannot strand the voice state machine.
-- `apps/mobile/app/assistant-premium.tsx`: Voice Core now uses explicit native abort semantics during unmount/session replacement.
-- `apps/mobile/scripts/d1-voice-readiness-check.cjs`: enforces permissions, locale binding, state transitions, abort cleanup and provider fallback policy.
+- `apps/mobile/app/assistant-premium.tsx`: explicit session versioning, stale async continuation guards, native abort on unmount/session replacement, locale-bound STT/TTS flow.
+- `apps/mobile/scripts/d1-voice-readiness-check.cjs`: enforces permissions, locale binding, state transitions, session isolation, abort cleanup and TTS safety.
 - `apps/mobile/scripts/voice-quality-check.cjs`: enforces multilingual voice contracts plus abort-safe STT and timeout-safe TTS regression guards.
+
+## Deep review evidence
+
+Review 1 — architecture/diff: verified that the repository changes stay scoped to Voice Core readiness and do not intentionally remove Premium UI behavior; session invalidation is applied before state transitions and stale continuations are guarded.
+
+Review 2 — implementation/contracts: verified the recognition handle exposes `stop` vs `abort`, aborted native events are not surfaced as user errors, listeners are cleaned exactly once, TTS has completion callbacks plus a bounded timeout, and the readiness/quality contracts enforce the same invariants.
 
 ## Current evidence
 
-Repository changes are committed on `work/global-multilingual-voice-100` through the current branch head. GitHub Actions did not expose a workflow run for the latest commit, so automated execution is not claimed here. Real microphone/OS/TTS validation remains the only blocking class of evidence for D1 closure.
+Repository changes are committed on `work/global-multilingual-voice-100`. GitHub Actions did not expose a workflow run for the latest repository changes, so automated execution is not claimed here. Real microphone/OS/TTS validation remains the only blocking class of evidence for D1 closure.
 
 ## Definition of done
 
