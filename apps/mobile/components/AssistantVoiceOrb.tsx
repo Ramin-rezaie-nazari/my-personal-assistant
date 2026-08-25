@@ -42,6 +42,7 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const accent = stateAccent(state);
   const iconName = state === 'listening' ? 'mic' : state === 'thinking' ? 'sparkles' : state === 'acting' ? 'flash' : state === 'speaking' ? 'volume-high' : state === 'done' ? 'checkmark' : 'mic-outline';
   const accessibilityLabel = label || 'MYPA voice assistant';
+  const isBusy = state === 'listening' || state === 'thinking' || state === 'acting' || state === 'speaking';
 
   const core = <>
     <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.14 : 0.28, transform: [{ scale: ring }] }]} />
@@ -52,8 +53,15 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   </>;
 
   return <View style={styles.wrap}>
-    {onPress ? <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={({ pressed }) => [styles.hitArea, pressed && styles.pressed]}>{core}</Pressable> : core}
-    {label ? <Text style={styles.label}>{label}</Text> : null}
+    {onPress ? <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={hint || 'Activate MYPA voice assistant'}
+      accessibilityState={{ busy: isBusy }}
+      onPress={onPress}
+      style={({ pressed }) => [styles.hitArea, pressed && styles.pressed]}
+    >{core}</Pressable> : core}
+    {label ? <Text accessibilityLiveRegion="polite" style={styles.label}>{label}</Text> : null}
     {onPress && hint ? <Text style={styles.hint}>{hint}</Text> : null}
   </View>;
 }
@@ -65,7 +73,7 @@ const styles = StyleSheet.create({
   orbit: { position: 'absolute', width: 136, height: 136, borderRadius: 68, borderWidth: 1, borderStyle: 'dashed', opacity: 0.65 },
   core: { width: 112, height: 112, borderRadius: 56, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(9,13,23,0.96)', shadowColor: '#000', shadowOpacity: 0.42, shadowRadius: 26, shadowOffset: { width: 0, height: 14 }, elevation: 12 },
   coreInner: { width: 94, height: 94, borderRadius: 47, alignItems: 'center', justifyContent: 'center', backgroundColor: '#121A2D', shadowOpacity: 0.34, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 8 },
-  label: { marginTop: 12, color: PREMIUM.colors.ink, fontSize: 14, fontWeight: '800' },
-  hint: { marginTop: 5, color: PREMIUM.colors.muted, fontSize: 10, letterSpacing: 0.2 },
+  label: { marginTop: 12, color: PREMIUM.colors.ink, fontSize: 14, fontWeight: '800', textAlign: 'center' },
+  hint: { marginTop: 5, color: PREMIUM.colors.muted, fontSize: 10, letterSpacing: 0.2, textAlign: 'center' },
   pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
 });
