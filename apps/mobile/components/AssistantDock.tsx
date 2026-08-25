@@ -9,24 +9,23 @@ export function AssistantDock({ onPress, accessibilityLabel = 'Open MYPA assista
   const pulse = useRef(new Animated.Value(1)).current;
   useEffect(() => {
     const loop = Animated.loop(Animated.sequence([
-      Animated.timing(pulse, { toValue: 1.04, duration: 1700, easing: PREMIUM.motion.ease, useNativeDriver: true }),
-      Animated.timing(pulse, { toValue: 0.985, duration: 1700, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 1.035, duration: 1800, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 0.99, duration: 1800, easing: PREMIUM.motion.ease, useNativeDriver: true }),
     ]));
     loop.start();
     return () => loop.stop();
   }, [pulse]);
+
   const openAssistant = onPress ?? (() => router.push('/assistant'));
-  return (
-    <Animated.View style={[styles.shell, { transform: [{ scale: pulse }] }]}>
-      <View style={styles.dock}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open daily view" onPress={() => router.push('/daily')} style={styles.item}><Ionicons name="today-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open reminders" onPress={() => router.push('/reminders')} style={styles.item}><Ionicons name="notifications-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={openAssistant} style={styles.core}><BrandMark size={46} /></Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open calendar" onPress={() => router.push('/calendar')} style={styles.item}><Ionicons name="calendar-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Open brain overview" onPress={() => router.push('/brain-overview')} style={styles.item}><Ionicons name="sparkles-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
-      </View>
-    </Animated.View>
-  );
+  return <Animated.View style={[styles.shell, { transform: [{ scale: pulse }] }]}>
+    <View style={styles.dock}>
+      <Pressable accessibilityRole="button" accessibilityLabel="Open today" onPress={() => router.push('/daily')} style={styles.item}><Ionicons name="today-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Open reminders" onPress={() => router.push('/reminders')} style={styles.item}><Ionicons name="notifications-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={openAssistant} style={styles.core}><BrandMark size={46} /></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Open calendar" onPress={() => router.push('/calendar')} style={styles.item}><Ionicons name="calendar-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
+      <Pressable accessibilityRole="button" accessibilityLabel="Open settings" onPress={() => router.push('/settings')} style={styles.item}><Ionicons name="options-outline" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
+    </View>
+  </Animated.View>;
 }
 
 const styles = StyleSheet.create({
