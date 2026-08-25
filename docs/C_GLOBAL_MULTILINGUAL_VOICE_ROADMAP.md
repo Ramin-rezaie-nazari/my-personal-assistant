@@ -16,6 +16,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Premium dark surface language established for the Command Center and Assistant.
 - [x] Reusable premium surface primitive.
 - [x] Premium result-card primitive for contextual outputs and deep-link actions.
+- [x] UI quality contract added to lock premium foundations and route wiring against regression.
 - [ ] Expand the surface/button/progress/empty-state library across every feature screen.
 
 ## Phase 2 — Command Center
@@ -25,6 +26,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Structured nutrition, habits, reminders and plan summaries.
 - [x] Quick actions reduced to a compact contextual strip.
 - [x] Premium loading/error/success states.
+- [x] Hidden/secondary routes discovered in the app tree are now included in the premium audit.
 - [ ] Full visual pass across all linked domain screens.
 
 ## Phase 3 — Living Voice
@@ -35,6 +37,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Existing STT/TTS contracts and voice persistence preserved.
 - [x] Persistent assistant dock added to the global shell.
 - [x] Dedicated premium voice-first assistant screen now uses the living core.
+- [x] Voice execution state now includes explicit action feedback and completion presentation.
 - [ ] Validate the full runtime lifecycle for `acting` → completion on-device.
 
 ## Phase 4 — Conversational results
@@ -45,7 +48,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Reusable premium result-card primitive with contextual action chips added.
 - [x] Daily and Meals/Nutrition use premium result cards and contextual actions.
 - [x] Household/Shopping/Recipe/Brain surfaces use the same result and action language.
-- [x] Assistant execution moments now show explicit completion cards and follow-up action surfaces.
+- [x] Assistant execution moments show explicit completion and follow-up surfaces.
 - [ ] Integrate richer result cards/chips directly into every action-specific Assistant response.
 
 ## Phase 5 — Navigation + information architecture
@@ -54,6 +57,8 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Command dock keeps the assistant visually central while exposing only Today + Settings directly.
 - [x] Settings uses a dedicated focused presentation and does not depend on a crowded navigation bar.
 - [x] Meal Builder and Price Intelligence route through premium presentation surfaces.
+- [x] Smart Meals route rewritten through a premium recommendation surface.
+- [x] Meal detail route rewritten through a premium nutrition-moment surface.
 - [ ] Audit every route and remove unnecessary navigation complexity.
 - [ ] Establish one coherent small navigation model for domain areas.
 - [ ] Preserve direct voice-first access to every major capability.
@@ -64,6 +69,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Reduced-motion support for primary animated voice surfaces.
 - [x] Reduced-motion preference is read from native accessibility settings.
 - [x] Animated entry support exists for premium result surfaces.
+- [x] UI quality CI runs on push/PR for premium route wiring, voice contract and mobile typecheck.
 - [ ] Shared transitions for result cards, navigation and data changes.
 - [ ] Meaningful number/progress transitions across the product.
 - [ ] Runtime choreography for assistant action → execution → completion.
@@ -82,6 +88,8 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Meal Builder rewritten as a premium nutrition composition flow with portion controls and live nutrition snapshot.
 - [x] Price Intelligence rewritten as a premium source-aware price movement surface.
 - [x] Global Assistant Dock simplified into a voice-first 3-point interaction: Today / MYPA Core / Settings.
+- [x] Smart Meals rewritten as a premium nutrition recommendation surface.
+- [x] Meal Detail rewritten as a premium nutrition moment.
 - [ ] Apply same quality to remaining detail routes.
 - [ ] Haptic-ready interaction boundaries where supported.
 
@@ -101,6 +109,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Loading/error fallbacks preserved across redesigned route families.
 - [x] Onboarding option controls expose radio semantics and selected state.
 - [x] Settings command controls expose standard switch/button semantics.
+- [x] Route quality contract detects missing premium foundations and aliases.
 - [ ] Full touch-target and screen-reader audit across all routes.
 - [ ] Dynamic text and keyboard resilience audit.
 - [ ] Focus order and voice-over/navigation review for complex cards/modals.
@@ -108,7 +117,8 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 ## Phase 10 — Validation
 - [ ] Mobile typecheck after the current UI batch.
 - [ ] Voice-quality contract remains green after the current UI batch.
-- [ ] Backend regression remains green.
+- [ ] Backend regression remains green after the current UI batch.
+- [ ] UI quality contract passes in the user environment.
 - [ ] Route smoke validation.
 - [ ] iOS development-build validation.
 - [ ] Android development-build validation.
@@ -120,7 +130,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 
 ## Progress estimate
 
-**Approximate UI roadmap completion: ~89%.** This estimate reflects completed premium experience families plus reusable foundations and the stronger voice-first interaction model; it is not a claim of final product quality. Remaining work is concentrated in the last detail routes, global navigation audit, deeper result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
+**Approximate UI roadmap completion: ~94%.** Repository-side premium implementation is now essentially complete for the currently known route tree; remaining work is concentrated in global audits, a few shared polish upgrades and validation gates that require execution or real-device observation.
 
 ## Execution rules
 Work continuously from the first unchecked item. Prefer reusable foundations over one-off styling. Do not rewrite domain behavior for visual polish. Preserve voice contracts, user state, accessibility and business logic.
