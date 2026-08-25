@@ -42,9 +42,9 @@ assert(speech.includes('const abort = () =>'), 'recognition abort implementation
 assert(speech.includes('ExpoSpeechRecognitionModule.abort()'), 'native recognizer abort is missing');
 assert(speech.includes('requestPermissionsAsync();'), 'permission request must remain inside the guarded lifecycle');
 assert(speech.includes('catch (error)'), 'permission/start failures must be guarded');
-assert(speech.includes('resultListener.remove()'), 'recognition result listener cleanup missing');
-assert(speech.includes('endListener.remove()'), 'recognition end listener cleanup missing');
-assert(speech.includes('errorListener.remove()'), 'recognition error listener cleanup missing');
+assert(speech.includes('let resultListener:') && speech.includes('resultListener?.remove();'), 'recognition result listener cleanup missing');
+assert(speech.includes('let endListener:') && speech.includes('endListener?.remove();'), 'recognition end listener cleanup missing');
+assert(speech.includes('let errorListener:') && speech.includes('errorListener?.remove();'), 'recognition error listener cleanup missing');
 assert(voice.includes('language: profile.locale'), 'TTS locale is not passed to the speech provider');
 assert(voice.includes('onError: () => resolve()') || voice.includes('onError: finish'), 'TTS failure cannot safely complete the promise');
 assert((languages.match(/\['[a-z]{2}(?:-[A-Z]{2}|-[A-Z][a-z]{2})',/g) || []).length >= 51, 'expected the registered global locale table to remain broad');
