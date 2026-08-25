@@ -33,14 +33,18 @@ export default function HabitsPremiumScreen() {
   }, []);
 
   useEffect(() => {
-    void hasAuthSession().then((ok) => (ok ? load() : router.replace('/')));
+    void hasAuthSession().then((ok) => {
+      if (ok) void load();
+      else router.replace('/');
+    });
   }, [load]);
 
   const add = async () => {
-    if (!name.trim()) return;
+    const trimmed = name.trim();
+    if (!trimmed) return;
     try {
       setBusy('add');
-      await createHabit({ name: name.trim(), frequency: 'daily', targetPerWeek: 7 });
+      await createHabit({ name: trimmed, frequency: 'daily', targetPerWeek: 7 });
       setName('');
       await load();
     } catch (err) {
@@ -92,17 +96,17 @@ export default function HabitsPremiumScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={PREMIUM.colors.primaryBright} />}
       >
         <View style={styles.top}>
-          <Pressable onPress={() => router.back()} style={styles.icon} accessibilityRole="button" accessibilityLabel="Back">
+          <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.icon}>
             <Ionicons name="arrow-back" size={18} color={PREMIUM.colors.inkSoft} />
           </Pressable>
           <View style={styles.titleWrap}>
             <Text style={styles.kicker}>DAILY RHYTHM</Text>
             <Text style={styles.title}>Habits</Text>
           </View>
-          <Pressable onPress={() => router.push('/assistant')} style={styles.icon} accessibilityRole="button" accessibilityLabel="Open MYPA assistant">
+          <Pressable accessibilityRole="button" accessibilityLabel="Open assistant" onPress={() => router.push('/assistant')} style={styles.icon}>
             <Ionicons name="sparkles-outline" size={18} color={PREMIUM.colors.primaryBright} />
           </Pressable>
         </View>
@@ -128,13 +132,7 @@ export default function HabitsPremiumScreen() {
         <View style={styles.form}>
           <Text style={styles.section}>Start something small</Text>
           <View style={styles.inputRow}>
-            <TextInput
-              value={name}
-              onChangeText={setName}
-              placeholder="A daily habit…"
-              placeholderTextColor={PREMIUM.colors.muted}
-              style={styles.input}
-            />
+            <TextInput value={name} onChangeText={setName} placeholder="A daily habit…" placeholderTextColor={PREMIUM.colors.muted} style={styles.input} returnKeyType="done" onSubmitEditing={() => void add()} />
             <MotionPress disabled={busy === 'add'} onPress={() => void add()} style={styles.add}>
               <Ionicons name="add" size={18} color={PREMIUM.colors.ink} />
             </MotionPress>
@@ -142,22 +140,22 @@ export default function HabitsPremiumScreen() {
         </View>
 
         <Text style={styles.section}>Your rhythm</Text>
-        {habits.map((h) => (
-          <View key={h.id} style={styles.card}>
+        {habits.map((habit) => (
+          <View key={habit.id} style={styles.card}>
             <View style={styles.cardTop}>
               <View style={styles.cardCopy}>
                 <View style={styles.nameRow}>
                   <View style={styles.dot} />
-                  <Text style={styles.name}>{h.name}</Text>
+                  <Text style={styles.name}>{habit.name}</Text>
                 </View>
-                <Text style={styles.meta}>{h.stats.streak} day streak · {h.stats.recentCompletions} recent completions</Text>
+                <Text style={styles.meta}>{habit.stats.streak} day streak · {habit.stats.recentCompletions} recent completions</Text>
               </View>
-              <MotionPress disabled={busy === h.id} onPress={() => void done(h.id)} style={styles.done}>
+              <MotionPress disabled={busy === habit.id} onPress={() => void done(habit.id)} style={styles.done}>
                 <Ionicons name="checkmark" size={15} color={PREMIUM.colors.ink} />
-                <Text style={styles.doneText}>{busy === h.id ? '…' : 'Done'}</Text>
+                <Text style={styles.doneText}>{busy === habit.id ? '…' : 'Done'}</Text>
               </MotionPress>
             </View>
-            <MotionPress disabled={busy === `delete-${h.id}`} onPress={() => void remove(h.id)}>
+            <MotionPress disabled={busy === `delete-${habit.id}`} onPress={() => void remove(habit.id)}>
               <Text style={styles.remove}>Remove habit</Text>
             </MotionPress>
           </View>
@@ -184,7 +182,7 @@ const styles = StyleSheet.create({
   loadingText: { color: PREMIUM.colors.ink, fontWeight: '900', marginTop: 12 },
   content: { padding: 18, gap: 14, paddingBottom: 120 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  icon: { width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: PREMIUM.colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,.03)' },
+  icon: { width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: PREMIUM.colors.border, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.03)' },
   titleWrap: { flex: 1, alignItems: 'center' },
   kicker: { color: PREMIUM.colors.muted, fontSize: 8, fontWeight: '900', letterSpacing: 1.5 },
   title: { color: PREMIUM.colors.ink, fontSize: 18, fontWeight: '900', marginTop: 3 },
@@ -203,8 +201,8 @@ const styles = StyleSheet.create({
   done: { minHeight: 42, paddingHorizontal: 12, borderRadius: 21, backgroundColor: PREMIUM.colors.primaryBright, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 5 },
   doneText: { color: PREMIUM.colors.ink, fontWeight: '900', fontSize: 11 },
   remove: { color: PREMIUM.colors.muted, fontSize: 10, fontWeight: '800' },
-  empty: { alignItems: 'center', borderRadius: 0 },
-  emptyIcon: { width: 46, height: 46, borderRadius: 23, backgroundColor: 'rgba(79,229,168,.12)', alignItems: 'center', justifyContent: 'center' },
+  empty: { alignItems: 'center', borderRadius: 24, borderWidth: 1, borderColor: PREMIUM.colors.border, backgroundColor: PREMIUM.colors.surfaceGlass, padding: 24 },
+  emptyIcon: { width: 46, height: 46, borderRadius: 23, backgroundColor: 'rgba(98,230,181,0.12)', alignItems: 'center', justifyContent: 'center' },
   emptyTitle: { color: PREMIUM.colors.ink, fontSize: 18, fontWeight: '900', marginTop: 12 },
   emptyText: { color: PREMIUM.colors.muted, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 6, maxWidth: 290 },
 });
