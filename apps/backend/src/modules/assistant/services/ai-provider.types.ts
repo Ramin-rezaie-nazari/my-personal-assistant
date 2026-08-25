@@ -8,6 +8,7 @@ export type AiProviderRequest = {
 export type AiProviderResponse = {
   text: string;
   providerId: AiProviderId;
+  metadata?: Record<string, unknown>;
 };
 
 export type AiProviderFailure = {
