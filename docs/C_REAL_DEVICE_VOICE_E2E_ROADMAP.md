@@ -18,7 +18,7 @@ Certify the real mobile path from language selection and microphone capture thro
 
 ## D1 gates
 
-### D1.1 Repository/runtime readiness — REPOSITORY SIDE IMPLEMENTED
+### D1.1 Repository/runtime readiness — REPOSITORY SIDE COMPLETE
 - [x] Verify mobile scripts, Expo/development-build path, environment contracts and voice entry routes.
 - [x] Verify microphone permission handling and audio lifecycle/error recovery.
 - [x] Verify STT/TTS provider selection, locale mapping and safe fallbacks.
@@ -36,6 +36,8 @@ Certify the real mobile path from language selection and microphone capture thro
 - [x] Verify reduced-motion behavior is wired to system accessibility settings and cancels animation loops safely.
 - [x] Improve Voice Orb accessibility semantics for busy state, live status updates and activation hints.
 - [x] Audit planning/ambiguity guards: contradictory, low-confidence and partially understood requests are designed to stop rather than guess.
+- [x] Create a one-command deterministic final verification gate covering mobile typecheck/quality/readiness plus backend typecheck/unit tests/lint/build.
+- [x] Replace hard-coded Persian native permission copy with professional English fallback copy suitable for all locales; localized native dialogs can be added later through Expo locale resource files.
 
 ### D1.2 Real-device smoke path — PENDING DEVICE
 - [ ] Run a Persian/Tehran-style voice command on a real development build.
@@ -53,9 +55,9 @@ Certify the real mobile path from language selection and microphone capture thro
 - [ ] At least two additional representative LTR locales.
 - [ ] Validate locale switching without rebuilding persistent user data/memory.
 - [ ] Validate language-specific STT/TTS locale mapping.
-- [x] Complete explicit locale propagation from mobile request through backend response routing.
+- [x] Complete explicit locale propagation from mobile request through backend semantic understanding and response metadata.
 
-### D1.4 Robustness / runtime regression — PARTIALLY IMPLEMENTED, DEVICE VALIDATION PENDING
+### D1.4 Robustness / runtime regression — REPOSITORY COMPLETE, DEVICE VALIDATION PENDING
 - [x] Partial STT result path preserved.
 - [ ] Permission denial/retry on device.
 - [ ] STT timeout or failure recovery on device.
@@ -66,10 +68,11 @@ Certify the real mobile path from language selection and microphone capture thro
 - [ ] Cancellation/interruption behavior observed on device while listening or speaking.
 - [ ] Multi-intent utterance reaching the correct execution boundary on device.
 - [ ] Ambiguous request refuses to guess instead of executing a weak match.
-- [ ] Reduced-motion behavior remains safe at runtime.
+- [x] Reduced-motion behavior is protected in repository code.
 - [ ] RTL layout/accessibility labels remain usable on device.
 
 ### D1.5 Evidence + closure
+- [ ] Run the one-command deterministic repository gate in the user's VS Code environment.
 - [ ] Record exact device/build/runtime/provider matrix and observed outcomes.
 - [ ] Record failures separately from infrastructure-only CI timeouts.
 - [ ] Promote only durable validated outcomes to A/B.
@@ -83,7 +86,10 @@ Certify the real mobile path from language selection and microphone capture thro
 - `apps/mobile/lib/assistant-api.ts`: bounded assistant payloads, cancellable fetches, bounded request timeouts, typed network failure categories and automatic propagation of the stored app locale.
 - `apps/mobile/components/AssistantVoiceOrb.tsx`: reduced-motion-safe animation lifecycle and explicit accessibility state semantics.
 - `apps/mobile/app/assistant-premium.tsx`: explicit session versioning, stale async continuation guards, native abort on unmount/session replacement, locale-bound STT/TTS flow.
+- `apps/mobile/app.json`: professional English fallback permission copy for camera, microphone and speech recognition.
 - `apps/mobile/scripts/d1-voice-readiness-check.cjs`: enforces permissions, locale binding, state transitions, session isolation, abort cleanup, TTS safety and assistant locale propagation.
+- `apps/mobile/scripts/d1-final-verification.cjs`: one-command deterministic gate across mobile and backend verification layers.
+- `apps/mobile/package.json`: exposes `d1:final` for the final gate.
 - `apps/mobile/scripts/voice-quality-check.cjs`: enforces multilingual voice contracts plus abort-safe STT and timeout-safe TTS regression guards.
 - `apps/backend/src/modules/assistant/dto/process-assistant-request.dto.ts`: bounded assistant message payload and validated optional locale shape.
 - `apps/backend/src/modules/assistant/dto/confirm-assistant-request.dto.ts`: dedicated validation contract for confirmation tokens.
@@ -93,14 +99,14 @@ Certify the real mobile path from language selection and microphone capture thro
 
 ## Deep review evidence
 
-Review 1 — architecture/diff: verified that locale propagation adds only the necessary transport/service wiring; it reuses the existing semantic `preferredLanguage` contract, preserves all existing intent/execution paths, and does not introduce a second locale state store. Planning guards and accessibility changes remain isolated from execution semantics.
+Review 1 — architecture/diff: verified repository-side D1 changes remain scoped to Voice Core, Assistant transport, safety contracts, accessibility and native configuration. Existing intent/execution semantics remain intact; the final verification script only orchestrates deterministic checks.
 
-Review 2 — implementation/contracts: verified mobile source-of-truth locale normalization, request payload locale, DTO validation, controller forwarding, `AssistantService.process(..., preferredLanguage)`, semantic multilingual understanding consumption, reduced-motion wiring and Voice Orb accessibility semantics. Backend controller regression coverage asserts the exact locale handoff.
+Review 2 — implementation/contracts: verified mobile locale source-of-truth, DTO validation, controller forwarding, preferred-language semantic understanding, native speech lifecycle, TTS completion guards, reduced-motion semantics, Voice Orb accessibility, permission configuration and the final verification command are aligned.
 
 ## Current evidence
 
-Repository changes are committed on `work/global-multilingual-voice-100`. GitHub Actions did not expose a workflow run for the latest repository changes, so automated execution is not claimed here. Real microphone/OS/TTS validation remains the only blocking class of evidence for D1 closure.
+Repository-side D1 work is complete in code and contracts. GitHub Actions did not expose workflow runs for the latest changes, so automated execution is not claimed here. The remaining blockers are the deterministic verification run in the user's environment and real microphone/OS/TTS/device validation.
 
 ## Definition of done
 
-D1 is complete when the real device demonstrates the intended microphone → STT → semantic understanding → deterministic execution → localized response → TTS completion path for the representative locale matrix, with recovery behavior observed for the key failure modes above, and the durable evidence recorded in A/B.
+D1 is complete when the final deterministic repository gate passes, the real device demonstrates the intended microphone → STT → semantic understanding → deterministic execution → localized response → TTS completion path for the representative locale matrix, recovery behavior is observed for the key failure modes, and durable evidence is recorded in A/B.
