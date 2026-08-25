@@ -42,7 +42,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Structured execution metadata remains compact.
 - [x] Reusable premium result-card primitive with contextual action chips added.
 - [x] Daily and Meals/Nutrition use premium result cards and contextual actions.
-- [x] Household/Shopping/Recipe/Brain surfaces now use the same result and action language.
+- [x] Household/Shopping/Recipe/Brain surfaces use the same result and action language.
 - [ ] Integrate rich result cards/chips directly into Assistant responses for action-specific outcomes.
 
 ## Phase 5 — Navigation + information architecture
@@ -66,24 +66,18 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Premium typography hierarchy, spacing rhythm, depth, shadows and restrained luminous accents established.
 - [x] Expo Vector Icons introduced for major command-center/assistant actions.
 - [x] Prototype-like text markers reduced in redesigned primary surfaces.
-- [x] Daily experience moved onto premium visual language.
-- [x] Meals/Nutrition moved onto premium visual language.
-- [x] Reminders moved onto premium visual language.
-- [x] Calendar moved onto premium visual language.
-- [x] Shopping moved onto premium visual language.
-- [x] Inventory moved onto premium visual language.
-- [x] Recipe Intelligence moved onto premium visual language.
-- [x] Personal Brain moved onto premium visual language.
-- [x] Supplements / Health Routine moved onto premium visual language.
-- [x] Yoga / Movement Coach moved onto premium visual language.
-- [x] Habits / Daily Rhythm moved onto premium visual language.
-- [ ] Apply same quality to remaining domain/settings screens.
+- [x] Daily, Meals/Nutrition, Reminders, Calendar, Shopping, Inventory, Recipe Intelligence, Personal Brain, Supplements, Yoga and Habits moved onto premium visual language.
+- [x] Personal Insights moved onto the premium visual language.
+- [x] Locale selection moved onto the premium visual language.
+- [x] Notification inbox moved onto the premium visual language.
+- [ ] Apply same quality to remaining domain/settings/onboarding screens.
 - [ ] Haptic-ready interaction boundaries where supported.
 
 ## Phase 8 — Persian + global
 - [x] RTL-aware Command Center and Assistant surfaces.
 - [x] Mature conversational Persian copy preserved.
 - [x] Language remains independent from stored data/business logic.
+- [x] Locale selection now follows the premium shell and keeps RTL-aware state.
 - [ ] Full RTL audit across every feature route.
 - [ ] Locale-aware dates/numbers/units audit across all redesigned surfaces.
 - [ ] Long-text/translation-resilience review for premium components.
@@ -91,7 +85,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 ## Phase 9 — Accessibility + resilience
 - [x] Semantic button roles/labels on major redesigned actions.
 - [x] Reduced-motion behavior implemented for primary animated voice surfaces.
-- [x] Loading/error fallbacks preserved across the redesigned route families.
+- [x] Loading/error fallbacks preserved across redesigned route families.
 - [ ] Full touch-target and screen-reader audit across all routes.
 - [ ] Dynamic text and keyboard resilience audit.
 - [ ] Focus order and voice-over/navigation review for complex cards/modals.
@@ -111,7 +105,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 
 ## Progress estimate
 
-**Approximate UI roadmap completion: ~74%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. The remaining work is concentrated in remaining routes/settings, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
+**Approximate UI roadmap completion: ~79%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. Remaining work is concentrated in remaining onboarding/settings/detail routes, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
 
 ## Execution rules
 Work continuously from the first unchecked item. Prefer reusable foundations over one-off styling. Do not rewrite domain behavior for visual polish. Preserve voice contracts, user state, accessibility and business logic.
