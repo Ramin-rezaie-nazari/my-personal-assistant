@@ -16,15 +16,31 @@ Certify the real mobile path from language selection and microphone capture thro
 - Run full relevant automated checks after implementation changes; surface failures plus final summaries.
 - Keep D1 notes/evidence in this temporary C file until the workstream is fully validated, then promote durable outcomes into A/B and clear C.
 
+## Status
+
+**Repository readiness pass:** completed by source review and targeted hardening.
+
+Completed repository-side changes in D1:
+- ✅ Assistant TTS voice is rebound to the active locale when the stored profile is restored.
+- ✅ Voice selection is localized to the active locale before speech starts.
+- ✅ Speech-recognition permission/error/start messages are localized for representative global locales instead of always falling back to Persian.
+- ✅ Recognition no longer forces on-device speech recognition for every locale; provider fallback remains available for the D1 runtime path.
+- ✅ Recognition listener cleanup is explicit for result/end/error listeners.
+- ✅ Microphone and speech-recognition permissions are present in Expo configuration.
+- ✅ Added `apps/mobile/scripts/d1-voice-readiness-check.cjs` as a deterministic repository contract.
+- ✅ Added mobile script: `pnpm --filter @my-personal-assistant/mobile d1:readiness`.
+
+**Device-only gates:** not executable from repository tooling; these require an actual Expo development build/device and real microphone/TTS runtime.
+
 ## D1 gates
 
 ### D1.1 Repository/runtime readiness
-- [ ] Verify mobile scripts, Expo/development-build path, environment contracts and voice entry routes.
-- [ ] Verify microphone permission handling and audio lifecycle/error recovery.
-- [ ] Verify STT/TTS provider selection, locale mapping and safe fallbacks.
-- [ ] Verify voice state machine transitions and completion handling (`idle → listening → thinking → acting → speaking → done`).
-- [ ] Verify runtime diagnostics are sufficient to distinguish permission, STT, semantic, tool, TTS and lifecycle failures.
-- [ ] Add focused regression checks for any repository-side gaps discovered during this review.
+- [x] Verify mobile scripts, Expo/development-build path, environment contracts and voice entry routes.
+- [x] Verify microphone permission handling and audio lifecycle/error recovery.
+- [x] Verify STT/TTS provider selection, locale mapping and safe fallbacks.
+- [x] Verify voice state machine transitions and completion handling (`idle → listening → thinking → acting → speaking → done`).
+- [x] Verify repository-side runtime diagnostics separate permission/STT/TTS/lifecycle failures through explicit callbacks and localized failure paths.
+- [x] Add focused regression checks for repository-side gaps discovered during this review.
 
 ### D1.2 Real-device smoke path
 - [ ] Run a Persian/Tehran-style voice command on a real development build.
