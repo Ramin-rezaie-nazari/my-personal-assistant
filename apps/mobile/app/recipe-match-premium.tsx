@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { hasAuthSession } from '../lib/api';
 import { getRecipeMatches, RecipeMatch } from '../lib/recipe-api';
+import { hasAuthSession } from '../lib/api';
 import { PREMIUM } from '../lib/premium-ui';
 import { PremiumGlow } from '../components/PremiumGlow';
 import { PremiumResultCard } from '../components/PremiumResultCard';
@@ -22,8 +22,8 @@ export default function RecipeMatchPremiumScreen() {
     try {
       setError(null);
       setRecipes(await getRecipeMatches());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to match recipes.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to match recipes.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -44,9 +44,9 @@ export default function RecipeMatchPremiumScreen() {
       setError(null);
       const { addRecipeMissingToBasket } = await import('../lib/recipe-api');
       await addRecipeMissingToBasket(recipe.recipeId, recipe.missing);
-      setAdded((cur) => ({ ...cur, [recipe.recipeId]: true }));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unable to add missing ingredients.');
+      setAdded((current) => ({ ...current, [recipe.recipeId]: true }));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to add missing ingredients.');
     } finally {
       setAdding(null);
     }
@@ -64,25 +64,16 @@ export default function RecipeMatchPremiumScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View pointerEvents="none" style={styles.bg}>
-        <PremiumGlow size={360} opacity={0.08} accent="amber" />
-      </View>
+      <View pointerEvents="none" style={styles.bg}><PremiumGlow size={360} opacity={0.08} accent="amber" /></View>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} tintColor={PREMIUM.colors.primaryBright} />}
         contentContainerStyle={styles.content}
       >
         <View style={styles.top}>
-          <Pressable onPress={() => router.back()} style={styles.icon} accessibilityRole="button" accessibilityLabel="Back">
-            <Ionicons name="arrow-back" size={18} color={PREMIUM.colors.inkSoft} />
-          </Pressable>
-          <View style={styles.titleWrap}>
-            <Text style={styles.kicker}>RECIPE INTELLIGENCE</Text>
-            <Text style={styles.title}>Cook smarter</Text>
-          </View>
-          <Pressable onPress={() => router.push('/assistant')} style={styles.icon} accessibilityRole="button" accessibilityLabel="Open MYPA assistant">
-            <Ionicons name="sparkles-outline" size={18} color={PREMIUM.colors.primaryBright} />
-          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.icon}><Ionicons name="arrow-back" size={18} color={PREMIUM.colors.inkSoft} /></Pressable>
+          <View style={styles.titleWrap}><Text style={styles.kicker}>RECIPE INTELLIGENCE</Text><Text style={styles.title}>Cook smarter</Text></View>
+          <Pressable accessibilityRole="button" accessibilityLabel="Open assistant" onPress={() => router.push('/assistant')} style={styles.icon}><Ionicons name="sparkles-outline" size={18} color={PREMIUM.colors.primaryBright} /></Pressable>
         </View>
 
         <PremiumResultCard
@@ -96,68 +87,60 @@ export default function RecipeMatchPremiumScreen() {
           ]}
         />
 
-        {error ? (
-          <PremiumResultCard
-            eyebrow="SYSTEM"
-            title="Recipe matching unavailable"
-            detail={error}
-            accent="rose"
-            actions={[{ label: 'Retry', icon: 'refresh', onPress: () => void load() }]}
-          />
-        ) : null}
+        {error ? <PremiumResultCard eyebrow="SYSTEM" title="Recipe matching unavailable" detail={error} accent="rose" actions={[{ label: 'Retry', icon: 'refresh', onPress: () => void load() }]} /> : null}
 
-        {recipes.length ? recipes.map((recipe) => (
-          <View key={recipe.recipeId} style={styles.card}>
-            <View style={styles.cardTop}>
-              <View style={styles.copy}>
-                <Text style={styles.name}>{recipe.name}</Text>
-                <Text style={styles.meta}>{recipe.calories} kcal · {Math.round(recipe.protein)}g protein</Text>
+        {recipes.length ? recipes.map((recipe) => {
+          const isAdding = adding === recipe.recipeId;
+          const isAdded = Boolean(added[recipe.recipeId]);
+          return (
+            <View key={recipe.recipeId} style={styles.card}>
+              <View style={styles.cardTop}>
+                <View style={styles.copy}>
+                  <Text style={styles.name}>{recipe.name}</Text>
+                  <Text style={styles.meta}>{recipe.calories} kcal · {Math.round(recipe.protein)}g protein</Text>
+                </View>
+                <View style={styles.score}><Text style={styles.scoreValue}>{recipe.score}</Text><Text style={styles.scoreLabel}>match</Text></View>
               </View>
-              <View style={styles.score}>
-                <Text style={styles.scoreValue}>{recipe.score}</Text>
-                <Text style={styles.scoreLabel}>match</Text>
-              </View>
-            </View>
-            <View style={styles.coverage}>
-              <View style={[styles.coverageFill, { width: `${recipe.coveragePercent}%` }]} />
-            </View>
-            <View style={styles.coverageRow}>
-              <Text style={styles.coverageText}>{recipe.coveragePercent}% in stock</Text>
-              <Text style={styles.coverageText}>{recipe.missingCount ? `${recipe.missingCount} missing` : 'Ready to cook'}</Text>
-            </View>
 
-            {recipe.missing.length ? (
-              <>
-                <Text style={styles.missingLabel}>NEEDS</Text>
-                {recipe.missing.map((item) => (
-                  <View key={item.foodId} style={styles.item}>
-                    <Text style={styles.itemName}>{item.name}</Text>
-                    <Text style={styles.itemQty}>{item.quantity} {item.unit}</Text>
-                  </View>
-                ))}
-                <MotionPress
-                  disabled={adding === recipe.recipeId || added[recipe.recipeId]}
-                  onPress={() => void addMissingToBasket(recipe)}
-                  style={[styles.basketButton, (adding === recipe.recipeId || added[recipe.recipeId]) && styles.disabled]}
-                >
-                  <Ionicons name={added[recipe.recipeId] ? 'checkmark' : 'cart-outline'} size={16} color={PREMIUM.colors.ink} />
-                  <Text style={styles.basketText}>{adding === recipe.recipeId ? 'Adding…' : added[recipe.recipeId] ? 'Added to basket' : 'Add missing ingredients'}</Text>
-                </MotionPress>
-              </>
-            ) : (
-              <View style={styles.ready}>
-                <Ionicons name="checkmark-circle-outline" size={18} color={PREMIUM.colors.mint} />
-                <Text style={styles.readyText}>Everything is already at home.</Text>
+              <View style={styles.coverage}><View style={[styles.coverageFill, { width: `${recipe.coveragePercent}%` }]} /></View>
+              <View style={styles.coverageRow}>
+                <Text style={styles.coverageText}>{recipe.coveragePercent}% in stock</Text>
+                <Text style={styles.coverageText}>{recipe.missingCount ? `${recipe.missingCount} missing` : 'Ready to cook'}</Text>
               </View>
-            )}
 
-            <View style={styles.macros}>
-              <Macro label="Protein" value={`${Math.round(recipe.protein)}g`} tone="mint" />
-              <Macro label="Carbs" value={`${Math.round(recipe.carbs)}g`} tone="amber" />
-              <Macro label="Fat" value={`${Math.round(recipe.fat)}g`} tone="cyan" />
+              {recipe.missing.length ? (
+                <>
+                  <Text style={styles.missingLabel}>NEEDS</Text>
+                  {recipe.missing.map((item) => (
+                    <View key={item.foodId} style={styles.item}>
+                      <Text style={styles.itemName}>{item.name}</Text>
+                      <Text style={styles.itemQty}>{item.quantity} {item.unit}</Text>
+                    </View>
+                  ))}
+                  <MotionPress
+                    disabled={isAdding || isAdded}
+                    onPress={() => void addMissingToBasket(recipe)}
+                    style={[styles.basketButton, (isAdding || isAdded) && styles.disabled]}
+                  >
+                    <Ionicons name={isAdded ? 'checkmark' : 'cart-outline'} size={16} color={PREMIUM.colors.ink} />
+                    <Text style={styles.basketText}>{isAdding ? 'Adding…' : isAdded ? 'Added to basket' : 'Add missing ingredients'}</Text>
+                  </MotionPress>
+                </>
+              ) : (
+                <View style={styles.ready}>
+                  <Ionicons name="checkmark-circle-outline" size={18} color={PREMIUM.colors.mint} />
+                  <Text style={styles.readyText}>Everything is already at home.</Text>
+                </View>
+              )}
+
+              <View style={styles.macros}>
+                <Macro label="Protein" value={`${Math.round(recipe.protein)}g`} tone="mint" />
+                <Macro label="Carbs" value={`${Math.round(recipe.carbs)}g`} tone="amber" />
+                <Macro label="Fat" value={`${Math.round(recipe.fat)}g`} tone="cyan" />
+              </View>
             </View>
-          </View>
-        )) : (
+          );
+        }) : (
           <View style={styles.empty}>
             <Ionicons name="restaurant-outline" size={28} color={PREMIUM.colors.primaryBright} />
             <Text style={styles.emptyTitle}>No recipe matches yet</Text>
@@ -175,12 +158,7 @@ export default function RecipeMatchPremiumScreen() {
 }
 
 function Macro({ label, value, tone }: { label: string; value: string; tone: 'mint' | 'amber' | 'cyan' }) {
-  return (
-    <View>
-      <Text style={styles.macroLabel}>{label}</Text>
-      <Text style={[styles.macroValue, { color: PREMIUM.colors[tone] }]}>{value}</Text>
-    </View>
-  );
+  return <View><Text style={styles.macroLabel}>{label}</Text><Text style={[styles.macroValue, { color: PREMIUM.colors[tone] }]}>{value}</Text></View>;
 }
 
 const styles = StyleSheet.create({
