@@ -17,11 +17,11 @@ export type MultilingualConstraintResult = {
 };
 
 const NEGATION: Record<string, readonly string[]> = {
-  en: ['no longer', 'only not', "don't", 'dont', 'not', 'never', 'without', 'no'],
-  fa: ['دیگه نمی', 'مگر نه', 'نذار', 'هرگز', 'بدون', 'نمی', 'نه'],
+  en: ['no longer', 'only not', "don't", 'do not', 'does not', 'did not', 'not', 'never', 'without', 'no'],
+  fa: ['دیگه نمی', 'مگر نه', 'نذار', 'نکن', 'نکنید', 'هرگز', 'بدون', 'نمی', 'نه'],
   es: ['ya no', 'a menos que no', 'nunca', 'sin', 'no'],
   fr: ['ne ... pas', 'ne', 'pas', 'jamais', 'sans'],
-  de: ['nicht mehr', 'kein', 'nie', 'ohne', 'nicht'],
+  de: ['nicht mehr', 'nicht', 'kein', 'nie', 'ohne'],
   it: ['non più', 'mai', 'senza', 'non'],
   pt: ['não mais', 'nunca', 'sem', 'não'],
   ru: ['больше не', 'никогда', 'без', 'не', 'нет'],
@@ -29,8 +29,8 @@ const NEGATION: Record<string, readonly string[]> = {
   tr: ['artık değil', 'asla', 'olmadan', 'değil', 'yok'],
   ar: ['لم يعد', 'أبداً', 'بدون', 'لا', 'ليس'],
   he: ['לא עוד', 'לעולם לא', 'בלי', 'לא'],
-  ja: ['もう〜ない', 'ない', 'ません', '決して', 'なし'],
-  ko: ['더 이상 안', '않아', '안', '절대', '없이'],
+  ja: ['もう〜ない', 'ない', 'ません', 'しない', 'しません', '追加しない', '決して', 'なし'],
+  ko: ['더 이상 안', '않아', '안', '하지 않는다', '절대', '없이'],
   zh: ['不再', '从不', '没有', '不要', '不'],
   hi: ['अब नहीं', 'कभी नहीं', 'बिना', 'नहीं'],
 };
@@ -58,17 +58,17 @@ const UNITS: Record<string, readonly string[]> = {
   gram: ['grams', 'gram', 'g', 'گرم', 'غرام', 'gramo', 'grammes', 'gramm'],
   kilogram: ['kilograms', 'kilogram', 'kg', 'کیلوگرم', 'کیلو', 'kilo', 'kilogramm'],
   milliliter: ['milliliters', 'milliliter', 'ml', 'میلی‌لیتر', 'میلی لیتر', 'mililitro'],
-  liter: ['liters', 'liter', 'l', 'لیتر', 'litro'],
+  liter: ['liters', 'liter', 'l', 'لیتر', 'litro', 'リットル', 'L'],
   ounce: ['ounces', 'ounce', 'oz'],
   pound: ['pounds', 'pound', 'lbs', 'lb'],
-  cup: ['cups', 'cup', 'فنجان', 'پیمانه', 'taza', 'tasses'],
-  tablespoon: ['tablespoons', 'tablespoon', 'tbsp', 'قاشق غذاخوری'],
-  teaspoon: ['teaspoons', 'teaspoon', 'tsp', 'قاشق چای‌خوری'],
-  piece: ['pieces', 'piece', 'عدد', 'تا'],
+  cup: ['cups', 'cup', 'فنجان', 'پیمانه', 'taza', 'tasses', 'カップ', '杯'],
+  tablespoon: ['tablespoons', 'tablespoon', 'tbsp', 'قاشق غذاخوری', '大さじ'],
+  teaspoon: ['teaspoons', 'teaspoon', 'tsp', 'قاشق چای‌خوری', '小さじ'],
+  piece: ['pieces', 'piece', 'عدد', 'تا', '個'],
 };
 
 const DATE_TERMS: Record<string, readonly string[]> = {
-  en: ['the day after tomorrow', 'day after tomorrow', 'tomorrow', 'today', 'tonight', 'yesterday', 'next week', 'next month'],
+  en: ['the day after tomorrow', 'day after tomorrow', 'tomorrow', 'today', 'yesterday', 'next week', 'next month'],
   fa: ['پس‌فردا', 'پس فردا', 'فردا', 'امروز', 'امشب', 'دیروز', 'هفته بعد', 'ماه بعد'],
   es: ['pasado mañana', 'mañana', 'hoy', 'esta noche', 'ayer', 'la próxima semana', 'el próximo mes'],
   fr: ['après-demain', 'demain', "aujourd’hui", 'ce soir', 'hier', 'la semaine prochaine', 'le mois prochain'],
@@ -136,7 +136,7 @@ export class MultilingualConstraintExtractionService {
   }
 
   private extractQuantities(text: string, constraints: MultilingualConstraint[]): void {
-    const quantityPattern = /(?:^|\s|[,:؛،])((?:\d+(?:[.,]\d+)?)|(?:\d+\s*\/\s*\d+))(?:\s*|$)/gu;
+    const quantityPattern = /(?:^|\s|[,:؛،])((?:\d+\s*\/\s*\d+)|(?:\d+(?:[.,]\d+)?))(?=\D|$)/gu;
     for (const match of text.matchAll(quantityPattern)) {
       const raw = match[1].trim();
       const value = raw.includes('/')
@@ -156,39 +156,35 @@ export class MultilingualConstraintExtractionService {
 
   private extractTime(text: string, constraints: MultilingualConstraint[]): void {
     const time = text.match(/(?:\b|T)([01]?\d|2[0-3])[:.]([0-5]\d)(?:\b|$)/u);
-    if (time) {
-      constraints.push({ kind: 'time', value: `${time[1].padStart(2, '0')}:${time[2]}`, source: time[0], confidence: 0.99 });
-    }
+    if (time) constraints.push({ kind: 'time', value: `${time[1].padStart(2, '0')}:${time[2]}`, source: time[0], confidence: 0.99 });
   }
 
   private extractDuration(text: string, constraints: MultilingualConstraint[]): void {
     const duration = text.match(/\b(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه|دقایق|分|分鐘|минут|минуты|minutos|minutos?|dakika|دقائق)\b/u);
-    if (duration) {
-      constraints.push({ kind: 'duration', value: Number(duration[1]), source: duration[0], confidence: 0.97 });
-    }
+    if (duration) constraints.push({ kind: 'duration', value: Number(duration[1]), source: duration[0], confidence: 0.97 });
   }
 
   private extractBudget(text: string, constraints: MultilingualConstraint[]): void {
     const budget = text.match(/(?:under|below|less than|up to|no more than|زیر|کمتر از|حداکثر|menos de|hasta|moins de|jusqu'à|unter|bis zu|weniger als|sotto|fino a|menos de|до|не более|altında|en fazla|أقل من|حتى|未満|以下|低于|少于)\s*(?:[$€£¥₹₽﷼]|usd|eur|gbp|irr|\$|€|£|¥)?\s*(\d+(?:[.,]\d+)?)/u);
-    if (budget) {
-      constraints.push({ kind: 'budget', value: Number(budget[1].replace(',', '.')), source: budget[0], confidence: 0.91 });
-    }
+    if (budget) constraints.push({ kind: 'budget', value: Number(budget[1].replace(',', '.')), source: budget[0], confidence: 0.91 });
   }
 
   private findUnit(text: string): { name: string; alias: string } | undefined {
-    const entries = Object.entries(UNITS).sort((a, b) => Math.max(...b[1].map((x) => x.length)) - Math.max(...a[1].map((x) => x.length)));
-    for (const [name, aliases] of entries) {
-      const alias = aliases.find((candidate) => text.startsWith(candidate));
-      if (alias) return { name, alias };
+    const entries = Object.entries(UNITS)
+      .flatMap(([name, aliases]) => aliases.map((alias) => ({ name, alias })))
+      .sort((a, b) => b.alias.length - a.alias.length);
+    for (const entry of entries) {
+      if (!text.startsWith(entry.alias)) continue;
+      const next = text.slice(entry.alias.length);
+      if (!next || /^(?:\s|[\p{P}\p{S}]|[\p{L}]|$)/u.test(next)) {
+        return entry;
+      }
     }
     return undefined;
   }
 
   private findAny(text: string, phrases: readonly string[]): string | undefined {
-    return phrases
-      .slice()
-      .sort((a, b) => b.length - a.length)
-      .find((phrase) => text.includes(phrase));
+    return phrases.slice().sort((a, b) => b.length - a.length).find((phrase) => text.includes(phrase));
   }
 
   private parseFraction(raw: string): number {
@@ -208,8 +204,8 @@ export class MultilingualConstraintExtractionService {
     if (affirmative && removal) return true;
 
     if (!negation) return false;
-    const negatedAddition = ADDITION.test(text) && /(?:not|don't|dont|نکن|نذار|نمی|no|no añadas|ne.*pas|nicht|non|não|не|追加しない|추가하지)/u.test(text);
-    const negatedRemoval = REMOVAL.test(text) && /(?:not|don't|dont|نکن|نمی|no|ne.*pas|nicht|non|não|не|削除しない|삭제하지)/u.test(text);
+    const negatedAddition = ADDITION.test(text) && /(?:not|don't|dont|do not|نکن|نذار|نمی|no|no añadas|ne.*pas|nicht|non|não|не|追加しない|추가하지)/u.test(text);
+    const negatedRemoval = REMOVAL.test(text) && /(?:not|don't|dont|do not|نکن|نمی|no|ne.*pas|nicht|non|não|не|削除しない|삭제하지)/u.test(text);
     return Boolean(negatedAddition && negatedRemoval);
   }
 }
