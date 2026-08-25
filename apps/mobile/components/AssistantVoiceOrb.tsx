@@ -3,10 +3,10 @@ import { Animated, StyleSheet, Text, View } from 'react-native';
 import { PREMIUM } from '../lib/premium-ui';
 import { useReducedMotion } from '../lib/use-reduced-motion';
 
-export type VoiceInteractionState = 'idle' | 'listening' | 'thinking' | 'speaking' | 'done';
+export type VoiceInteractionState = 'idle' | 'listening' | 'thinking' | 'acting' | 'speaking' | 'done';
 type Props = { state: VoiceInteractionState; label: string; onPress?: () => void };
 
-const stateAccent = (state: VoiceInteractionState) => state === 'listening' ? PREMIUM.colors.cyan : state === 'thinking' ? PREMIUM.colors.primaryBright : state === 'speaking' ? PREMIUM.colors.mint : state === 'done' ? PREMIUM.colors.amber : PREMIUM.colors.primary;
+const stateAccent = (state: VoiceInteractionState) => state === 'listening' ? PREMIUM.colors.cyan : state === 'thinking' ? PREMIUM.colors.primaryBright : state === 'acting' ? PREMIUM.colors.amber : state === 'speaking' ? PREMIUM.colors.mint : state === 'done' ? PREMIUM.colors.amber : PREMIUM.colors.primary;
 
 export function AssistantVoiceOrb({ state, label, onPress }: Props) {
   const reduced = useReducedMotion();
@@ -24,9 +24,15 @@ export function AssistantVoiceOrb({ state, label, onPress }: Props) {
       return;
     }
     const loop = Animated.loop(Animated.parallel([
-      Animated.sequence([Animated.timing(pulse, { toValue: state === 'thinking' ? 1.09 : 1.16, duration: 900, easing: PREMIUM.motion.ease, useNativeDriver: true }), Animated.timing(pulse, { toValue: 0.98, duration: 900, easing: PREMIUM.motion.ease, useNativeDriver: true })]),
-      Animated.sequence([Animated.timing(ring, { toValue: 1.08, duration: 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }), Animated.timing(ring, { toValue: 0.82, duration: 1100, easing: PREMIUM.motion.ease, useNativeDriver: true })]),
-      Animated.timing(rotation, { toValue: 1, duration: 5200, useNativeDriver: true }),
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: state === 'thinking' ? 1.09 : state === 'acting' ? 1.12 : 1.16, duration: state === 'acting' ? 720 : 900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.98, duration: 900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+      ]),
+      Animated.sequence([
+        Animated.timing(ring, { toValue: state === 'acting' ? 1.14 : 1.08, duration: state === 'acting' ? 760 : 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+        Animated.timing(ring, { toValue: 0.82, duration: state === 'acting' ? 760 : 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+      ]),
+      Animated.timing(rotation, { toValue: 1, duration: state === 'acting' ? 3600 : 5200, useNativeDriver: true }),
     ]));
     loop.start();
     return () => loop.stop();
@@ -34,7 +40,7 @@ export function AssistantVoiceOrb({ state, label, onPress }: Props) {
 
   const spin = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   const accent = stateAccent(state);
-  const icon = state === 'listening' ? '◉' : state === 'thinking' ? '✦' : state === 'speaking' ? '◌' : state === 'done' ? '✓' : '⌁';
+  const icon = state === 'listening' ? '◉' : state === 'thinking' ? '✦' : state === 'acting' ? '↗' : state === 'speaking' ? '◌' : state === 'done' ? '✓' : '⌁';
 
   return <View style={styles.wrap} accessible accessibilityRole="button" accessibilityLabel={label || 'MYPA voice assistant'}>
     <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.14 : 0.28, transform: [{ scale: ring }] }]} />
