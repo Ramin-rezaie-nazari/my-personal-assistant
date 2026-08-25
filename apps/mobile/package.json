@@ -10,7 +10,8 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "voice:quality": "node scripts/voice-quality-check.cjs",
-    "ui:quality": "node scripts/ui-quality-check.cjs"
+    "ui:quality": "node scripts/ui-quality-check.cjs",
+    "d1:readiness": "node scripts/d1-voice-readiness-check.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
