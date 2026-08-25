@@ -7,6 +7,8 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 
 **Design freedom rule:** legacy UI is not a constraint. Preserve business logic, data contracts and good accessibility behavior; rewrite presentation from scratch whenever the old surface conflicts with the current MYPA vision.
 
+**Open-design rule:** for this workstream, design authority is intentionally unrestricted. Any screen, component, navigation pattern, interaction, animation or information architecture may be rewritten, replaced, deleted or rebuilt from scratch when that produces a materially better MYPA experience. Do not preserve previous work for sentimental or sunk-cost reasons. The success criterion is the final product quality: beautiful, mature, coherent, effortless, emotionally engaging and never confusing.
+
 ## Phase 1 — Visual foundation
 - [x] Unified premium color/depth/radius/spacing/motion token layer.
 - [x] Reusable animated glow primitive.
@@ -33,7 +35,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Existing STT/TTS contracts and voice persistence preserved.
 - [x] Persistent assistant dock added to the global shell.
 - [x] Dedicated premium voice-first assistant screen now uses the living core.
-- [ ] Wire real execution lifecycle to `acting` state and validate transitions in runtime.
+- [ ] Validate the full runtime lifecycle for `acting` → completion on-device.
 
 ## Phase 4 — Conversational results
 - [x] Premium conversation surface implementation added as the new Assistant experience.
@@ -43,14 +45,15 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Reusable premium result-card primitive with contextual action chips added.
 - [x] Daily and Meals/Nutrition use premium result cards and contextual actions.
 - [x] Household/Shopping/Recipe/Brain surfaces use the same result and action language.
-- [ ] Integrate rich result cards/chips directly into Assistant responses for action-specific outcomes.
+- [x] Assistant execution moments now show explicit completion cards and follow-up action surfaces.
+- [ ] Integrate richer result cards/chips directly into every action-specific Assistant response.
 
 ## Phase 5 — Navigation + information architecture
 - [x] Global assistant remains reachable through a compact persistent command dock.
 - [x] Main entry route points to the redesigned Command Center.
-- [x] Command dock now reserves a direct settings entry while keeping the assistant visually central.
-- [x] Settings uses a dedicated modal-like bottom transition and intentionally omits the persistent dock for focus.
-- [x] Meal Builder and Price Intelligence now route through premium presentation surfaces.
+- [x] Command dock keeps the assistant visually central while exposing only Today + Settings directly.
+- [x] Settings uses a dedicated focused presentation and does not depend on a crowded navigation bar.
+- [x] Meal Builder and Price Intelligence route through premium presentation surfaces.
 - [ ] Audit every route and remove unnecessary navigation complexity.
 - [ ] Establish one coherent small navigation model for domain areas.
 - [ ] Preserve direct voice-first access to every major capability.
@@ -78,6 +81,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Settings rewritten as a premium personal control center with profile, experience controls, quick links and privacy emphasis.
 - [x] Meal Builder rewritten as a premium nutrition composition flow with portion controls and live nutrition snapshot.
 - [x] Price Intelligence rewritten as a premium source-aware price movement surface.
+- [x] Global Assistant Dock simplified into a voice-first 3-point interaction: Today / MYPA Core / Settings.
 - [ ] Apply same quality to remaining detail routes.
 - [ ] Haptic-ready interaction boundaries where supported.
 
@@ -116,12 +120,14 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 
 ## Progress estimate
 
-**Approximate UI roadmap completion: ~87%.** This estimate reflects completed premium experience families plus reusable foundations; it is not a claim of final product quality. Remaining work is concentrated in remaining detail routes, navigation consolidation, Assistant action/result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
+**Approximate UI roadmap completion: ~89%.** This estimate reflects completed premium experience families plus reusable foundations and the stronger voice-first interaction model; it is not a claim of final product quality. Remaining work is concentrated in the last detail routes, global navigation audit, deeper result choreography, motion polish, global RTL/locale resilience, accessibility and device validation.
 
 ## Execution rules
 Work continuously from the first unchecked item. Prefer reusable foundations over one-off styling. Do not rewrite domain behavior for visual polish. Preserve voice contracts, user state, accessibility and business logic.
 
-For legacy screens, do not preserve weak presentation just because it already exists. Reuse the underlying data/API/domain behavior when correct; otherwise design and implement the best current version from scratch.
+Legacy screens may be rewritten completely whenever they are weaker than the current vision. Reuse underlying data/API/domain behavior when correct; do not preserve weak presentation because it already exists.
+
+Treat design authority as fully open: proactively choose the better interaction, composition, animation, information architecture or component system whenever the current one can be improved. Optimize for the final experience, not for minimizing diffs or preserving old implementation.
 
 For long tests, execute the full suite but surface only failures/errors plus the final summary.
 
