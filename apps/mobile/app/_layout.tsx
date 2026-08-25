@@ -54,7 +54,7 @@ export default function RootLayout() {
     if (!onExpectedRoute) router.replace(targetRoute);
   }, [bootReady, currentSegment, targetRoute]);
   if (!bootReady) return <StartupScreen />;
-  const showAssistantDock = currentSegment != null && !['assistant', 'language', 'auth', 'onboarding'].includes(currentSegment);
+  const showAssistantDock = currentSegment != null && !['assistant', 'language', 'auth', 'onboarding', 'settings'].includes(currentSegment);
   return <View style={styles.root}>
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: PREMIUM.colors.canvas }, animation: 'fade' }}>
       <Stack.Screen name="index" options={{ animation: 'fade' }} />
@@ -62,6 +62,7 @@ export default function RootLayout() {
       <Stack.Screen name="language" options={{ animation: 'fade' }} />
       <Stack.Screen name="auth" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="onboarding" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="settings" options={{ animation: 'slide_from_bottom' }} />
     </Stack>
     {showAssistantDock ? <View style={styles.dock}><AssistantDock onPress={() => router.push('/assistant')} /></View> : null}
   </View>;
