@@ -1,3 +1,4 @@
+import { getStoredLocale, normalizeLocale } from './i18n';
 import { getStoredAccessToken } from './api';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
@@ -146,12 +147,15 @@ export async function sendAssistantMessage(
     throw new AssistantNetworkError('INVALID_RESPONSE', 'MESSAGE_TOO_LONG');
   }
 
+  const storedLocale = await getStoredLocale();
+  const preferredLocale = locale ?? (storedLocale ? normalizeLocale(storedLocale) : 'en-US');
+
   const response = await authorizedFetch('/assistant', {
     method: 'POST',
     signal,
     body: JSON.stringify({
       message: normalizedMessage,
-      ...(locale ? { locale } : {}),
+      locale: preferredLocale,
     }),
   });
 
