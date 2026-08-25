@@ -22,6 +22,9 @@ export type TtsProvider = {
 };
 
 const STORAGE_KEY = 'mypa.voice.profile.v1';
+const MIN_TTS_TIMEOUT_MS = 15_000;
+const MAX_TTS_TIMEOUT_MS = 60_000;
+const TTS_TIMEOUT_PER_CHARACTER_MS = 90;
 
 /** Voice character presets; the contract is vendor-agnostic. */
 export const VOICE_PROFILES: VoiceProfile[] = [
@@ -54,28 +57,62 @@ export function getVoiceProfileForLocale(
 }
 
 export async function getStoredVoiceProfile(): Promise<VoiceProfile> {
-  const stored = await AsyncStorage.getItem(STORAGE_KEY);
-  return getVoiceProfile(stored);
+  try {
+    const stored = await AsyncStorage.getItem(STORAGE_KEY);
+    return getVoiceProfile(stored);
+  } catch {
+    return VOICE_PROFILES[0];
+  }
 }
 
 export async function setStoredVoiceProfile(id: string): Promise<void> {
-  await AsyncStorage.setItem(STORAGE_KEY, id);
+  const profile = getVoiceProfile(id);
+  await AsyncStorage.setItem(STORAGE_KEY, profile.id);
 }
 
 export async function speakAssistantText(text: string, profile: VoiceProfile): Promise<void> {
+  const normalizedText = text.trim();
+  if (!normalizedText) return;
+
   await Speech.stop();
+
+  const timeoutMs = Math.min(
+    MAX_TTS_TIMEOUT_MS,
+    Math.max(MIN_TTS_TIMEOUT_MS, normalizedText.length * TTS_TIMEOUT_PER_CHARACTER_MS),
+  );
+
   await new Promise<void>((resolve) => {
-    Speech.speak(text, {
-      language: profile.locale,
-      rate: profile.rate,
-      pitch: profile.pitch,
-      onDone: resolve,
-      onStopped: resolve,
-      onError: () => resolve(),
-    });
+    let settled = false;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      if (timeout) clearTimeout(timeout);
+      resolve();
+    };
+
+    timeout = setTimeout(finish, timeoutMs);
+
+    try {
+      Speech.speak(normalizedText, {
+        language: profile.locale,
+        rate: profile.rate,
+        pitch: profile.pitch,
+        onDone: finish,
+        onStopped: finish,
+        onError: finish,
+      });
+    } catch {
+      finish();
+    }
   });
 }
 
 export async function stopAssistantSpeech(): Promise<void> {
-  await Speech.stop();
+  try {
+    await Speech.stop();
+  } catch {
+    // Cleanup must never leave the voice state machine stuck.
+  }
 }
