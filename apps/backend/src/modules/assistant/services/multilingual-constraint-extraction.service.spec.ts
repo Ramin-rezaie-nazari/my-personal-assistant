@@ -12,6 +12,8 @@ describe('MultilingualConstraintExtractionService', () => {
     ['fr-FR', 'si le dîner coûte moins de 20, ajoute 2 tasses'],
     ['de-DE', 'wenn das Abendessen unter 20 liegt, füge 2 Tassen hinzu'],
     ['ru-RU', 'если ужин меньше 20, добавь 2'],
+    ['tr-TR', 'eğer akşam yemeği 20 altında ise 2 kilo ekle'],
+    ['ja-JP', '夕食が20未満なら2カップ追加して'],
   ])('extracts conditional + numeric constraints for %s', (locale, input) => {
     const result = service.extract(input, locale as Parameters<typeof service.extract>[1]);
     expect(result.conditional).toBe(true);
@@ -32,8 +34,22 @@ describe('MultilingualConstraintExtractionService', () => {
     expect(result.constraints.some((item) => item.kind === 'quantity')).toBe(true);
   });
 
+  it('extracts multiple quantities, attached units, fraction and Persian digits', () => {
+    const result = service.extract('add 500g chicken and 1/2 cup rice plus ۲ لیتر آب', 'en-US');
+    expect(result.constraints.filter((item) => item.kind === 'quantity')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ value: 500 }),
+      expect.objectContaining({ value: 0.5 }),
+      expect.objectContaining({ value: 2 }),
+    ]));
+    expect(result.constraints.filter((item) => item.kind === 'unit')).toEqual(expect.arrayContaining([
+      expect.objectContaining({ value: 'gram' }),
+      expect.objectContaining({ value: 'cup' }),
+      expect.objectContaining({ value: 'liter' }),
+    ]));
+  });
+
   it('extracts metric/imperial units, time, duration and budget together', () => {
-    const result = service.extract('add 2.5 lb chicken at 19:30 for 20 minutes under 30', 'en-US');
+    const result = service.extract('add 2.5 lb chicken at 19:30 for 20 minutes under $30', 'en-US');
     expect(result.constraints).toEqual(expect.arrayContaining([
       expect.objectContaining({ kind: 'quantity', value: 2.5 }),
       expect.objectContaining({ kind: 'unit', value: 'pound' }),
@@ -43,9 +59,38 @@ describe('MultilingualConstraintExtractionService', () => {
     ]));
   });
 
+  it.each([
+    ['en-US', 'schedule it tomorrow at 08:15'],
+    ['fa-IR', 'فردا ساعت ۰۸:۱۵ یادم بنداز'],
+    ['es-ES', 'recuérdamelo mañana a las 08:15'],
+    ['ja-JP', '明日08:15にリマインドして'],
+  ])('extracts relative date and clock time for %s', (locale, input) => {
+    const result = service.extract(input, locale as Parameters<typeof service.extract>[1]);
+    expect(result.constraints).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: 'date' }),
+      expect.objectContaining({ kind: 'time', value: '08:15' }),
+    ]));
+  });
+
+  it.each([
+    ['en-US', 'make it vegan and high protein'],
+    ['fa-IR', 'غذای وگان و پروتئین بالا'],
+    ['de-DE', 'vegetarisch und glutenfrei'],
+    ['ja-JP', 'ビーガンで高タンパク'],
+  ])('extracts diet constraints for %s', (locale, input) => {
+    const result = service.extract(input, locale as Parameters<typeof service.extract>[1]);
+    expect(result.constraints.some((item) => item.kind === 'diet')).toBe(true);
+  });
+
   it('flags contradictory affirmative/removal combinations instead of treating them as ordinary constraints', () => {
     const result = service.extract('add chicken but cancel and remove it', 'en-US');
     expect(result.contradictory).toBe(true);
+  });
+
+  it('does not mark a simple negated add as contradictory', () => {
+    const result = service.extract("don't add chicken", 'en-US');
+    expect(result.contradictory).toBe(false);
+    expect(result.constraints.some((item) => item.kind === 'negation')).toBe(true);
   });
 
   it('does not invent locale-specific state when no constraint signal exists', () => {
