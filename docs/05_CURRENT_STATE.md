@@ -7,7 +7,6 @@
 > **Fixed file aliases:**
 > - **A** = `docs/05_CURRENT_STATE.md`
 > - **B** = `docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`
-> - **C** = `docs/C_GLOBAL_MULTILINGUAL_VOICE_ROADMAP.md`
 >
 > Every work session starts by reading A and B first.
 
@@ -46,9 +45,33 @@ Validated on `work/global-multilingual-voice-100`:
 
 **Milestone boundary:** this green result proves the defined repository-side deterministic engineering contract plus the implemented semantic/context/constraint layers under automated validation. It does **not** prove unconstrained native-level speech understanding, native-quality TTS, real-device reliability, accent/noise robustness, local/offline provider readiness or arbitrary full-conversation coverage.
 
+### Durable completed milestone — Premium User Experience + Voice-first Mobile Surface (repository-side)
+
+Validated on `work/global-multilingual-voice-100` and locked after final local validation:
+
+- ✅ Premium design tokens, depth, spacing, typography and shared motion foundation.
+- ✅ Reusable `PremiumGlow`, `PremiumSurface` and `PremiumResultCard` primitives.
+- ✅ Shared reduced-motion support and motion-safe interaction behavior.
+- ✅ Living Voice Core with `idle → listening → thinking → acting → speaking → done` states.
+- ✅ Voice Core is a real semantic/tappable interaction, not a visual-only affordance.
+- ✅ Persistent assistant dock centered on Today / MYPA Core / Settings, with RTL-aware accessibility behavior.
+- ✅ Command Center and Assistant rewritten around the assistant as the primary visual anchor.
+- ✅ Daily, nutrition/meals, reminders, calendar, shopping, inventory, recipe intelligence, Personal Brain, supplements, yoga, habits and insights moved to the premium visual language.
+- ✅ Language, Auth, Onboarding and Settings aligned with the same premium visual system.
+- ✅ Meal Builder, Price Intelligence, Smart Meals and Meal Detail implemented as premium experiences.
+- ✅ Known direct feature routes are premium implementations or explicit shell/entry exceptions; UI drift protection is enforced by the UI Quality Contract.
+- ✅ Voice Quality Contract and UI Quality Contract added for future regression/drift protection.
+- ✅ Startup entrance shortened and the implicit English Voice Core hint removed so Persian/global UI does not silently mix copy.
+- ✅ Final mobile validation completed on commit `3856b57aa4588759af26c01efbe6f0bb195fcb27`:
+  - **TypeScript:** zero TypeScript errors.
+  - **Voice Quality Contract:** PASS — **51 locales, 10 voice profiles**, STT/TTS mapping, localized speech context, RTL policy, Persian Tehran style and safe TTS completion.
+  - **UI Quality Contract:** PASS — premium foundations, route wiring, RTL-aware surfaces, reduced-motion support and tappable voice core.
+
+**Workstream boundary:** repository-side UI/voice implementation is complete and green. Real Expo/device smoke testing, visual review on real hardware, accessibility runtime review and provider/device speech-quality validation remain external/runtime gates and are intentionally not claimed here.
+
 ## Next unchecked capabilities
 
-The first remaining gates are external/runtime validation rather than unfinished implementation of the completed repository milestone:
+The first remaining gates are external/runtime validation rather than unfinished implementation of the completed repository milestones:
 
 - ⬜ Validate multilingual language picker and complete microphone → STT → understanding → TTS flow on a real development build/device.
 - ⬜ Validate representative supported locale/provider combinations on real hardware.
@@ -99,7 +122,8 @@ The first remaining gates are external/runtime validation rather than unfinished
 
 - **Full backend Jest:** **160/160 suites passed, 432/432 tests passed, 0 snapshots, 36.563s**.
 - **Mobile voice quality:** **VOICE QUALITY CONTRACT PASS** for **51 locales, 10 voice profiles, STT/TTS mapping, RTL policy, Persian Tehran style and safe TTS completion**.
-- **Mobile typecheck:** completed with **no TypeScript error output** under the compact error-only validation command.
+- **Mobile UI quality:** **UI QUALITY CONTRACT PASS** for premium foundations, route wiring, RTL-aware surfaces, reduced-motion support and tappable voice core.
+- **Mobile TypeScript:** completed with **no TypeScript error output**.
 
 ### Previous validation evidence
 
@@ -174,4 +198,4 @@ The architecture must preserve one internal intent model while allowing language
 
 ## Working rule
 
-Every work session starts by reading **A and B**, then inspecting the repository. Continue from the **first unchecked item of the current workstream**. When an item becomes green, record the exact validation result in **A** and update **B** when the UX contract changes. **C is temporary execution state: after a milestone is fully documented in A/B, clear C so it is ready for the next roadmap.**
+Every work session starts by reading **A and B**, then inspecting the repository. Continue from the **first unchecked item of the current workstream**. When an item becomes green, record the exact validation result in **A** and update **B** when the UX contract changes.
