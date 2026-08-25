@@ -1,6 +1,6 @@
 # My Personal Assistant — D1 Real-Device Voice E2E Roadmap
 
-> C = temporary execution roadmap. A=`docs/05_CURRENT_STATE.md`; B=`docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`. D1 is the next runtime-validation workstream after the repository-side multilingual voice + premium mobile milestone was locked.
+> C = temporary execution roadmap. A=`docs/05_CURRENT_STATE.md`; B=`docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`. D1 is the runtime-validation workstream after the multilingual voice + premium mobile milestone.
 
 ## Objective
 
@@ -8,41 +8,28 @@ Certify the real mobile path from language selection and microphone capture thro
 
 ## Execution rules
 
-- Preserve all previously green A/B milestones; do not reopen them unless D1 exposes a real regression.
-- Inspect the repository and current contracts before changing implementation.
+- Preserve previously green A/B milestones; reopen them only for a real regression.
+- Inspect repository contracts before changing implementation.
 - Fix repository-side blockers ourselves whenever the available tools permit it.
 - Prefer deterministic, vendor-agnostic contracts and explicit runtime diagnostics over hidden fallbacks.
 - Separate repository-test certification from real-device/provider certification.
-- Run full relevant automated checks after implementation changes; surface failures plus final summaries.
-- Keep D1 notes/evidence in this temporary C file until the workstream is fully validated, then promote durable outcomes into A/B and clear C.
-
-## Status
-
-**Repository readiness pass:** completed by source review and targeted hardening.
-
-Completed repository-side changes in D1:
-- ✅ Assistant TTS voice is rebound to the active locale when the stored profile is restored.
-- ✅ Voice selection is localized to the active locale before speech starts.
-- ✅ Speech-recognition permission/error/start messages are localized for representative global locales instead of always falling back to Persian.
-- ✅ Recognition no longer forces on-device speech recognition for every locale; provider fallback remains available for the D1 runtime path.
-- ✅ Recognition listener cleanup is explicit for result/end/error listeners.
-- ✅ Microphone and speech-recognition permissions are present in Expo configuration.
-- ✅ Added `apps/mobile/scripts/d1-voice-readiness-check.cjs` as a deterministic repository contract.
-- ✅ Added mobile script: `pnpm --filter @my-personal-assistant/mobile d1:readiness`.
-
-**Device-only gates:** not executable from repository tooling; these require an actual Expo development build/device and real microphone/TTS runtime.
+- Run the relevant automated checks in the user's environment when the runtime/device is required; do not claim those checks were executed here.
+- Keep evidence in this temporary C file until the workstream is fully validated, then promote durable outcomes into A/B and clear C.
 
 ## D1 gates
 
-### D1.1 Repository/runtime readiness
+### D1.1 Repository/runtime readiness — REPOSITORY SIDE IMPLEMENTED
 - [x] Verify mobile scripts, Expo/development-build path, environment contracts and voice entry routes.
 - [x] Verify microphone permission handling and audio lifecycle/error recovery.
 - [x] Verify STT/TTS provider selection, locale mapping and safe fallbacks.
 - [x] Verify voice state machine transitions and completion handling (`idle → listening → thinking → acting → speaking → done`).
-- [x] Verify repository-side runtime diagnostics separate permission/STT/TTS/lifecycle failures through explicit callbacks and localized failure paths.
-- [x] Add focused regression checks for repository-side gaps discovered during this review.
+- [x] Verify runtime cleanup distinguishes listener removal from native recognition abort.
+- [x] Add focused regression checks for repository-side gaps discovered during review.
+- [x] Make TTS completion timeout-safe so a missing native callback cannot strand the UI in `speaking`.
+- [x] Make stored voice IDs self-healing to a known profile.
+- [x] Make native on-device speech capability detection report actual device support, not only locale-table membership.
 
-### D1.2 Real-device smoke path
+### D1.2 Real-device smoke path — PENDING DEVICE
 - [ ] Run a Persian/Tehran-style voice command on a real development build.
 - [ ] Confirm microphone permission and capture.
 - [ ] Confirm STT result reaches semantic understanding.
@@ -51,7 +38,7 @@ Completed repository-side changes in D1:
 - [ ] Confirm TTS starts, completes and returns the Voice Core to `done`.
 - [ ] Repeat with a normal conversational follow-up using prior context.
 
-### D1.3 Representative multilingual device matrix
+### D1.3 Representative multilingual device matrix — PENDING DEVICE
 - [ ] Persian + RTL.
 - [ ] English + LTR.
 - [ ] At least one additional RTL locale.
@@ -59,13 +46,14 @@ Completed repository-side changes in D1:
 - [ ] Validate locale switching without rebuilding persistent user data/memory.
 - [ ] Validate language-specific STT/TTS locale mapping.
 
-### D1.4 Robustness / runtime regression
-- [ ] Partial STT result handling.
-- [ ] Permission denial/retry.
-- [ ] STT timeout or failure recovery.
-- [ ] TTS failure/completion cleanup.
-- [ ] Cancellation/interruption during listening or speaking.
-- [ ] Multi-intent utterance reaching the correct execution boundary.
+### D1.4 Robustness / runtime regression — PARTIALLY IMPLEMENTED, DEVICE VALIDATION PENDING
+- [x] Partial STT result path preserved.
+- [ ] Permission denial/retry on device.
+- [ ] STT timeout or failure recovery on device.
+- [x] TTS failure/completion cleanup is guarded in repository code.
+- [x] Recognition cancellation now has explicit native abort semantics.
+- [ ] Cancellation/interruption behavior observed on device while listening or speaking.
+- [ ] Multi-intent utterance reaching the correct execution boundary on device.
 - [ ] Ambiguous request refuses to guess instead of executing a weak match.
 - [ ] Reduced-motion behavior remains safe at runtime.
 - [ ] RTL layout/accessibility labels remain usable on device.
@@ -76,6 +64,18 @@ Completed repository-side changes in D1:
 - [ ] Promote only durable validated outcomes to A/B.
 - [ ] Mark D1 complete only when all realistically testable gates are green.
 - [ ] Delete this C roadmap after handoff to A/B.
+
+## Repository-side changes in this workstream
+
+- `apps/mobile/lib/speech-recognition.ts`: abort-safe lifecycle, locale-aware contextual terms, guarded permission/start failures, real native on-device capability reporting.
+- `apps/mobile/lib/voice.ts`: locale-bound voice profiles, defensive stored-profile recovery, timeout-safe TTS completion, synchronous speech failure protection, cleanup that cannot strand the voice state machine.
+- `apps/mobile/app/assistant-premium.tsx`: Voice Core now uses explicit native abort semantics during unmount/session replacement.
+- `apps/mobile/scripts/d1-voice-readiness-check.cjs`: enforces permissions, locale binding, state transitions, abort cleanup and provider fallback policy.
+- `apps/mobile/scripts/voice-quality-check.cjs`: enforces multilingual voice contracts plus abort-safe STT and timeout-safe TTS regression guards.
+
+## Current evidence
+
+Repository changes are committed on `work/global-multilingual-voice-100` through the current branch head. GitHub Actions did not expose a workflow run for the latest commit, so automated execution is not claimed here. Real microphone/OS/TTS validation remains the only blocking class of evidence for D1 closure.
 
 ## Definition of done
 
