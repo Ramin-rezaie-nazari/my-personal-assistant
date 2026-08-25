@@ -5,7 +5,6 @@
 > Fixed file aliases:
 > - **A** = `docs/05_CURRENT_STATE.md`
 > - **B** = `docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`
-> - **C** = `docs/C_GLOBAL_MULTILINGUAL_VOICE_ROADMAP.md`
 >
 > Every work session reads A and B first.
 
@@ -115,12 +114,36 @@ The repository-side multilingual voice and semantic foundation is **fully green 
 
 This is a durable engineering milestone, not a claim of native-level understanding of arbitrary human speech. Real-device speech quality, local/offline provider routing, accent/noise robustness, fully language-native responses and full end-to-end conversation coverage remain separate gates.
 
+## Premium voice-first interaction layer — completed repository milestone
+
+The repository-side UX implementation is now also a durable contract:
+
+- Premium design tokens, shared surface/glow/result primitives, spacing, typography and motion foundation are established.
+- Reduced-motion behavior is protected at shared interaction primitives.
+- The Voice Core exposes `idle → listening → thinking → acting → speaking → done` and remains a semantic/tappable interaction.
+- The persistent assistant dock is centered on Today / MYPA Core / Settings and respects RTL-aware accessibility behavior.
+- Command Center and Assistant are assistant-first, with execution moments and compact follow-up actions.
+- Feature surfaces for daily life, nutrition/meals, reminders, calendar, shopping, inventory, recipe intelligence, Personal Brain, supplements, yoga, habits, insights, language, auth, onboarding, settings, meal builder, price intelligence, smart meals and meal detail share the premium visual language.
+- Known direct feature routes are premium implementations or explicit shell/entry exceptions, with UI drift detection enforced by the UI Quality Contract.
+- Voice Quality Contract and UI Quality Contract provide deterministic regression protection for locale/voice coverage, route wiring, RTL behavior, reduced motion and Voice Core semantics.
+- Startup entrance was shortened and the implicit English Voice Core hint was removed so Persian/global UI does not silently mix copy.
+
+### Repository-side final validation — green
+
+Validated on commit `3856b57aa4588759af26c01efbe6f0bb195fcb27`:
+
+- **TypeScript:** zero TypeScript errors.
+- **Voice Quality Contract:** PASS — 51 locales, 10 voice profiles, STT/TTS mapping, localized speech context, RTL policy, Persian Tehran style and safe TTS completion.
+- **UI Quality Contract:** PASS — premium foundations, route wiring, RTL-aware surfaces, reduced-motion support and tappable Voice Core.
+
+The repository-side implementation is complete. Real-device interaction, native speech quality, provider-dependent behavior, visual review and accessibility runtime review remain separate runtime gates.
+
 ## Current implementation boundary
 
-The persistent-context layer, voice-first shell, deterministic multilingual foundation and the deep repository-side semantic/context/constraint implementation pass are established and green. These completed layers should not be reopened unless a later architecture or behavior change invalidates them.
+The persistent-context layer, voice-first shell, deterministic multilingual foundation, deep semantic/context/constraint implementation and premium voice-first mobile surface are established and green. These completed layers should not be reopened unless a later architecture or behavior change invalidates them.
 
 The next work should start from runtime evidence: real-device microphone/STT/understanding/TTS validation, local/offline provider capability and fallback routing, full native response coverage, representative all-locale conversations and robustness under accents/noise/slang/mixed-language/long utterances.
 
 ## Progress rule
 
-When an item becomes truly green, record its durable result in A and update B when the user-visible UX contract changes. **C is temporary execution state only: after a milestone is completed and documented in A/B, clear C completely and use it for the next roadmap.**
+When an item becomes truly green, record its durable result in A and update B when the user-visible UX contract changes.
