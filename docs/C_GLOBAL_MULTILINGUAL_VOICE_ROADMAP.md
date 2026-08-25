@@ -10,13 +10,14 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Reusable animated glow primitive.
 - [x] Reduced-motion accessibility hook.
 - [x] Premium dark surface language established for the Command Center.
-- [ ] Reusable surface/button/progress/empty-state library expanded across every feature screen.
+- [x] Reusable premium surface primitive added.
+- [ ] Expand the surface/button/progress/empty-state library across every feature screen.
 
 ## Phase 2 — Command Center
 - [x] Redesigned Command Center as a living, dark premium surface rather than a dashboard grid.
 - [x] Assistant presence is the primary visual anchor.
 - [x] Contextual priorities and progressive visual hierarchy.
-- [x] Animated/structured nutrition, habits, reminders and plan summaries.
+- [x] Structured nutrition, habits, reminders and plan summaries.
 - [x] Quick actions reduced to a compact contextual strip.
 - [x] Premium loading/error/success states.
 - [ ] Full visual pass across all linked domain screens.
@@ -27,14 +28,15 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Layered glow and orbit/ripple visual language.
 - [x] Existing STT/TTS contracts and voice persistence preserved.
 - [x] Persistent assistant dock added to the global shell.
-- [ ] Acting state needs a dedicated execution animation/state surface in the conversational UI.
+- [x] Dedicated premium voice-first assistant screen now uses the living core.
+- [ ] Dedicated acting/execution state animation needs device/runtime review.
 
 ## Phase 4 — Conversational results
-- [ ] Premium conversation surfaces instead of current prototype chat styling.
-- [ ] Clear distinction between speech, assistant state, action and completed result.
-- [ ] Animated result entry and execution confirmation.
-- [ ] Structured result cards/chips with progressive disclosure.
-- [ ] Contextual deep-link action chips.
+- [x] Premium conversation surface implementation added as the new Assistant experience.
+- [x] Clear user vs assistant result presentation.
+- [x] Animated voice state transitions are represented through the shared core.
+- [x] Structured execution metadata remains compact.
+- [ ] Rich result cards/chips and contextual deep-link actions still need implementation.
 
 ## Phase 5 — Navigation + information architecture
 - [x] Global assistant remains reachable through a compact persistent dock.
@@ -45,35 +47,35 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 
 ## Phase 6 — Motion system
 - [x] Central motion duration/easing tokens.
-- [x] Shared press/entry motion used in the redesigned Command Center and dock.
-- [x] Reduced-motion support for the living voice core.
+- [x] Shared press/entry motion used in redesigned surfaces and dock.
+- [x] Reduced-motion support for the primary animated voice surface.
 - [ ] Shared transitions for result cards, domain navigation and data changes.
 - [ ] Meaningful number/progress transitions across the product.
 
 ## Phase 7 — Premium polish
 - [x] Premium typography hierarchy, spacing rhythm, depth, shadows and restrained luminous accents established in the new shell.
-- [x] Expo Vector Icons introduced for major command-center actions.
-- [x] Prototype-like text markers reduced in the redesigned command center.
-- [ ] Apply the same polish to assistant, daily, nutrition, recipe, inventory, shopping, fitness, reminder and settings screens.
+- [x] Expo Vector Icons introduced for major command-center/assistant actions.
+- [x] Prototype-like text markers reduced in redesigned primary surfaces.
+- [ ] Apply the same polish to daily, nutrition, recipe, inventory, shopping, fitness, reminder and settings screens.
 - [ ] Haptic-ready interaction boundaries where supported.
 
 ## Phase 8 — Persian + global
-- [x] RTL-aware Command Center layout.
-- [x] Persian copy keeps a mature conversational identity.
+- [x] RTL-aware Command Center and Assistant surfaces.
+- [x] Mature conversational Persian copy preserved.
 - [x] Language remains independent from stored data/business logic.
 - [ ] Full RTL audit across every feature route.
 - [ ] Locale-aware presentation audit for dates/numbers/units on all redesigned surfaces.
 
 ## Phase 9 — Accessibility + resilience
-- [x] Semantic button roles and labels added to major redesigned actions.
-- [x] Reduced-motion behavior implemented for the primary animated voice surface.
-- [x] Loading and error fallbacks preserved in the redesigned Command Center.
+- [x] Semantic button roles/labels on major redesigned actions.
+- [x] Reduced-motion behavior implemented for primary animated voice surfaces.
+- [x] Loading/error fallbacks preserved in redesigned Command Center and Assistant.
 - [ ] Full touch-target and screen-reader audit across all routes.
 - [ ] Dynamic text and keyboard resilience audit.
 
 ## Phase 10 — Validation
 - [ ] Mobile typecheck after the current UI batch.
-- [ ] Existing voice-quality contract remains green after the current UI batch.
+- [ ] Voice-quality contract remains green after the current UI batch.
 - [ ] Backend regression remains green.
 - [ ] Route smoke validation.
 - [ ] iOS development-build validation.
