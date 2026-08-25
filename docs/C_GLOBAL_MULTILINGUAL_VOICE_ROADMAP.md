@@ -8,9 +8,9 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 ## Phase 1 — Visual foundation
 - [x] Unified premium color/depth/radius/spacing/motion token layer.
 - [x] Reusable animated glow primitive.
-- [x] Reduced-motion accessibility hook.
-- [x] Premium dark surface language established for the Command Center.
-- [x] Reusable premium surface primitive added.
+- [x] Native reduced-motion preference hook.
+- [x] Premium dark surface language established for the Command Center and Assistant.
+- [x] Reusable premium surface primitive.
 - [ ] Expand the surface/button/progress/empty-state library across every feature screen.
 
 ## Phase 2 — Command Center
@@ -25,11 +25,12 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 ## Phase 3 — Living Voice
 - [x] Voice orb/core redesigned as MYPA's visual heart.
 - [x] Distinct state-aware motion for idle/listening/thinking/speaking/done.
+- [x] Dedicated `acting` state and visual language added to the voice-core contract.
 - [x] Layered glow and orbit/ripple visual language.
 - [x] Existing STT/TTS contracts and voice persistence preserved.
 - [x] Persistent assistant dock added to the global shell.
 - [x] Dedicated premium voice-first assistant screen now uses the living core.
-- [ ] Dedicated acting/execution state animation needs device/runtime review.
+- [ ] Wire real execution lifecycle to `acting` state and validate transitions in runtime.
 
 ## Phase 4 — Conversational results
 - [x] Premium conversation surface implementation added as the new Assistant experience.
@@ -39,7 +40,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [ ] Rich result cards/chips and contextual deep-link actions still need implementation.
 
 ## Phase 5 — Navigation + information architecture
-- [x] Global assistant remains reachable through a compact persistent dock.
+- [x] Global assistant remains reachable through a compact persistent command dock.
 - [x] Main entry route already points to the redesigned Command Center.
 - [ ] Audit all routes and remove unnecessary navigation complexity.
 - [ ] Establish a coherent small navigation model for domain areas.
@@ -49,6 +50,7 @@ Build a premium, mature, highly animated, voice-first Personal Operating System 
 - [x] Central motion duration/easing tokens.
 - [x] Shared press/entry motion used in redesigned surfaces and dock.
 - [x] Reduced-motion support for the primary animated voice surface.
+- [x] Reduced-motion preference is read from native accessibility settings.
 - [ ] Shared transitions for result cards, domain navigation and data changes.
 - [ ] Meaningful number/progress transitions across the product.
 
