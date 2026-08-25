@@ -8,8 +8,8 @@ export type PremiumResultAction = { label: string; icon?: keyof typeof Ionicons.
 
 export function PremiumResultCard({ title, eyebrow, value, detail, accent = 'primary', actions = [], children }: PropsWithChildren<{ title: string; eyebrow?: string; value?: string; detail?: string; accent?: 'primary' | 'cyan' | 'mint' | 'amber' | 'rose'; actions?: PremiumResultAction[] }>) {
   const reduced = useReducedMotion();
-  const appear = new Animated.Value(reduced ? 1 : 0);
-  const translate = new Animated.Value(reduced ? 0 : 12);
+  const appear = React.useRef(new Animated.Value(reduced ? 1 : 0)).current;
+  const translate = React.useRef(new Animated.Value(reduced ? 0 : 12)).current;
 
   React.useEffect(() => {
     Animated.parallel([
