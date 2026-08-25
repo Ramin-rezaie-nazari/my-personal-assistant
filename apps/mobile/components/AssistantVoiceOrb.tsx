@@ -1,14 +1,15 @@
 import { useEffect, useRef } from 'react';
-import { Animated, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { PREMIUM } from '../lib/premium-ui';
 import { useReducedMotion } from '../lib/use-reduced-motion';
 
 export type VoiceInteractionState = 'idle' | 'listening' | 'thinking' | 'acting' | 'speaking' | 'done';
-type Props = { state: VoiceInteractionState; label: string; onPress?: () => void };
+type Props = { state: VoiceInteractionState; label: string; hint?: string; onPress?: () => void };
 
 const stateAccent = (state: VoiceInteractionState) => state === 'listening' ? PREMIUM.colors.cyan : state === 'thinking' ? PREMIUM.colors.primaryBright : state === 'acting' ? PREMIUM.colors.amber : state === 'speaking' ? PREMIUM.colors.mint : state === 'done' ? PREMIUM.colors.amber : PREMIUM.colors.primary;
 
-export function AssistantVoiceOrb({ state, label, onPress }: Props) {
+export function AssistantVoiceOrb({ state, label, hint = 'Tap to speak', onPress }: Props) {
   const reduced = useReducedMotion();
   const pulse = useRef(new Animated.Value(1)).current;
   const ring = useRef(new Animated.Value(0.8)).current;
@@ -40,26 +41,31 @@ export function AssistantVoiceOrb({ state, label, onPress }: Props) {
 
   const spin = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   const accent = stateAccent(state);
-  const icon = state === 'listening' ? '◉' : state === 'thinking' ? '✦' : state === 'acting' ? '↗' : state === 'speaking' ? '◌' : state === 'done' ? '✓' : '⌁';
+  const iconName = state === 'listening' ? 'mic' : state === 'thinking' ? 'sparkles' : state === 'acting' ? 'flash' : state === 'speaking' ? 'volume-high' : state === 'done' ? 'checkmark' : 'mic-outline';
+  const accessibilityLabel = label || 'MYPA voice assistant';
 
-  return <View style={styles.wrap} accessible accessibilityRole="button" accessibilityLabel={label || 'MYPA voice assistant'}>
+  const core = <>
     <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.14 : 0.28, transform: [{ scale: ring }] }]} />
     <Animated.View style={[styles.orbit, { borderColor: accent, transform: [{ rotate: spin }, { scale: ring }] }]} />
     <Animated.View style={[styles.core, { transform: [{ scale: pulse }], borderColor: accent }]}>
-      <View style={[styles.coreInner, { shadowColor: accent }]}><Text style={styles.icon}>{icon}</Text></View>
+      <View style={[styles.coreInner, { shadowColor: accent }]}><Ionicons name={iconName} size={36} color={PREMIUM.colors.white} /></View>
     </Animated.View>
+  </>;
+
+  return <View style={styles.wrap}>
+    {onPress ? <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} onPress={onPress} style={styles.hitArea}>{core}</Pressable> : core}
     {label ? <Text style={styles.label}>{label}</Text> : null}
-    {onPress ? <Text style={styles.hint}>Tap to speak · MYPA is listening</Text> : null}
+    {onPress ? <Text style={styles.hint}>{hint}</Text> : null}
   </View>;
 }
 
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center', minHeight: 190, paddingVertical: 10 },
+  hitArea: { width: 196, height: 160, alignItems: 'center', justifyContent: 'center' },
   outerGlow: { position: 'absolute', width: 180, height: 180, borderRadius: 90 },
   orbit: { position: 'absolute', width: 136, height: 136, borderRadius: 68, borderWidth: 1, borderStyle: 'dashed', opacity: 0.65 },
   core: { width: 112, height: 112, borderRadius: 56, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(9,13,23,0.96)', shadowColor: '#000', shadowOpacity: 0.42, shadowRadius: 26, shadowOffset: { width: 0, height: 14 }, elevation: 12 },
   coreInner: { width: 94, height: 94, borderRadius: 47, alignItems: 'center', justifyContent: 'center', backgroundColor: '#121A2D', shadowOpacity: 0.34, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 8 },
-  icon: { color: PREMIUM.colors.white, fontSize: 38, fontWeight: '700' },
   label: { marginTop: 12, color: PREMIUM.colors.ink, fontSize: 14, fontWeight: '800' },
   hint: { marginTop: 5, color: PREMIUM.colors.muted, fontSize: 10, letterSpacing: 0.2 },
 });
