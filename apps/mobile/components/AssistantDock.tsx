@@ -1,26 +1,33 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, I18nManager, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { PREMIUM } from '../lib/premium-ui';
 import { BrandMark } from './BrandMark';
+import { useReducedMotion } from '../lib/use-reduced-motion';
 
 export function AssistantDock({ onPress, accessibilityLabel = 'Open MYPA assistant' }: { onPress?: () => void; accessibilityLabel?: string }) {
+  const reduced = useReducedMotion();
   const pulse = useRef(new Animated.Value(1)).current;
   useEffect(() => {
+    pulse.stopAnimation();
+    if (reduced) {
+      pulse.setValue(1);
+      return;
+    }
     const loop = Animated.loop(Animated.sequence([
       Animated.timing(pulse, { toValue: 1.035, duration: 1900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
       Animated.timing(pulse, { toValue: 0.992, duration: 1900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
     ]));
     loop.start();
     return () => loop.stop();
-  }, [pulse]);
+  }, [pulse, reduced]);
 
   const openAssistant = onPress ?? (() => router.push('/assistant'));
 
   return (
     <Animated.View style={[styles.shell, { transform: [{ scale: pulse }] }]}>
-      <View style={styles.dock}>
+      <View style={[styles.dock, I18nManager.isRTL && styles.rtlRow]}>
         <Pressable accessibilityRole="button" accessibilityLabel="Open today" onPress={() => router.push('/daily')} style={({ pressed }) => [styles.sideItem, pressed && styles.pressed]}>
           <Ionicons name="today-outline" size={19} color={PREMIUM.colors.inkSoft} />
           <View style={styles.activeLine} />
@@ -62,6 +69,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 14 },
     elevation: 16,
   },
+  rtlRow: { flexDirection: 'row-reverse' },
   sideItem: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
   centerSlot: { width: 86, height: 72, alignItems: 'center', justifyContent: 'center' },
   coreOuter: { width: 66, height: 66, borderRadius: 33, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(184,172,255,0.08)', borderWidth: 1, borderColor: 'rgba(184,172,255,0.38)', shadowColor: PREMIUM.colors.primary, shadowOpacity: 0.32, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
