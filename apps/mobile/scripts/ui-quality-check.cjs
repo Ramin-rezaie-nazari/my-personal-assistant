@@ -18,6 +18,8 @@ const requiredFiles = [
   'lib/i18n.ts',
   'app/_layout.tsx',
   'app/assistant-premium.tsx',
+  'app/smart-meals-premium.tsx',
+  'app/meal-detail-premium.tsx',
 ];
 
 const premiumRouteAliases = [
@@ -36,6 +38,7 @@ const premiumRouteAliases = [
   ['recipe-match.tsx', "export { default } from './recipe-match-premium';"],
   ['reminders.tsx', "export { default } from './reminders-premium';"],
   ['shopping.tsx', "export { default } from './shopping-premium';"],
+  ['smart-meals.tsx', "export { default } from './smart-meals-premium';"],
   ['supplements.tsx', "export { default } from './supplements-premium';"],
   ['yoga.tsx', "export { default } from './yoga-premium';"],
 ];
@@ -44,6 +47,8 @@ const requiredTokens = [
   ['app/_layout.tsx', ['AssistantDock', 'PREMIUM.colors.canvas', 'ErrorBoundary']],
   ['app/command-center-v2.tsx', ['AssistantVoiceOrb', 'PremiumGlow', 'PREMIUM', 'rtl']],
   ['app/assistant-premium.tsx', ['AssistantVoiceOrb', 'startRecognition', 'speakAssistantText', 'PremiumGlow', 'PREMIUM']],
+  ['app/smart-meals-premium.tsx', ['PremiumResultCard', 'buildSmartMealSuggestions', 'PremiumGlow', 'PREMIUM']],
+  ['app/meal-detail-premium.tsx', ['PremiumResultCard', 'getMeals', 'PremiumGlow', 'PREMIUM']],
   ['components/AssistantVoiceOrb.tsx', ['listening', 'thinking', 'speaking', 'done']],
 ];
 
@@ -63,6 +68,10 @@ for (const [file, expected] of premiumRouteAliases) {
   const content = fs.readFileSync(full, 'utf8');
   if (!content.includes(expected)) failures.push(`route is not wired to premium surface: app/${file}`);
 }
+
+const detailRoute = path.join(appDir, 'meal', '[id].tsx');
+if (!fs.existsSync(detailRoute)) failures.push('missing route: app/meal/[id].tsx');
+else if (!fs.readFileSync(detailRoute, 'utf8').includes("export { default } from '../meal-detail-premium';")) failures.push('meal detail is not wired to premium surface');
 
 for (const [relative, tokens] of requiredTokens) {
   const full = path.join(root, relative);
