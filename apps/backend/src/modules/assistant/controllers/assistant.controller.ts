@@ -10,6 +10,7 @@ import {
 import { Request } from 'express';
 
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { ConfirmAssistantRequestDto } from '../dto/confirm-assistant-request.dto';
 import { ProcessAssistantRequestDto } from '../dto/process-assistant-request.dto';
 import { AssistantService } from '../services/assistant.service';
 
@@ -53,7 +54,7 @@ export class AssistantController {
   @Post('confirm')
   @UseGuards(JwtAuthGuard)
   async confirm(
-    @Body() body: { token: string },
+    @Body() body: ConfirmAssistantRequestDto,
     @Req() req: AuthenticatedRequest,
   ) {
     return this.assistantService.confirm(req.user.id, body.token);
