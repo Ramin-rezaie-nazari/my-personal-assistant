@@ -47,7 +47,7 @@ export class AssistantController {
     @Body() dto: ProcessAssistantRequestDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.assistantService.process(dto.message, req.user.id);
+    return this.assistantService.process(dto.message, req.user.id, dto.locale);
   }
 
   @Post('confirm')
