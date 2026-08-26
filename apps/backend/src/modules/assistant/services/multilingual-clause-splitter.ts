@@ -1,64 +1,77 @@
-const SPACED_CONNECTORS = /\s+(and then|and|but|then|also|plus|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e depois|e|depois|и потом|и|sonra|ve sonra|ve|و بعدش|و همچنین|سپس|هم|یا|ولی|اما|ثم|ثم بعد)\s+/iu;
-const FARSI_LOOKAHEAD_CONNECTOR = /\s+و\s+(?=بعد\s+)/iu;
+const SPACED_CONNECTOR = /\s+(and|also|plus|but|et|puis|y|luego|und|e|depois|и|и потом|sonra|ve|و بعدش|و همچنین|سپس|هم|یا|ولی|اما)\s+/iu;
+const TEMPORAL_CONNECTOR = /\s+(then|and then|et puis|y luego|und dann|und danach|e poi|e depois|ve sonra)\s+/iu;
+const FARSI_CONNECTOR = /\s+و\s+(?=بعد\s+)/iu;
 const CJK_CONNECTOR = /\s*(?=(?:然后再|然后|之后|それから|その後|そして|次に|그리고|그다음)\s*)/u;
 const SENTENCE_BOUNDARY = /[;；.。!?！？]+\s*/u;
 
 /**
  * Deterministically splits natural multi-intent utterances into executable clauses.
- * It intentionally avoids language-specific NLP models on this hot path.
+ * Conjunctions used purely as coordination are consumed at the boundary.
+ * Temporal "then" is preserved only when it starts a new sentence-level clause,
+ * because that marker is semantically useful to downstream understanding.
  */
 export function splitMultilingualClauses(input: string): string[] {
-  return splitMultilingualClausesDetailed(input).map(({ clause }) => clause);
-}
-
-/**
- * Same splitter with the sequencing marker that introduced each clause.
- * The marker is metadata only; plain splitting always strips it.
- */
-export function splitMultilingualClausesDetailed(input: string): Array<{ clause: string; marker?: string }> {
   const source = input.trim();
   if (!source) return [];
 
-  const sentenceParts = source
+  return source
     .split(SENTENCE_BOUNDARY)
-    .flatMap(splitConnectorFamilyDetailed)
-    .flatMap(splitFarsiDetailed)
-    .flatMap(splitCjkDetailed);
-
-  return sentenceParts
-    .map(({ text, marker }) => ({ clause: normalizeClause(text), marker }))
-    .map(({ clause, marker }) => ({ clause: stripLeadingClauseConnector(clause), marker: marker ?? detectLeadingClauseMarker(clause) }))
-    .filter(({ clause }) => Boolean(clause));
+    .flatMap((sentence) => splitSentence(sentence))
+    .map(normalizeClause)
+    .filter(Boolean);
 }
 
-function splitConnectorFamilyDetailed(part: string): Array<{ text: string; marker?: string }> {
-  const output: Array<{ text: string; marker?: string }> = [];
-  const pieces = part.split(SPACED_CONNECTORS);
-  if (pieces.length === 1) return [{ text: part }];
+function splitSentence(sentence: string): string[] {
+  let parts = [sentence.trim()].filter(Boolean);
 
-  output.push({ text: pieces[0] });
+  parts = parts.flatMap((part) => splitAndTemporalConnectors(part));
+  parts = parts.flatMap((part) => splitCoordinatingConnectors(part));
+  parts = parts.flatMap((part) => splitFarsiConnector(part));
+  parts = parts.flatMap((part) => splitCjkConnector(part));
+
+  return parts.filter(Boolean);
+}
+
+function splitAndTemporalConnectors(part: string): string[] {
+  const match = part.match(TEMPORAL_CONNECTOR);
+  if (!match || match.index === undefined) return [part];
+
+  const left = part.slice(0, match.index).trim();
+  const marker = match[1];
+  const right = part.slice(match.index + match[0].length).trim();
+
+  // In a sentence-level clause, "then" is preserved as part of the next clause.
+  return [left, `${marker} ${right}`.trim()].filter(Boolean);
+}
+
+function splitCoordinatingConnectors(part: string): string[] {
+  const pieces = part.split(SPACED_CONNECTOR);
+  if (pieces.length === 1) return [part];
+
+  const output: string[] = [pieces[0]?.trim() ?? ''];
   for (let index = 1; index < pieces.length; index += 2) {
-    const marker = pieces[index]?.trim();
-    const text = pieces[index + 1] ?? '';
-    output.push({ text: `${marker} ${text}`.trim(), marker });
+    const right = pieces[index + 1]?.trim() ?? '';
+    if (right) output.push(right);
   }
-
-  return output;
+  return output.filter(Boolean);
 }
 
-function splitFarsiDetailed(part: { text: string; marker?: string }): Array<{ text: string; marker?: string }> {
-  const pieces = part.text.split(FARSI_LOOKAHEAD_CONNECTOR);
+function splitFarsiConnector(part: string): string[] {
+  const pieces = part.split(FARSI_CONNECTOR);
   if (pieces.length === 1) return [part];
-  return [
-    { text: pieces[0], marker: part.marker },
-    ...pieces.slice(1).map((text) => ({ text: `بعد ${text}`.trim(), marker: 'بعد' })),
-  ];
+
+  return pieces
+    .map((piece) => piece.trim())
+    .filter(Boolean)
+    .map((piece) => piece.replace(/^بعد\s+/u, '').trim())
+    .filter(Boolean);
 }
 
-function splitCjkDetailed(part: { text: string; marker?: string }): Array<{ text: string; marker?: string }> {
-  const pieces = part.text.split(CJK_CONNECTOR);
-  if (pieces.length === 1) return [part];
-  return pieces.map((text) => ({ text, marker: part.marker }));
+function splitCjkConnector(part: string): string[] {
+  return part
+    .split(CJK_CONNECTOR)
+    .map((piece) => piece.trim())
+    .filter(Boolean);
 }
 
 function normalizeClause(part: string): string {
@@ -68,17 +81,5 @@ function normalizeClause(part: string): string {
     .replace(/[’‘`]/g, "'")
     .replace(/[؟?!،؛,.。；，！？]/gu, ' ')
     .replace(/\s+/gu, ' ')
-    .trim();
-}
-
-function detectLeadingClauseMarker(part: string): string | undefined {
-  return part.match(/^(then|and then|puis|et puis|y luego|luego|und dann|und danach|e poi|e depois|sonra|ve sonra|بعد(?:ها)?|سپس|ثم|ثم بعد|然后再|然后|之后|それから|その後|そして|次に|그리고|그다음)\s+/iu)?.[1];
-}
-
-function stripLeadingClauseConnector(part: string): string {
-  return part
-    .replace(/^(?:then|and then|puis|et puis|y luego|luego|und dann|und danach|e poi|e depois|sonra|ve sonra)\s+/iu, '')
-    .replace(/^(?:بعد(?:ها)?|سپس|ثم|ثم بعد)\s+/u, '')
-    .replace(/^(?:然后再|然后|之后|それから|その後|そして|次に|그리고|그다음)/u, '')
     .trim();
 }
