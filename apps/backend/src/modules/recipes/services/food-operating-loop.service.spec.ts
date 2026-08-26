@@ -17,7 +17,7 @@ describe('FoodOperatingLoopService', () => {
     scale: jest.fn(),
   };
   const shopping = {
-    addRecipeMissing: jest.fn(),
+    addOrMerge: jest.fn(),
   };
   const countryFood = {
     getLocalRecipeGuidance: jest.fn(),
@@ -97,17 +97,26 @@ describe('FoodOperatingLoopService', () => {
       localContext: null,
       financeContext: null,
     };
-    jest.spyOn(service, 'buildPlan').mockResolvedValue(plan);
-    shopping.addRecipeMissing.mockResolvedValue({ recipeId: 'recipe-1', added: 1 });
+    jest.spyOn(service, 'buildPlan').mockResolvedValue(plan as never);
+    shopping.addOrMerge.mockResolvedValue({ id: 'shopping-1', foodId: 'food-1' });
 
     const result = await service.addMissingToShopping('user-1', 'recipe-1', 4);
 
-    expect(shopping.addRecipeMissing).toHaveBeenCalledWith(
-      'user-1',
-      'recipe-1',
-      plan.inventory.missing,
-    );
-    expect(result.shopping).toEqual({ recipeId: 'recipe-1', added: 1 });
+    expect(shopping.addOrMerge).toHaveBeenCalledWith({
+      userId: 'user-1',
+      foodId: 'food-1',
+      name: 'Chicken',
+      quantity: 200,
+      unit: 'g',
+      source: 'recipe',
+      sourceRecipeId: 'recipe-1',
+      priority: 'high',
+    });
+    expect(result.shopping).toEqual({
+      recipeId: 'recipe-1',
+      added: 1,
+      items: [{ id: 'shopping-1', foodId: 'food-1' }],
+    });
   });
 
   it('recommends recipes using inventory coverage and nutrition targets', async () => {
