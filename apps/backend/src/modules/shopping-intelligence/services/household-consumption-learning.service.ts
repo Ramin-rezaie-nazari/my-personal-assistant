@@ -25,10 +25,11 @@ export class HouseholdConsumptionLearningService {
       throw new Error('Consumption quantity must be positive');
     }
     const history = this.events.get(event.productKey) ?? [];
-    history.push({ ...event, source: event.source ?? 'manual' });
+    const storedEvent = { ...event, source: event.source ?? 'manual' };
+    history.push(storedEvent);
     history.sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
     this.events.set(event.productKey, history.slice(-500));
-    return event;
+    return storedEvent;
   }
 
   forecast(productKey: string, now = new Date()): ConsumptionForecast {
