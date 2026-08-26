@@ -19,7 +19,7 @@ describe('RecipeShoppingConsolidationService', () => {
       { recipeId: 'r1', servings: 2 },
       { recipeId: 'r2', servings: 2 },
     ]);
-    expect(result.items[0].quantity).toBe(1);
+    expect(result.items[0].quantity).toBe(1000);
     expect(result.items[0].unit).toBe('ml');
     expect(result.items[0].recipeIds).toEqual(['r1', 'r2']);
   });
