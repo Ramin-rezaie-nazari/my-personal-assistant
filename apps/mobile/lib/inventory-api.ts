@@ -30,6 +30,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 }
 
 export function getInventory() { return request<InventoryItem[]>('/inventory'); }
-export function setInventoryQuantity(id: string, quantity: number) { return request<InventoryItem>(`/inventory/${id}`, { method: 'PATCH', body: JSON.stringify({ quantity }) }); }
+export function setInventoryQuantity(id: string, quantity: number, source = 'mobile') { return request<InventoryItem>(`/inventory/${id}`, { method: 'PATCH', body: JSON.stringify({ quantity, source }) }); }
 export function addInventory(data: { foodId: string; quantity: number; unit?: string; dailyConsumption?: number; safetyStock?: number; essential?: boolean; expiresAt?: string }) { return request<InventoryItem>('/inventory', { method: 'POST', body: JSON.stringify(data) }); }
+export function consumeInventory(id: string, quantity: number) { return request<InventoryItem>(`/inventory/${id}/consume`, { method: 'POST', body: JSON.stringify({ quantity }) }); }
+export function wasteInventory(id: string, quantity: number) { return request<InventoryItem>(`/inventory/${id}/waste`, { method: 'POST', body: JSON.stringify({ quantity }) }); }
+export function purchaseInventory(id: string, quantity: number) { return request<InventoryItem>(`/inventory/${id}/purchase`, { method: 'POST', body: JSON.stringify({ quantity }) }); }
 export function removeInventory(id: string) { return request<{ deleted: true }>(`/inventory/${id}`, { method: 'DELETE' }); }
