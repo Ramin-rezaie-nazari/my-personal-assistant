@@ -5,7 +5,7 @@ import {
   IngredientMeasurementKind,
   IngredientScalingPolicy,
 } from '../../nutrition/recipe-intelligence/recipe-domain.types';
-import { ShoppingService } from '../../shopping/shopping.service';
+import { ShoppingListPersistenceService } from '../../shopping-intelligence/services/shopping-list-persistence.service';
 import { GlobalCountryFoodService } from './global-country-food.service';
 import { GlobalCountryFinanceService } from '../../budget-intelligence/services/global-country-finance.service';
 
@@ -44,7 +44,7 @@ export class FoodOperatingLoopService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly scaling: RecipeServingScalingService,
-    private readonly shopping: ShoppingService,
+    private readonly shopping: ShoppingListPersistenceService,
     private readonly countryFood: GlobalCountryFoodService,
     private readonly countryFinance: GlobalCountryFinanceService,
   ) {}
@@ -95,8 +95,21 @@ export class FoodOperatingLoopService {
 
   async addMissingToShopping(userId: string, recipeId: string, targetServings: number) {
     const plan = await this.buildPlan(userId, recipeId, targetServings);
-    const result = await this.shopping.addRecipeMissing(userId, recipeId, plan.inventory.missing);
-    return { plan, shopping: result };
+    const added = await Promise.all(
+      plan.inventory.missing.map((item) =>
+        this.shopping.addOrMerge({
+          userId,
+          foodId: item.foodId,
+          name: item.name,
+          quantity: item.quantity,
+          unit: item.unit,
+          source: 'recipe',
+          sourceRecipeId: recipeId,
+          priority: 'high',
+        }),
+      ),
+    );
+    return { plan, shopping: { recipeId, added: added.length, items: added } };
   }
 
   private matchScaledIngredients(recipeIngredients: RecipeIngredientPersisted[], scaledIngredients: Array<{ ingredientId: string; scaledQuantity: number; unit: string }>, inventoryByFood: Map<string, InventoryRecord>) {
