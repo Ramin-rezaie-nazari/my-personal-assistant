@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
@@ -9,16 +10,20 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { ShoppingService } from './shopping.service';
+
 @Controller('shopping')
 @UseGuards(JwtAuthGuard)
 export class ShoppingController {
   constructor(private readonly shopping: ShoppingService) {}
+
   @Get('smart') smartList(@Request() req: { user: { id: string } }) {
     return this.shopping.smartList(req.user.id);
   }
+
   @Get('basket') basket(@Request() req: { user: { id: string } }) {
     return this.shopping.listBasket(req.user.id);
   }
+
   @Post('basket') add(
     @Request() req: { user: { id: string } },
     @Body()
@@ -29,10 +34,12 @@ export class ShoppingController {
       unit: string;
       source?: string;
       priority?: string;
+      sourceRecipeId?: string;
     },
   ) {
     return this.shopping.addToBasket(req.user.id, body);
   }
+
   @Post('from-recipe') addFromRecipe(
     @Request() req: { user: { id: string } },
     @Body()
@@ -41,16 +48,44 @@ export class ShoppingController {
       items: Array<{ foodId: string; quantity: number; unit: string }>;
     },
   ) {
-    return this.shopping.addRecipeMissing(
-      req.user.id,
-      body.recipeId,
-      body.items ?? [],
-    );
+    return this.shopping.addRecipeMissing(req.user.id, body.recipeId, body.items ?? []);
   }
+
+  @Post('from-recipes') addFromRecipes(
+    @Request() req: { user: { id: string } },
+    @Body()
+    body: {
+      recipes: Array<{ recipeId: string; items: Array<{ foodId: string; quantity: number; unit: string }> }>;
+    },
+  ) {
+    return this.shopping.addRecipesMissing(req.user.id, body.recipes ?? []);
+  }
+
+  @Post('basket/reorder') reorder(
+    @Request() req: { user: { id: string } },
+    @Body('ids') ids: string[],
+  ) {
+    return this.shopping.reorder(req.user.id, ids ?? []);
+  }
+
   @Post('basket/:id/complete') complete(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
   ) {
     return this.shopping.complete(req.user.id, id);
+  }
+
+  @Post('basket/:id/reopen') reopen(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+  ) {
+    return this.shopping.reopen(req.user.id, id);
+  }
+
+  @Delete('basket/:id') remove(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+  ) {
+    return this.shopping.remove(req.user.id, id);
   }
 }
