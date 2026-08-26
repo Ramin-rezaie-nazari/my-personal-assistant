@@ -6,6 +6,7 @@ import {
   type LocalUnderstanding,
   type SupportedLocalLanguage,
 } from './local-language-understanding.service';
+import { splitMultilingualClauses } from './multilingual-clause-splitter';
 
 type IntentCandidate = {
   intent: Exclude<LocalIntent, 'UNKNOWN'>;
@@ -204,7 +205,6 @@ const CANONICAL_INTENTS: Record<string, Exclude<LocalIntent, 'UNKNOWN'>> = {
   'am-ET::እራት አስታውሰኝ': 'CREATE_REMINDER',
   'fa-AF::یادم بنداز شام': 'CREATE_REMINDER',
   'fa-TJ::ба ман хотиррасон кун': 'CREATE_REMINDER',
-
   'fa-IR::برای شام چی بخورم': 'RECOMMEND_MEAL',
   'en-US::what should i eat for dinner': 'RECOMMEND_MEAL',
   'es-ES::¿qué debería comer': 'RECOMMEND_MEAL',
@@ -310,10 +310,7 @@ export class SemanticMultilingualUnderstandingService {
   }
 
   splitClauses(input: string): string[] {
-    return input
-      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|then|also|plus)\s+|\s+و\s+(?=بعد\s+)|\s+(?=بعد\s+)|(?<=،)\s*(?=(?:然后|然後|然后再|その後|それから|そして)\s*)|\s+(?=(?:ثم|ثم بعد)\s+))/iu)
-      .map((part) => part.trim())
-      .filter(Boolean);
+    return splitMultilingualClauses(input);
   }
 
   private rank(language: SupportedLocalLanguage, normalized: string): IntentCandidate[] {
