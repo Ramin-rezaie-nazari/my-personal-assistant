@@ -1,177 +1,151 @@
 # MYPA — Shopping + Inventory Core Roadmap
 
-> C = temporary execution roadmap. A=`docs/05_CURRENT_STATE.md`; B=`docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`.
-> Goal: take Shopping + Inventory from partial repository capability to a production-grade Personal Operating System subsystem without inventing progress.
+> Temporary execution roadmap for the Shopping + Inventory workstream.
+> A=`docs/05_CURRENT_STATE.md`; B=`docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`.
+>
+> **Rule:** `[x]` means implementation exists in the repository; it is **not Green** until the final verification run passes.
 
-## Workstream objective
+## Goal
 
-Build a coherent household loop:
+Build the household operating loop:
 
 ```text
-Recipe / Meal Plan / User Request
-        ↓
-Ingredient normalization
-        ↓
-Household inventory
-        ↓
-Availability + quantity + freshness evaluation
-        ↓
-Missing / low-stock / expiring needs
-        ↓
-Purchase planning
-        ↓
-Shopping list
-        ↓
-Budget-aware alternatives
-        ↓
-Purchase / consumption events
-        ↓
-Inventory update
-        ↓
-Consumption learning + reorder forecasting
+Recipe / request
+  → canonical ingredient identity
+  → inventory + freshness
+  → missing / low stock
+  → purchase planning
+  → persistent shopping list
+  → budget-aware choices
+  → purchase / consume / waste events
+  → inventory update
+  → consumption learning
+  → reorder forecasting
 ```
 
-The subsystem must be multilingual-ready, country/currency/unit aware, deterministic-first, provider-agnostic and reusable by the future Food OS, Budget Intelligence and Local Brain.
+The subsystem remains deterministic-first, multilingual-ready, country/currency/unit aware, vendor-agnostic and reusable by Food OS, Budget Intelligence and the Local Brain.
 
-## Completion gates
+## C1 — Domain contract
 
-### C1 — Repository audit and domain contract
-- [x] Audit existing shopping-intelligence, inventory, food, recipe, budget and ingredient models.
-- [x] Define the canonical household/item identity boundary and avoid duplicate ingredient concepts.
-- [x] Define quantity/unit normalization and conversion boundaries.
-- [x] Define event semantics for add, consume, adjust, waste, purchase, transfer and correction.
-- [x] Define source precedence and idempotency rules for inventory mutations.
-- [x] Define expiry/freshness semantics and timezone/country boundaries.
-- [ ] Define budget integration contract without coupling shopping to one price provider.
+- [x] Existing shopping/inventory/recipe/budget domains audited.
+- [x] Canonical household item identity boundary defined.
+- [x] Canonical unit normalization/conversion boundary defined.
+- [x] Mutation semantics cover purchase, consume, waste, adjust and correction.
+- [x] Inventory events support idempotency and audit history.
+- [x] Expiry/freshness semantics are represented.
+- [x] Global country/currency/RTL context contract exists.
+- [x] Provider-agnostic price-provider contract exists.
 
-### C2 — Inventory core
-- [x] Inventory item model is canonical and household scoped.
-- [ ] Add / update / consume / adjust / remove operations are complete and validated.
-- [x] Quantity arithmetic is unit-safe and deterministic.
-- [x] Duplicate items merge safely using canonical identity.
-- [x] Partial consumption works.
-- [x] Waste/loss is represented separately from normal consumption.
-- [x] Expiry and low-stock states are deterministic.
-- [x] Inventory event/audit persistence contract exists with transactional idempotency.
+## C2 — Inventory core
 
-### C3 — Shopping list core
-- [x] Persistent shopping list create/read/update/delete/complete/reopen/reorder service exists.
-- [x] Group by canonical ingredient identity; source information is preserved.
-- [x] Merge duplicate requirements.
-- [x] Convert household requirements into missing quantities.
-- [x] Preserve already-owned inventory quantities.
-- [x] Authenticated API contract exists for list CRUD operations.
-- [x] Track list order persistently with `sortOrder`.
-- [x] Shopping list generation remains useful without live prices.
+- [x] Household-scoped inventory persistence.
+- [x] Create/update/adjust/remove operations.
+- [x] Purchase / consume / waste operations.
+- [x] Unit-safe deterministic quantity handling.
+- [x] Duplicate merge at canonical identity boundaries.
+- [x] Partial consumption.
+- [x] Expiry + low-stock prioritization.
+- [x] Durable `InventoryEvent` model and transaction/idempotency contract.
+- [x] Premium mobile inventory surface exposes lifecycle actions.
 
-### C4 — Recipe → Inventory → Shopping bridge
-- [ ] Ingredient identity mapping from recipe data to inventory identity is fully centralized.
-- [x] Accurate required-vs-owned calculation at the canonical shopping layer.
-- [x] Existing Food Operating Loop already provides serving-aware scaled recipe requirements.
-- [x] Missing recipe ingredients now route through canonical persistent shopping storage.
-- [x] No duplicate shopping lines for equivalent normalized ingredients.
-- [x] Multi-source consolidation into one shopping plan at the deterministic layer.
-- [ ] Full unit-safe RecipeInventoryMatcher refactor still required.
+## C3 — Shopping list core
 
-### C5 — Purchase planning + budget awareness
-- [x] Purchase planner ranks what should be bought now vs later with expiry-aware priorities.
-- [x] Low-stock and expiry priorities influence deterministic purchase planning.
-- [ ] Existing household budget intelligence is consumed through a stable contract.
-- [x] Price estimates are optional inputs and unavailable prices remain non-fatal.
-- [x] Budget limits can reduce purchase quantity instead of silently overspending.
-- [x] Purchase plan exposes deterministic reasons.
-- [ ] Multi-provider live price aggregation remains future work and must not be required by core logic.
+- [x] Persistent CRUD.
+- [x] Complete / reopen / delete / reorder.
+- [x] Canonical merge and unit-compatible quantity consolidation.
+- [x] Recipe source attribution.
+- [x] User-scoped authenticated APIs.
+- [x] Mobile API contract updated for lifecycle operations.
+- [x] Shopping UI already uses premium surface + empty/loading/error states.
 
-### C6 — Consumption learning + reorder forecasting
-- [x] Consumption history is represented as an explicit event stream for persistence.
-- [x] Historical consumption can feed deterministic forecasting.
-- [x] Forecasting handles sparse data safely.
-- [x] Reorder thresholds/expected depletion are explainable.
-- [x] Forecast confidence is represented explicitly.
-- [x] Forecast services do not silently mutate inventory.
-- [ ] Hydrate learning forecasts from persisted InventoryEvent data in production runtime.
+## C4 — Recipe → Inventory → Shopping
 
-### C7 — Globalization
-- [x] Units are locale-aware but internally canonical at the deterministic domain layer.
-- [ ] Currency is separated from item identity across the full shopping domain.
-- [ ] Country/region/store context is supported without hard-coding Iran behavior.
-- [x] Persian/Arabic labels can normalize to stable canonical identity without changing business logic.
-- [ ] RTL-safe API/UX payload semantics are complete end-to-end.
+- [x] Food Operating Loop scales recipe requirements before matching inventory.
+- [x] Missing requirements preserve already-owned inventory.
+- [x] Missing recipe items route into canonical persistent shopping.
+- [x] Multi-recipe deterministic consolidation service exists.
+- [x] Consolidation merges compatible units and preserves recipe provenance.
+- [ ] Final verification of RecipeInventoryMatcher against the new canonical path.
 
-### C8 — Assistant / Brain integration
-- [ ] Natural commands can inspect inventory.
-- [ ] Natural commands can add/remove shopping items.
-- [ ] Natural commands can consume/adjust inventory.
-- [ ] Natural commands can ask what is missing for a recipe/meal plan.
-- [ ] Context-aware follow-ups bind correctly to the active list/item/recipe.
-- [ ] Ambiguous item identity refuses to guess.
-- [ ] Tool contracts remain deterministic-first and vendor agnostic.
+## C5 — Purchase planning + budget
 
-### C9 — Mobile UX
-- [ ] Inventory surface follows the premium product language.
-- [ ] Shopping list is fast, glanceable and voice-first.
-- [ ] Common operations require minimal navigation.
-- [ ] Empty/loading/error states are intentional.
-- [ ] Accessibility and RTL behavior are preserved.
-- [ ] Optimistic UI is used only where mutation semantics remain safe.
+- [x] Expiry-aware purchase priority.
+- [x] Budget-limited quantity planning.
+- [x] Explainable purchase reasons.
+- [x] Unavailable price fallback.
+- [x] Deterministic budget overflow policy with partial/skip/watch outcomes.
+- [x] Provider registry with multiple-provider-safe aggregation.
+- [x] Scheduled-refresh orchestration contract exists.
+- [ ] Durable price snapshot persistence and live provider implementations remain future extension work; core logic does not depend on them.
 
-### C10 — Tests and verification
-- [x] Unit tests cover canonical identity, quantities, units, expiry and core events.
-- [ ] Unit/integration coverage for persistent shopping CRUD is still required.
-- [ ] Integration tests cover Recipe → Inventory → Shopping end-to-end.
-- [ ] Budget/price integration tests cover fallback behavior.
-- [ ] Assistant tool/semantic integration tests cover natural-language commands.
-- [ ] Mobile typecheck passes for the workstream changes.
-- [ ] Backend typecheck passes for the workstream changes.
-- [ ] Backend lint passes for the workstream changes.
-- [ ] Relevant backend suites pass in the user's environment.
-- [ ] Relevant mobile quality contracts pass after UI changes.
-- [ ] Full backend Jest passes after the workstream stabilizes.
+## C6 — Consumption learning + reorder
 
-### C11 — Architecture review / closure
-- [ ] Review data ownership and DB mutation boundaries twice.
-- [ ] Review future Food OS / Budget / Brain compatibility twice.
-- [ ] Confirm no vendor-specific dependency leaked into core shopping logic.
+- [x] Consumption history event stream.
+- [x] Sparse-data-safe deterministic forecasting.
+- [x] Explicit confidence score.
+- [x] Explainable reorder thresholds.
+- [x] Persistence-aware forecast facade reads `InventoryEvent` history.
+- [x] Forecast does not mutate inventory.
+- [ ] Final integration verification for persisted-history forecasts.
+
+## C7 — Globalization
+
+- [x] Canonical units independent from localized labels.
+- [x] Persian/Arabic digit normalization in the assistant input path.
+- [x] Currency separated from item identity through shopping context.
+- [x] Country/region/timezone/locale context contract.
+- [x] RTL direction encoded in global shopping context.
+- [ ] Final end-to-end UI/runtime RTL validation.
+
+## C8 — Assistant / Brain
+
+- [x] Canonical shopping/inventory mutation services are available to assistant adapters.
+- [x] Basket add/remove adapter uses the canonical shopping path.
+- [x] Inventory consume/purchase adapter path exists.
+- [x] Household action resolution layer is implemented in the natural execution path; final runtime validation remains.
+- [ ] Natural-language “inspect inventory / what is missing” tool contract still needs final wiring verification.
+- [ ] Ambiguity refusal / contextual follow-up verification remains.
+
+## C9 — Mobile UX
+
+- [x] Premium inventory surface connected to live inventory APIs.
+- [x] Premium shopping surface connected to live basket APIs.
+- [x] Common inventory operations are one-tap/low-navigation.
+- [x] Shopping empty/loading/error states exist.
+- [x] Accessibility labels exist on core inventory and shopping actions.
+- [x] Existing premium RTL-aware foundations remain the UI base.
+- [ ] Final RTL + device verification remains.
+
+## C10 — Final verification
+
+Implementation/test files have been added/updated, but **nothing here is claimed Green yet**.
+
+- [ ] Targeted shopping/inventory unit suites.
+- [ ] Recipe → inventory → shopping integration suites.
+- [ ] Price/budget fallback suites.
+- [ ] Assistant household action suites.
+- [ ] Mobile typecheck.
+- [ ] Backend typecheck.
+- [ ] Backend lint.
+- [ ] Backend build / Prisma generate.
+- [ ] Full backend Jest.
+- [ ] Mobile voice/UI quality contracts.
+- [ ] Final D1 verification.
+
+## C11 — Closure
+
+- [ ] Architecture review #1: ownership, mutation boundaries, migrations, dependency direction.
+- [ ] Architecture review #2: Food OS / Budget / Brain / Local AI compatibility.
+- [ ] Confirm vendor-agnostic core.
 - [ ] Confirm subscription-ready boundaries remain intact.
 - [ ] Record exact evidence in A/B.
-- [ ] Calculate honest progress against the whole MYPA vision.
-- [ ] Clear this C file after closure and prepare a fresh C for the next workstream.
+- [ ] Calculate honest whole-product progress.
+- [ ] Only after all verification is green: clear C and prepare next workstream.
 
-## Parallel task batches
+## Current status
 
-### Batch 1 — low-risk foundations ✅ CODED
-Canonical identity/unit normalization; deterministic inventory mutations; focused unit tests.
+**Implementation pass:** substantial core + integration work is now coded.
 
-### Batch 2 — core household loop ✅ CODED / NEEDS EXECUTION
-Expiry-aware inventory priority; durable InventoryEvent schema + transaction persistence; inventory-aware shopping consolidation; deterministic shopping-list generation; history-driven consumption forecasting.
+**Verification status:** intentionally pending. We are following the project rule to implement first and run the consolidated verification at the end.
 
-### Batch 3 — persistent shopping + recipe bridge ✅ CODED / NEEDS EXECUTION
-Persistent shopping CRUD API; ordering; authenticated user scoping; Recipe Food Operating Loop wired to canonical shopping persistence.
-
-### Batch 4 — purchase planning ✅ CODED / NEEDS EXECUTION
-Expiry-aware purchase prioritization; budget-limited quantities; explainable planner reasons; unavailable-price fallback; planner regression tests.
-
-### Batch 5 — learning
-Persistent-event hydration; reorder forecasting from DB history; sparse-data safety; confidence semantics; real consumption-to-inventory lifecycle.
-
-### Batch 6 — global + assistant
-Locale/currency/unit contracts; multilingual tool integration; ambiguity handling; voice/text command coverage.
-
-### Batch 7 — mobile + verification
-Premium surfaces; accessibility/RTL; contracts; full verification; architecture review; closure.
-
-## Definition of done
-
-The workstream is 100% only when a user can naturally say things such as:
-
-- «چه چیزهایی برای شام‌های این هفته نداریم؟»
-- «دو تا شیر دارم، یکی هم بخر.»
-- «این مرغ را مصرف کردم.»
-- «برای این سه غذا یک لیست خرید واحد درست کن.»
-- «این هفته خرید را زیر بودجه نگه دار.»
-
-and the system can execute the safe deterministic portions correctly, explain what it did, preserve household state, and remain compatible with the broader Food OS, Budget Intelligence, Personal Brain and future Local AI architecture.
-
-## Current honest state
-
-Several core batches are coded but not yet claimed green until the user's environment runs focused TypeScript/tests against the current head. The next checkpoint must surface only failures plus a final summary.
+**Important:** the workstream is not 100% until the Definition of Done examples actually execute safely and the final verification gates are green.
