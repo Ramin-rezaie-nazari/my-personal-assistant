@@ -110,10 +110,13 @@ export class ContextualCommandService {
   }
 
   private splitClauses(text: string): string[] {
-    return text
-      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|but|then|also|plus|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e|depois|e depois|и потом|и|sonra|ve sonra|ve|そして|それから|然后|之后|و بعدش|و همچنین|سپس|هم|یا|ولی|اما|ثم)\s+|\s+و\s+(?=بعد\s+)|(?<=،)\s*(?=然后|然後|そして|それから))/iu)
-      .map((part) => part.trim())
-      .filter(Boolean);
+    const clauses = text
+      .split(/[;؛.。]+\s*/u)
+      .flatMap((part) => part.split(/\s+(?:and then|and|but|then|also|plus|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e|depois|e depois|и потом|и|sonra|ve sonra|ve|و بعدش|و همچنین|سپس|هم|یا|ولی|اما|ثم)\s+/iu))
+      .flatMap((part) => part.split(/\s+و\s+(?=بعد\s+)/iu))
+      .flatMap((part) => part.replace(/(\s+)(?=(?:然后|之后|それから|そして))/gu, '\n').split('\n'));
+
+    return clauses.map((part) => part.trim()).filter(Boolean);
   }
 
   private detectContradictions(text: string, intents: ContextualCommand['operation'][], entities: ContextualCommand['entities']): string[] {
