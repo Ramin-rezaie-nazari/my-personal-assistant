@@ -74,12 +74,13 @@ The subsystem must be multilingual-ready, country/currency/unit aware, determini
 - [ ] Full unit-safe RecipeInventoryMatcher refactor still required.
 
 ### C5 — Purchase planning + budget awareness
-- [ ] Purchase planner ranks what should be bought now vs later with expiry-aware priorities.
+- [x] Purchase planner ranks what should be bought now vs later with expiry-aware priorities.
 - [x] Low-stock and expiry priorities influence deterministic purchase planning.
 - [ ] Existing household budget intelligence is consumed through a stable contract.
 - [x] Price estimates are optional inputs and unavailable prices remain non-fatal.
 - [x] Budget limits can reduce purchase quantity instead of silently overspending.
 - [x] Purchase plan exposes deterministic reasons.
+- [ ] Multi-provider live price aggregation remains future work and must not be required by core logic.
 
 ### C6 — Consumption learning + reorder forecasting
 - [x] Consumption history is represented as an explicit event stream for persistence.
@@ -147,8 +148,8 @@ Expiry-aware inventory priority; durable InventoryEvent schema + transaction per
 ### Batch 3 — persistent shopping + recipe bridge ✅ CODED / NEEDS EXECUTION
 Persistent shopping CRUD API; ordering; authenticated user scoping; Recipe Food Operating Loop wired to canonical shopping persistence.
 
-### Batch 4 — planning intelligence
-Purchase planner; expiry/low-stock priority; budget-aware choices; explainable alternatives; provider-agnostic price integration.
+### Batch 4 — purchase planning ✅ CODED / NEEDS EXECUTION
+Expiry-aware purchase prioritization; budget-limited quantities; explainable planner reasons; unavailable-price fallback; planner regression tests.
 
 ### Batch 5 — learning
 Persistent-event hydration; reorder forecasting from DB history; sparse-data safety; confidence semantics; real consumption-to-inventory lifecycle.
@@ -173,4 +174,4 @@ and the system can execute the safe deterministic portions correctly, explain wh
 
 ## Current honest state
 
-Repository design/implementation is advancing through the core household loop. The next checkpoint is local typecheck/lint + focused shopping/recipe tests before claiming additional green gates.
+Several core batches are coded but not yet claimed green until the user's environment runs focused TypeScript/tests against the current head. The next checkpoint must surface only failures plus a final summary.
