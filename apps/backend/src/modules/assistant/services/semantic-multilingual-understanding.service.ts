@@ -311,14 +311,26 @@ export class SemanticMultilingualUnderstandingService {
 
   splitClauses(input: string): string[] {
     const clauses = splitMultilingualClauses(input);
-    const markerPattern = /^(?:then|بعد)\s+/iu;
-    const markers = input.match(/(?:^|[.;،؛])\s*(then|بعد)\s+/iu)?.[1];
-    if (!markers || clauses.length < 2) return clauses;
-    const normalizedMarker = markers.toLowerCase();
-    const alreadyMarked = markerPattern.test(clauses[clauses.length - 1]);
-    if (alreadyMarked) return clauses;
-    clauses[clauses.length - 1] = `${normalizedMarker} ${clauses[clauses.length - 1]}`.trim();
+    if (clauses.length < 2) return clauses;
+
+    const marker = this.extractTrailingSemanticMarker(input);
+    if (!marker) return clauses;
+
+    const last = clauses.length - 1;
+    if (!this.hasLeadingSemanticMarker(clauses[last])) {
+      clauses[last] = `${marker} ${clauses[last]}`.trim();
+    }
     return clauses;
+  }
+
+  private extractTrailingSemanticMarker(input: string): 'then' | 'بعد' | undefined {
+    if (/\bthen\s+[^.;!?]*$/iu.test(input)) return 'then';
+    if (/(?:^|\s)و\s+بعد\s+[^.;!?]*$/u.test(input)) return 'بعد';
+    return undefined;
+  }
+
+  private hasLeadingSemanticMarker(clause: string): boolean {
+    return /^(?:then|بعد)\s+/iu.test(clause);
   }
 
   private rank(language: SupportedLocalLanguage, normalized: string): IntentCandidate[] {
