@@ -1,0 +1,64 @@
+name: Apply D1 Clause Splitter Fix
+
+on:
+  push:
+    branches:
+      - fix/multilingual-clause-splitting-d1-verify
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Apply deterministic splitter integration
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          root = Path('apps/backend/src/modules/assistant/services')
+          contextual = root / 'contextual-command.service.ts'
+          semantic = root / 'semantic-multilingual-understanding.service.ts'
+
+          c = contextual.read_text()
+          import_line = "import { splitMultilingualClauses } from './multilingual-clause-splitter';\n"
+          if import_line not in c:
+              anchor = "import { ConversationContextService } from './conversation-context.service';\n"
+              c = c.replace(anchor, anchor + import_line, 1)
+
+          start = c.index("  private splitClauses(text: string): string[] {")
+          end = c.index("\n  private detectContradictions", start)
+          c = c[:start] + "  private splitClauses(text: string): string[] {\n    return splitMultilingualClauses(text);\n  }\n" + c[end:]
+          contextual.write_text(c)
+
+          s = semantic.read_text()
+          if import_line not in s:
+              anchor = "} from './local-language-understanding.service';\n"
+              s = s.replace(anchor, anchor + "import { splitMultilingualClauses } from './multilingual-clause-splitter';\n", 1)
+
+          start = s.index("  splitClauses(input: string): string[] {")
+          end = s.index("\n  private rank(", start)
+          s = s[:start] + "  splitClauses(input: string): string[] {\n    return splitMultilingualClauses(input);\n  }\n" + s[end:]
+          semantic.write_text(s)
+
+          spec = root / 'multilingual-clause-splitter.spec.ts'
+          spec.write_text("""import { splitMultilingualClauses } from './multilingual-clause-splitter';\n\ndescribe('splitMultilingualClauses', () => {\n  it('splits natural Latin-script multi-intent requests', () => {\n    expect(splitMultilingualClauses('remind me tomorrow and add chicken to my basket')).toEqual([\n      'remind me tomorrow',\n      'add chicken to my basket',\n    ]);\n    expect(splitMultilingualClauses('rappelle-moi demain et puis ajoute le poulet au panier')).toEqual([\n      'rappelle-moi demain',\n      'ajoute le poulet au panier',\n    ]);\n    expect(splitMultilingualClauses('erinnere mich morgen und füge hühnchen zum warenkorb hinzu')).toEqual([\n      'erinnere mich morgen',\n      'füge hühnchen zum warenkorb hinzu',\n    ]);\n  });\n\n  it('splits Persian coordination while preserving clause content', () => {\n    expect(splitMultilingualClauses('یادم بنداز فردا و بعد مرغ رو به سبد اضافه کن')).toEqual([\n      'یادم بنداز فردا',\n      'مرغ رو به سبد اضافه کن',\n    ]);\n    expect(splitMultilingualClauses('یادم بنداز فردا؛ بعد مرغ رو به سبد اضافه کن')).toEqual([\n      'یادم بنداز فردا',\n      'بعد مرغ رو به سبد اضافه کن',\n    ]);\n  });\n\n  it('splits CJK clauses with and without whitespace', () => {\n    expect(splitMultilingualClauses('明天提醒我，然后把鸡肉放进购物车')).toEqual([\n      '明天提醒我',\n      '把鸡肉放进购物车',\n    ]);\n    expect(splitMultilingualClauses('明天提醒我 然后把鸡肉放进购物车')).toEqual([\n      '明天提醒我',\n      '把鸡肉放进购物车',\n    ]);\n    expect(splitMultilingualClauses('今夜思い出させて、それから鶏肉をカートに入れて')).toEqual([\n      '今夜思い出させて',\n      '鶏肉をカートに入れて',\n    ]);\n  });\n\n  it('handles sentence boundaries and chained intents deterministically', () => {\n    expect(splitMultilingualClauses('remind me tomorrow; add chicken to my basket. then tell me calories')).toEqual([\n      'remind me tomorrow',\n      'add chicken to my basket',\n      'tell me calories',\n    ]);\n    expect(splitMultilingualClauses('   ')).toEqual([]);\n  });\n\n  it('does not split ordinary text merely because it contains a connector token', () => {\n    expect(splitMultilingualClauses('and then what')).toEqual(['and then what']);\n    expect(splitMultilingualClauses('ثم ماذا')).toEqual(['ثم ماذا']);\n  });\n});\n""")
+
+          Path('.github/workflows/d1-clause-fix.yml').unlink()
+          PY
+
+      - name: Commit source fix
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/backend/src/modules/assistant/services .github/workflows/d1-clause-fix.yml
+          git diff --cached --quiet && exit 0
+          git commit -m "fix(assistant): harden multilingual clause segmentation"
+          git push origin HEAD:fix/multilingual-clause-splitting-d1-verify
