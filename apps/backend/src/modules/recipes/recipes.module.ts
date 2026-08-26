@@ -9,6 +9,7 @@ import { RecipesService } from './services/recipes.service';
 import { RecipeInventoryMatcherService } from './services/recipe-inventory-matcher.service';
 import { GlobalCountryFoodService } from './services/global-country-food.service';
 import { FoodOperatingLoopService } from './services/food-operating-loop.service';
+import { RecipeShoppingConsolidationService } from './services/recipe-shopping-consolidation.service';
 
 @Module({
   imports: [
@@ -24,12 +25,14 @@ import { FoodOperatingLoopService } from './services/food-operating-loop.service
     RecipeInventoryMatcherService,
     GlobalCountryFoodService,
     FoodOperatingLoopService,
+    RecipeShoppingConsolidationService,
   ],
   exports: [
     RecipesService,
     RecipeInventoryMatcherService,
     GlobalCountryFoodService,
     FoodOperatingLoopService,
+    RecipeShoppingConsolidationService,
   ],
 })
 export class RecipesModule {}
