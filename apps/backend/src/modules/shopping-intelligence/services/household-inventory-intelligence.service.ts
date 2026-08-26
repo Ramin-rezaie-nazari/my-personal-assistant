@@ -30,16 +30,16 @@ export class HouseholdInventoryIntelligenceService {
     return items.map((item) => {
       const consumption = Math.max(0, item.dailyConsumption ?? 0);
       const safetyStock = Math.max(0, item.safetyStock ?? 0);
-      const reorderPoint = Math.max(safetyStock, consumption * 2);
+      const consumptionHorizon = consumption * 2;
+      const reorderPoint = consumptionHorizon + safetyStock;
       const daysRemaining =
         consumption > 0 ? item.quantity / consumption : null;
       const expiryDaysRemaining = item.expiresAt
         ? (item.expiresAt.getTime() - now.getTime()) / 86_400_000
         : null;
-      const targetQuantity = reorderPoint;
       const recommendedQuantity = Math.max(
         0,
-        Math.ceil(targetQuantity - item.quantity),
+        Math.ceil(reorderPoint - item.quantity),
       );
       const urgency =
         item.quantity <= 0
@@ -52,7 +52,7 @@ export class HouseholdInventoryIntelligenceService {
                 ? 'soon'
                 : expiryDaysRemaining !== null && expiryDaysRemaining <= 3
                   ? 'soon'
-                  : item.quantity <= reorderPoint
+                  : item.quantity < reorderPoint
                     ? 'soon'
                     : 'none';
       const reason =
