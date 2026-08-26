@@ -27,6 +27,10 @@ type TaskRow = {
   goalTitle: string | null;
   dependencyStatus: string[];
 };
+type PrismaLifeTaskFallback = {
+  findMany?: (args: Record<string, unknown>) => Promise<unknown[]>;
+  update?: (args: Record<string, unknown>) => Promise<unknown>;
+};
 
 @Injectable()
 export class SmartPlanningService {
@@ -42,7 +46,7 @@ export class SmartPlanningService {
     const end = new Date(start);
     end.setDate(end.getDate() + 1);
     const prismaRecord = this.prisma as unknown as {
-      lifeTask?: { findMany?: Function };
+      lifeTask?: PrismaLifeTaskFallback;
     };
     const taskQuery = prismaRecord.lifeTask?.findMany
       ? prismaRecord.lifeTask.findMany({
@@ -200,7 +204,7 @@ export class SmartPlanningService {
         scheduled.setHours(preferred, 0, 0, 0);
         if (scheduled > new Date()) {
           const prismaRecord = this.prisma as unknown as {
-            lifeTask?: { update?: Function };
+            lifeTask?: PrismaLifeTaskFallback;
           };
           if (prismaRecord.lifeTask?.update)
             await prismaRecord.lifeTask.update({
