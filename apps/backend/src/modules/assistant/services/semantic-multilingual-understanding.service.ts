@@ -310,7 +310,15 @@ export class SemanticMultilingualUnderstandingService {
   }
 
   splitClauses(input: string): string[] {
-    return splitMultilingualClauses(input);
+    const clauses = splitMultilingualClauses(input);
+    const markerPattern = /^(?:then|بعد)\s+/iu;
+    const markers = input.match(/(?:^|[.;،؛])\s*(then|بعد)\s+/iu)?.[1];
+    if (!markers || clauses.length < 2) return clauses;
+    const normalizedMarker = markers.toLowerCase();
+    const alreadyMarked = markerPattern.test(clauses[clauses.length - 1]);
+    if (alreadyMarked) return clauses;
+    clauses[clauses.length - 1] = `${normalizedMarker} ${clauses[clauses.length - 1]}`.trim();
+    return clauses;
   }
 
   private rank(language: SupportedLocalLanguage, normalized: string): IntentCandidate[] {
