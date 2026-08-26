@@ -3,7 +3,7 @@ import { DecisionActionAdapterService } from '../../personal-brain/services/deci
 import { DecisionCandidate } from '../../personal-brain/services/unified-decision-engine.service';
 import { ShoppingService } from '../../shopping/shopping.service';
 import { InventoryService } from '../../inventory/inventory.service';
-import { PrismaService } from '../../../common/database/prisma.service';
+import { HouseholdItemResolutionService } from '../../shopping-intelligence/services/household-item-resolution.service';
 
 const FOOD_NAMES: Record<string, string[]> = {
   milk: ['milk', 'شیر'],
@@ -21,7 +21,7 @@ export class LocalBasketActionAdapter implements OnModuleInit {
     private readonly adapters: DecisionActionAdapterService,
     private readonly shopping: ShoppingService,
     private readonly inventory: InventoryService,
-    private readonly prisma: PrismaService,
+    private readonly resolver: HouseholdItemResolutionService,
   ) {}
 
   onModuleInit() {
@@ -44,10 +44,23 @@ export class LocalBasketActionAdapter implements OnModuleInit {
     const quantity = typeof understanding?.entities?.quantity === 'number' ? understanding.entities.quantity : 1;
     if (!food) throw new Error('food_entity_missing');
 
-    const aliases = FOOD_NAMES[food] ?? [food];
-    const resolved = await this.resolveFood(aliases);
-    if (!resolved) throw new Error(`food_not_found:${food}`);
     const userId = context.userId as string;
+    const aliases = FOOD_NAMES[food] ?? [food];
+    let resolved: { id: string; name: string; category: string } | null = null;
+    let ambiguous = false;
+    for (const alias of aliases) {
+      const result = await this.resolver.resolve(userId, alias);
+      if (result.status === 'ambiguous') {
+        ambiguous = true;
+        break;
+      }
+      if (result.status === 'resolved') {
+        resolved = result.item;
+        break;
+      }
+    }
+    if (ambiguous) throw new Error(`food_ambiguous:${food}`);
+    if (!resolved) throw new Error(`food_not_found:${food}`);
 
     if (candidate.action === 'add_to_basket') {
       const item = await this.shopping.addToBasket(userId, {
@@ -79,13 +92,5 @@ export class LocalBasketActionAdapter implements OnModuleInit {
 
     const updated = await this.inventory.purchase(userId, item.id, quantity);
     return { changed: true, foodId: resolved.id, food, quantity: updated.quantity };
-  }
-
-  private async resolveFood(aliases: string[]) {
-    return this.prisma.foodItem.findFirst({
-      where: {
-        OR: aliases.map((alias) => ({ name: { equals: alias, mode: 'insensitive' as const } })),
-      },
-    });
   }
 }
