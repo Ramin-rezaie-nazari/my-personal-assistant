@@ -145,7 +145,7 @@ model HealthProfile {
 }
 
 model NutritionProfile {
-  id String @id @unique
+  id String @id @default(uuid())
   userId String @unique
   dailyCaloriesGoal Int?
   proteinGoalGrams Int?
