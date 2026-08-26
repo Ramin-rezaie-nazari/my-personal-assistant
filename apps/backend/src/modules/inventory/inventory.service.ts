@@ -20,22 +20,22 @@ export class InventoryService {
       include: { food: true },
       orderBy: [{ essential: 'desc' }, { updatedAt: 'desc' }],
     });
-    return this.intelligence
-      .prioritize(
-        items.map((item) => ({
-          productKey: item.foodId,
-          quantity: item.quantity,
-          unit: item.unit,
-          dailyConsumption: item.dailyConsumption,
-          safetyStock: item.safetyStock,
-          essential: item.essential,
-          expiresAt: item.expiresAt,
-        })),
-      )
-      .map((forecast) => ({
-        ...items.find((item) => item.foodId === forecast.productKey),
-        ...forecast,
-      }));
+    const forecasts = this.intelligence.prioritize(
+      items.map((item) => ({
+        productKey: item.foodId,
+        quantity: item.quantity,
+        unit: item.unit,
+        dailyConsumption: item.dailyConsumption,
+        safetyStock: item.safetyStock,
+        essential: item.essential,
+        expiresAt: item.expiresAt,
+      })),
+    );
+    const byFoodId = new Map(items.map((item) => [item.foodId, item]));
+    return forecasts.flatMap((forecast) => {
+      const item = byFoodId.get(forecast.productKey);
+      return item ? [{ ...item, ...forecast }] : [];
+    });
   }
 
   async create(userId: string, dto: CreateInventoryDto) {
