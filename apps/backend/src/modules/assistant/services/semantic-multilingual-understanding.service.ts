@@ -311,7 +311,7 @@ export class SemanticMultilingualUnderstandingService {
 
   splitClauses(input: string): string[] {
     return input
-      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|then|also|plus|و بعدش|و همچنین|و بعد|بعد|هم|ثم)\s+|\s+(?=بعد\s+))/iu)
+      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|then|also|plus)\s+|\s+و\s+(?=بعد\s+)|\s+(?=بعد\s+)|(?<=،)\s*(?=(?:然后|然後|然后再|その後|それから|そして)\s*)|\s+(?=(?:ثم|ثم بعد)\s+))/iu)
       .map((part) => part.trim())
       .filter(Boolean);
   }
