@@ -30,7 +30,7 @@ export class HouseholdInventoryIntelligenceService {
     return items.map((item) => {
       const consumption = Math.max(0, item.dailyConsumption ?? 0);
       const safetyStock = Math.max(0, item.safetyStock ?? 0);
-      const reorderPoint = Math.max(safetyStock, consumption * 2 + safetyStock);
+      const reorderPoint = Math.max(safetyStock, consumption * 2);
       const daysRemaining =
         consumption > 0 ? item.quantity / consumption : null;
       const expiryDaysRemaining = item.expiresAt
