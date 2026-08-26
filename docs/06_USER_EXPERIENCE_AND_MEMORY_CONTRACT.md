@@ -2,7 +2,7 @@
 
 > **B — Product/UX contract paired with A.**
 >
-> Fixed file aliases:
+> **Fixed file aliases:**
 > - **A** = `docs/05_CURRENT_STATE.md`
 > - **B** = `docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md`
 >
@@ -108,7 +108,8 @@ The repository-side multilingual voice and semantic foundation is **fully green 
 - Structured multilingual constraint extraction for conditions, negation, dates, diet, quantities, units, time, duration and budgets.
 - Entity/context regression foundation: **5/5 tests passed**.
 - Multilingual voice quality matrix: **5/5 tests passed**, including 51-locale reminders, representative meal/nutrition/basket/cancellation intents, code-switching, determinism and reminder-vs-dinner disambiguation.
-- Full backend Jest validation: **160/160 suites, 432/432 tests passed**.
+- Full backend Jest validation: **162/162 suites, 475/475 tests passed, 0 snapshots**.
+- Targeted multilingual regression: **20/20 tests passed**.
 - Mobile voice-quality contract: **51 locales / 10 voice profiles passed** with STT/TTS mapping, RTL policy, Persian Tehran style and safe TTS completion.
 - Mobile TypeScript validation completed with **no TypeScript errors surfaced**.
 
@@ -128,21 +129,46 @@ The repository-side UX implementation is now also a durable contract:
 - Voice Quality Contract and UI Quality Contract provide deterministic regression protection for locale/voice coverage, route wiring, RTL behavior, reduced motion and Voice Core semantics.
 - Startup entrance was shortened and the implicit English Voice Core hint was removed so Persian/global UI does not silently mix copy.
 
-### Repository-side final validation — green
+## D1 repository-side UX/runtime closure — latest durable contract
 
-Validated on commit `3856b57aa4588759af26c01efbe6f0bb195fcb27`:
+**Date:** 2026-08-26
 
-- **TypeScript:** zero TypeScript errors.
-- **Voice Quality Contract:** PASS — 51 locales, 10 voice profiles, STT/TTS mapping, localized speech context, RTL policy, Persian Tehran style and safe TTS completion.
-- **UI Quality Contract:** PASS — premium foundations, route wiring, RTL-aware surfaces, reduced-motion support and tappable Voice Core.
+The repository-side D1 implementation is fully green. This confirms the product UX/runtime architecture for the tested engineering scope:
 
-The repository-side implementation is complete. Real-device interaction, native speech quality, provider-dependent behavior, visual review and accessibility runtime review remain separate runtime gates.
+- ✅ Voice-first interaction remains the primary path; manual input stays a fallback.
+- ✅ The shared multilingual clause splitter preserves one internal intent model across languages and safely separates natural multi-intent utterances for execution.
+- ✅ Semantic understanding preserves conversational context and semantic markers where required by the existing user-visible contract, while execution-facing clause boundaries remain deterministic.
+- ✅ Voice state transitions, session replacement, cancellation and TTS completion are protected against stale async continuations and missing native callbacks.
+- ✅ Assistant transport is bounded, cancellable and locale-aware.
+- ✅ Reduced-motion and Voice Core accessibility semantics remain part of the contract.
+- ✅ D1 final repository verification passes with full backend tests, mobile quality gates, typechecks, lint, Prisma generation and build.
+- ✅ Recipe image output remains WebP with a hard 60 KiB byte limit while the compression search is bounded for predictable runtime cost.
+
+### Validation snapshot
+
+- **162/162 backend suites; 475/475 tests:** PASS.
+- **20/20 targeted multilingual tests:** PASS.
+- **Recipe image pipeline:** 2/2 tests PASS.
+- **Voice Quality Contract:** PASS.
+- **UI Quality Contract:** PASS.
+- **D1 Voice Readiness Contract:** PASS.
+- **D1 FINAL REPOSITORY VERIFICATION:** PASS.
 
 ## Current implementation boundary
 
 The persistent-context layer, voice-first shell, deterministic multilingual foundation, deep semantic/context/constraint implementation and premium voice-first mobile surface are established and green. These completed layers should not be reopened unless a later architecture or behavior change invalidates them.
 
 The next work should start from runtime evidence: real-device microphone/STT/understanding/TTS validation, local/offline provider capability and fallback routing, full native response coverage, representative all-locale conversations and robustness under accents/noise/slang/mixed-language/long utterances.
+
+## Remaining runtime gates
+
+- ⬜ Real-device microphone → STT → semantic understanding → Personal Brain → localized response → TTS.
+- ⬜ Persian/RTL, English/LTR and representative additional locale/device matrix.
+- ⬜ Permission denial/retry, STT timeout/failure recovery and listening/speaking interruption on device.
+- ⬜ Real-device multi-intent execution boundaries and ambiguity refusal.
+- ⬜ Local/offline STT/TTS provider validation and multilingual fallback policy.
+- ⬜ Broader language-native response coverage and real-world entity/locale gaps.
+- ⬜ Accent, noise, slang, mixed-language and long-conversation robustness on real speech.
 
 ## Progress rule
 
