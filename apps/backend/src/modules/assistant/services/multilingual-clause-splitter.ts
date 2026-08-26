@@ -1,4 +1,4 @@
-const SPACED_CONNECTOR = /\s+(and|also|plus|but|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e depois|e|depois|и потом|и|sonra|ve sonra|ve|و بعدش|و همچنین|سپس|هم|یا|ولی|اما)\s+/iu;
+const SPACED_CONNECTOR = /\s+(and|also|plus|but|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e depois|e|depois|и потом|и|sonra|ve sonra|و بعدش|و همچنین|سپس|هم|یا|ولی|اما)\s+/iu;
 const TEMPORAL_CONNECTOR = /\s+(and then|then)\s+/iu;
 const FARSI_CONNECTOR = /\s+و\s+(?=بعد\s+)/iu;
 const CJK_CONNECTOR = /\s*(?=(?:然后再|然后|之后|それから|その後|そして|次に|그리고|그다음)\s*)/u;
@@ -27,16 +27,16 @@ function splitDetailedInternal(input: string): Array<{ clause: string; marker?: 
 
   return source
     .split(SENTENCE_BOUNDARY)
-    .flatMap((sentence) => splitSentence(sentence))
+    .flatMap((sentence, sentenceIndex) => splitSentence(sentence, sentenceIndex > 0))
     .map(({ text, marker }) => ({ clause: normalizeClause(text), marker }))
     .map(({ clause, marker }) => ({ clause: stripLeadingClauseConnector(clause), marker: marker ?? detectLeadingClauseMarker(clause) }))
     .filter(({ clause }) => Boolean(clause));
 }
 
-function splitSentence(sentence: string): Array<{ text: string; marker?: string }> {
+function splitSentence(sentence: string, preserveTemporalMarker: boolean): Array<{ text: string; marker?: string }> {
   let parts: Array<{ text: string; marker?: string }> = [{ text: sentence.trim() }].filter(({ text }) => Boolean(text));
 
-  parts = parts.flatMap(splitTemporalConnector);
+  parts = parts.flatMap((part) => splitTemporalConnector(part, preserveTemporalMarker));
   parts = parts.flatMap(splitCoordinatingConnectors);
   parts = parts.flatMap(splitFarsiConnector);
   parts = parts.flatMap(splitCjkConnector);
@@ -44,7 +44,7 @@ function splitSentence(sentence: string): Array<{ text: string; marker?: string 
   return parts.filter(({ text }) => Boolean(text.trim()));
 }
 
-function splitTemporalConnector(part: { text: string; marker?: string }): Array<{ text: string; marker?: string }> {
+function splitTemporalConnector(part: { text: string; marker?: string }, preserveTemporalMarker: boolean): Array<{ text: string; marker?: string }> {
   const match = part.text.match(TEMPORAL_CONNECTOR);
   if (!match || match.index === undefined) return [part];
 
@@ -53,7 +53,7 @@ function splitTemporalConnector(part: { text: string; marker?: string }): Array<
   const marker = match[1]?.trim();
   return [
     { text: left, marker: part.marker },
-    { text: right, marker },
+    { text: preserveTemporalMarker ? `${marker} ${right}`.trim() : right, marker: preserveTemporalMarker ? marker : undefined },
   ].filter(({ text }) => Boolean(text));
 }
 
