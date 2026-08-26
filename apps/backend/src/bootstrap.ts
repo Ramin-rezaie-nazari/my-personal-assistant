@@ -23,6 +23,7 @@ export async function createApp() {
 export async function bootstrap() {
   const app = await createApp();
   const configService = app.get(AppConfigService);
-  await app.listen(configService.port);
+  const host = process.env.HOST ?? '0.0.0.0';
+  await app.listen(configService.port, host);
   return app;
 }
