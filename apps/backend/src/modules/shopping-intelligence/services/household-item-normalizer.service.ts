@@ -94,7 +94,9 @@ export class HouseholdItemNormalizerService {
   convert(quantity: number, from: string, to: string) {
     const a = this.normalizeUnit(from);
     const b = this.normalizeUnit(to);
-    if (UNIT_GROUP[a] !== UNIT_GROUP[b]) throw new Error(`Cannot convert ${a} to ${b}`);
+    if (UNIT_GROUP[a] !== UNIT_GROUP[b]) {
+      throw new Error(`Incompatible units: cannot convert ${a} to ${b}`);
+    }
     return (quantity * TO_BASE[a]) / TO_BASE[b];
   }
 }
