@@ -1,4 +1,4 @@
-const SPACED_CONNECTORS = /\s+(?:and then|and|but|then|also|plus|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e depois|e|depois|и потом|и|sonra|ve sonra|ve|و بعدش|و همچنین|سپس|هم|یا|ولی|اما|ثم|ثم بعد)\s+/iu;
+const SPACED_CONNECTORS = /\s+(and then|and|but|then|also|plus|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e depois|e|depois|и потом|и|sonra|ve sonra|ve|و بعدش|و همچنین|سپس|هم|یا|ولی|اما|ثم|ثم بعد)\s+/iu;
 const FARSI_LOOKAHEAD_CONNECTOR = /\s+و\s+(?=بعد\s+)/iu;
 const CJK_CONNECTOR = /\s*(?=(?:然后再|然后|之后|それから|その後|そして|次に|그리고|그다음)\s*)/u;
 const SENTENCE_BOUNDARY = /[;；.。!?！？]+\s*/u;
@@ -12,9 +12,8 @@ export function splitMultilingualClauses(input: string): string[] {
 }
 
 /**
- * Same deterministic splitter, but keeps the connector that introduced each clause.
- * This is useful for semantic understanding layers where "then" / "بعد" carries
- * sequencing context even though the executable clause itself should be clean.
+ * Same splitter with the sequencing marker that introduced each clause.
+ * The marker is metadata only; plain splitting always strips it.
  */
 export function splitMultilingualClausesDetailed(input: string): Array<{ clause: string; marker?: string }> {
   const source = input.trim();
@@ -22,38 +21,44 @@ export function splitMultilingualClausesDetailed(input: string): Array<{ clause:
 
   const sentenceParts = source
     .split(SENTENCE_BOUNDARY)
-    .flatMap((part) => splitConnectorFamily(part))
-    .flatMap((part) => part.split(FARSI_LOOKAHEAD_CONNECTOR))
-    .flatMap((part) => part.split(CJK_CONNECTOR));
+    .flatMap(splitConnectorFamilyDetailed)
+    .flatMap(splitFarsiDetailed)
+    .flatMap(splitCjkDetailed);
 
   return sentenceParts
-    .map((part) => {
-      const normalized = normalizeClause(part);
-      return { clause: stripLeadingClauseConnector(normalized), marker: detectLeadingClauseMarker(normalized) };
-    })
+    .map(({ text, marker }) => ({ clause: normalizeClause(text), marker }))
+    .map(({ clause, marker }) => ({ clause: stripLeadingClauseConnector(clause), marker: marker ?? detectLeadingClauseMarker(clause) }))
     .filter(({ clause }) => Boolean(clause));
 }
 
-function splitConnectorFamily(part: string): string[] {
-  const output: string[] = [];
-  let remainder = part.trim();
+function splitConnectorFamilyDetailed(part: string): Array<{ text: string; marker?: string }> {
+  const output: Array<{ text: string; marker?: string }> = [];
+  const pieces = part.split(SPACED_CONNECTORS);
+  if (pieces.length === 1) return [{ text: part }];
 
-  while (remainder) {
-    const match = remainder.match(SPACED_CONNECTORS);
-    if (!match || match.index === undefined) {
-      output.push(remainder);
-      break;
-    }
-
-    const left = remainder.slice(0, match.index).trim();
-    const right = remainder.slice(match.index + match[0].length).trim();
-    if (left) output.push(left);
-    const connector = match[0].trim();
-    output.push(`${connector} ${right}`.trim());
-    break;
+  output.push({ text: pieces[0] });
+  for (let index = 1; index < pieces.length; index += 2) {
+    const marker = pieces[index]?.trim();
+    const text = pieces[index + 1] ?? '';
+    output.push({ text: `${marker} ${text}`.trim(), marker });
   }
 
   return output;
+}
+
+function splitFarsiDetailed(part: { text: string; marker?: string }): Array<{ text: string; marker?: string }> {
+  const pieces = part.text.split(FARSI_LOOKAHEAD_CONNECTOR);
+  if (pieces.length === 1) return [part];
+  return [
+    { text: pieces[0], marker: part.marker },
+    ...pieces.slice(1).map((text) => ({ text: `بعد ${text}`.trim(), marker: 'بعد' })),
+  ];
+}
+
+function splitCjkDetailed(part: { text: string; marker?: string }): Array<{ text: string; marker?: string }> {
+  const pieces = part.text.split(CJK_CONNECTOR);
+  if (pieces.length === 1) return [part];
+  return pieces.map((text) => ({ text, marker: part.marker }));
 }
 
 function normalizeClause(part: string): string {
