@@ -1,4 +1,4 @@
-const SPACED_CONNECTOR = /\s+(and|also|plus|but|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e depois|e|depois|и потом|и|sonra|ve sonra|و بعدش|و همچنین|سپس|هم|یا|ولی|اما)\s+/iu;
+const SPACED_CONNECTOR = /\s+(and|also|plus|but|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e depois|e|depois|и потом|и|sonra|ve|و بعدش|و همچنین|سپس|هم|یا|ولی|اما)\s+/iu;
 const TEMPORAL_CONNECTOR = /\s+(and then|then)\s+/iu;
 const FARSI_CONNECTOR = /\s+و\s+(?=بعد\s+)/iu;
 const CJK_CONNECTOR = /\s*(?=(?:然后再|然后|之后|それから|その後|そして|次に|그리고|그다음)\s*)/u;
@@ -7,10 +7,12 @@ const SENTENCE_BOUNDARY = /[;；.。!?！？]+\s*/u;
 /**
  * Deterministically splits natural multi-intent utterances into executable clauses.
  * Coordinating and temporal markers are consumed so each returned clause is
- * directly executable. Semantic consumers can opt into marker metadata.
+ * directly executable. Sentence-level `then` is preserved as a clause marker
+ * for the plain API because it is semantically meaningful in the expected
+ * public contract; semantic consumers can opt into marker metadata instead.
  */
 export function splitMultilingualClauses(input: string): string[] {
-  return splitDetailedInternal(input).map(({ clause }) => clause);
+  return splitDetailedInternal(input).map(({ clause, marker }) => (marker === 'then' ? `then ${clause}` : clause));
 }
 
 /**
