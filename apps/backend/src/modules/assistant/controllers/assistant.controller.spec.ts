@@ -26,6 +26,8 @@ describe('AssistantController history', () => {
 });
 
 describe('AssistantController locale propagation', () => {
+  const householdCommands = { tryExecute: jest.fn() };
+
   it('passes the validated preferred locale to the assistant service', async () => {
     const service = { process: jest.fn().mockResolvedValue({ message: 'ok' }) };
     const controller = new AssistantController(service as never, householdCommands as never);
