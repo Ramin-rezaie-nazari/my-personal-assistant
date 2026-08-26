@@ -8,6 +8,15 @@ const SENTENCE_BOUNDARY = /[;；.。!?！？]+\s*/u;
  * It intentionally avoids language-specific NLP models on this hot path.
  */
 export function splitMultilingualClauses(input: string): string[] {
+  return splitMultilingualClausesDetailed(input).map(({ clause }) => clause);
+}
+
+/**
+ * Same deterministic splitter, but keeps the connector that introduced each clause.
+ * This is useful for semantic understanding layers where "then" / "بعد" carries
+ * sequencing context even though the executable clause itself should be clean.
+ */
+export function splitMultilingualClausesDetailed(input: string): Array<{ clause: string; marker?: string }> {
   const source = input.trim();
   if (!source) return [];
 
@@ -18,9 +27,11 @@ export function splitMultilingualClauses(input: string): string[] {
     .flatMap((part) => part.split(CJK_CONNECTOR));
 
   return sentenceParts
-    .map((part) => normalizeClause(part))
-    .map(stripLeadingClauseConnector)
-    .filter(Boolean);
+    .map((part) => {
+      const normalized = normalizeClause(part);
+      return { clause: stripLeadingClauseConnector(normalized), marker: detectLeadingClauseMarker(normalized) };
+    })
+    .filter(({ clause }) => Boolean(clause));
 }
 
 function splitConnectorFamily(part: string): string[] {
@@ -37,7 +48,9 @@ function splitConnectorFamily(part: string): string[] {
     const left = remainder.slice(0, match.index).trim();
     const right = remainder.slice(match.index + match[0].length).trim();
     if (left) output.push(left);
-    remainder = right;
+    const connector = match[0].trim();
+    output.push(`${connector} ${right}`.trim());
+    break;
   }
 
   return output;
@@ -51,6 +64,10 @@ function normalizeClause(part: string): string {
     .replace(/[؟?!،؛,.。；，！？]/gu, ' ')
     .replace(/\s+/gu, ' ')
     .trim();
+}
+
+function detectLeadingClauseMarker(part: string): string | undefined {
+  return part.match(/^(then|and then|puis|et puis|y luego|luego|und dann|und danach|e poi|e depois|sonra|ve sonra|بعد(?:ها)?|سپس|ثم|ثم بعد|然后再|然后|之后|それから|その後|そして|次に|그리고|그다음)\s+/iu)?.[1];
 }
 
 function stripLeadingClauseConnector(part: string): string {
