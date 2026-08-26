@@ -15,6 +15,7 @@ import { HouseholdInventoryCoreService } from './services/household-inventory-co
 import { HouseholdShoppingConsolidatorService } from './services/household-shopping-consolidator.service';
 import { HouseholdInventoryPersistenceService } from './services/household-inventory-persistence.service';
 import { ShoppingListPersistenceService } from './services/shopping-list-persistence.service';
+import { ShoppingPriceProviderService } from './services/shopping-price-provider.service';
 
 @Module({
   controllers: [ShoppingIntelligenceController],
@@ -34,6 +35,7 @@ import { ShoppingListPersistenceService } from './services/shopping-list-persist
     HouseholdShoppingConsolidatorService,
     HouseholdInventoryPersistenceService,
     ShoppingListPersistenceService,
+    ShoppingPriceProviderService,
   ],
   exports: [
     ShoppingIntelligenceService,
@@ -51,6 +53,7 @@ import { ShoppingListPersistenceService } from './services/shopping-list-persist
     HouseholdShoppingConsolidatorService,
     HouseholdInventoryPersistenceService,
     ShoppingListPersistenceService,
+    ShoppingPriceProviderService,
   ],
 })
 export class ShoppingIntelligenceModule {}
