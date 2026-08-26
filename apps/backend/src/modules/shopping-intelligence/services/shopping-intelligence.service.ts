@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 @Injectable()
 export class ShoppingIntelligenceService {
-  async createShoppingPlan() {
+  async createShoppingPlan(_userId?: string) {
     await Promise.resolve();
 
     return {
