@@ -24,7 +24,7 @@ Recipe / request
   → assistant / mobile execution
 ```
 
-## Implementation status before verification
+## Implementation status
 
 ### C1 — Domain contract
 - [x] Shopping/inventory/recipe/budget domains audited.
@@ -90,7 +90,7 @@ Recipe / request
 - [x] Deterministic household natural command path for inspect/add/remove/consume/purchase.
 - [x] Assistant module/controller wiring for household path.
 - [x] Canonical basket adapter path.
-- [ ] Final multilingual/contextual integration verification.
+- [x] Final repository-side multilingual/contextual integration verification.
 
 ### C9 — Mobile UX
 - [x] Premium inventory surface connected to live state.
@@ -100,29 +100,48 @@ Recipe / request
 - [x] Accessibility labels on core actions.
 - [ ] Final physical-device / RTL runtime verification.
 
-## Verification gates — all intentionally pending
+## Verification — green in user's VS Code environment
 
-- [ ] Prisma generate + schema consistency.
-- [ ] Targeted Shopping/Inventory/Recipe/Assistant Jest suites.
-- [ ] Backend typecheck.
-- [ ] Backend lint.
-- [ ] Backend build.
-- [ ] Full backend Jest.
-- [ ] Mobile typecheck.
-- [ ] Mobile quality contracts.
-- [ ] Final D1 verification.
+- [x] Prisma generate + schema consistency.
+- [x] Targeted Shopping/Inventory/Recipe/Assistant Jest suites.
+- [x] Backend typecheck.
+- [x] Backend lint.
+- [x] Backend build.
+- [x] Full backend Jest / repository D1 gate.
+- [x] Mobile typecheck.
+- [x] Mobile quality contracts.
+- [x] Final D1 verification.
 
-## Closure
+### Verification evidence
 
-Only after every relevant gate is green:
+- Backend full Jest: **162/162 suites, 475/475 tests, 0 snapshots**.
+- Targeted multilingual regression: **3 suites, 20/20 tests**.
+- Recipe image pipeline: **2/2 tests**.
+- Mobile Voice Quality Contract: PASS.
+- Mobile UI Quality Contract: PASS.
+- D1 Voice Readiness Contract: PASS.
+- Backend typecheck: PASS.
+- Backend ESLint: PASS.
+- Prisma generation: PASS.
+- Backend build: PASS.
+- `D1 FINAL REPOSITORY VERIFICATION PASS` was observed in the user's environment.
 
-- [ ] Architecture review #1.
-- [ ] Architecture review #2.
-- [ ] Confirm vendor-agnostic core.
-- [ ] Confirm subscription-ready boundaries.
-- [ ] Record exact evidence in A/B.
-- [ ] Calculate honest whole-product progress.
-- [ ] Clear this C and create the next workstream C.
+## Architecture closure review
+
+- [x] Architecture review #1: canonical item identity, inventory events, shopping persistence, recipe bridge and assistant boundaries remain domain-separated and reusable by Food OS / Budget / Brain.
+- [x] Architecture review #2: provider independence, transactional event history, ambiguity refusal and subscription-ready boundaries reviewed for side effects and future extensibility.
+- [x] Vendor-agnostic core confirmed; live-price providers are optional adapters.
+- [x] Subscription-ready boundaries remain intact.
+- [x] Exact verification evidence recorded in A/B.
+- [ ] Physical-device / RTL runtime evidence required before claiming 100% workstream closure.
+
+## Honest progress
+
+**Shopping + Inventory Core:** approximately **90–95% complete**.
+
+The repository-side implementation and automated verification are green. The remaining gap is deliberately limited to real-device / RTL runtime validation; it is not being counted as complete without evidence.
+
+**Whole MYPA product:** the Shopping + Inventory workstream produced a meaningful additional step from the previous ~27% whole-product estimate, but the global product percentage should only be recalibrated in A after this workstream's architecture/evidence is recorded.
 
 ## Definition of Done
 
@@ -135,3 +154,5 @@ The workstream is 100% only when the system can safely execute examples such as:
 - «این هفته خرید را زیر بودجه نگه دار.»
 
 with durable state, explainable deterministic decisions, ambiguity refusal and compatibility with Food OS, Budget Intelligence, Personal Brain and future Local AI.
+
+The final unchecked gate is the user's physical-device / RTL runtime validation. Until that happens, this C remains intentionally open and is **not cleared or reused as the next roadmap**.
