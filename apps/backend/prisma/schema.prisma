@@ -31,6 +31,7 @@ model User {
   meals Meal[]
   recipes Recipe[]
   inventoryItems InventoryItem[]
+  inventoryEvents InventoryEvent[]
   shoppingItems ShoppingItem[]
   workouts Workout[]
   reminders Reminder[]
@@ -202,6 +203,7 @@ model FoodItem {
   mealItems MealItem[]
   recipeIngredients RecipeIngredient[]
   inventoryItems InventoryItem[]
+  inventoryEvents InventoryEvent[]
   shoppingItems ShoppingItem[]
 }
 
@@ -291,6 +293,26 @@ model InventoryItem {
   @@unique([userId, foodId])
   @@index([userId, essential])
   @@index([userId, expiresAt])
+}
+
+model InventoryEvent {
+  id String @id @default(uuid())
+  userId String
+  foodId String
+  type String
+  quantity Float
+  unit String
+  source String @default("manual")
+  idempotencyKey String?
+  occurredAt DateTime @default(now())
+  metadata Json?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  food FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  @@unique([userId, idempotencyKey])
+  @@index([userId, foodId, occurredAt])
+  @@index([userId, occurredAt])
+  @@index([userId, type, occurredAt])
 }
 
 model ShoppingItem {
