@@ -36,64 +36,65 @@ The subsystem must be multilingual-ready, country/currency/unit aware, determini
 ## Completion gates
 
 ### C1 — Repository audit and domain contract
-- [ ] Audit existing shopping-intelligence, inventory, food, recipe, budget and ingredient models.
-- [ ] Define the canonical household/item identity boundary and avoid duplicate ingredient concepts.
-- [ ] Define quantity/unit normalization and conversion boundaries.
-- [ ] Define event semantics for add, consume, adjust, waste, purchase, transfer and correction.
-- [ ] Define source precedence and idempotency rules for inventory mutations.
-- [ ] Define expiry/freshness semantics and timezone/country boundaries.
+- [x] Audit existing shopping-intelligence, inventory, food, recipe, budget and ingredient models.
+- [x] Define the canonical household/item identity boundary and avoid duplicate ingredient concepts.
+- [x] Define quantity/unit normalization and conversion boundaries.
+- [x] Define event semantics for add, consume, adjust, waste, purchase, transfer and correction.
+- [x] Define source precedence and idempotency rules for inventory mutations.
+- [x] Define expiry/freshness semantics and timezone/country boundaries.
 - [ ] Define budget integration contract without coupling shopping to one price provider.
 
 ### C2 — Inventory core
-- [ ] Inventory item model is canonical and household scoped.
+- [x] Inventory item model is canonical and household scoped.
 - [ ] Add / update / consume / adjust / remove operations are complete and validated.
-- [ ] Quantity arithmetic is unit-safe and deterministic.
-- [ ] Duplicate items merge safely using canonical identity.
-- [ ] Partial consumption works.
-- [ ] Waste/loss is represented separately from normal consumption.
-- [ ] Expiry and low-stock states are deterministic.
-- [ ] Inventory history/audit semantics are durable.
+- [x] Quantity arithmetic is unit-safe and deterministic.
+- [x] Duplicate items merge safely using canonical identity.
+- [x] Partial consumption works.
+- [x] Waste/loss is represented separately from normal consumption.
+- [x] Expiry and low-stock states are deterministic.
+- [x] Inventory event/audit persistence contract exists with transactional idempotency.
 
 ### C3 — Shopping list core
-- [ ] Create/update/delete/reorder shopping items.
-- [ ] Group by canonical ingredient/category/store context.
-- [ ] Merge duplicate requirements.
-- [ ] Convert recipe requirements into missing quantities.
-- [ ] Preserve already-owned inventory quantities.
-- [ ] Support explicit manual additions and removals.
-- [ ] Track planned/purchased/skipped states.
-- [ ] Shopping list remains useful without live prices.
+- [ ] Create/update/delete/reorder shopping items persistently.
+- [x] Group by canonical ingredient identity; source information is preserved.
+- [x] Merge duplicate requirements.
+- [x] Convert household requirements into missing quantities.
+- [x] Preserve already-owned inventory quantities.
+- [ ] Support explicit manual additions and removals persistently.
+- [ ] Track planned/purchased/skipped states persistently.
+- [x] Shopping list generation remains useful without live prices.
 
 ### C4 — Recipe → Inventory → Shopping bridge
 - [ ] Ingredient identity mapping from recipe data to inventory identity.
-- [ ] Accurate required-vs-owned calculation.
+- [x] Accurate required-vs-owned calculation at the canonical shopping layer.
 - [ ] Scaling aware of serving count and ingredient policy.
 - [ ] Household-size aware aggregation across multiple meals.
-- [ ] No duplicate recommendation/purchase lines for equivalent ingredients.
-- [ ] Multi-recipe consolidation into one shopping plan.
+- [x] No duplicate shopping lines for equivalent normalized ingredients.
+- [x] Multi-source consolidation into one shopping plan at the deterministic layer.
 
 ### C5 — Purchase planning + budget awareness
-- [ ] Purchase planner ranks what should be bought now vs later.
-- [ ] Low-stock and expiry priorities influence planning.
+- [ ] Purchase planner ranks what should be bought now vs later with expiry-aware priorities.
+- [x] Low-stock and expiry priorities influence deterministic purchase planning.
 - [ ] Existing household budget intelligence is consumed through a stable contract.
-- [ ] Price estimates are optional inputs, never a single point of failure.
-- [ ] Budget overflow produces deterministic alternatives.
-- [ ] Purchase plan exposes explainable reasoning.
+- [x] Price estimates are optional inputs and unavailable prices remain non-fatal.
+- [x] Budget limits can reduce purchase quantity instead of silently overspending.
+- [x] Purchase plan exposes deterministic reasons.
 
 ### C6 — Consumption learning + reorder forecasting
-- [ ] Consumption events update inventory safely.
-- [ ] Historical consumption feeds forecast inputs.
-- [ ] Forecasting handles sparse data safely.
-- [ ] Reorder thresholds/expected depletion are explainable.
-- [ ] Forecast confidence is represented explicitly.
-- [ ] Forecast never silently mutates inventory.
+- [x] Consumption history is represented as an explicit event stream for persistence.
+- [x] Historical consumption can feed deterministic forecasting.
+- [x] Forecasting handles sparse data safely.
+- [x] Reorder thresholds/expected depletion are explainable.
+- [x] Forecast confidence is represented explicitly.
+- [x] Forecast services do not silently mutate inventory.
+- [ ] Hydrate learning forecasts from persisted InventoryEvent data in production runtime.
 
 ### C7 — Globalization
-- [ ] Units are locale-aware but internally canonical.
-- [ ] Currency is separated from item identity.
+- [x] Units are locale-aware but internally canonical at the deterministic domain layer.
+- [ ] Currency is separated from item identity across the full shopping domain.
 - [ ] Country/region/store context is supported without hard-coding Iran behavior.
-- [ ] Persian/Arabic digits and localized item labels remain compatible with canonical identity.
-- [ ] RTL-safe API/UX payload semantics.
+- [x] Persian/Arabic labels can normalize to stable canonical identity without changing business logic.
+- [ ] RTL-safe API/UX payload semantics are complete end-to-end.
 
 ### C8 — Assistant / Brain integration
 - [ ] Natural commands can inspect inventory.
@@ -113,15 +114,15 @@ The subsystem must be multilingual-ready, country/currency/unit aware, determini
 - [ ] Optimistic UI is used only where mutation semantics remain safe.
 
 ### C10 — Tests and verification
-- [ ] Unit tests cover canonical identity, quantities, units and events.
+- [x] Unit tests cover canonical identity, quantities, units, expiry and core events.
 - [ ] Integration tests cover Recipe → Inventory → Shopping.
 - [ ] Budget/price integration tests cover fallback behavior.
 - [ ] Assistant tool/semantic integration tests cover natural-language commands.
-- [ ] Mobile typecheck passes.
-- [ ] Backend typecheck passes.
-- [ ] Backend lint passes.
-- [ ] Relevant backend suites pass.
-- [ ] Relevant mobile quality contracts pass.
+- [ ] Mobile typecheck passes for the workstream changes.
+- [ ] Backend typecheck passes for the workstream changes.
+- [ ] Backend lint passes for the workstream changes.
+- [ ] Relevant backend suites pass in the user's environment.
+- [ ] Relevant mobile quality contracts pass after UI changes.
 - [ ] Full backend Jest passes after the workstream stabilizes.
 
 ### C11 — Architecture review / closure
@@ -135,11 +136,11 @@ The subsystem must be multilingual-ready, country/currency/unit aware, determini
 
 ## Parallel task batches
 
-### Batch 1 — low-risk foundations
-Inventory contract audit; unit/identity normalization; mutation semantics; focused unit tests.
+### Batch 1 — low-risk foundations ✅ CODED
+Inventory contract audit; canonical identity/unit normalization; deterministic mutation semantics; focused tests.
 
-### Batch 2 — core household loop
-Inventory operations; shopping list operations; duplicate merge; missing-quantity calculation.
+### Batch 2 — core household loop 🟡 CODED / NEEDS EXECUTION
+Inventory expiry-aware prioritization; durable InventoryEvent schema + transaction persistence; inventory-aware shopping consolidation; real shopping-list generation; history-driven consumption forecasting; focused tests.
 
 ### Batch 3 — recipe bridge
 Recipe-to-shopping conversion; multi-recipe consolidation; serving-aware aggregation; regression tests.
@@ -148,7 +149,7 @@ Recipe-to-shopping conversion; multi-recipe consolidation; serving-aware aggrega
 Purchase planner; expiry/low-stock priority; budget-aware choices; explainable alternatives.
 
 ### Batch 5 — learning
-Consumption event learning; reorder forecasting; sparse-data safety; confidence semantics.
+Persistent-event hydration; reorder forecasting from DB history; sparse-data safety; confidence semantics.
 
 ### Batch 6 — global + assistant
 Locale/currency/unit contracts; multilingual tool integration; ambiguity handling; voice/text command coverage.
@@ -167,3 +168,7 @@ The workstream is 100% only when a user can naturally say things such as:
 - «این هفته خرید را زیر بودجه نگه دار.»
 
 and the system can execute the safe deterministic portions correctly, explain what it did, preserve household state, and remain compatible with the broader Food OS, Budget Intelligence, Personal Brain and future Local AI architecture.
+
+## Current honest state
+
+Repository design/implementation is partway through the workstream. No 100% claim is allowed until the persisted CRUD loop, recipe bridge, assistant integration, mobile UX and full verification are all green.
