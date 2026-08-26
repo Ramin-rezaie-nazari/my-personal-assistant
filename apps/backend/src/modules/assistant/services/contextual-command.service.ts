@@ -102,7 +102,7 @@ export class ContextualCommandService {
     else if (this.matches(text, ['سوم', 'سومی', 'third', 'troisième', 'dritte', 'terzo', 'третий', 'üçüncü', '三番目', '第三个'])) entities.ordinal = 3;
     if (this.matches(text, ['امروز', 'today', "aujourd'hui", 'hoy', 'heute', 'oggi', 'hoje', 'сегодня', 'bugün', '今日', '今天', 'اليوم'])) entities.date = 'today';
     else if (this.matches(text, ['فردا', 'tomorrow', 'demain', 'mañana', 'morgen', 'domani', 'amanhã', 'завтра', 'yarın', '明日', '明天', 'غدًا'])) entities.date = 'tomorrow';
-    else if (this.matches(text, ['پس فردا', 'پس‌فردا', 'day after tomorrow', 'après-demain', 'pasado mañana', 'übermorgen', 'dopodomani', 'depois de amanhã', 'послезавтра', 'öbür gün', '明後日', '后天', 'بعد غد'])) entities.date = 'day_after_tomorrow';
+    else if (this.matches(text, ['پس فردا', 'پس‌فردا', 'day after tomorrow', 'après-demain', 'pasado mañana', 'übermorgen', 'dopodomani', 'depois de amanhã', 'послезавтра', 'öбür gün', '明後日', '后天', 'بعد غد'])) entities.date = 'day_after_tomorrow';
     if (this.matches(text, ['نه', 'نخیر', 'نه ممنون', 'نمیخوام', 'نمی خوام', 'no', 'nope', 'non', 'nein', 'não', 'no quiero', 'нет', 'いいえ', '不'])) entities.confirmation = 'no';
     else if (this.matches(text, ['بله', 'آره', 'اره', 'حتما', 'باشه', 'اوکی', 'yes', 'sure', 'oui', 'ja', 'sim', 'sí', 'да', 'はい', '好'])) entities.confirmation = 'yes';
     if (this.matches(text, ['نه', 'بدون', 'نذار', 'نمیخوام', 'نمی خوام', 'without', 'without any', 'sin', 'sans', 'ohne', 'senza', 'sem', 'без', 'olmadan', 'なし', '不含', 'do not', "don't", 'does not', 'did not'])) entities.negated = true;
@@ -111,7 +111,8 @@ export class ContextualCommandService {
 
   private splitClauses(text: string): string[] {
     return text
-      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|but|then|also|plus|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e|depois|e depois|и потом|и|sonra|ve sonra|ve|そして|それから|然后|之后|و بعدش|و همچنین|سپس|هم|یا|ولی|اما|ثم)\s+|\s+و\s+(?=بعد\s+)|(?<=،)\s*(?=然后|然後|そして|それから))\n      .map((part) => part.trim())
+      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|but|then|also|plus|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e|depois|e depois|и потом|и|sonra|ve sonra|ve|そして|それから|然后|之后|و بعدش|و همچنین|سپس|هم|یا|ولی|اما|ثم)\s+|\s+و\s+(?=بعد\s+)|(?<=،)\s*(?=然后|然後|そして|それから))/iu)
+      .map((part) => part.trim())
       .filter(Boolean);
   }
 
