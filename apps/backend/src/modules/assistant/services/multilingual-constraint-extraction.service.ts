@@ -136,7 +136,7 @@ export class MultilingualConstraintExtractionService {
   }
 
   private extractQuantities(text: string, constraints: MultilingualConstraint[]): void {
-    const quantityPattern = /(?:^|\s|[,:؛،])((?:\d+\s*\/\s*\d+)|(?:\d+(?:[.,]\d+)?))(?=\D|$)/gu;
+    const quantityPattern = /(?<![\p{N}.])((?:\d+\s*\/\s*\d+)|(?:\d+(?:[.,]\d+)?))(?![\p{N}.])/gu;
     for (const match of text.matchAll(quantityPattern)) {
       const raw = match[1].trim();
       const value = raw.includes('/')
@@ -148,9 +148,7 @@ export class MultilingualConstraintExtractionService {
       const start = (match.index ?? 0) + match[0].length;
       const after = text.slice(start).trimStart();
       const unit = this.findUnit(after);
-      if (unit) {
-        constraints.push({ kind: 'unit', value: unit.name, source: unit.alias, confidence: 0.96 });
-      }
+      if (unit) constraints.push({ kind: 'unit', value: unit.name, source: unit.alias, confidence: 0.96 });
     }
   }
 
@@ -176,9 +174,7 @@ export class MultilingualConstraintExtractionService {
     for (const entry of entries) {
       if (!text.startsWith(entry.alias)) continue;
       const next = text.slice(entry.alias.length);
-      if (!next || /^(?:\s|[\p{P}\p{S}]|[\p{L}]|$)/u.test(next)) {
-        return entry;
-      }
+      if (!next || /^(?:\s|[\p{P}\p{S}]|[\p{L}]|$)/u.test(next)) return entry;
     }
     return undefined;
   }
