@@ -21,6 +21,7 @@ import { ShoppingGlobalContextService } from './services/shopping-global-context
 import { PersistentConsumptionForecastService } from './services/persistent-consumption-forecast.service';
 import { ShoppingPriceRefreshService } from './services/shopping-price-refresh.service';
 import { ShoppingPlanOrchestratorService } from './services/shopping-plan-orchestrator.service';
+import { HouseholdItemResolutionService } from './services/household-item-resolution.service';
 
 @Module({
   controllers: [ShoppingIntelligenceController],
@@ -46,6 +47,7 @@ import { ShoppingPlanOrchestratorService } from './services/shopping-plan-orches
     PersistentConsumptionForecastService,
     ShoppingPriceRefreshService,
     ShoppingPlanOrchestratorService,
+    HouseholdItemResolutionService,
   ],
   exports: [
     ShoppingIntelligenceService,
@@ -69,6 +71,7 @@ import { ShoppingPlanOrchestratorService } from './services/shopping-plan-orches
     PersistentConsumptionForecastService,
     ShoppingPriceRefreshService,
     ShoppingPlanOrchestratorService,
+    HouseholdItemResolutionService,
   ],
 })
 export class ShoppingIntelligenceModule {}
