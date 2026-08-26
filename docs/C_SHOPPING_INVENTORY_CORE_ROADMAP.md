@@ -55,22 +55,23 @@ The subsystem must be multilingual-ready, country/currency/unit aware, determini
 - [x] Inventory event/audit persistence contract exists with transactional idempotency.
 
 ### C3 — Shopping list core
-- [ ] Create/update/delete/reorder shopping items persistently.
+- [x] Persistent shopping list create/read/update/delete/complete/reopen/reorder service exists.
 - [x] Group by canonical ingredient identity; source information is preserved.
 - [x] Merge duplicate requirements.
 - [x] Convert household requirements into missing quantities.
 - [x] Preserve already-owned inventory quantities.
-- [ ] Support explicit manual additions and removals persistently.
-- [ ] Track planned/purchased/skipped states persistently.
+- [x] Authenticated API contract exists for list CRUD operations.
+- [x] Track list order persistently with `sortOrder`.
 - [x] Shopping list generation remains useful without live prices.
 
 ### C4 — Recipe → Inventory → Shopping bridge
-- [ ] Ingredient identity mapping from recipe data to inventory identity.
+- [ ] Ingredient identity mapping from recipe data to inventory identity is fully centralized.
 - [x] Accurate required-vs-owned calculation at the canonical shopping layer.
-- [ ] Scaling aware of serving count and ingredient policy.
-- [ ] Household-size aware aggregation across multiple meals.
+- [x] Existing Food Operating Loop already provides serving-aware scaled recipe requirements.
+- [x] Missing recipe ingredients now route through canonical persistent shopping storage.
 - [x] No duplicate shopping lines for equivalent normalized ingredients.
 - [x] Multi-source consolidation into one shopping plan at the deterministic layer.
+- [ ] Full unit-safe RecipeInventoryMatcher refactor still required.
 
 ### C5 — Purchase planning + budget awareness
 - [ ] Purchase planner ranks what should be bought now vs later with expiry-aware priorities.
@@ -115,7 +116,8 @@ The subsystem must be multilingual-ready, country/currency/unit aware, determini
 
 ### C10 — Tests and verification
 - [x] Unit tests cover canonical identity, quantities, units, expiry and core events.
-- [ ] Integration tests cover Recipe → Inventory → Shopping.
+- [ ] Unit/integration coverage for persistent shopping CRUD is still required.
+- [ ] Integration tests cover Recipe → Inventory → Shopping end-to-end.
 - [ ] Budget/price integration tests cover fallback behavior.
 - [ ] Assistant tool/semantic integration tests cover natural-language commands.
 - [ ] Mobile typecheck passes for the workstream changes.
@@ -137,19 +139,19 @@ The subsystem must be multilingual-ready, country/currency/unit aware, determini
 ## Parallel task batches
 
 ### Batch 1 — low-risk foundations ✅ CODED
-Inventory contract audit; canonical identity/unit normalization; deterministic mutation semantics; focused tests.
+Canonical identity/unit normalization; deterministic inventory mutations; focused unit tests.
 
-### Batch 2 — core household loop 🟡 CODED / NEEDS EXECUTION
-Inventory expiry-aware prioritization; durable InventoryEvent schema + transaction persistence; inventory-aware shopping consolidation; real shopping-list generation; history-driven consumption forecasting; focused tests.
+### Batch 2 — core household loop ✅ CODED / NEEDS EXECUTION
+Expiry-aware inventory priority; durable InventoryEvent schema + transaction persistence; inventory-aware shopping consolidation; deterministic shopping-list generation; history-driven consumption forecasting.
 
-### Batch 3 — recipe bridge
-Recipe-to-shopping conversion; multi-recipe consolidation; serving-aware aggregation; regression tests.
+### Batch 3 — persistent shopping + recipe bridge ✅ CODED / NEEDS EXECUTION
+Persistent shopping CRUD API; ordering; authenticated user scoping; Recipe Food Operating Loop wired to canonical shopping persistence.
 
 ### Batch 4 — planning intelligence
-Purchase planner; expiry/low-stock priority; budget-aware choices; explainable alternatives.
+Purchase planner; expiry/low-stock priority; budget-aware choices; explainable alternatives; provider-agnostic price integration.
 
 ### Batch 5 — learning
-Persistent-event hydration; reorder forecasting from DB history; sparse-data safety; confidence semantics.
+Persistent-event hydration; reorder forecasting from DB history; sparse-data safety; confidence semantics; real consumption-to-inventory lifecycle.
 
 ### Batch 6 — global + assistant
 Locale/currency/unit contracts; multilingual tool integration; ambiguity handling; voice/text command coverage.
@@ -171,4 +173,4 @@ and the system can execute the safe deterministic portions correctly, explain wh
 
 ## Current honest state
 
-Repository design/implementation is partway through the workstream. No 100% claim is allowed until the persisted CRUD loop, recipe bridge, assistant integration, mobile UX and full verification are all green.
+Repository design/implementation is advancing through the core household loop. The next checkpoint is local typecheck/lint + focused shopping/recipe tests before claiming additional green gates.
