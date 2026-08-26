@@ -11,14 +11,22 @@ export type HouseholdPrice = {
   available: boolean;
   buyScore?: number;
 };
+
 export type HouseholdPurchasePlanItem = {
   productKey: string;
   quantity: number;
   price: number | null;
+  currency: string | null;
   estimatedCost: number | null;
   urgency: 'critical' | 'soon' | 'normal' | 'none';
+  expiryDaysRemaining: number | null;
   action: 'buy' | 'watch' | 'skip';
-  reason: string;
+  reason:
+    | 'inventory_need_and_budget_align'
+    | 'budget_constraint'
+    | 'monitor_price_or_stock'
+    | 'price_unavailable'
+    | 'no_reorder_needed';
 };
 
 @Injectable()
@@ -31,90 +39,83 @@ export class HouseholdPurchasePlannerService {
     items: InventoryItem[],
     prices: HouseholdPrice[],
     budgetRemaining: number,
+    now = new Date(),
   ): {
     items: HouseholdPurchasePlanItem[];
     totalEstimatedCost: number;
     budgetRemainingAfterPlan: number;
+    currency: string | null;
   } {
-    const forecasts = this.inventory.prioritize(items);
+    const forecasts = this.inventory.prioritize(items, now);
     let remaining = Math.max(0, budgetRemaining);
     const plan: HouseholdPurchasePlanItem[] = [];
+    let currency: string | null = null;
 
     for (const item of forecasts) {
       const price = prices.find(
         (candidate) => candidate.productKey === item.productKey,
       );
+      if (price?.currency) currency ??= price.currency;
       const quantity = item.recommendedQuantity;
       if (quantity <= 0) {
         plan.push({
           productKey: item.productKey,
           quantity: 0,
           price: price?.price ?? null,
+          currency: price?.currency ?? null,
           estimatedCost: 0,
           urgency: item.urgency,
+          expiryDaysRemaining: item.expiryDaysRemaining,
           action: 'skip',
           reason: 'no_reorder_needed',
         });
         continue;
       }
 
-      const unitPrice = price?.available ? price.price : null;
-      let purchaseQuantity = quantity;
-      if (
-        item.urgency === 'critical' &&
-        item.safetyStock !== undefined &&
-        item.safetyStock > 0
-      ) {
-        purchaseQuantity = Math.min(purchaseQuantity, item.safetyStock);
-      }
-      if (
-        unitPrice !== null &&
-        unitPrice > 0 &&
-        purchaseQuantity * unitPrice > remaining &&
-        item.urgency === 'critical'
-      ) {
-        purchaseQuantity = Math.min(
-          purchaseQuantity,
-          Math.floor(remaining / unitPrice),
-        );
-      }
-
+      const unitPrice = price?.available && price.price > 0 ? price.price : null;
+      const affordableQuantity =
+        unitPrice !== null ? Math.floor(remaining / unitPrice) : 0;
+      const purchaseQuantity =
+        unitPrice !== null
+          ? Math.min(quantity, affordableQuantity)
+          : quantity;
       const estimatedCost =
         unitPrice !== null ? purchaseQuantity * unitPrice : null;
-      const affordable =
-        estimatedCost !== null &&
-        estimatedCost > 0 &&
-        estimatedCost <= remaining;
+      const fullNeedAffordable =
+        estimatedCost !== null && purchaseQuantity === quantity;
+      const urgentEnoughToBuy =
+        item.urgency === 'critical' ||
+        (item.urgency === 'soon' && (price?.buyScore ?? 0.5) >= 0.5);
       const action =
-        item.urgency === 'critical' && affordable
-          ? 'buy'
-          : item.urgency === 'soon' &&
-              affordable &&
-              (price?.buyScore ?? 0.5) >= 0.5
-            ? 'buy'
-            : estimatedCost === null
-              ? 'watch'
-              : affordable
-                ? 'watch'
-                : 'skip';
+        unitPrice === null
+          ? 'watch'
+          : purchaseQuantity <= 0
+            ? 'skip'
+            : urgentEnoughToBuy
+              ? 'buy'
+              : 'watch';
 
-      if (action === 'buy' && estimatedCost !== null)
+      if (action === 'buy' && estimatedCost !== null) {
         remaining -= estimatedCost;
+      }
+
       plan.push({
         productKey: item.productKey,
         quantity: purchaseQuantity,
         price: price?.price ?? null,
+        currency: price?.currency ?? null,
         estimatedCost,
         urgency: item.urgency,
+        expiryDaysRemaining: item.expiryDaysRemaining,
         action,
         reason:
-          action === 'buy'
-            ? 'inventory_need_and_budget_align'
-            : action === 'watch'
-              ? 'monitor_price_or_stock'
-              : estimatedCost === null
-                ? 'price_unavailable'
-                : 'budget_constraint',
+          unitPrice === null
+            ? 'price_unavailable'
+            : !fullNeedAffordable
+              ? 'budget_constraint'
+              : action === 'buy'
+                ? 'inventory_need_and_budget_align'
+                : 'monitor_price_or_stock',
       });
     }
 
@@ -122,6 +123,7 @@ export class HouseholdPurchasePlannerService {
       items: plan,
       totalEstimatedCost: budgetRemaining - remaining,
       budgetRemainingAfterPlan: remaining,
+      currency,
     };
   }
 }
