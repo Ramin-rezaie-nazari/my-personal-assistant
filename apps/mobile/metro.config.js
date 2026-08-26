@@ -1,22 +1,31 @@
 const path = require('path');
 const { getDefaultConfig } = require('expo/metro-config');
 
-const projectRoot = __dirname;
-const workspaceRoot = path.resolve(projectRoot, '../..');
-const config = getDefaultConfig(projectRoot);
-const mobileReactPath = path.dirname(require.resolve('react/package.json', { paths: [projectRoot] }));
+const config = getDefaultConfig(__dirname);
+const mobileReactPath = path.dirname(require.resolve('react/package.json'));
+const mobileReactRuntimePath = path.dirname(require.resolve('react/jsx-runtime'));
+const mobileReactDevRuntimePath = path.dirname(require.resolve('react/jsx-dev-runtime'));
 
-config.resolver.disableHierarchicalLookup = true;
-config.resolver.nodeModulesPaths = [
-  path.resolve(projectRoot, 'node_modules'),
-  path.resolve(workspaceRoot, 'node_modules'),
-];
+const originalResolveRequest = config.resolver.resolveRequest;
 
-config.resolver.extraNodeModules = {
-  ...(config.resolver.extraNodeModules || {}),
-  react: mobileReactPath,
-  'react/jsx-runtime': path.join(mobileReactPath, 'jsx-runtime.js'),
-  'react/jsx-dev-runtime': path.join(mobileReactPath, 'jsx-dev-runtime.js'),
+config.resolver.resolveRequest = (context, moduleName, platform) => {
+  if (moduleName === 'react' || moduleName === 'react/package.json') {
+    return { type: 'sourceFile', filePath: path.join(mobileReactPath, 'index.js') };
+  }
+
+  if (moduleName === 'react/jsx-runtime') {
+    return { type: 'sourceFile', filePath: path.join(mobileReactRuntimePath, 'jsx-runtime.js') };
+  }
+
+  if (moduleName === 'react/jsx-dev-runtime') {
+    return { type: 'sourceFile', filePath: path.join(mobileReactDevRuntimePath, 'jsx-dev-runtime.js') };
+  }
+
+  if (originalResolveRequest) {
+    return originalResolveRequest(context, moduleName, platform);
+  }
+
+  return context.resolveRequest(context, moduleName, platform);
 };
 
 module.exports = config;
