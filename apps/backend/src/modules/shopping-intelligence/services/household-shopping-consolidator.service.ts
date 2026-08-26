@@ -53,7 +53,7 @@ export class HouseholdShoppingConsolidatorService {
         continue;
       }
       if (!this.normalizer.canConvert(existing.unit, normalized.unit)) {
-        throw new Error(`Incompatible units for ${productKey}`);
+        throw new Error(`incompatible units for ${productKey}`);
       }
       existing.quantity += this.normalizer.convert(normalized.quantity, normalized.unit, existing.unit);
       if (input.source) existing.sources.add(input.source);
@@ -70,7 +70,7 @@ export class HouseholdShoppingConsolidatorService {
         continue;
       }
       if (!this.normalizer.canConvert(existing.unit, normalized.unit)) {
-        throw new Error(`Incompatible inventory units for ${productKey}`);
+        throw new Error(`incompatible inventory units for ${productKey}`);
       }
       existing.quantity += this.normalizer.convert(normalized.quantity, normalized.unit, existing.unit);
     }
@@ -78,7 +78,7 @@ export class HouseholdShoppingConsolidatorService {
     return [...required.entries()].map(([productKey, entry]) => {
       const ownedEntry = owned.get(productKey);
       if (ownedEntry && !this.normalizer.canConvert(ownedEntry.unit, entry.unit)) {
-        throw new Error(`Incompatible units for ${productKey}`);
+        throw new Error(`incompatible units for ${productKey}`);
       }
       const ownedQuantity = ownedEntry
         ? this.normalizer.convert(ownedEntry.quantity, ownedEntry.unit, entry.unit)
