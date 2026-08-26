@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { HouseholdItemNormalizerService } from './household-item-normalizer.service';
 
@@ -111,7 +112,7 @@ export class HouseholdInventoryPersistenceService {
           source: input.source ?? 'manual',
           idempotencyKey: input.idempotencyKey,
           occurredAt: input.occurredAt ?? new Date(),
-          metadata: input.metadata,
+          metadata: input.metadata as Prisma.InputJsonValue | undefined,
         },
       });
 
@@ -150,19 +151,13 @@ export class HouseholdInventoryPersistenceService {
         return currentQuantity - converted;
       case 'adjust':
         return converted;
-      default: {
-        const exhaustive: never = type;
-        return exhaustive;
-      }
     }
   }
 
-  private earlierExpiry(
-    a?: Date | null,
-    b?: Date | null,
-  ): Date | null | undefined {
-    if (!a) return b;
-    if (!b) return a;
-    return a.getTime() <= b.getTime() ? a : b;
+  private earlierExpiry(current: Date | null | undefined, incoming: Date | null | undefined) {
+    if (incoming === undefined) return current;
+    if (current === null || current === undefined) return incoming;
+    if (incoming === null) return current;
+    return incoming < current ? incoming : current;
   }
 }
