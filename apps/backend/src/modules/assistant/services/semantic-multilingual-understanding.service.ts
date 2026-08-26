@@ -310,7 +310,10 @@ export class SemanticMultilingualUnderstandingService {
   }
 
   splitClauses(input: string): string[] {
-    return splitMultilingualClausesDetailed(input).map(({ clause, marker }) => (marker && marker !== 'and' ? `${marker} ${clause}` : clause));
+    return splitMultilingualClausesDetailed(input).map(({ clause, marker }) => {
+      if (marker === 'بعد') return `بعد ${clause}`;
+      return clause;
+    });
   }
 
   private rank(language: SupportedLocalLanguage, normalized: string): IntentCandidate[] {
