@@ -19,6 +19,7 @@ export function splitMultilingualClauses(input: string): string[] {
 
   return sentenceParts
     .map((part) => normalizeClause(part))
+    .map(stripLeadingClauseConnector)
     .filter(Boolean);
 }
 
@@ -49,5 +50,13 @@ function normalizeClause(part: string): string {
     .replace(/[’‘`]/g, "'")
     .replace(/[؟?!،؛,.。；，！？]/gu, ' ')
     .replace(/\s+/gu, ' ')
+    .trim();
+}
+
+function stripLeadingClauseConnector(part: string): string {
+  return part
+    .replace(/^(?:then|and then|puis|et puis|y luego|luego|und dann|und danach|e poi|e depois|sonra|ve sonra)\s+/iu, '')
+    .replace(/^(?:بعد(?:ها)?|سپس|ثم|ثم بعد)\s+/u, '')
+    .replace(/^(?:然后再|然后|之后|それから|その後|そして|次に|그리고|그다음)/u, '')
     .trim();
 }
