@@ -3,6 +3,7 @@ import { DecisionActionAdapterService } from '../../personal-brain/services/deci
 import { DecisionCandidate } from '../../personal-brain/services/unified-decision-engine.service';
 import { ShoppingService } from '../../shopping/shopping.service';
 import { InventoryService } from '../../inventory/inventory.service';
+import { PrismaService } from '../../../common/database/prisma.service';
 
 const FOOD_NAMES: Record<string, string[]> = {
   milk: ['milk', 'شیر'],
@@ -20,6 +21,7 @@ export class LocalBasketActionAdapter implements OnModuleInit {
     private readonly adapters: DecisionActionAdapterService,
     private readonly shopping: ShoppingService,
     private readonly inventory: InventoryService,
+    private readonly prisma: PrismaService,
   ) {}
 
   onModuleInit() {
@@ -80,12 +82,10 @@ export class LocalBasketActionAdapter implements OnModuleInit {
   }
 
   private async resolveFood(aliases: string[]) {
-    for (const alias of aliases) {
-      const found = await this.shopping['prisma'].foodItem.findFirst({
-        where: { name: { equals: alias, mode: 'insensitive' } },
-      });
-      if (found) return found;
-    }
-    return null;
+    return this.prisma.foodItem.findFirst({
+      where: {
+        OR: aliases.map((alias) => ({ name: { equals: alias, mode: 'insensitive' as const } })),
+      },
+    });
   }
 }
