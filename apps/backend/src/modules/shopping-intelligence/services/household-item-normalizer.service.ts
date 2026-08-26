@@ -14,7 +14,6 @@ const UNIT_ALIASES: Record<string, CanonicalUnit> = {
   milligrams: 'mg',
   میلی‌گرم: 'mg',
   میلیگرم: 'mg',
-  میلی‌گرم: 'mg',
   g: 'g',
   gram: 'g',
   grams: 'g',
@@ -78,31 +77,24 @@ export class HouseholdItemNormalizerService {
 
   normalizeUnit(value: string): CanonicalUnit {
     const key = value.normalize('NFKC').trim().toLocaleLowerCase();
-    const unit = UNIT_ALIASES[key];
-    if (!unit) throw new Error(`Unsupported unit: ${value}`);
-    return unit;
+    return UNIT_ALIASES[key] ?? 'pcs';
   }
 
-  normalizeQuantity(quantity: number, unit: string): { quantity: number; unit: CanonicalUnit } {
-    if (!Number.isFinite(quantity) || quantity < 0) {
-      throw new Error('Quantity must be a finite non-negative number');
-    }
-    return { quantity, unit: this.normalizeUnit(unit) };
+  normalizeQuantity(quantity: number, unit: string) {
+    const normalizedUnit = this.normalizeUnit(unit);
+    return { quantity, unit: normalizedUnit };
   }
 
-  canConvert(fromUnit: string, toUnit: string): boolean {
-    const from = this.normalizeUnit(fromUnit);
-    const to = this.normalizeUnit(toUnit);
-    return UNIT_GROUP[from] === UNIT_GROUP[to];
+  canConvert(from: string, to: string) {
+    const a = this.normalizeUnit(from);
+    const b = this.normalizeUnit(to);
+    return UNIT_GROUP[a] === UNIT_GROUP[b];
   }
 
-  convert(quantity: number, fromUnit: string, toUnit: string): number {
-    const from = this.normalizeUnit(fromUnit);
-    const to = this.normalizeUnit(toUnit);
-    if (UNIT_GROUP[from] !== UNIT_GROUP[to]) {
-      throw new Error(`Incompatible units: ${from} -> ${to}`);
-    }
-    if (!Number.isFinite(quantity)) throw new Error('Quantity must be finite');
-    return (quantity * TO_BASE[from]) / TO_BASE[to];
+  convert(quantity: number, from: string, to: string) {
+    const a = this.normalizeUnit(from);
+    const b = this.normalizeUnit(to);
+    if (UNIT_GROUP[a] !== UNIT_GROUP[b]) throw new Error(`Cannot convert ${a} to ${b}`);
+    return (quantity * TO_BASE[a]) / TO_BASE[b];
   }
 }
