@@ -111,15 +111,14 @@ export class ContextualCommandService {
 
   private splitClauses(text: string): string[] {
     return text
-      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|but|then|also|plus|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e|depois|e depois|и потом|и|sonra|ve sonra|ve|そして|それから|然后|之后|ثم)\s+|\s+و\s+(?=بعد\s+)|\s+(?=بعد\s+))/iu)
-      .map((part) => part.trim())
+      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|but|then|also|plus|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e|depois|e depois|и потом|и|sonra|ve sonra|ve|そして|それから|然后|之后|و بعدش|و همچنین|سپس|هم|یا|ولی|اما|ثم)\s+|\s+و\s+(?=بعد\s+)|(?<=،)\s*(?=然后|然後|そして|それから))\n      .map((part) => part.trim())
       .filter(Boolean);
   }
 
   private detectContradictions(text: string, intents: ContextualCommand['operation'][], entities: ContextualCommand['entities']): string[] {
     const issues: string[] = [];
     if (intents.includes('cancel') && intents.includes('create')) issues.push('create_and_cancel_same_turn');
-    if (entities.negated && intents.includes('create') && !this.matches(text, ['بدون', 'نذار', 'نمیخوام', 'without', 'sin', 'sans', 'ohne', 'sem', 'без', 'なし', '不含', 'do not', "don't", 'does not', 'did not'])) issues.push('negation_create_ambiguity');
+    if (entities.negated && intents.includes('create')) issues.push('negation_create_ambiguity');
     return issues;
   }
 
