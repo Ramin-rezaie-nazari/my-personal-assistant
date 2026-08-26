@@ -19,12 +19,14 @@ import { ShoppingListPersistenceService } from '../services/shopping-list-persis
 import { ShoppingPriceProviderService } from '../services/shopping-price-provider.service';
 import { PersistentConsumptionForecastService } from '../services/persistent-consumption-forecast.service';
 import { ShoppingGlobalContextService } from '../services/shopping-global-context.service';
+import { ShoppingPlanOrchestratorService } from '../services/shopping-plan-orchestrator.service';
 
 @Controller('shopping-intelligence')
 @UseGuards(JwtAuthGuard)
 export class ShoppingIntelligenceController {
   constructor(
     private readonly shoppingService: ShoppingIntelligenceService,
+    private readonly shoppingPlan: ShoppingPlanOrchestratorService,
     private readonly shoppingList: ShoppingListPersistenceService,
     private readonly priceProviders: ShoppingPriceProviderService,
     private readonly forecasts: PersistentConsumptionForecastService,
@@ -32,8 +34,13 @@ export class ShoppingIntelligenceController {
   ) {}
 
   @Get()
-  getShoppingPlan() {
-    return this.shoppingService.createShoppingPlan();
+  getShoppingPlan(@Request() req: { user: { id: string } }, @Query('budget') budget?: string) {
+    return this.shoppingPlan.build(req.user.id, budget ? Number(budget) : 0);
+  }
+
+  @Get('legacy')
+  getLegacyShoppingPlan(@Request() req: { user: { id: string } }) {
+    return this.shoppingService.createShoppingPlan(req.user.id);
   }
 
   @Get('context')
