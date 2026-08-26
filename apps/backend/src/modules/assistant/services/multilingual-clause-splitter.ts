@@ -6,11 +6,25 @@ const SENTENCE_BOUNDARY = /[;；.。!?！？]+\s*/u;
 
 /**
  * Deterministically splits natural multi-intent utterances into executable clauses.
- * Conjunctions used purely as coordination are consumed at the boundary.
- * Temporal "then" is preserved only when it starts a new sentence-level clause,
- * because that marker is semantically useful to downstream understanding.
+ * Coordination markers are consumed; sentence-level temporal "then" is preserved.
  */
 export function splitMultilingualClauses(input: string): string[] {
+  return splitDetailedInternal(input).map(({ clause }) => clause);
+}
+
+/**
+ * Backward-compatible detail API used by semantic understanding.
+ * Markers are intentionally reported as `and` for clause boundaries so the
+ * existing consumer does not re-add coordinating/temporal markers.
+ */
+export function splitMultilingualClausesDetailed(input: string): Array<{ clause: string; marker?: string }> {
+  return splitMultilingualClauses(input).map((clause, index) => ({
+    clause,
+    marker: index === 0 ? undefined : 'and',
+  }));
+}
+
+function splitDetailedInternal(input: string): Array<{ clause: string }> {
   const source = input.trim();
   if (!source) return [];
 
@@ -18,29 +32,29 @@ export function splitMultilingualClauses(input: string): string[] {
     .split(SENTENCE_BOUNDARY)
     .flatMap((sentence) => splitSentence(sentence))
     .map(normalizeClause)
-    .filter(Boolean);
+    .filter(Boolean)
+    .map((clause) => ({ clause }));
 }
 
 function splitSentence(sentence: string): string[] {
   let parts = [sentence.trim()].filter(Boolean);
 
-  parts = parts.flatMap((part) => splitAndTemporalConnectors(part));
-  parts = parts.flatMap((part) => splitCoordinatingConnectors(part));
-  parts = parts.flatMap((part) => splitFarsiConnector(part));
-  parts = parts.flatMap((part) => splitCjkConnector(part));
+  parts = parts.flatMap(splitTemporalConnector);
+  parts = parts.flatMap(splitCoordinatingConnectors);
+  parts = parts.flatMap(splitFarsiConnector);
+  parts = parts.flatMap(splitCjkConnector);
 
   return parts.filter(Boolean);
 }
 
-function splitAndTemporalConnectors(part: string): string[] {
+function splitTemporalConnector(part: string): string[] {
   const match = part.match(TEMPORAL_CONNECTOR);
   if (!match || match.index === undefined) return [part];
 
   const left = part.slice(0, match.index).trim();
-  const marker = match[1];
   const right = part.slice(match.index + match[0].length).trim();
-
-  // In a sentence-level clause, "then" is preserved as part of the next clause.
+  // Temporal marker is intentionally preserved inside a sentence-level clause.
+  const marker = match[1]?.trim();
   return [left, `${marker} ${right}`.trim()].filter(Boolean);
 }
 
