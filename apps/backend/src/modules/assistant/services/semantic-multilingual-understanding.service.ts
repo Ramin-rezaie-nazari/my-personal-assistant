@@ -6,7 +6,7 @@ import {
   type LocalUnderstanding,
   type SupportedLocalLanguage,
 } from './local-language-understanding.service';
-import { splitMultilingualClauses } from './multilingual-clause-splitter';
+import { splitMultilingualClausesDetailed } from './multilingual-clause-splitter';
 
 type IntentCandidate = {
   intent: Exclude<LocalIntent, 'UNKNOWN'>;
@@ -310,27 +310,7 @@ export class SemanticMultilingualUnderstandingService {
   }
 
   splitClauses(input: string): string[] {
-    const clauses = splitMultilingualClauses(input);
-    if (clauses.length < 2) return clauses;
-
-    const marker = this.extractTrailingSemanticMarker(input);
-    if (!marker) return clauses;
-
-    const last = clauses.length - 1;
-    if (!this.hasLeadingSemanticMarker(clauses[last])) {
-      clauses[last] = `${marker} ${clauses[last]}`.trim();
-    }
-    return clauses;
-  }
-
-  private extractTrailingSemanticMarker(input: string): 'then' | 'بعد' | undefined {
-    if (/\bthen\s+[^.;!?]*$/iu.test(input)) return 'then';
-    if (/(?:^|\s)و\s+بعد\s+[^.;!?]*$/u.test(input)) return 'بعد';
-    return undefined;
-  }
-
-  private hasLeadingSemanticMarker(clause: string): boolean {
-    return /^(?:then|بعد)\s+/iu.test(clause);
+    return splitMultilingualClausesDetailed(input).map(({ clause, marker }) => (marker && marker !== 'and' ? `${marker} ${clause}` : clause));
   }
 
   private rank(language: SupportedLocalLanguage, normalized: string): IntentCandidate[] {
