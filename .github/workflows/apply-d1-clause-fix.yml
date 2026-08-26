@@ -1,0 +1,57 @@
+name: Apply D1 Clause Fix
+
+on:
+  push:
+    branches:
+      - 'work/fix-multilingual-clause-splitting-d1-final'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply source integration
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          root = Path('apps/backend/src/modules/assistant/services')
+          contextual = root / 'contextual-command.service.ts'
+          semantic = root / 'semantic-multilingual-understanding.service.ts'
+          utility_import = "import { splitMultilingualClauses } from './multilingual-clause-splitter';\n"
+
+          c = contextual.read_text()
+          if utility_import not in c:
+              c = c.replace("import { ConversationContextService } from './conversation-context.service';\n", "import { ConversationContextService } from './conversation-context.service';\n" + utility_import, 1)
+          start = c.index("  private splitClauses(text: string): string[] {")
+          end = c.index("\n  private detectContradictions", start)
+          c = c[:start] + "  private splitClauses(text: string): string[] {\n    return splitMultilingualClauses(text);\n  }\n" + c[end:]
+          contextual.write_text(c)
+
+          s = semantic.read_text()
+          if utility_import not in s:
+              s = s.replace("} from './local-language-understanding.service';\n", "} from './local-language-understanding.service';\n" + utility_import, 1)
+          start = s.index("  splitClauses(input: string): string[] {")
+          end = s.index("\n  private rank(", start)
+          s = s[:start] + "  splitClauses(input: string): string[] {\n    return splitMultilingualClauses(input);\n  }\n" + s[end:]
+          semantic.write_text(s)
+
+          spec = root / 'multilingual-clause-splitter.spec.ts'
+          if not spec.exists():
+              spec.write_text('''import { splitMultilingualClauses } from './multilingual-clause-splitter';\n\ndescribe('splitMultilingualClauses', () => {\n  it('splits natural multilingual requests', () => {\n    expect(splitMultilingualClauses('remind me tomorrow and add chicken to my basket')).toEqual(['remind me tomorrow', 'add chicken to my basket']);\n    expect(splitMultilingualClauses('rappelle-moi demain et puis ajoute le poulet au panier')).toEqual(['rappelle-moi demain', 'ajoute le poulet au panier']);\n    expect(splitMultilingualClauses('erinnere mich morgen und füge hühnchen zum warenkorb hinzu')).toEqual(['erinnere mich morgen', 'füge hühnchen zum warenkorb hinzu']);\n  });\n  it('splits Persian coordination', () => {\n    expect(splitMultilingualClauses('یادم بنداز فردا و بعد مرغ رو به سبد اضافه کن')).toEqual(['یادم بنداز فردا', 'مرغ رو به سبد اضافه کن']);\n  });\n  it('splits CJK with and without whitespace', () => {\n    expect(splitMultilingualClauses('明天提醒我，然后把鸡肉放进购物车')).toEqual(['明天提醒我', '把鸡肉放进购物车']);\n    expect(splitMultilingualClauses('明天提醒我 然后把鸡肉放进购物车')).toEqual(['明天提醒我', '把鸡肉放进购物车']);\n    expect(splitMultilingualClauses('今夜思い出させて、それから鶏肉をカートに入れて')).toEqual(['今夜思い出させて', '鶏肉をカートに入れて']);\n  });\n  it('keeps sentence boundaries deterministic', () => {\n    expect(splitMultilingualClauses('remind me tomorrow; add chicken to my basket. then tell me calories')).toEqual(['remind me tomorrow', 'add chicken to my basket', 'tell me calories']);\n    expect(splitMultilingualClauses('   ')).toEqual([]);\n  });\n});\n''')
+          Path('.github/workflows/apply-d1-clause-fix.yml').unlink()
+          PY
+      - name: Commit source integration
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/backend/src/modules/assistant/services .github/workflows/apply-d1-clause-fix.yml
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m 'fix(assistant): harden multilingual clause segmentation'
+          git push origin HEAD:work/fix-multilingual-clause-splitting-d1-final
