@@ -40,7 +40,6 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     ContextService,
     ReasoningService,
     RecommendationService,
-    PlanningService,
     NaturalActionExecutionService,
     ConversationHistoryService,
     ConversationContextService,
