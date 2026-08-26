@@ -24,18 +24,12 @@ import { LocalLanguageUnderstandingService } from './services/local-language-und
 import { SemanticMultilingualUnderstandingService } from './services/semantic-multilingual-understanding.service';
 import { MultilingualConstraintExtractionService } from './services/multilingual-constraint-extraction.service';
 import { HouseholdAssistantReadService } from './services/household-assistant-read.service';
+import { HouseholdNaturalCommandService } from './services/household-natural-command.service';
 import { LocalIntelligenceProvider } from './providers/local-intelligence.provider';
 import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter';
 
 @Module({
-  imports: [
-    PrismaModule,
-    PersonalBrainModule,
-    ShoppingModule,
-    ShoppingIntelligenceModule,
-    InventoryModule,
-    RecipesModule,
-  ],
+  imports: [PrismaModule, PersonalBrainModule, ShoppingModule, ShoppingIntelligenceModule, InventoryModule, RecipesModule],
   controllers: [AssistantController],
   providers: [
     KnowledgeService,
@@ -46,6 +40,7 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     ContextService,
     ReasoningService,
     RecommendationService,
+    PlanningService,
     NaturalActionExecutionService,
     ConversationHistoryService,
     ConversationContextService,
@@ -55,6 +50,7 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     SemanticMultilingualUnderstandingService,
     MultilingualConstraintExtractionService,
     HouseholdAssistantReadService,
+    HouseholdNaturalCommandService,
     LocalIntelligenceProvider,
     LocalBasketActionAdapter,
   ],
@@ -73,6 +69,7 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     SemanticMultilingualUnderstandingService,
     MultilingualConstraintExtractionService,
     HouseholdAssistantReadService,
+    HouseholdNaturalCommandService,
   ],
 })
 export class AssistantModule {}
