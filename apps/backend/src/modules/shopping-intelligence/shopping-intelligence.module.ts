@@ -18,6 +18,7 @@ import { ShoppingListPersistenceService } from './services/shopping-list-persist
 import { ShoppingPriceProviderService } from './services/shopping-price-provider.service';
 import { ShoppingBudgetPolicyService } from './services/shopping-budget-policy.service';
 import { ShoppingGlobalContextService } from './services/shopping-global-context.service';
+import { PersistentConsumptionForecastService } from './services/persistent-consumption-forecast.service';
 
 @Module({
   controllers: [ShoppingIntelligenceController],
@@ -40,6 +41,7 @@ import { ShoppingGlobalContextService } from './services/shopping-global-context
     ShoppingPriceProviderService,
     ShoppingBudgetPolicyService,
     ShoppingGlobalContextService,
+    PersistentConsumptionForecastService,
   ],
   exports: [
     ShoppingIntelligenceService,
@@ -60,6 +62,7 @@ import { ShoppingGlobalContextService } from './services/shopping-global-context
     ShoppingPriceProviderService,
     ShoppingBudgetPolicyService,
     ShoppingGlobalContextService,
+    PersistentConsumptionForecastService,
   ],
 })
 export class ShoppingIntelligenceModule {}
