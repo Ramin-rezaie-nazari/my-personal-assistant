@@ -21,50 +21,69 @@ export class HouseholdConsumptionLearningService {
   private readonly events = new Map<string, ConsumptionEvent[]>();
 
   record(event: ConsumptionEvent): ConsumptionEvent {
-    if (event.quantity <= 0)
+    if (event.quantity <= 0) {
       throw new Error('Consumption quantity must be positive');
+    }
     const history = this.events.get(event.productKey) ?? [];
-    history.push({ ...event, source: event.source ?? 'manual' });
+    const storedEvent = { ...event, source: event.source ?? 'manual' };
+    history.push(storedEvent);
     history.sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
     this.events.set(event.productKey, history.slice(-500));
-    return event;
+    return storedEvent;
   }
 
   forecast(productKey: string, now = new Date()): ConsumptionForecast {
-    const history = this.events.get(productKey) ?? [];
-    if (history.length < 2)
+    return this.forecastFromHistory(productKey, this.history(productKey), now);
+  }
+
+  forecastFromHistory(
+    productKey: string,
+    history: ConsumptionEvent[],
+    now = new Date(),
+  ): ConsumptionForecast {
+    const normalized = history
+      .filter((event) => event.quantity > 0 && Number.isFinite(event.quantity))
+      .map((event) => ({ ...event }))
+      .sort((a, b) => a.occurredAt.getTime() - b.occurredAt.getTime());
+
+    if (normalized.length < 2) {
       return {
         productKey,
         dailyRate: 0,
         confidence: 0,
         daysObserved: 0,
-        sampleCount: history.length,
+        sampleCount: normalized.length,
         next7DayNeed: 0,
         next30DayNeed: 0,
       };
-    const first = history[0].occurredAt.getTime();
-    const last = history[history.length - 1].occurredAt.getTime();
+    }
+
+    const first = normalized[0].occurredAt.getTime();
+    const last = normalized[normalized.length - 1].occurredAt.getTime();
     const spanDays = Math.max(1, (last - first) / 86_400_000);
-    const total = history.reduce((sum, event) => sum + event.quantity, 0);
+    const total = normalized.reduce((sum, event) => sum + event.quantity, 0);
     const dailyRate = total / spanDays;
-    const recent = history.filter(
+    const recent = normalized.filter(
       (event) => now.getTime() - event.occurredAt.getTime() <= 30 * 86_400_000,
     );
+    const recencyScore = recent.length / Math.max(1, normalized.length);
     const confidence = Math.max(
       0,
       Math.min(
         1,
-        0.25 +
-          Math.min(0.5, recent.length / 20) +
-          Math.min(0.25, spanDays / 60),
+        0.2 +
+          Math.min(0.45, normalized.length / 20) +
+          Math.min(0.2, spanDays / 60) +
+          Math.min(0.15, recencyScore * 0.15),
       ),
     );
+
     return {
       productKey,
       dailyRate,
       confidence,
       daysObserved: spanDays,
-      sampleCount: history.length,
+      sampleCount: normalized.length,
       next7DayNeed: dailyRate * 7,
       next30DayNeed: dailyRate * 30,
     };

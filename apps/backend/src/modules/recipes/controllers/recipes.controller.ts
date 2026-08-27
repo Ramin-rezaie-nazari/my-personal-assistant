@@ -16,6 +16,7 @@ import { RecipesService } from '../services/recipes.service';
 import { RecipeInventoryMatcherService } from '../services/recipe-inventory-matcher.service';
 import { GlobalCountryFoodService } from '../services/global-country-food.service';
 import { FoodOperatingLoopService } from '../services/food-operating-loop.service';
+import { RecipeShoppingConsolidationService } from '../services/recipe-shopping-consolidation.service';
 import { CreateRecipeDto } from '../dto/create-recipe.dto';
 
 @Controller('recipes')
@@ -26,6 +27,7 @@ export class RecipesController {
     private readonly matcher: RecipeInventoryMatcherService,
     private readonly globalCountryFood: GlobalCountryFoodService,
     private readonly foodOperatingLoop: FoodOperatingLoopService,
+    private readonly shoppingConsolidation: RecipeShoppingConsolidationService,
   ) {}
 
   @Post()
@@ -88,6 +90,17 @@ export class RecipesController {
       return { mealType, recipe };
     });
     return { targetServings: servings, countryCode: countryCode.trim().toUpperCase() || null, meals, generatedDeterministically: true };
+  }
+
+  @Post('shopping/consolidate')
+  consolidateShopping(
+    @Request() req: { user: { id: string } },
+    @Body() body: { recipes: Array<{ recipeId: string; servings: number }>; countryCode?: string },
+  ) {
+    if (!Array.isArray(body.recipes) || body.recipes.length === 0) {
+      throw new BadRequestException('recipes must contain at least one recipe');
+    }
+    return this.shoppingConsolidation.build(req.user.id, body.recipes, body.countryCode ?? '');
   }
 
   @Get(':id/food-plan')

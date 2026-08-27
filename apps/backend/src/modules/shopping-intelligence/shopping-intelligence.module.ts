@@ -10,6 +10,18 @@ import { HouseholdInventoryIntelligenceService } from './services/household-inve
 import { HouseholdPurchasePlannerService } from './services/household-purchase-planner.service';
 import { HouseholdConsumptionLearningService } from './services/household-consumption-learning.service';
 import { HouseholdReorderForecastService } from './services/household-reorder-forecast.service';
+import { HouseholdItemNormalizerService } from './services/household-item-normalizer.service';
+import { HouseholdInventoryCoreService } from './services/household-inventory-core.service';
+import { HouseholdShoppingConsolidatorService } from './services/household-shopping-consolidator.service';
+import { HouseholdInventoryPersistenceService } from './services/household-inventory-persistence.service';
+import { ShoppingListPersistenceService } from './services/shopping-list-persistence.service';
+import { ShoppingPriceProviderService } from './services/shopping-price-provider.service';
+import { ShoppingBudgetPolicyService } from './services/shopping-budget-policy.service';
+import { ShoppingGlobalContextService } from './services/shopping-global-context.service';
+import { PersistentConsumptionForecastService } from './services/persistent-consumption-forecast.service';
+import { ShoppingPriceRefreshService } from './services/shopping-price-refresh.service';
+import { ShoppingPlanOrchestratorService } from './services/shopping-plan-orchestrator.service';
+import { HouseholdItemResolutionService } from './services/household-item-resolution.service';
 
 @Module({
   controllers: [ShoppingIntelligenceController],
@@ -24,6 +36,18 @@ import { HouseholdReorderForecastService } from './services/household-reorder-fo
     HouseholdPurchasePlannerService,
     HouseholdConsumptionLearningService,
     HouseholdReorderForecastService,
+    HouseholdItemNormalizerService,
+    HouseholdInventoryCoreService,
+    HouseholdShoppingConsolidatorService,
+    HouseholdInventoryPersistenceService,
+    ShoppingListPersistenceService,
+    ShoppingPriceProviderService,
+    ShoppingBudgetPolicyService,
+    ShoppingGlobalContextService,
+    PersistentConsumptionForecastService,
+    ShoppingPriceRefreshService,
+    ShoppingPlanOrchestratorService,
+    HouseholdItemResolutionService,
   ],
   exports: [
     ShoppingIntelligenceService,
@@ -36,6 +60,18 @@ import { HouseholdReorderForecastService } from './services/household-reorder-fo
     HouseholdPurchasePlannerService,
     HouseholdConsumptionLearningService,
     HouseholdReorderForecastService,
+    HouseholdItemNormalizerService,
+    HouseholdInventoryCoreService,
+    HouseholdShoppingConsolidatorService,
+    HouseholdInventoryPersistenceService,
+    ShoppingListPersistenceService,
+    ShoppingPriceProviderService,
+    ShoppingBudgetPolicyService,
+    ShoppingGlobalContextService,
+    PersistentConsumptionForecastService,
+    ShoppingPriceRefreshService,
+    ShoppingPlanOrchestratorService,
+    HouseholdItemResolutionService,
   ],
 })
 export class ShoppingIntelligenceModule {}

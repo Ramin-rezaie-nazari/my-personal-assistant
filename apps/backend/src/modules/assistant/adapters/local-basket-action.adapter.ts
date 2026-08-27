@@ -1,7 +1,9 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
-import { PrismaService } from '../../../common/database/prisma.service';
 import { DecisionActionAdapterService } from '../../personal-brain/services/decision-action-adapter.service';
 import { DecisionCandidate } from '../../personal-brain/services/unified-decision-engine.service';
+import { ShoppingService } from '../../shopping/shopping.service';
+import { InventoryService } from '../../inventory/inventory.service';
+import { HouseholdItemResolutionService } from '../../shopping-intelligence/services/household-item-resolution.service';
 
 const FOOD_NAMES: Record<string, string[]> = {
   milk: ['milk', 'شیر'],
@@ -16,15 +18,19 @@ const FOOD_NAMES: Record<string, string[]> = {
 @Injectable()
 export class LocalBasketActionAdapter implements OnModuleInit {
   constructor(
-    private readonly prisma: PrismaService,
     private readonly adapters: DecisionActionAdapterService,
+    private readonly shopping: ShoppingService,
+    private readonly inventory: InventoryService,
+    private readonly resolver: HouseholdItemResolutionService,
   ) {}
 
   onModuleInit() {
     this.adapters.register({
       supports: (candidate) =>
         candidate.action === 'add_to_basket' ||
-        candidate.action === 'remove_from_basket',
+        candidate.action === 'remove_from_basket' ||
+        candidate.action === 'consume_inventory' ||
+        candidate.action === 'purchase_inventory',
       execute: (candidate, context) => this.execute(candidate, context),
     });
   }
@@ -33,63 +39,58 @@ export class LocalBasketActionAdapter implements OnModuleInit {
     candidate: DecisionCandidate,
     context: Record<string, unknown>,
   ) {
-    const understanding = context.localUnderstanding as
-      { entities?: Record<string, unknown> } | undefined;
-    const food =
-      typeof understanding?.entities?.food === 'string'
-        ? understanding.entities.food
-        : undefined;
-    const quantity =
-      typeof understanding?.entities?.quantity === 'number'
-        ? understanding.entities.quantity
-        : 1;
+    const understanding = context.localUnderstanding as { entities?: Record<string, unknown> } | undefined;
+    const food = typeof understanding?.entities?.food === 'string' ? understanding.entities.food : undefined;
+    const quantity = typeof understanding?.entities?.quantity === 'number' ? understanding.entities.quantity : 1;
     if (!food) throw new Error('food_entity_missing');
 
+    const userId = context.userId as string;
     const aliases = FOOD_NAMES[food] ?? [food];
-    const foodItem = await this.prisma.foodItem.findFirst({
-      where: {
-        OR: aliases.map((name) => ({
-          name: { equals: name, mode: 'insensitive' as const },
-        })),
-      },
-    });
-    if (!foodItem) throw new Error(`food_not_found:${food}`);
+    let resolved: { id: string; name: string; category: string } | null = null;
+    let ambiguous = false;
+    for (const alias of aliases) {
+      const result = await this.resolver.resolve(userId, alias);
+      if (result.status === 'ambiguous') {
+        ambiguous = true;
+        break;
+      }
+      if (result.status === 'resolved') {
+        resolved = result.item;
+        break;
+      }
+    }
+    if (ambiguous) throw new Error(`food_ambiguous:${food}`);
+    if (!resolved) throw new Error(`food_not_found:${food}`);
 
-    if (candidate.action === 'remove_from_basket') {
-      const result = await this.prisma.shoppingItem.updateMany({
-        where: {
-          userId: context.userId as string,
-          foodId: foodItem.id,
-          completed: false,
-        },
-        data: { completed: true },
+    if (candidate.action === 'add_to_basket') {
+      const item = await this.shopping.addToBasket(userId, {
+        foodId: resolved.id,
+        quantity,
+        unit: 'piece',
+        source: 'assistant',
+        priority: 'normal',
       });
-      return { changed: result.count, foodId: foodItem.id, food };
+      return { id: item.id, foodId: resolved.id, food, quantity: item.quantity };
     }
 
-    const existing = await this.prisma.shoppingItem.findFirst({
-      where: {
-        userId: context.userId as string,
-        foodId: foodItem.id,
-        completed: false,
-      },
-    });
-    const item = existing
-      ? await this.prisma.shoppingItem.update({
-          where: { id: existing.id },
-          data: { quantity: existing.quantity + quantity },
-        })
-      : await this.prisma.shoppingItem.create({
-          data: {
-            userId: context.userId as string,
-            foodId: foodItem.id,
-            name: foodItem.name,
-            quantity,
-            unit: 'unit',
-            source: 'assistant',
-            priority: 'normal',
-          },
-        });
-    return { id: item.id, foodId: foodItem.id, food, quantity: item.quantity };
+    if (candidate.action === 'remove_from_basket') {
+      const result = await this.shopping.listBasket(userId);
+      const item = result.find((entry) => entry.foodId === resolved.id && !entry.completed);
+      if (!item) return { changed: 0, foodId: resolved.id, food };
+      await this.shopping.remove(userId, item.id);
+      return { changed: 1, foodId: resolved.id, food };
+    }
+
+    const inventory = await this.inventory.list(userId);
+    const item = inventory.find((entry) => entry.foodId === resolved.id);
+    if (!item) throw new Error(`inventory_item_not_found:${food}`);
+
+    if (candidate.action === 'consume_inventory') {
+      const updated = await this.inventory.consume(userId, item.id, quantity);
+      return { changed: true, foodId: resolved.id, food, quantity: updated.quantity };
+    }
+
+    const updated = await this.inventory.purchase(userId, item.id, quantity);
+    return { changed: true, foodId: resolved.id, food, quantity: updated.quantity };
   }
 }

@@ -1,9 +1,11 @@
 import { AssistantController } from './assistant.controller';
 
 describe('AssistantController history', () => {
+  const householdCommands = { tryExecute: jest.fn() };
+
   it('passes the authenticated owner and normalized limit to the service', async () => {
     const service = { getHistory: jest.fn().mockResolvedValue([]) };
-    const controller = new AssistantController(service as never);
+    const controller = new AssistantController(service as never, householdCommands as never);
 
     await controller.getHistory({ user: { id: 'u1' } } as never, '40');
 
@@ -12,7 +14,7 @@ describe('AssistantController history', () => {
 
   it('falls back to the default history size for invalid limits', async () => {
     const service = { getHistory: jest.fn().mockResolvedValue([]) };
-    const controller = new AssistantController(service as never);
+    const controller = new AssistantController(service as never, householdCommands as never);
 
     await controller.getHistory(
       { user: { id: 'u1' } } as never,
@@ -24,9 +26,12 @@ describe('AssistantController history', () => {
 });
 
 describe('AssistantController locale propagation', () => {
+  const householdCommands = { tryExecute: jest.fn() };
+
   it('passes the validated preferred locale to the assistant service', async () => {
     const service = { process: jest.fn().mockResolvedValue({ message: 'ok' }) };
-    const controller = new AssistantController(service as never);
+    const controller = new AssistantController(service as never, householdCommands as never);
+    householdCommands.tryExecute.mockResolvedValue({ handled: false, executed: false });
 
     await controller.process(
       { message: 'امشب چی بخورم؟', locale: 'fa-IR' },

@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 
 import { PrismaModule } from '../../common/database/prisma.module';
 import { PersonalBrainModule } from '../personal-brain/personal-brain.module';
+import { ShoppingModule } from '../shopping/shopping.module';
+import { ShoppingIntelligenceModule } from '../shopping-intelligence/shopping-intelligence.module';
+import { InventoryModule } from '../inventory/inventory.module';
+import { RecipesModule } from '../recipes/recipes.module';
 import { AssistantController } from './controllers/assistant.controller';
 import { AssistantService } from './services/assistant.service';
 import { MemoryService } from './services/memory.service';
@@ -19,11 +23,13 @@ import { AiProviderRouterService } from './services/ai-provider-router.service';
 import { LocalLanguageUnderstandingService } from './services/local-language-understanding.service';
 import { SemanticMultilingualUnderstandingService } from './services/semantic-multilingual-understanding.service';
 import { MultilingualConstraintExtractionService } from './services/multilingual-constraint-extraction.service';
+import { HouseholdAssistantReadService } from './services/household-assistant-read.service';
+import { HouseholdNaturalCommandService } from './services/household-natural-command.service';
 import { LocalIntelligenceProvider } from './providers/local-intelligence.provider';
 import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter';
 
 @Module({
-  imports: [PrismaModule, PersonalBrainModule],
+  imports: [PrismaModule, PersonalBrainModule, ShoppingModule, ShoppingIntelligenceModule, InventoryModule, RecipesModule],
   controllers: [AssistantController],
   providers: [
     KnowledgeService,
@@ -42,6 +48,8 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     LocalLanguageUnderstandingService,
     SemanticMultilingualUnderstandingService,
     MultilingualConstraintExtractionService,
+    HouseholdAssistantReadService,
+    HouseholdNaturalCommandService,
     LocalIntelligenceProvider,
     LocalBasketActionAdapter,
   ],
@@ -59,6 +67,8 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     LocalLanguageUnderstandingService,
     SemanticMultilingualUnderstandingService,
     MultilingualConstraintExtractionService,
+    HouseholdAssistantReadService,
+    HouseholdNaturalCommandService,
   ],
 })
 export class AssistantModule {}

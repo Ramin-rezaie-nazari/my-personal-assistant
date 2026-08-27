@@ -35,9 +35,36 @@ export class InventoryController {
   adjust(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
+    @Body() body: { quantity: number; source?: string },
+  ) {
+    return this.inventory.adjust(req.user.id, id, body.quantity, body.source);
+  }
+
+  @Post(':id/consume')
+  consume(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
     @Body('quantity') quantity: number,
   ) {
-    return this.inventory.adjust(req.user.id, id, quantity);
+    return this.inventory.consume(req.user.id, id, quantity);
+  }
+
+  @Post(':id/waste')
+  waste(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Body('quantity') quantity: number,
+  ) {
+    return this.inventory.waste(req.user.id, id, quantity);
+  }
+
+  @Post(':id/purchase')
+  purchase(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Body('quantity') quantity: number,
+  ) {
+    return this.inventory.purchase(req.user.id, id, quantity);
   }
 
   @Delete(':id')

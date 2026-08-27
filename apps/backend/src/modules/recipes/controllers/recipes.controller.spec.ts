@@ -14,11 +14,13 @@ describe('RecipesController food operating loop', () => {
     addMissingToShopping: jest.fn(),
     recommend: jest.fn(),
   };
+  const shoppingConsolidation = { consolidate: jest.fn() };
   const controller = new RecipesController(
     recipesService as never,
     matcher as never,
     globalCountryFood as never,
     foodOperatingLoop as never,
+    shoppingConsolidation as never,
   );
 
   beforeEach(() => jest.clearAllMocks());

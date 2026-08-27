@@ -31,28 +31,38 @@ export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) { return <Ap
 export default function RootLayout() {
   const [bootReady, setBootReady] = useState(false);
   const [targetRoute, setTargetRoute] = useState<'/language' | '/auth' | '/onboarding' | '/'>('/language');
+  const bootRouteGuardPending = useRef(false);
   const segments = useSegments();
   const currentSegment = segments[0];
+
   useEffect(() => {
     let mounted = true;
-    const timeoutId = setTimeout(() => { if (mounted) { setTargetRoute('/language'); setBootReady(true); } }, 700);
-    void Promise.all([getStoredLocale(), hasAuthSession(), getOnboardingState()]).then(([locale, authenticated, onboarding]) => {
+    const resolveBootRoute = (route: '/language' | '/auth' | '/onboarding' | '/') => {
       if (!mounted) return;
-      clearTimeout(timeoutId);
-      if (locale) I18nManager.allowRTL(isRTL(locale));
-      if (!locale) setTargetRoute('/language');
-      else if (!authenticated) setTargetRoute('/auth');
-      else if (!onboarding.completed) setTargetRoute('/onboarding');
-      else setTargetRoute('/');
+      setTargetRoute(route);
+      bootRouteGuardPending.current = true;
       setBootReady(true);
-    }).catch(() => { if (mounted) { clearTimeout(timeoutId); setTargetRoute('/language'); setBootReady(true); } });
+    };
+    const timeoutId = setTimeout(() => resolveBootRoute('/language'), 700);
+    void Promise.all([getStoredLocale(), hasAuthSession(), getOnboardingState()]).then(([locale, authenticated, onboarding]) => {
+      clearTimeout(timeoutId);
+      if (!mounted) return;
+      if (locale) I18nManager.allowRTL(isRTL(locale));
+      if (!locale) resolveBootRoute('/language');
+      else if (!authenticated) resolveBootRoute('/auth');
+      else if (!onboarding.completed) resolveBootRoute('/onboarding');
+      else resolveBootRoute('/');
+    }).catch(() => resolveBootRoute('/language'));
     return () => { mounted = false; clearTimeout(timeoutId); };
   }, []);
+
   useEffect(() => {
-    if (!bootReady) return;
+    if (!bootReady || !bootRouteGuardPending.current) return;
+    bootRouteGuardPending.current = false;
     const onExpectedRoute = (targetRoute === '/language' && currentSegment === 'language') || (targetRoute === '/auth' && currentSegment === 'auth') || (targetRoute === '/onboarding' && currentSegment === 'onboarding') || (targetRoute === '/' && currentSegment == null);
     if (!onExpectedRoute) router.replace(targetRoute);
   }, [bootReady, currentSegment, targetRoute]);
+
   if (!bootReady) return <StartupScreen />;
   const showAssistantDock = currentSegment != null && !['assistant', 'language', 'auth', 'onboarding', 'settings'].includes(currentSegment);
   return <View style={styles.root}>

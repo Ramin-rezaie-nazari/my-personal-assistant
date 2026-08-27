@@ -20,21 +20,22 @@ export class InventoryService {
       include: { food: true },
       orderBy: [{ essential: 'desc' }, { updatedAt: 'desc' }],
     });
-    return this.intelligence
-      .prioritize(
-        items.map((item) => ({
-          productKey: item.foodId,
-          quantity: item.quantity,
-          unit: item.unit,
-          dailyConsumption: item.dailyConsumption,
-          safetyStock: item.safetyStock,
-          essential: item.essential,
-        })),
-      )
-      .map((forecast) => ({
-        ...items.find((item) => item.foodId === forecast.productKey),
-        ...forecast,
-      }));
+    const forecasts = this.intelligence.prioritize(
+      items.map((item) => ({
+        productKey: item.foodId,
+        quantity: item.quantity,
+        unit: item.unit,
+        dailyConsumption: item.dailyConsumption,
+        safetyStock: item.safetyStock,
+        essential: item.essential,
+        expiresAt: item.expiresAt,
+      })),
+    );
+    const byFoodId = new Map(items.map((item) => [item.foodId, item]));
+    return forecasts.flatMap((forecast) => {
+      const item = byFoodId.get(forecast.productKey);
+      return item ? [{ ...item, ...forecast }] : [];
+    });
   }
 
   async create(userId: string, dto: CreateInventoryDto) {
@@ -44,7 +45,10 @@ export class InventoryService {
       where: { id: dto.foodId, OR: [{ userId: null }, { userId }] },
     });
     if (!food) throw new NotFoundException('Food not found');
-    return this.prisma.inventoryItem.upsert({
+    const existing = await this.prisma.inventoryItem.findUnique({
+      where: { userId_foodId: { userId, foodId: dto.foodId } },
+    });
+    const result = await this.prisma.inventoryItem.upsert({
       where: { userId_foodId: { userId, foodId: dto.foodId } },
       update: {
         quantity: dto.quantity,
@@ -66,20 +70,51 @@ export class InventoryService {
       },
       include: { food: true },
     });
+    const delta = result.quantity - (existing?.quantity ?? 0);
+    if (delta !== 0) {
+      await this.appendEvent(userId, dto.foodId, delta > 0 ? 'purchase' : 'adjust', Math.abs(delta), result.unit, 'inventory-create');
+    }
+    return result;
   }
 
-  async adjust(userId: string, id: string, quantity: number) {
+  async adjust(userId: string, id: string, quantity: number, source = 'adjustment') {
     if (quantity < 0)
       throw new BadRequestException('quantity cannot be negative');
     const item = await this.prisma.inventoryItem.findFirst({
       where: { id, userId },
     });
     if (!item) throw new NotFoundException('Inventory item not found');
-    return this.prisma.inventoryItem.update({
+    const delta = quantity - item.quantity;
+    const result = await this.prisma.inventoryItem.update({
       where: { id },
       data: { quantity },
       include: { food: true },
     });
+    if (delta !== 0) {
+      await this.appendEvent(userId, item.foodId, source, Math.abs(delta), item.unit, `inventory-${id}-${Date.now()}`);
+    }
+    return result;
+  }
+
+  async consume(userId: string, id: string, quantity: number, source = 'consume') {
+    return this.decrement(userId, id, quantity, source, 'consume');
+  }
+
+  async waste(userId: string, id: string, quantity: number) {
+    return this.decrement(userId, id, quantity, 'waste', 'waste');
+  }
+
+  async purchase(userId: string, id: string, quantity: number) {
+    if (quantity <= 0) throw new BadRequestException('quantity must be positive');
+    const item = await this.prisma.inventoryItem.findFirst({ where: { id, userId }, include: { food: true } });
+    if (!item) throw new NotFoundException('Inventory item not found');
+    const result = await this.prisma.inventoryItem.update({
+      where: { id },
+      data: { quantity: { increment: quantity } },
+      include: { food: true },
+    });
+    await this.appendEvent(userId, item.foodId, 'purchase', quantity, item.unit, `purchase-${id}-${Date.now()}`);
+    return result;
   }
 
   async remove(userId: string, id: string) {
@@ -89,5 +124,33 @@ export class InventoryService {
     if (!item) throw new NotFoundException('Inventory item not found');
     await this.prisma.inventoryItem.delete({ where: { id } });
     return { deleted: true };
+  }
+
+  private async decrement(userId: string, id: string, quantity: number, source: string, eventType: string) {
+    if (quantity <= 0) throw new BadRequestException('quantity must be positive');
+    const item = await this.prisma.inventoryItem.findFirst({ where: { id, userId }, include: { food: true } });
+    if (!item) throw new NotFoundException('Inventory item not found');
+    if (quantity > item.quantity) throw new BadRequestException('quantity exceeds current inventory');
+    const result = await this.prisma.inventoryItem.update({
+      where: { id },
+      data: { quantity: { decrement: quantity } },
+      include: { food: true },
+    });
+    await this.appendEvent(userId, item.foodId, eventType, quantity, item.unit, `${source}-${id}-${Date.now()}`);
+    return result;
+  }
+
+  private appendEvent(userId: string, foodId: string, type: string, quantity: number, unit: string, idempotencyKey: string) {
+    return this.prisma.inventoryEvent.create({
+      data: {
+        userId,
+        foodId,
+        type,
+        quantity,
+        unit,
+        source: type,
+        idempotencyKey,
+      },
+    });
   }
 }

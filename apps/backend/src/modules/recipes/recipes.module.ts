@@ -2,27 +2,37 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../common/database/prisma.module';
 import { NutritionModule } from '../nutrition/nutrition.module';
 import { ShoppingModule } from '../shopping/shopping.module';
+import { ShoppingIntelligenceModule } from '../shopping-intelligence/shopping-intelligence.module';
 import { BudgetIntelligenceModule } from '../budget-intelligence/budget-intelligence.module';
 import { RecipesController } from './controllers/recipes.controller';
 import { RecipesService } from './services/recipes.service';
 import { RecipeInventoryMatcherService } from './services/recipe-inventory-matcher.service';
 import { GlobalCountryFoodService } from './services/global-country-food.service';
 import { FoodOperatingLoopService } from './services/food-operating-loop.service';
+import { RecipeShoppingConsolidationService } from './services/recipe-shopping-consolidation.service';
 
 @Module({
-  imports: [PrismaModule, NutritionModule, ShoppingModule, BudgetIntelligenceModule],
+  imports: [
+    PrismaModule,
+    NutritionModule,
+    ShoppingModule,
+    ShoppingIntelligenceModule,
+    BudgetIntelligenceModule,
+  ],
   controllers: [RecipesController],
   providers: [
     RecipesService,
     RecipeInventoryMatcherService,
     GlobalCountryFoodService,
     FoodOperatingLoopService,
+    RecipeShoppingConsolidationService,
   ],
   exports: [
     RecipesService,
     RecipeInventoryMatcherService,
     GlobalCountryFoodService,
     FoodOperatingLoopService,
+    RecipeShoppingConsolidationService,
   ],
 })
 export class RecipesModule {}
