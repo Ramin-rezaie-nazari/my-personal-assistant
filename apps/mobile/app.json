@@ -35,6 +35,14 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone for voice conversations.",
           "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to process your speech for voice recognition."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
     ],
     "experiments": {
