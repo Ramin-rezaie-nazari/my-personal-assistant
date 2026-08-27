@@ -5,17 +5,15 @@ const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, '../..');
 const config = getDefaultConfig(projectRoot);
 
-// Keep native app resolution inside the mobile workspace.
-// Backend/web tooling (notably Prisma Studio) has its own React version
-// and must never leak into the native bundle.
+// Keep the mobile app on its own React installation while preserving
+// Metro's normal hierarchical lookup for Expo packages such as
+// @expo/metro-runtime.
 const mobileNodeModules = path.resolve(projectRoot, 'node_modules');
 config.resolver.nodeModulesPaths = [
   mobileNodeModules,
   path.resolve(workspaceRoot, 'node_modules'),
 ];
-config.resolver.disableHierarchicalLookup = true;
 
-// Explicitly pin React to the app's React 19.0.0 installation.
 config.resolver.extraNodeModules = {
   react: path.resolve(mobileNodeModules, 'react'),
 };
