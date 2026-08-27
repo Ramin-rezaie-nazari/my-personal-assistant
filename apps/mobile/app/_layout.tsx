@@ -33,9 +33,17 @@ export default function RootLayout() {
   const [targetRoute, setTargetRoute] = useState<'/language' | '/auth' | '/onboarding' | '/'>('/language');
   const segments = useSegments();
   const currentSegment = segments[0];
+  const initialRouteApplied = useRef(false);
+
   useEffect(() => {
     let mounted = true;
-    const timeoutId = setTimeout(() => { if (mounted) { setTargetRoute('/language'); setBootReady(true); } }, 700);
+    const timeoutId = setTimeout(() => {
+      if (mounted) {
+        setTargetRoute('/language');
+        setBootReady(true);
+      }
+    }, 700);
+
     void Promise.all([getStoredLocale(), hasAuthSession(), getOnboardingState()]).then(([locale, authenticated, onboarding]) => {
       if (!mounted) return;
       clearTimeout(timeoutId);
@@ -45,16 +53,36 @@ export default function RootLayout() {
       else if (!onboarding.completed) setTargetRoute('/onboarding');
       else setTargetRoute('/');
       setBootReady(true);
-    }).catch(() => { if (mounted) { clearTimeout(timeoutId); setTargetRoute('/language'); setBootReady(true); } });
-    return () => { mounted = false; clearTimeout(timeoutId); };
+    }).catch(() => {
+      if (mounted) {
+        clearTimeout(timeoutId);
+        setTargetRoute('/language');
+        setBootReady(true);
+      }
+    });
+
+    return () => {
+      mounted = false;
+      clearTimeout(timeoutId);
+    };
   }, []);
+
   useEffect(() => {
-    if (!bootReady) return;
-    const onExpectedRoute = (targetRoute === '/language' && currentSegment === 'language') || (targetRoute === '/auth' && currentSegment === 'auth') || (targetRoute === '/onboarding' && currentSegment === 'onboarding') || (targetRoute === '/' && currentSegment == null);
+    if (!bootReady || initialRouteApplied.current) return;
+    const onExpectedRoute =
+      (targetRoute === '/language' && currentSegment === 'language') ||
+      (targetRoute === '/auth' && currentSegment === 'auth') ||
+      (targetRoute === '/onboarding' && currentSegment === 'onboarding') ||
+      (targetRoute === '/' && currentSegment == null);
+
+    initialRouteApplied.current = true;
     if (!onExpectedRoute) router.replace(targetRoute);
   }, [bootReady, currentSegment, targetRoute]);
+
   if (!bootReady) return <StartupScreen />;
+
   const showAssistantDock = currentSegment != null && !['assistant', 'language', 'auth', 'onboarding', 'settings'].includes(currentSegment);
+
   return <View style={styles.root}>
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: PREMIUM.colors.canvas }, animation: 'fade' }}>
       <Stack.Screen name="index" options={{ animation: 'fade' }} />
