@@ -2,6 +2,18 @@
 
 Goal: make the first-use experience feel polished, lively, coherent, personal, and unmistakably MYPA before adding more product surface area.
 
+## Critical — MYPA voice assistant must work
+- [ ] Fix the main-screen MYPA voice orb so tapping it reliably enters a real listening state instead of spinning indefinitely.
+- [ ] Verify Android speech-recognition service discovery and explicitly support the Google speech recognition service on compatible devices.
+- [ ] Ensure microphone permission is requested/checked correctly before starting recognition.
+- [ ] Check speech-recognition availability before entering the listening animation.
+- [ ] Surface a real user-facing error when speech recognition is unavailable, rather than leaving the UI in a perpetual loading/listening state.
+- [ ] Verify Persian (`fa-IR`) speech recognition on the connected Android phone.
+- [ ] Verify voice transcript → `/assistant` API → assistant response → TTS end-to-end.
+- [ ] Rebuild the native Android app after speech-recognition config changes; Metro reload alone is not sufficient for native plugin changes.
+- [ ] Add an explicit manual stop/retry path for listening failures.
+- [ ] Keep voice behavior independent of Supabase during local development.
+
 ## Language screen
 - [x] Replace standalone green visual palette with the MYPA visual system.
 - [x] Improve logo treatment and overall composition.
@@ -78,6 +90,18 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 - [ ] Ensure this screen is clearly and exclusively about exercise setup, equipment, and available session time.
 - [ ] Review whether the current split between equipment and duration is the cleanest UX.
 - [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
+- [ ] Keep exercise location simple: home and gym are the primary choices.
+- [ ] Offer session durations: 20 min, 30 min, 45 min, 60 min, 90 min, 2 hours, 3 hours.
+
+## Permissions — first-run access model
+- [ ] Build a clear first-run Permissions experience explaining why each access is useful to MYPA before OS prompts appear.
+- [ ] Location → local food/context recommendations and country/region detection.
+- [ ] Microphone → voice conversations with MYPA.
+- [ ] Camera → movement/form coaching when the user chooses to use it.
+- [ ] Notifications → reminders, food plans, workouts, habits, and scheduled actions.
+- [ ] Photos/media only when a later feature genuinely needs it.
+- [ ] Handle Allow / Deny / Re-request states cleanly without locking the user out of onboarding.
+- [ ] Keep permission behavior local-development friendly and ready for later Supabase migration.
 
 ## Shared visual direction — all onboarding screens
 - [ ] Create a cohesive premium visual composition shared by all screens rather than a collection of plain forms.
@@ -101,4 +125,5 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 - [ ] Test short screens, long text, and keyboard/scroll interactions.
 - [ ] Test first-launch permission behavior for location and graceful denial/fallback.
 - [ ] Build and verify on the connected Android phone.
+- [ ] Verify voice assistant on the connected Android phone as a blocking acceptance criterion.
 - [ ] Only after this visual pass is stable, continue with the next product task.
