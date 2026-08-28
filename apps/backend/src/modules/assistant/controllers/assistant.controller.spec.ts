@@ -22,3 +22,17 @@ describe('AssistantController history', () => {
     expect(service.getHistory).toHaveBeenCalledWith('u1', 24);
   });
 });
+
+describe('AssistantController locale propagation', () => {
+  it('passes the validated preferred locale to the assistant service', async () => {
+    const service = { process: jest.fn().mockResolvedValue({ message: 'ok' }) };
+    const controller = new AssistantController(service as never);
+
+    await controller.process(
+      { message: 'امشب چی بخورم؟', locale: 'fa-IR' },
+      { user: { id: 'u1' } } as never,
+    );
+
+    expect(service.process).toHaveBeenCalledWith('امشب چی بخورم؟', 'u1', 'fa-IR');
+  });
+});
