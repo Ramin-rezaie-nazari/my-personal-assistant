@@ -4,15 +4,15 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 
 ## Critical — MYPA voice assistant must work
 - [ ] Fix the main-screen MYPA voice orb so tapping it reliably enters a real listening state instead of spinning indefinitely.
-- [ ] Verify Android speech-recognition service discovery and explicitly support the Google speech recognition service on compatible devices.
-- [ ] Ensure microphone permission is requested/checked correctly before starting recognition.
-- [ ] Check speech-recognition availability before entering the listening animation.
-- [ ] Surface a real user-facing error when speech recognition is unavailable, rather than leaving the UI in a perpetual loading/listening state.
+- [x] Verify Android speech-recognition service discovery and explicitly support the Google speech recognition service on compatible devices.
+- [x] Ensure microphone permission is requested/checked correctly before starting recognition.
+- [x] Check speech-recognition availability before entering the listening animation.
+- [x] Surface a real user-facing error when speech recognition is unavailable, rather than leaving the UI in a perpetual loading/listening state.
 - [ ] Verify Persian (`fa-IR`) speech recognition on the connected Android phone.
 - [ ] Verify voice transcript → `/assistant` API → assistant response → TTS end-to-end.
 - [ ] Rebuild the native Android app after speech-recognition config changes; Metro reload alone is not sufficient for native plugin changes.
-- [ ] Add an explicit manual stop/retry path for listening failures.
-- [ ] Keep voice behavior independent of Supabase during local development.
+- [x] Add an explicit manual stop/retry path for listening failures.
+- [x] Keep voice behavior independent of Supabase during local development.
 
 ## Language screen
 - [x] Replace standalone green visual palette with the MYPA visual system.
@@ -90,7 +90,7 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 - [ ] Ensure this screen is clearly and exclusively about exercise setup, equipment, and available session time.
 - [ ] Review whether the current split between equipment and duration is the cleanest UX.
 - [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
-- [ ] Keep exercise location simple: home and gym are the primary choices.
+- [x] Keep exercise location simple: home and gym are the primary choices.
 - [ ] Offer session durations: 20 min, 30 min, 45 min, 60 min, 90 min, 2 hours, 3 hours.
 
 ## Permissions — first-run access model
