@@ -78,7 +78,10 @@ export async function getOnboardingState(): Promise<OnboardingState> {
   const raw = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
   if (!raw) return DEFAULT_ONBOARDING;
   try {
-    return mergeOnboardingState(JSON.parse(raw) as Partial<OnboardingState>);
+    const parsed = JSON.parse(raw) as Partial<OnboardingState>;
+    const migrated = mergeOnboardingState(parsed);
+    if (parsed.version !== ONBOARDING_VERSION) return { ...migrated, completed: false };
+    return migrated;
   } catch {
     return DEFAULT_ONBOARDING;
   }
