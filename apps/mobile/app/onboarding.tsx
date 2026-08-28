@@ -1,186 +1,283 @@
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Easing, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Easing, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Camera from 'expo-camera';
+import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
-import type { AppLocale } from '../lib/i18n';
-import { getStoredLocale } from '../lib/i18n';
-import { DEFAULT_ONBOARDING, OnboardingState, setOnboardingState } from '../lib/onboarding';
+import { AppLocale, getStoredLocale } from '../lib/i18n';
 import { BRAND } from '../lib/branding';
 import { BrandWordmark } from '../components/BrandWordmark';
-
-const steps = [0, 1, 2, 3, 4] as const;
+import { DEFAULT_ONBOARDING, OnboardingState, calculateBMI, setOnboardingState } from '../lib/onboarding';
 
 const COPY = {
-  en: {
-    eyebrow: 'MAKE MYPA YOURS',
-    titles: ['What is your main goal for food and exercise?', 'Where are you today?', 'How should your nutrition feel?', 'Where should I learn from?', 'How do you like to train?'],
-    subtitles: ['Choose the outcome you want MYPA to help you work toward every day.', 'Your plan should match your current experience so it feels challenging, not overwhelming.', 'Your food plan should fit the way you already want to eat.', 'Local context helps recipes, routines and suggestions feel more natural.', 'Tell me your setup and available time so I can make workouts realistic.'],
-    next: 'Continue', start: 'Meet my assistant', back: 'Back', required: 'Pick one to continue.',
-    goalHint: 'This shapes both your nutrition and training recommendations.',
-    fitnessHint: 'You can change this later as you progress.',
-    dietHint: 'Nothing is permanent — MYPA can adapt with you.',
-    countryHint: 'Used only to make recommendations feel more local.',
-    equipment: 'Where will you train?', session: 'How much time do you usually have?',
-  },
   fa: {
-    eyebrow: 'MYPA را شخصی کن',
-    titles: ['هدف اصلی‌ات از تغذیه و ورزش چیه؟', 'الان در چه سطحی هستی؟', 'تغذیه‌ات دوست داری چه مدلی باشه؟', 'از کجا با تو یاد بگیرم؟', 'چطور دوست داری تمرین کنی؟'],
-    subtitles: ['انتخابت هم پیشنهادهای غذایی و هم برنامه تمرینی MYPA را شکل می‌دهد.', 'برنامه باید با سطح فعلی‌ات جور باشد؛ نه زیادی سخت و نه خسته‌کننده.', 'برنامه غذایی باید با سبک زندگی و انتخاب‌های خودت هماهنگ باشد.', 'این اطلاعات کمک می‌کند پیشنهادها و غذاها طبیعی‌تر و محلی‌تر باشند.', 'وسایل و زمانت را بگو تا تمرین‌هایی پیشنهاد بدهم که واقعاً شدنی باشند.'],
-    next: 'ادامه', start: 'بریم سراغ MYPA', back: 'قبلی', required: 'برای ادامه یکی را انتخاب کن.',
-    goalHint: 'این انتخاب هم روی تغذیه اثر می‌گذارد و هم روی تمرینات.',
-    fitnessHint: 'هر وقت پیشرفت کردی می‌توانی بعداً تغییرش بدهی.',
-    dietHint: 'هیچ‌چیز دائمی نیست؛ MYPA خودش را با تو هماهنگ می‌کند.',
-    countryHint: 'فقط برای طبیعی‌تر و کاربردی‌تر شدن پیشنهادها استفاده می‌شود.',
-    equipment: 'کجا تمرین می‌کنی؟', session: 'معمولاً چقدر برای تمرین وقت داری؟',
+    welcomeKicker: 'به MYPA خوش اومدی', welcomeTitle: 'بیا دستیارت رو مخصوص خودت بسازیم.', welcomeBody: 'چند انتخاب کوتاه کافیه تا MYPA هدف‌ها، غذا و تمرینت رو بهتر بشناسه و از همون اول شخصی‌تر کنارت باشه.', start: 'شروع کنیم', permissionsKicker: 'یک قدم برای آماده‌سازی', permissionsTitle: 'ابزارهای MYPA رو فعال کن.', permissionsBody: 'این دسترسی‌ها برای قابلیت‌های اصلی MYPA لازمن؛ کنترلشون همیشه دست خودته.', continue: 'ادامه', later: 'فعلاً رد می‌کنم', enabled: 'فعال', unavailable: 'فعال نشد', location: 'موقعیت مکانی', locationHint: 'برای تشخیص کشور و پیشنهادهای غذایی محلی', microphone: 'میکروفن', microphoneHint: 'برای صحبت کردن با MYPA', camera: 'دوربین', cameraHint: 'برای مربی ورزشی و بررسی فرم حرکات', notifications: 'اعلان‌ها', notificationsHint: 'برای یادآوری‌ها و برنامه‌های روزانه', found: 'کشورت رو پیدا کردم', profileKicker: 'درباره تو', profileTitle: 'از مهم‌ترین اطلاعات شروع کنیم.', profileBody: 'قد، وزن، سن و جنسیت کمک می‌کنن کالری، BMI و پیشنهادهای تمرینی و غذایی دقیق‌تر بشن.', gender: 'جنسیت', female: 'زن', male: 'مرد', other: 'سایر', preferNot: 'ترجیح می‌دم نگویم', age: 'سن', height: 'قد', weight: 'وزن', years: 'سال', cm: 'سانتی‌متر', kg: 'کیلو', bmi: 'BMI', bmiHint: 'فقط یکی از شاخص‌های شخصی‌سازی است و تشخیص پزشکی نیست.', goalKicker: '۰۱ · هدف تو', goal: 'هدفت از تمرینات ورزشی و برنامه غذایی چیه؟', goalBody: 'با جواب دادن به این سؤال‌ها بهتر می‌تونم کمکت کنم تا به هدفت برسی.', fatLoss: 'کاهش چربی و کاهش وزن', sculpt: 'خوش‌فرم شدن', strength: 'عضله‌سازی و قدرت بیشتر', health: 'سلامت و تناسب اندام عمومی', levelKicker: '۰۲ · سطح تو', level: 'چه سطحی از تمرینات ورزشی برای شما مناسبه؟', levelBody: 'سطحت رو بگو تا برنامه از همون جایی شروع بشه که واقعاً برات مناسبه.', beginner: 'تازه‌کارم', beginnerHint: 'آرام و قدم‌به‌قدم', foundation: 'یکم تجربه دارم', foundationHint: 'ساختن پایه محکم', intermediate: 'متوسط', intermediateHint: 'آماده رشد و چالش', advanced: 'پیشرفته', advancedHint: 'برنامه دقیق‌تر و حرفه‌ای‌تر', foodKicker: '۰۳ · غذای تو', food: 'دوست داری برنامه غذاییت چجوری باشه؟', foodBody: 'از این به بعد بهتر می‌تونم غذاهایی رو بهت معرفی کنم که بیشتر خوشت بیاد.', balanced: 'متعادل و منعطف', protein: 'پروتئین بالا', vegetarian: 'گیاهخواری', vegan: 'وگان', dietWeightLoss: 'تمرکز بیشتر روی کاهش وزن', exerciseKicker: '۰۴ · روال تو', exercise: 'کجا و چقدر دوست داری تمرین کنی؟', exerciseBody: 'زمان و محل تمرین رو طوری انتخاب کن که واقعاً بتونی بهش پایبند بمونی.', home: 'خانه', gym: 'باشگاه', minutes20: '۲۰ دقیقه', minutes30: '۳۰ دقیقه', minutes45: '۴۵ دقیقه', minutes60: '۶۰ دقیقه', minutes90: '۹۰ دقیقه', hours2: '۲ ساعت', hours3: '۳ ساعت', back: 'قبلی', finish: 'MYPA من رو بساز', required: 'برای ادامه یکی از گزینه‌ها رو انتخاب کن.', profileRequired: 'اطلاعات لازم رو کامل کن تا شخصی‌سازی دقیق‌تر بشه.'
+  },
+  en: {
+    welcomeKicker: 'WELCOME TO MYPA', welcomeTitle: 'Let’s make your assistant yours.', welcomeBody: 'A few thoughtful choices are enough for MYPA to understand your goals, food and training from day one.', start: 'Get started', permissionsKicker: 'ONE STEP TO SET UP', permissionsTitle: 'Give MYPA the tools it needs.', permissionsBody: 'These permissions unlock the core MYPA experience. You stay in control.', continue: 'Continue', later: 'I’ll decide later', enabled: 'Enabled', unavailable: 'Not enabled', location: 'Location', locationHint: 'Country detection and local food context', microphone: 'Microphone', microphoneHint: 'Voice conversations with MYPA', camera: 'Camera', cameraHint: 'Movement and form coaching', notifications: 'Notifications', notificationsHint: 'Reminders and daily plans', found: 'Your country is ready', profileKicker: 'ABOUT YOU', profileTitle: 'Start with the basics.', profileBody: 'Age, height, weight and gender help MYPA make smarter nutrition, BMI and workout decisions.', gender: 'Gender', female: 'Female', male: 'Male', other: 'Other', preferNot: 'Prefer not to say', age: 'Age', height: 'Height', weight: 'Weight', years: 'years', cm: 'cm', kg: 'kg', bmi: 'BMI', bmiHint: 'One personalization signal, not a medical diagnosis.', goalKicker: '01 · YOUR GOAL', goal: 'What’s your goal for exercise and nutrition?', goalBody: 'By answering these questions, I can help you reach your goal more effectively.', fatLoss: 'Lose fat & weight', sculpt: 'Get in shape', strength: 'Build muscle & strength', health: 'General fitness & health', levelKicker: '02 · YOUR LEVEL', level: 'What exercise level is right for you?', levelBody: 'Tell me where you are today so your plan starts at the right place.', beginner: 'I’m just starting', beginnerHint: 'Gentle and guided', foundation: 'I have some experience', foundationHint: 'Build a solid base', intermediate: 'I train regularly', intermediateHint: 'Ready for a challenge', advanced: 'I’m advanced', advancedHint: 'Precise, advanced planning', foodKicker: '03 · YOUR FOOD', food: 'How do you want your food plan to feel?', foodBody: 'From here on, I can recommend meals you’re more likely to enjoy.', balanced: 'Balanced & flexible', protein: 'High protein', vegetarian: 'Vegetarian', vegan: 'Vegan', dietWeightLoss: 'More focus on weight loss', exerciseKicker: '04 · YOUR ROUTINE', exercise: 'Where and how long do you like to train?', exerciseBody: 'Choose a setup that feels realistic enough to keep doing.', home: 'Home', gym: 'Gym', minutes20: '20 min', minutes30: '30 min', minutes45: '45 min', minutes60: '60 min', minutes90: '90 min', hours2: '2 hours', hours3: '3 hours', back: 'Back', finish: 'Build my MYPA', required: 'Choose one option to continue.', profileRequired: 'Complete the required details so MYPA can personalize better.'
   },
 } as const;
 
-function Aura({ progress }: { progress: number }) {
-  const pulse = useRef(new Animated.Value(0)).current;
-  useEffect(() => {
-    const loop = Animated.loop(Animated.sequence([
-      Animated.timing(pulse, { toValue: 1, duration: 1800, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-      Animated.timing(pulse, { toValue: 0, duration: 1800, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-    ]));
-    loop.start();
-    return () => loop.stop();
-  }, [pulse]);
-  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.07] });
-  const opacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.16, 0.08] });
-  return (
-    <View style={styles.auraWrap}>
-      <Animated.View style={[styles.aura, { transform: [{ scale }], opacity }]} />
-      <View style={styles.auraCore}><Text style={styles.auraMark}>✦</Text></View>
-      <View style={styles.progressTrack}><View style={[styles.progressArc, { width: `${Math.round(progress * 100)}%` }]} /></View>
-    </View>
-  );
-}
+type PermissionKey = keyof OnboardingState['permissions'];
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+
+type Choice = { key: string; label: string; hint?: string; icon: IconName };
 
 export default function OnboardingScreen() {
-  const [step, setStep] = useState(0);
+  const [screen, setScreen] = useState(0);
   const [state, setState] = useState<OnboardingState>(DEFAULT_ONBOARDING);
   const [locale, setLocale] = useState<AppLocale>('en');
   const [busy, setBusy] = useState(false);
+  const [permissionBusy, setPermissionBusy] = useState<PermissionKey | null>(null);
+  const [countryName, setCountryName] = useState('');
   const entry = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => { void getStoredLocale().then((value) => { if (value) setLocale(value); }); }, []);
-  useEffect(() => {
-    entry.setValue(0);
-    Animated.spring(entry, { toValue: 1, tension: 65, friction: 9, useNativeDriver: true }).start();
-  }, [step, entry]);
-
   const rtl = locale === 'fa' || locale.startsWith('fa-');
-  const copy = COPY[rtl ? 'fa' : 'en'];
-  const update = (patch: Partial<OnboardingState>) => setState((current) => ({ ...current, ...patch }));
-  const stepComplete = step === 0 ? Boolean(state.goal) : step === 1 ? Boolean(state.fitnessLevel) : step === 2 ? Boolean(state.diet) : step === 3 ? state.country.trim().length > 0 : Boolean(state.equipment) && Number(state.sessionMinutes) > 0;
-  const progress = (step + (stepComplete ? 1 : 0)) / steps.length;
-  const translateY = entry.interpolate({ inputRange: [0, 1], outputRange: [16, 0] });
+  const copy = rtl ? COPY.fa : COPY.en;
 
-  const finish = async () => {
-    if (!stepComplete) return;
-    try { setBusy(true); await setOnboardingState({ ...state, completed: true }); router.replace('/'); }
-    finally { setBusy(false); }
+  useEffect(() => { void getStoredLocale().then((value) => value && setLocale(value)); }, []);
+  useEffect(() => { entry.setValue(0); Animated.timing(entry, { toValue: 1, duration: 380, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start(); }, [entry, screen]);
+
+  const bmi = useMemo(() => calculateBMI(Number(state.weightKg), Number(state.heightCm)), [state.heightCm, state.weightKg]);
+  const update = (patch: Partial<OnboardingState>) => setState((current) => ({ ...current, ...patch }));
+  const setPermission = (key: PermissionKey, value: OnboardingState['permissions'][PermissionKey]) => setState((current) => ({ ...current, permissions: { ...current.permissions, [key]: value } }));
+
+  const requestPermission = async (key: PermissionKey) => {
+    try {
+      setPermissionBusy(key);
+      if (key === 'location') {
+        const result = await Location.requestForegroundPermissionsAsync();
+        const status = result.status === 'granted' ? 'granted' : result.status === 'denied' ? 'denied' : 'undetermined';
+        setPermission(key, status);
+        if (result.status === 'granted') {
+          try {
+            const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+            const places = await Location.reverseGeocodeAsync(position.coords);
+            const place = places[0];
+            const country = place?.country ?? '';
+            if (country) { setCountryName(country); update({ country, countryCode: place?.isoCountryCode ?? null }); }
+          } catch {}
+        }
+      } else if (key === 'microphone') {
+        const result = await Camera.requestMicrophonePermissionsAsync();
+        setPermission(key, result.status === 'granted' ? 'granted' : result.status === 'denied' ? 'denied' : 'undetermined');
+      } else if (key === 'camera') {
+        const result = await Camera.requestCameraPermissionsAsync();
+        setPermission(key, result.status === 'granted' ? 'granted' : result.status === 'denied' ? 'denied' : 'undetermined');
+      } else {
+        const result = await Notifications.requestPermissionsAsync();
+        setPermission(key, result.granted || result.ios?.status === Notifications.IosAuthorizationStatus.PROVISIONAL ? 'granted' : 'denied');
+      }
+    } catch { setPermission(key, 'unavailable'); } finally { setPermissionBusy(null); }
   };
 
-  const goNext = () => { if (!stepComplete || busy) return; if (step === steps.length - 1) void finish(); else setStep((current) => current + 1); };
+  const requestAll = async () => {
+    for (const key of ['location', 'microphone', 'camera', 'notifications'] as PermissionKey[]) {
+      if (state.permissions[key] !== 'granted') await requestPermission(key);
+    }
+  };
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <View style={[styles.container, rtl && styles.rtl]}>
-        <View style={styles.header}>
-          <View style={styles.brandHeader}><BrandWordmark compact /></View>
-          <View style={styles.counterPill}><Text style={styles.counter}>{step + 1}/{steps.length}</Text></View>
-        </View>
+  const profileComplete = Boolean(state.gender) && Number(state.age) >= 13 && Number(state.age) <= 110 && Number(state.heightCm) >= 80 && Number(state.heightCm) <= 240 && Number(state.weightKg) >= 25 && Number(state.weightKg) <= 300;
+  const questionComplete = screen === 3 ? !!state.goal : screen === 4 ? !!state.fitnessLevel : screen === 5 ? !!state.diet : !!state.exerciseLocation && Number(state.sessionMinutes) > 0;
+  const complete = screen === 0 || screen === 1 || screen === 2 ? true : screen === 2 ? profileComplete : questionComplete;
+  const screenOk = screen === 2 ? profileComplete : complete;
 
-        <ScrollView style={styles.pageScroll} contentContainerStyle={styles.pageContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-          <View style={styles.hero}>
-            <Aura progress={progress} />
-            <Text style={styles.eyebrow}>{copy.eyebrow}</Text>
-            <Animated.View style={{ transform: [{ translateY }], opacity: entry }}>
-              <Text style={styles.title}>{copy.titles[step]}</Text>
-              <Text style={styles.subtitle}>{copy.subtitles[step]}</Text>
-            </Animated.View>
-          </View>
+  const next = async () => {
+    if (busy) return;
+    if (screen === 1) { await requestAll(); setScreen(2); return; }
+    if (!screenOk) return;
+    if (screen === 6) {
+      setBusy(true);
+      await setOnboardingState({ ...state, bmi, completed: true });
+      setBusy(false);
+      router.replace('/');
+      return;
+    }
+    setScreen((value) => value + 1);
+  };
 
-          <Animated.View style={[styles.card, { transform: [{ translateY }], opacity: entry }]}>
-            {step === 0 ? <>
-              <OptionGrid options={[
-                ['fat_loss', rtl ? 'کاهش چربی و کاهش وزن' : 'Lose fat & weight'],
-                ['body_sculpt', rtl ? 'خوش‌فرم شدن' : 'Get in shape'],
-                ['strength', rtl ? 'عضله‌سازی و قدرت بیشتر' : 'Build muscle & strength'],
-                ['general_fitness', rtl ? 'سلامت و تناسب اندام عمومی' : 'General fitness & health'],
-              ]} value={state.goal} onSelect={(value) => update({ goal: value as OnboardingState['goal'] })} />
-              <Text style={styles.helper}>{copy.goalHint}</Text>
-            </> : null}
+  return <SafeAreaView style={styles.safe}>
+    <View style={styles.background} pointerEvents="none"><View style={styles.blobOne} /><View style={styles.blobTwo} /><View style={styles.centerGlow} /></View>
+    <View style={styles.container}>
+      <View style={styles.header}>
+        {screen > 0 ? <Pressable onPress={() => setScreen((value) => Math.max(0, value - 1))} style={styles.navButton}><MaterialCommunityIcons name={rtl ? 'arrow-right' : 'arrow-left'} size={19} color={BRAND.colors.inkSoft} /></Pressable> : <View style={styles.navPlaceholder} />}
+        <View style={styles.brandCenter}><BrandWordmark compact /></View>
+        {screen > 1 ? <View style={styles.progressPill}><Text style={styles.progressText}>{Math.min(screen - 1, 4)} / 4</Text><View style={styles.progressRail}><View style={[styles.progressFill, { width: `${Math.max(8, Math.min(100, ((screen - 1) / 4) * 100))}%` }]} /></View></View> : <View style={styles.navPlaceholder} />}
+      </View>
 
-            {step === 1 ? <>
-              <OptionGrid options={[
-                ['beginner', rtl ? 'تازه‌کارم' : 'Beginner'],
-                ['foundation', rtl ? 'پایه‌ام خوبه' : 'Foundation'],
-                ['intermediate', rtl ? 'متوسط' : 'Intermediate'],
-                ['advanced', rtl ? 'پیشرفته' : 'Advanced'],
-              ]} value={state.fitnessLevel} onSelect={(value) => update({ fitnessLevel: value as OnboardingState['fitnessLevel'] })} />
-              <Text style={styles.helper}>{copy.fitnessHint}</Text>
-            </> : null}
-
-            {step === 2 ? <>
-              <OptionGrid options={[
-                ['balanced', rtl ? 'متعادل و منعطف' : 'Balanced & flexible'],
-                ['high_protein', rtl ? 'پروتئین بالا' : 'High protein'],
-                ['vegetarian', rtl ? 'گیاهخواری' : 'Vegetarian'],
-                ['vegan', rtl ? 'وگان' : 'Vegan'],
-                ['halal', rtl ? 'حلال' : 'Halal'],
-              ]} value={state.diet} onSelect={(value) => update({ diet: value as OnboardingState['diet'] })} />
-              <Text style={styles.helper}>{copy.dietHint}</Text>
-            </> : null}
-
-            {step === 3 ? <>
-              <OptionGrid options={[
-                ['Iran', rtl ? 'ایران' : 'Iran'],
-                ['United States', rtl ? 'آمریکا' : 'United States'],
-                ['Spain', rtl ? 'اسپانیا' : 'Spain'],
-                ['Turkey', rtl ? 'ترکیه' : 'Turkey'],
-                ['Germany', rtl ? 'آلمان' : 'Germany'],
-                ['United Kingdom', rtl ? 'بریتانیا' : 'United Kingdom'],
-              ]} value={state.country} onSelect={(value) => update({ country: value })} />
-              <Text style={styles.helper}>{copy.countryHint}</Text>
-            </> : null}
-
-            {step === 4 ? <>
-              <Text style={styles.sectionLabel}>{copy.equipment}</Text>
-              <OptionGrid options={[
-                ['none', rtl ? 'بدون تجهیزات' : 'No equipment'],
-                ['home', rtl ? 'تمرین در خانه' : 'Home setup'],
-                ['gym', rtl ? 'باشگاه' : 'Gym'],
-              ]} value={state.equipment} onSelect={(value) => update({ equipment: value as OnboardingState['equipment'] })} />
-              <Text style={[styles.sectionLabel, styles.sectionSpacing]}>{copy.session}</Text>
-              <OptionGrid options={[
-                ['20', '20 min'],
-                ['30', '30 min'],
-                ['45', '45 min'],
-                ['60', '60 min'],
-              ]} value={String(state.sessionMinutes)} onSelect={(value) => update({ sessionMinutes: Number(value) as OnboardingState['sessionMinutes'] })} />
-            </> : null}
-          </Animated.View>
+      <Animated.View style={[styles.flex, { opacity: entry, transform: [{ translateY: entry.interpolate({ inputRange: [0, 1], outputRange: [18, 0] }) }] }]}> 
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {screen === 0 ? <Welcome copy={copy} rtl={rtl} /> : null}
+          {screen === 1 ? <Permissions copy={copy} rtl={rtl} state={state} country={countryName} busyKey={permissionBusy} onRequest={requestPermission} /> : null}
+          {screen === 2 ? <Profile copy={copy} rtl={rtl} state={state} bmi={bmi} onUpdate={update} /> : null}
+          {screen === 3 ? <Question rtl={rtl} eyebrow={copy.goalKicker} title={copy.goal} body={copy.goalBody} choices={[
+            { key: 'fat_loss', label: copy.fatLoss, icon: 'fire' }, { key: 'body_sculpt', label: copy.sculpt, icon: 'human-handsup' }, { key: 'strength', label: copy.strength, icon: 'dumbbell' }, { key: 'general_fitness', label: copy.health, icon: 'heart-pulse' }
+          ]} value={state.goal} onSelect={(value) => update({ goal: value as OnboardingState['goal'] })} /> : null}
+          {screen === 4 ? <Question rtl={rtl} eyebrow={copy.levelKicker} title={copy.level} body={copy.levelBody} choices={[
+            { key: 'beginner', label: copy.beginner, hint: copy.beginnerHint, icon: 'sprout' }, { key: 'foundation', label: copy.foundation, hint: copy.foundationHint, icon: 'walk' }, { key: 'intermediate', label: copy.intermediate, hint: copy.intermediateHint, icon: 'run-fast' }, { key: 'advanced', label: copy.advanced, hint: copy.advancedHint, icon: 'trophy-outline' }
+          ]} value={state.fitnessLevel} onSelect={(value) => update({ fitnessLevel: value as OnboardingState['fitnessLevel'] })} /> : null}
+          {screen === 5 ? <Question rtl={rtl} eyebrow={copy.foodKicker} title={copy.food} body={copy.foodBody} choices={[
+            { key: 'balanced', label: copy.balanced, icon: 'scale-balance' }, { key: 'high_protein', label: copy.protein, icon: 'food-steak' }, { key: 'vegetarian', label: copy.vegetarian, icon: 'leaf' }, { key: 'vegan', label: copy.vegan, icon: 'sprout-outline' }, { key: 'weight_loss', label: copy.dietWeightLoss, icon: 'target' }
+          ]} value={state.diet} onSelect={(value) => update({ diet: value === 'weight_loss' ? 'balanced' : value as OnboardingState['diet'] })} /> : null}
+          {screen === 6 ? <Exercise copy={copy} rtl={rtl} location={state.exerciseLocation} minutes={state.sessionMinutes} onLocation={(value) => update({ exerciseLocation: value })} onMinutes={(value) => update({ sessionMinutes: value })} /> : null}
         </ScrollView>
+      </Animated.View>
 
-        <View style={styles.bottomArea}>
-          <Text style={[styles.ready, !stepComplete && styles.required]}>{stepComplete ? `✦ ${step === steps.length - 1 ? copy.start : copy.next}` : copy.required}</Text>
-          <View style={styles.actions}>
-            {step > 0 ? <Pressable onPress={() => setStep((current) => current - 1)} style={styles.secondary}><Text style={styles.secondaryText}>{copy.back}</Text></Pressable> : <View style={styles.secondaryPlaceholder} />}
-            <Pressable disabled={busy || !stepComplete} onPress={goNext} style={({ pressed }) => [styles.primary, pressed && styles.pressed, (!stepComplete || busy) && styles.disabled]}>
-              {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryText}>{step === steps.length - 1 ? copy.start : copy.next}</Text>}
-            </Pressable>
-          </View>
+      <View style={styles.footer}>
+        {screen === 1 ? <Pressable onPress={() => setScreen(2)} style={styles.laterButton}><Text style={styles.laterText}>{copy.later}</Text></Pressable> : null}
+        {screen === 2 && !profileComplete ? <Text style={[styles.validation, rtl && styles.rtlText]}>{copy.profileRequired}</Text> : null}
+        {(screen >= 3 && !screenOk) ? <Text style={[styles.validation, rtl && styles.rtlText]}>{copy.required}</Text> : null}
+        <View style={styles.actionRow}>
+          {screen > 0 ? <Pressable onPress={() => setScreen((value) => Math.max(0, value - 1))} style={styles.secondaryButton}><Text style={styles.secondaryText}>{copy.back}</Text></Pressable> : <View style={styles.secondaryPlaceholder} />}
+          <Pressable disabled={busy || (screen === 2 ? !profileComplete : screen >= 3 ? !screenOk : false)} onPress={() => void next()} style={({ pressed }) => [styles.primaryButton, pressed && styles.pressed, ((screen === 2 ? !profileComplete : screen >= 3 ? !screenOk : false) || busy) && styles.disabled]}>
+            {busy ? <ActivityIndicator color={BRAND.colors.white} /> : <><Text style={styles.primaryText}>{screen === 0 ? copy.start : screen === 6 ? copy.finish : copy.continue}</Text><MaterialCommunityIcons name={rtl ? 'arrow-left' : 'arrow-right'} size={20} color={BRAND.colors.white} /></>}
+          </Pressable>
         </View>
       </View>
-    </SafeAreaView>
-  );
+    </View>
+  </SafeAreaView>;
 }
 
-function OptionGrid({ options, value, onSelect }: { options: [string, string][]; value: string; onSelect: (value: string) => void }) {
-  return <View style={styles.options}>{options.map(([key, label]) => <Pressable key={key} onPress={() => onSelect(key)} accessibilityRole="radio" accessibilityState={{ selected: key === value }} style={[styles.option, key === value && styles.optionSelected]}><View style={[styles.choiceDot, key === value && styles.choiceDotSelected]} /><View style={styles.optionCopy}><Text style={styles.optionTitle}>{label}</Text></View><Text style={styles.check}>{key === value ? '✓' : ''}</Text></Pressable>)}</View>;
+function Welcome({ copy, rtl }: { copy: typeof COPY.fa; rtl: boolean }) {
+  return <View style={styles.welcome}>
+    <View style={styles.brandHero}><View style={styles.brandHeroCore}><Text style={styles.brandHeroText}>M</Text></View><View style={styles.sparkA} /><View style={styles.sparkB} /></View>
+    <Text style={[styles.eyebrow, rtl && styles.rtlText]}>{copy.welcomeKicker}</Text>
+    <Text style={[styles.title, rtl && styles.rtlText]}>{copy.welcomeTitle}</Text>
+    <Text style={[styles.subtitle, rtl && styles.rtlText]}>{copy.welcomeBody}</Text>
+    <View style={styles.featureGrid}><Feature icon="food-apple-outline" text={rtl ? 'تغذیه شخصی' : 'Personal nutrition'} /><Feature icon="dumbbell" text={rtl ? 'تمرین هوشمند' : 'Smart training'} /><Feature icon="message-text-outline" text={rtl ? 'گفت‌وگو با MYPA' : 'Talk to MYPA'} /></View>
+  </View>;
+}
+function Feature({ icon, text }: { icon: IconName; text: string }) { return <View style={styles.feature}><View style={styles.featureIcon}><MaterialCommunityIcons name={icon} size={19} color={BRAND.colors.primary} /></View><Text style={styles.featureText}>{text}</Text></View>; }
+
+function Permissions({ copy, rtl, state, country, busyKey, onRequest }: { copy: typeof COPY.fa; rtl: boolean; state: OnboardingState; country: string; busyKey: PermissionKey | null; onRequest: (key: PermissionKey) => Promise<void> }) {
+  const items = [
+    { key: 'location' as const, icon: 'map-marker-radius-outline' as IconName, title: copy.location, hint: copy.locationHint },
+    { key: 'microphone' as const, icon: 'microphone-outline' as IconName, title: copy.microphone, hint: copy.microphoneHint },
+    { key: 'camera' as const, icon: 'camera-outline' as IconName, title: copy.camera, hint: copy.cameraHint },
+    { key: 'notifications' as const, icon: 'bell-outline' as IconName, title: copy.notifications, hint: copy.notificationsHint },
+  ];
+  return <View style={styles.section}>
+    <Text style={[styles.eyebrow, rtl && styles.rtlText]}>{copy.permissionsKicker}</Text><Text style={[styles.title, rtl && styles.rtlText]}>{copy.permissionsTitle}</Text><Text style={[styles.subtitle, rtl && styles.rtlText]}>{copy.permissionsBody}</Text>
+    <View style={styles.permissionStack}>{items.map((item) => { const value = state.permissions[item.key]; return <Pressable key={item.key} onPress={() => void onRequest(item.key)} style={({ pressed }) => [styles.permissionCard, pressed && styles.pressed]}><View style={styles.permissionIcon}><MaterialCommunityIcons name={item.icon} size={22} color={BRAND.colors.primary} /></View><View style={styles.permissionCopy}><Text style={[styles.permissionTitle, rtl && styles.rtlText]}>{item.title}</Text><Text style={[styles.permissionHint, rtl && styles.rtlText]}>{item.hint}</Text></View>{busyKey === item.key ? <ActivityIndicator size="small" color={BRAND.colors.primary} /> : <View style={[styles.statusPill, value === 'granted' && styles.statusGranted]}><Text style={[styles.statusText, value === 'granted' && styles.statusGrantedText]}>{value === 'granted' ? copy.enabled : copy.unavailable}</Text></View>}</Pressable>; })}</View>
+    {country ? <View style={styles.detected}><MaterialCommunityIcons name="earth" size={21} color={BRAND.colors.primary} /><View style={styles.detectedCopy}><Text style={[styles.detectedTitle, rtl && styles.rtlText]}>{copy.found}</Text><Text style={[styles.detectedBody, rtl && styles.rtlText]}>{country}</Text></View></View> : null}
+  </View>;
+}
+
+function Profile({ copy, rtl, state, bmi, onUpdate }: { copy: typeof COPY.fa; rtl: boolean; state: OnboardingState; bmi: number | null; onUpdate: (patch: Partial<OnboardingState>) => void }) {
+  const genders: [OnboardingState['gender'], string][] = [['female', copy.female], ['male', copy.male], ['other', copy.other], ['prefer_not_to_say', copy.preferNot]];
+  return <View style={styles.section}>
+    <Text style={[styles.eyebrow, rtl && styles.rtlText]}>{copy.profileKicker}</Text><Text style={[styles.title, rtl && styles.rtlText]}>{copy.profileTitle}</Text><Text style={[styles.subtitle, rtl && styles.rtlText]}>{copy.profileBody}</Text>
+    <Text style={[styles.groupLabel, rtl && styles.rtlText]}>{copy.gender}</Text><View style={styles.genderGrid}>{genders.map(([key, label]) => <Pressable key={key} onPress={() => onUpdate({ gender: key })} style={[styles.genderCard, state.gender === key && styles.choiceSelected]}><Text style={[styles.genderText, state.gender === key && styles.selectedText]}>{label}</Text></Pressable>)}</View>
+    <View style={styles.inputRow}><MetricInput label={copy.age} value={state.age?.toString() ?? ''} suffix={copy.years} keyboardType="number-pad" onChange={(value) => onUpdate({ age: value ? Number(value) : null })} /><MetricInput label={copy.height} value={state.heightCm?.toString() ?? ''} suffix={copy.cm} keyboardType="number-pad" onChange={(value) => onUpdate({ heightCm: value ? Number(value) : null })} /><MetricInput label={copy.weight} value={state.weightKg?.toString() ?? ''} suffix={copy.kg} keyboardType="decimal-pad" onChange={(value) => onUpdate({ weightKg: value ? Number(value) : null })} /></View>
+    <View style={styles.bmiCard}><View style={styles.bmiBadge}><Text style={styles.bmiValue}>{bmi ?? '—'}</Text><Text style={styles.bmiLabel}>{copy.bmi}</Text></View><Text style={[styles.bmiHint, rtl && styles.rtlText]}>{copy.bmiHint}</Text></View>
+  </View>;
+}
+function MetricInput({ label, value, suffix, keyboardType, onChange }: { label: string; value: string; suffix: string; keyboardType: 'number-pad' | 'decimal-pad'; onChange: (value: string) => void }) { return <View style={styles.metricInput}><Text style={styles.metricInputLabel}>{label}</Text><View style={styles.inputShell}><TextInput value={value} onChangeText={onChange} keyboardType={keyboardType} placeholder="—" placeholderTextColor={BRAND.colors.muted} style={styles.metricInputValue} maxLength={5} /><Text style={styles.inputSuffix}>{suffix}</Text></View></View>; }
+
+function Question({ rtl, eyebrow, title, body, choices, value, onSelect }: { rtl: boolean; eyebrow: string; title: string; body: string; choices: Choice[]; value: string | null; onSelect: (value: string) => void }) {
+  return <View style={styles.section}><View style={styles.questionHero}><View style={styles.questionHalo}><MaterialCommunityIcons name="creation" size={27} color={BRAND.colors.primary} /></View><Text style={[styles.eyebrow, rtl && styles.rtlText]}>{eyebrow}</Text><Text style={[styles.title, styles.questionTitle, rtl && styles.rtlText]}>{title}</Text><Text style={[styles.subtitle, rtl && styles.rtlText]}>{body}</Text></View><View style={styles.choiceStack}>{choices.map((choice) => <Pressable key={choice.key} onPress={() => onSelect(choice.key)} accessibilityRole="radio" accessibilityState={{ selected: choice.key === value }} style={({ pressed }) => [styles.choiceCard, choice.key === value && styles.choiceSelected, pressed && styles.pressed]}><View style={[styles.choiceIcon, choice.key === value && styles.choiceIconSelected]}><MaterialCommunityIcons name={choice.icon} size={21} color={choice.key === value ? BRAND.colors.white : BRAND.colors.primary} /></View><View style={styles.choiceCopy}><Text style={[styles.choiceTitle, rtl && styles.rtlText, choice.key === value && styles.selectedText]}>{choice.label}</Text>{choice.hint ? <Text style={[styles.choiceHint, rtl && styles.rtlText, choice.key === value && styles.selectedHint]}>{choice.hint}</Text> : null}</View><View style={[styles.radio, choice.key === value && styles.radioSelected]}>{choice.key === value ? <View style={styles.radioDot} /> : null}</View></Pressable>)}</View></View>;
+}
+
+function Exercise({ copy, rtl, location, minutes, onLocation, onMinutes }: { copy: typeof COPY.fa; rtl: boolean; location: OnboardingState['exerciseLocation']; minutes: OnboardingState['sessionMinutes']; onLocation: (value: NonNullable<OnboardingState['exerciseLocation']>) => void; onMinutes: (value: OnboardingState['sessionMinutes']) => void }) {
+  const durations: [OnboardingState['sessionMinutes'], string][] = [[20, copy.minutes20], [30, copy.minutes30], [45, copy.minutes45], [60, copy.minutes60], [90, copy.minutes90], [120, copy.hours2], [180, copy.hours3]];
+  return <View style={styles.section}><View style={styles.questionHero}><View style={styles.questionHalo}><MaterialCommunityIcons name="run-fast" size={28} color={BRAND.colors.primary} /></View><Text style={[styles.eyebrow, rtl && styles.rtlText]}>{copy.exerciseKicker}</Text><Text style={[styles.title, styles.questionTitle, rtl && styles.rtlText]}>{copy.exercise}</Text><Text style={[styles.subtitle, rtl && styles.rtlText]}>{copy.exerciseBody}</Text></View><Text style={[styles.groupLabel, rtl && styles.rtlText]}>{rtl ? 'محل تمرین' : 'Training place'}</Text><View style={styles.placeRow}>{[['home', copy.home, 'home-heart'], ['gym', copy.gym, 'dumbbell']].map(([key, label, icon]) => <Pressable key={key} onPress={() => onLocation(key as 'home' | 'gym')} style={[styles.placeCard, location === key && styles.choiceSelected]}><MaterialCommunityIcons name={icon as IconName} size={24} color={location === key ? BRAND.colors.white : BRAND.colors.primary} /><Text style={[styles.placeText, location === key && styles.selectedText]}>{label}</Text></Pressable>)}</View><Text style={[styles.groupLabel, styles.durationLabel, rtl && styles.rtlText]}>{rtl ? 'مدت تمرین' : 'Session length'}</Text><View style={styles.durationGrid}>{durations.map(([value, label]) => <Pressable key={value} onPress={() => onMinutes(value)} style={[styles.durationCard, minutes === value && styles.durationSelected]}><Text style={[styles.durationText, minutes === value && styles.selectedText]}>{label}</Text></Pressable>)}</View></View>;
 }
 
 const styles = StyleSheet.create({
-  safe:{flex:1,backgroundColor:BRAND.colors.canvas}, container:{flex:1,paddingHorizontal:22,paddingTop:14}, rtl:{direction:'rtl'}, header:{height:46,position:'relative',alignItems:'center',justifyContent:'center'}, brandHeader:{position:'absolute',left:0,right:0,top:1,alignItems:'center',justifyContent:'center'}, counterPill:{position:'absolute',right:0,top:8,minWidth:42,height:30,paddingHorizontal:10,borderRadius:15,backgroundColor:BRAND.colors.surface,borderWidth:1,borderColor:BRAND.colors.border,alignItems:'center',justifyContent:'center'}, counter:{color:BRAND.colors.inkSoft,fontSize:11,fontWeight:'900'}, pageScroll:{flex:1}, pageContent:{paddingTop:8,paddingBottom:18}, hero:{alignItems:'center',paddingTop:4,paddingBottom:16}, auraWrap:{width:96,height:96,alignItems:'center',justifyContent:'center',marginBottom:12}, aura:{position:'absolute',width:96,height:96,borderRadius:30,backgroundColor:BRAND.colors.violet}, auraCore:{width:72,height:72,borderRadius:24,backgroundColor:BRAND.colors.startup,alignItems:'center',justifyContent:'center',shadowColor:'#000',shadowOpacity:.14,shadowRadius:18,shadowOffset:{width:0,height:8},elevation:4}, auraMark:{color:BRAND.colors.violet,fontSize:31}, progressTrack:{position:'absolute',left:3,right:3,bottom:0,height:4,backgroundColor:BRAND.colors.border,borderRadius:4,overflow:'hidden'}, progressArc:{height:4,backgroundColor:BRAND.colors.primary}, eyebrow:{color:BRAND.colors.primary,fontSize:10,fontWeight:'900',letterSpacing:1.5,textAlign:'center'}, title:{color:BRAND.colors.ink,fontSize:30,lineHeight:36,fontWeight:'900',textAlign:'center',marginTop:7}, subtitle:{color:BRAND.colors.muted,fontSize:13,lineHeight:20,textAlign:'center',marginTop:7,maxWidth:340}, card:{backgroundColor:BRAND.colors.surface,borderRadius:28,padding:16,borderWidth:1,borderColor:BRAND.colors.border,shadowColor:'#000',shadowOpacity:.05,shadowRadius:18,shadowOffset:{width:0,height:8},elevation:2}, options:{gap:10}, option:{minHeight:58,borderRadius:18,borderWidth:1,borderColor:BRAND.colors.border,backgroundColor:BRAND.colors.surfaceElevated,paddingHorizontal:14,flexDirection:'row',alignItems:'center'}, optionSelected:{borderColor:BRAND.colors.primary,borderWidth:2,backgroundColor:BRAND.colors.primarySoft}, choiceDot:{width:13,height:13,borderRadius:7,borderWidth:1.5,borderColor:BRAND.colors.border,marginRight:12}, choiceDotSelected:{borderColor:BRAND.colors.primary,backgroundColor:BRAND.colors.primary}, optionCopy:{flex:1}, optionTitle:{color:BRAND.colors.ink,fontSize:15,fontWeight:'800'}, check:{color:BRAND.colors.primary,fontSize:20,fontWeight:'900',width:22,textAlign:'right'}, helper:{color:BRAND.colors.muted,fontSize:11,lineHeight:17,marginTop:12,textAlign:'center'}, sectionLabel:{color:BRAND.colors.inkSoft,fontSize:11,fontWeight:'900',marginBottom:9}, sectionSpacing:{marginTop:20}, bottomArea:{paddingTop:8,paddingBottom:10,gap:9,backgroundColor:BRAND.colors.canvas}, required:{color:BRAND.colors.primary,fontSize:11,fontWeight:'800',textAlign:'center'}, ready:{color:BRAND.colors.inkSoft,fontSize:11,fontWeight:'800',textAlign:'center'}, actions:{flexDirection:'row',gap:10,alignItems:'center'}, secondary:{minHeight:54,flex:.38,borderRadius:18,borderWidth:1,borderColor:BRAND.colors.border,alignItems:'center',justifyContent:'center',backgroundColor:BRAND.colors.surface}, secondaryPlaceholder:{flex:.38}, secondaryText:{color:BRAND.colors.inkSoft,fontWeight:'800'}, primary:{minHeight:54,flex:1,borderRadius:18,alignItems:'center',justifyContent:'center',backgroundColor:BRAND.colors.primary,shadowColor:BRAND.colors.primaryStrong,shadowOpacity:.16,shadowRadius:14,shadowOffset:{width:0,height:7},elevation:3}, primaryText:{color:'#fff',fontSize:15,fontWeight:'900'}, pressed:{opacity:.82}, disabled:{opacity:.5},
+  safe: { flex: 1, backgroundColor: BRAND.colors.canvas },
+  flex: { flex: 1 },
+  background: { ...StyleSheet.absoluteFillObject, overflow: 'hidden', backgroundColor: BRAND.colors.canvas },
+  blobOne: { position: 'absolute', width: 300, height: 300, borderRadius: 150, right: -170, top: 80, backgroundColor: BRAND.colors.violet, opacity: 0.1 },
+  blobTwo: { position: 'absolute', width: 250, height: 250, borderRadius: 125, left: -150, bottom: 100, backgroundColor: BRAND.colors.cyan, opacity: 0.07 },
+  centerGlow: { position: 'absolute', width: 330, height: 330, borderRadius: 165, alignSelf: 'center', top: '24%', backgroundColor: BRAND.colors.primarySoft, opacity: 0.8 },
+  container: { flex: 1, paddingHorizontal: 20, paddingTop: 10 },
+  header: { height: 48, alignItems: 'center', justifyContent: 'center', position: 'relative', marginBottom: 4 },
+  brandCenter: { position: 'absolute', left: 0, right: 0, top: 0, alignItems: 'center' },
+  navButton: { position: 'absolute', left: 0, top: 4, width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255,255,255,0.86)', borderWidth: 1, borderColor: BRAND.colors.border, alignItems: 'center', justifyContent: 'center' },
+  navPlaceholder: { position: 'absolute', right: 0, top: 4, width: 38, height: 38 },
+  progressPill: { position: 'absolute', right: 0, top: 8, height: 30, minWidth: 92, paddingHorizontal: 10, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.88)', borderWidth: 1, borderColor: BRAND.colors.border, flexDirection: 'row', alignItems: 'center', gap: 8 },
+  progressText: { color: BRAND.colors.inkSoft, fontSize: 9, fontWeight: '900' },
+  progressRail: { width: 32, height: 4, borderRadius: 4, backgroundColor: BRAND.colors.border, overflow: 'hidden' },
+  progressFill: { height: 4, backgroundColor: BRAND.colors.primary, borderRadius: 4 },
+  scrollContent: { flexGrow: 1, paddingTop: 6, paddingBottom: 20 },
+  welcome: { alignItems: 'center', paddingTop: 18, paddingBottom: 18 },
+  brandHero: { width: 136, height: 136, alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
+  brandHeroCore: { width: 94, height: 94, borderRadius: 30, backgroundColor: BRAND.colors.startup, alignItems: 'center', justifyContent: 'center', shadowColor: BRAND.colors.primary, shadowOpacity: 0.22, shadowRadius: 28, shadowOffset: { width: 0, height: 12 }, elevation: 8 },
+  brandHeroText: { color: BRAND.colors.violet, fontSize: 44, fontWeight: '900' },
+  sparkA: { position: 'absolute', width: 14, height: 14, borderRadius: 5, backgroundColor: BRAND.colors.cyan, right: 7, top: 17, transform: [{ rotate: '22deg' }] },
+  sparkB: { position: 'absolute', width: 9, height: 9, borderRadius: 4, backgroundColor: BRAND.colors.violet, left: 10, bottom: 20, transform: [{ rotate: '45deg' }] },
+  section: { paddingTop: 10, paddingBottom: 18 },
+  eyebrow: { color: BRAND.colors.primary, fontSize: 10, fontWeight: '900', letterSpacing: 1.35, textAlign: 'center', marginBottom: 8, textTransform: 'uppercase' },
+  title: { color: BRAND.colors.ink, fontSize: 30, lineHeight: 37, fontWeight: '900', textAlign: 'center', maxWidth: 360 },
+  questionTitle: { fontSize: 28, lineHeight: 35 },
+  subtitle: { color: BRAND.colors.muted, fontSize: 14, lineHeight: 22, textAlign: 'center', maxWidth: 360, marginTop: 9 },
+  rtlText: { textAlign: 'right', alignSelf: 'stretch' },
+  featureGrid: { width: '100%', gap: 10, marginTop: 22 },
+  feature: { minHeight: 58, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.9)', borderWidth: 1, borderColor: BRAND.colors.border, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 11 },
+  featureIcon: { width: 35, height: 35, borderRadius: 12, backgroundColor: BRAND.colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  featureText: { color: BRAND.colors.inkSoft, fontSize: 13, fontWeight: '800' },
+  permissionStack: { marginTop: 24, gap: 10 },
+  permissionCard: { minHeight: 78, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.92)', borderWidth: 1, borderColor: BRAND.colors.border, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  permissionIcon: { width: 42, height: 42, borderRadius: 15, backgroundColor: BRAND.colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  permissionCopy: { flex: 1 },
+  permissionTitle: { color: BRAND.colors.ink, fontSize: 14, fontWeight: '900' },
+  permissionHint: { color: BRAND.colors.muted, fontSize: 11, lineHeight: 16, marginTop: 2 },
+  statusPill: { minWidth: 55, height: 28, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.canvas, borderWidth: 1, borderColor: BRAND.colors.border },
+  statusGranted: { backgroundColor: BRAND.colors.primarySoft, borderColor: BRAND.colors.primary },
+  statusText: { color: BRAND.colors.muted, fontSize: 9, fontWeight: '900' },
+  statusGrantedText: { color: BRAND.colors.primary },
+  detected: { marginTop: 12, borderRadius: 18, padding: 14, backgroundColor: BRAND.colors.primarySoft, borderWidth: 1, borderColor: '#E7D9FF', flexDirection: 'row', alignItems: 'center', gap: 12 },
+  detectedCopy: { flex: 1 },
+  detectedTitle: { color: BRAND.colors.ink, fontSize: 12, fontWeight: '900' },
+  detectedBody: { color: BRAND.colors.primary, fontSize: 12, fontWeight: '800', marginTop: 2 },
+  groupLabel: { color: BRAND.colors.inkSoft, fontSize: 12, fontWeight: '900', marginBottom: 10 },
+  genderGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9, marginBottom: 16 },
+  genderCard: { minWidth: '47%', flexGrow: 1, minHeight: 48, borderRadius: 16, borderWidth: 1, borderColor: BRAND.colors.border, backgroundColor: 'rgba(255,255,255,0.9)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  genderText: { color: BRAND.colors.inkSoft, fontSize: 12, fontWeight: '900', textAlign: 'center' },
+  selectedText: { color: BRAND.colors.white },
+  inputRow: { flexDirection: 'row', gap: 9 },
+  metricInput: { flex: 1 },
+  metricInputLabel: { color: BRAND.colors.muted, fontSize: 10, fontWeight: '800', marginBottom: 5 },
+  inputShell: { minHeight: 56, borderRadius: 17, borderWidth: 1, borderColor: BRAND.colors.border, backgroundColor: 'rgba(255,255,255,0.92)', paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center' },
+  metricInputValue: { flex: 1, color: BRAND.colors.ink, fontSize: 17, fontWeight: '900', paddingVertical: 0, textAlign: 'center' },
+  inputSuffix: { color: BRAND.colors.muted, fontSize: 9, fontWeight: '800' },
+  bmiCard: { marginTop: 13, borderRadius: 20, padding: 13, backgroundColor: BRAND.colors.primarySoft, borderWidth: 1, borderColor: '#E7D9FF', flexDirection: 'row', alignItems: 'center', gap: 12 },
+  bmiBadge: { width: 72, height: 72, borderRadius: 22, backgroundColor: BRAND.colors.startup, alignItems: 'center', justifyContent: 'center' },
+  bmiValue: { color: BRAND.colors.white, fontSize: 20, fontWeight: '900' },
+  bmiLabel: { color: BRAND.colors.violet, fontSize: 9, fontWeight: '900', marginTop: 1 },
+  bmiHint: { flex: 1, color: BRAND.colors.muted, fontSize: 10, lineHeight: 15 },
+  questionHero: { alignItems: 'center', marginBottom: 20 },
+  questionHalo: { width: 66, height: 66, borderRadius: 22, backgroundColor: BRAND.colors.primarySoft, borderWidth: 1, borderColor: '#E7D9FF', alignItems: 'center', justifyContent: 'center', marginBottom: 13 },
+  choiceStack: { gap: 10 },
+  choiceCard: { minHeight: 72, borderRadius: 20, borderWidth: 1, borderColor: BRAND.colors.border, backgroundColor: 'rgba(255,255,255,0.94)', paddingHorizontal: 13, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  choiceSelected: { backgroundColor: BRAND.colors.primary, borderColor: BRAND.colors.primary, shadowColor: BRAND.colors.primary, shadowOpacity: 0.2, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+  choiceIcon: { width: 42, height: 42, borderRadius: 15, backgroundColor: BRAND.colors.primarySoft, alignItems: 'center', justifyContent: 'center' },
+  choiceIconSelected: { backgroundColor: 'rgba(255,255,255,0.16)' },
+  choiceCopy: { flex: 1 },
+  choiceTitle: { color: BRAND.colors.ink, fontSize: 14, fontWeight: '900' },
+  choiceHint: { color: BRAND.colors.muted, fontSize: 10, lineHeight: 14, marginTop: 2 },
+  selectedHint: { color: 'rgba(255,255,255,0.78)' },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: BRAND.colors.border, alignItems: 'center', justifyContent: 'center' },
+  radioSelected: { borderColor: BRAND.colors.white },
+  radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: BRAND.colors.white },
+  placeRow: { flexDirection: 'row', gap: 10 },
+  placeCard: { flex: 1, minHeight: 90, borderRadius: 20, borderWidth: 1, borderColor: BRAND.colors.border, backgroundColor: 'rgba(255,255,255,0.94)', alignItems: 'center', justifyContent: 'center', gap: 7 },
+  placeText: { color: BRAND.colors.inkSoft, fontSize: 13, fontWeight: '900' },
+  durationLabel: { marginTop: 22 },
+  durationGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 9 },
+  durationCard: { minWidth: '30%', flexGrow: 1, minHeight: 46, borderRadius: 16, borderWidth: 1, borderColor: BRAND.colors.border, backgroundColor: 'rgba(255,255,255,0.94)', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 8 },
+  durationSelected: { backgroundColor: BRAND.colors.primary, borderColor: BRAND.colors.primary },
+  durationText: { color: BRAND.colors.inkSoft, fontSize: 12, fontWeight: '900', textAlign: 'center' },
+  footer: { paddingTop: 6, paddingBottom: 8, backgroundColor: BRAND.colors.canvas, gap: 7 },
+  laterButton: { alignSelf: 'center', paddingVertical: 3 },
+  laterText: { color: BRAND.colors.muted, fontSize: 10, fontWeight: '800' },
+  validation: { color: BRAND.colors.primary, fontSize: 10, lineHeight: 15, fontWeight: '800', textAlign: 'center' },
+  actionRow: { flexDirection: 'row', gap: 10, alignItems: 'center' },
+  secondaryPlaceholder: { flex: 0.34 },
+  secondaryButton: { flex: 0.34, minHeight: 54, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.88)', borderWidth: 1, borderColor: BRAND.colors.border, alignItems: 'center', justifyContent: 'center' },
+  secondaryText: { color: BRAND.colors.inkSoft, fontSize: 13, fontWeight: '900' },
+  primaryButton: { flex: 1, minHeight: 54, borderRadius: 18, backgroundColor: BRAND.colors.primary, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, shadowColor: BRAND.colors.primary, shadowOpacity: 0.24, shadowRadius: 14, shadowOffset: { width: 0, height: 7 }, elevation: 7 },
+  primaryText: { color: BRAND.colors.white, fontSize: 15, fontWeight: '900' },
+  pressed: { opacity: 0.9, transform: [{ scale: 0.985 }] },
+  disabled: { opacity: 0.45 },
 });
