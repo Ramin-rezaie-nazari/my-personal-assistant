@@ -5,6 +5,7 @@ const root = path.resolve(__dirname, '..');
 const languageFile = fs.readFileSync(path.join(root, 'lib/voice-language.ts'), 'utf8');
 const voiceFile = fs.readFileSync(path.join(root, 'lib/voice.ts'), 'utf8');
 const speechFile = fs.readFileSync(path.join(root, 'lib/speech-recognition.ts'), 'utf8');
+const appConfig = fs.readFileSync(path.join(root, 'app.json'), 'utf8');
 
 const expectedLocales = [
   'fa-IR','en-US','en-GB','es-ES','es-MX','fr-FR','de-DE','it-IT','pt-BR','pt-PT',
@@ -47,11 +48,17 @@ assert(speechFile.includes('requiresOnDeviceRecognition: false'), 'network/provi
 assert(speechFile.includes('abort: () => void'), 'recognition handle must expose explicit abort');
 assert(speechFile.includes('ExpoSpeechRecognitionModule.abort()'), 'native abort is missing');
 assert(speechFile.includes('supportsOnDeviceRecognition()'), 'native device capability check is missing');
-assert(speechFile.includes('if (event.error === \'aborted\') return;'), 'abort must not surface as a user-facing recognition error');
+assert(speechFile.includes("if (event.error === 'aborted') return;"), 'abort must not surface as a user-facing recognition error');
+assert(!speechFile.includes('com.google.android.googlequicksearchbox'), 'STT must not hard-code Google Quick Search Box');
+assert(speechFile.includes('getDefaultRecognitionService'), 'Android diagnostics should inspect the device default speech service');
+assert(speechFile.includes('ExpoSpeechRecognitionModule.start({'), 'recognition start call is missing');
+assert(!speechFile.includes('androidRecognitionServicePackage: ANDROID_SPEECH_SERVICE'), 'custom Android recognition service must not be forced');
+assert(appConfig.includes('"com.google.android.tts"'), 'Google TTS speech service should be queryable on Android');
+assert(appConfig.includes('"com.samsung.android.bixby.agent"'), 'Samsung Bixby speech service should be queryable on Samsung devices');
 
 const rtlLocales = ['fa-IR','fa-AF','ar-SA','he-IL','ur-PK'];
 for (const locale of rtlLocales) {
   assert(languageFile.includes(`['${locale}'`), `RTL locale ${locale} is not registered in the voice table`);
 }
 
-console.log(`VOICE QUALITY CONTRACT PASS: ${expectedLocales.length} locales, ${voiceProfileIds.length} voice profiles, STT/TTS mapping, localized speech context, RTL policy, native capability detection, abort-safe cleanup and timeout-safe TTS.`);
+console.log(`VOICE QUALITY CONTRACT PASS: ${expectedLocales.length} locales, ${voiceProfileIds.length} voice profiles, STT/TTS mapping, localized speech context, device-default Android speech service, RTL policy, abort-safe cleanup and timeout-safe TTS.`);
