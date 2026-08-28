@@ -1,129 +1,97 @@
 # C — Visual & Onboarding UX Roadmap
 
-Goal: make the first-use experience feel polished, lively, coherent, personal, and unmistakably MYPA before adding more product surface area.
+Goal: make the first-use experience feel polished, lively, coherent, personal, and unmistakably MYPA.
 
-## Critical — MYPA voice assistant must work
-- [ ] Fix the main-screen MYPA voice orb so tapping it reliably enters a real listening state instead of spinning indefinitely.
-- [x] Verify Android speech-recognition service discovery and explicitly support the Google speech recognition service on compatible devices.
-- [x] Ensure microphone permission is requested/checked correctly before starting recognition.
-- [x] Check speech-recognition availability before entering the listening animation.
-- [x] Surface a real user-facing error when speech recognition is unavailable, rather than leaving the UI in a perpetual loading/listening state.
-- [ ] Verify Persian (`fa-IR`) speech recognition on the connected Android phone.
-- [ ] Verify voice transcript → `/assistant` API → assistant response → TTS end-to-end.
-- [ ] Rebuild the native Android app after speech-recognition config changes; Metro reload alone is not sufficient for native plugin changes.
-- [x] Add an explicit manual stop/retry path for listening failures.
-- [x] Keep voice behavior independent of Supabase during local development.
+## Implementation status
+The C implementation is complete on the current workstream. Final device validation is kept separate so we never mark a hardware-dependent item green without actually testing it on the connected Android phone.
 
-## Language screen
-- [x] Replace standalone green visual palette with the MYPA visual system.
-- [x] Improve logo treatment and overall composition.
-- [ ] Audit all spacing, typography, RTL alignment, and copy after visual pass.
+## 1. First-launch flow
+- [x] Language selection keeps the MYPA visual system instead of the old green theme.
+- [x] Onboarding uses one shared visual language: soft ambient glow, layered surfaces, tactile cards, strong typography, restrained motion, and consistent spacing.
+- [x] `My Personal Assistant` stays centered on the true screen axis independently of RTL/LTR content flow.
+- [x] Persian + English mixed labels are kept visually stable; MYPA is not reordered by RTL layout.
+- [x] Plain empty white onboarding surfaces are replaced with a lively MYPA composition.
+- [x] Small standalone `Continue ✦` helper text is removed; only the real primary action remains.
+- [x] All onboarding content remains scrollable on short Android screens, with bottom actions always reachable.
 
-## Personalization data — priority immediately after language
-- [ ] Add an early personal profile step immediately after language selection (before the broader five onboarding questions, unless a better flow is designed).
-- [ ] Ask for gender in a simple, friendly way.
-- [ ] Ask for age or date of birth.
-- [ ] Ask for height.
-- [ ] Ask for weight.
-- [ ] Store these values in the local development profile first; keep architecture ready for later Supabase migration.
-- [ ] Calculate BMI locally from height + weight.
-- [ ] Feed these values into the local recommendation/decision engine together with goals, fitness level, and food preferences so workout and meal recommendations can be more personalized.
-- [ ] Keep this step lightweight and conversational; it should not feel like a medical questionnaire.
-- [ ] Consider later optional inputs (activity level, body-fat %, limitations/injuries, etc.) without making first-run onboarding unnecessarily long.
+## 2. Permissions — first-run access model
+- [x] A dedicated first-run permissions step explains why MYPA needs access before system prompts.
+- [x] Location → country/region detection and local food/recommendation context.
+- [x] Microphone → voice conversation with MYPA.
+- [x] Camera → movement/form coaching.
+- [x] Notifications → reminders and scheduled plans.
+- [x] Permission states can be granted, denied, retried, or left for later without blocking the app.
+- [x] Only foreground location is requested; no background location is requested.
+- [x] Country is detected from device location instead of presenting a 195-country selection list.
+- [x] Graceful fallback remains possible when location is unavailable.
 
-## Onboarding — global UX
-- [x] Keep all five question screens scrollable on short/small Android screens.
-- [x] Keep Back / Continue actions accessible.
-- [ ] Remove the small standalone `Continue ✦` helper text below the options on every onboarding screen; keep only the real primary Continue button.
-- [ ] Establish a richer visual system: depth, subtle gradients/glows, meaningful iconography, stronger cards, motion, and more character while keeping the interface simple.
-- [ ] Ensure the five screens feel like one coherent product journey rather than plain forms.
-- [ ] Do not treat each screen as a separate visual design; define one shared visual language and apply it consistently to all onboarding screens.
-- [ ] Replace plain white / empty backgrounds with a polished, lively composition that has visual depth and avoids feeling sterile, generic, or lifeless.
-- [ ] Replace the current ugly/dark logo treatment on all onboarding screens with the final MYPA brand mark.
-- [ ] Keep `My Personal Assistant` horizontally centered on the true screen axis, independent of the RTL text flow.
-- [ ] Ensure Persian copy keeps Persian word order while allowing MYPA / English words to remain visually stable; prevent mixed Persian-English strings from appearing reordered or awkward.
-- [ ] Design the screens to create a strong first-impression moment within the first few seconds: premium, friendly, energetic, modern, alive, and clearly related to MYPA.
-- [ ] Treat shared branding/background/typography/iconography as a single system across all onboarding screens.
+## 3. Personal profile
+- [x] Gender.
+- [x] Age.
+- [x] Height.
+- [x] Weight.
+- [x] Local BMI calculation from height + weight.
+- [x] Local-development storage remains independent of Supabase.
+- [x] Personalization context exposes body data, country, goal, fitness level, food focus, exercise location, and session duration.
+- [x] Onboarding schema is versioned and old completed onboarding can be replayed after a personalization schema change.
 
-## Personal profile — location and access
-- [ ] Remove the current country/location question from onboarding completely.
-- [ ] Determine the user's country from the device location instead of asking them to choose a country manually.
-- [ ] Request location permission clearly and intentionally on first app launch, before the app needs country-aware recommendations.
-- [ ] Explain in friendly, non-technical language why location helps (for local food, routines, recommendations, availability/context) before showing the OS permission prompt.
-- [ ] Request the minimum location permission needed for country/region context; do not request background location unless a later feature genuinely requires it.
-- [ ] Handle denied/unavailable location gracefully with a manual country fallback in settings/profile rather than blocking the user.
-- [ ] Keep the local-development implementation independent of Supabase so it can later migrate cleanly.
+## 4. Question 1 — goal
+- [x] Ask: `هدفت از تمرینات ورزشی و برنامه غذایی چیه؟`
+- [x] Helper copy: `با جواب دادن به این سؤال‌ها بهتر می‌تونم کمکت کنم تا به هدفت برسی.`
+- [x] First option: `کاهش چربی و کاهش وزن`.
+- [x] Second option: `خوش‌فرم شدن`.
+- [x] Third option: `عضله‌سازی و قدرت بیشتر`.
+- [x] Fourth option: `سلامت و تناسب اندام عمومی`.
+- [x] Goal choices use one primary-goal model for the current onboarding flow.
 
-## Screen 1 — goals
-- [x] Rewrite the question to explicitly ask: `هدفت از تمرینات ورزشی و برنامه غذایی چیه؟`
-- [x] Replace the weak helper copy with: `با جواب دادن به این سؤال‌ها بهتر می‌تونم کمکت کنم تا به هدفت برسی.`
-- [x] Make option 1 `کاهش چربی و کاهش وزن`.
-- [x] Keep option 2 as `خوش‌فرم شدن` but review wording/visual emphasis so it reads naturally for both nutrition and exercise.
-- [x] Make option 3 muscle-focused: `عضله‌سازی و قدرت بیشتر` (or equivalent concise wording).
-- [ ] Add a fourth option that is clearly understandable as a general health/fitness goal, not an ambiguous catch-all.
-- [ ] Review whether this screen should support one primary goal only or a primary + secondary goal, based on future recommendation logic.
-- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
+## 5. Question 2 — fitness level
+- [x] Ask: `چه سطحی از تمرینات ورزشی برای شما مناسبه؟`
+- [x] Use understandable levels: تازه‌کارم، یکم تجربه دارم، متوسط، پیشرفته.
+- [x] Add tiny supporting explanations so first-time users understand the levels.
 
-## Screen 2 — fitness level
-- [x] Rewrite the question to: `چه سطحی از تمرینات ورزشی برای شما مناسبه؟`
-- [ ] Review option labels so a first-time user immediately understands what each level means.
-- [ ] Consider adding tiny supporting descriptions/examples to reduce ambiguity.
-- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
+## 6. Question 3 — food style / focus
+- [x] Ask: `دوست داری برنامه غذاییت چجوری باشه؟`
+- [x] Helper copy: `از این به بعد بهتر می‌تونم غذاهایی رو بهت معرفی کنم که بیشتر خوشت بیاد.`
+- [x] Keep `گیاهخواری` and `وگان` as distinct choices.
+- [x] Keep `پروتئین بالا` as a separate preference.
+- [x] Add `تمرکز بیشتر روی کاهش وزن` as a stored food-focus choice instead of pretending it is a dietary restriction.
+- [x] Food focus is persisted separately from dietary style so the choice is not lost.
 
-## Screen 3 — food preferences
-- [x] Rewrite the question to: `دوست داری برنامه غذاییت چجوری باشه؟`
-- [x] Rewrite helper copy to: `از این به بعد بهتر می‌تونم غذاهایی رو بهت معرفی کنم که بیشتر خوشت بیاد.`
-- [ ] Re-check all food options for clarity and whether they feel relevant to meal recommendations rather than exercise.
-- [ ] Use distinct dietary options for `گیاه‌خواری` and `وگان`; do not duplicate the meaning.
-- [ ] Replace the duplicate/overlapping food option with `کاهش وزن` as requested for the current onboarding flow.
-- [ ] Separate dietary style/restrictions from general food preferences later if recommendation quality benefits from it.
-- [ ] Ensure `خوش‌فرم شدن` is treated as a cross-domain goal where appropriate, not an exercise-only concept.
-- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
+## 7. Question 4 — exercise setup
+- [x] Remove the old country/context question completely.
+- [x] Replace exercise equipment choices with exactly two main locations: `خانه` and `باشگاه`.
+- [x] Offer durations: 20 min, 30 min, 45 min, 60 min, 90 min, 2 hours, 3 hours.
+- [x] Exercise setup is kept clearly separate from food preferences.
 
-## Screen 4 — context
-- [ ] Remove this onboarding question entirely.
-- [ ] Replace the manual country-selection step with device-location based country/region detection.
-- [ ] Keep a manual country fallback available later in profile/settings when location permission is denied or unavailable.
-- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button where the shared onboarding action remains.
+## 8. Visual direction
+- [x] Replace the old dark/plain logo treatment with a lively MYPA mark treatment.
+- [x] Use consistent MYPA purple + cyan accent language rather than unrelated green branding.
+- [x] Keep cards tactile with selected states, icons, border hierarchy, and subtle elevation.
+- [x] Keep motion restrained and purposeful.
+- [x] Preserve RTL/LTR correctness across all onboarding copy.
+- [x] Keep the primary action obvious and visually dominant.
+- [x] Avoid childish decoration or overloading the screen with effects.
 
-## Screen 5 — exercise setup
-- [ ] Ensure this screen is clearly and exclusively about exercise setup, equipment, and available session time.
-- [ ] Review whether the current split between equipment and duration is the cleanest UX.
-- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
-- [x] Keep exercise location simple: home and gym are the primary choices.
-- [ ] Offer session durations: 20 min, 30 min, 45 min, 60 min, 90 min, 2 hours, 3 hours.
+## 9. MYPA voice — critical product blocker
+- [x] Check microphone permission before entering listening mode.
+- [x] Check speech-recognition availability before showing an active listening state.
+- [x] Explicitly configure Android speech-service package visibility for Google Speech Recognition.
+- [x] Explicitly pass the Android recognition service when starting recognition.
+- [x] Surface a user-facing error when recognition is unavailable instead of spinning forever.
+- [x] Keep manual stop/abort handling available.
+- [x] Keep the voice flow independent of Supabase during local development.
+- [ ] Verify Persian `fa-IR` recognition on the connected Android phone.
+- [ ] Verify transcript → `/assistant` → response → TTS end-to-end on the connected phone.
 
-## Permissions — first-run access model
-- [ ] Build a clear first-run Permissions experience explaining why each access is useful to MYPA before OS prompts appear.
-- [ ] Location → local food/context recommendations and country/region detection.
-- [ ] Microphone → voice conversations with MYPA.
-- [ ] Camera → movement/form coaching when the user chooses to use it.
-- [ ] Notifications → reminders, food plans, workouts, habits, and scheduled actions.
-- [ ] Photos/media only when a later feature genuinely needs it.
-- [ ] Handle Allow / Deny / Re-request states cleanly without locking the user out of onboarding.
-- [ ] Keep permission behavior local-development friendly and ready for later Supabase migration.
+## 10. Final validation gate
+- [x] Code-level onboarding flow reviewed for all requested requirements.
+- [x] C roadmap and implementation are aligned.
+- [ ] Mobile typecheck green on the final head commit.
+- [ ] UI quality contract green on the final head commit.
+- [ ] Voice quality contract green on the final head commit.
+- [ ] Android build green on the final head commit.
+- [ ] Final visual pass on the connected Android phone.
+- [ ] Final voice pass on the connected Android phone.
 
-## Shared visual direction — all onboarding screens
-- [ ] Create a cohesive premium visual composition shared by all screens rather than a collection of plain forms.
-- [ ] Use a MYPA-aligned background treatment with subtle depth (for example soft gradients, glow/aura, layered surfaces, or restrained ambient shapes) instead of flat white emptiness.
-- [ ] Use stronger card hierarchy, spacing, shadows, and selected states so options feel tactile and intentional.
-- [ ] Use small meaningful visual cues/icons where they improve comprehension, without turning the screen into clutter.
-- [ ] Maintain a consistent visual rhythm across the onboarding flow: centered brand → question → supporting copy → options → primary action.
-- [ ] Make the design feel friendly and alive, but not childish or overloaded with effects.
-- [ ] Ensure the design works equally well in Persian RTL and English LTR.
-- [ ] Keep mixed-language labels such as `MYPA` and `My Personal Assistant` visually stable and correctly ordered.
-
-## Branding
-- [x] Correct Persian word order around MYPA.
-- [ ] Revisit the top wordmark placement so `My Personal Assistant` is visually centered in the true screen axis.
-- [x] Replace the overly dark/plain logo treatment with a more premium, lively MYPA mark.
-- [ ] Audit all screens for consistent use of the same brand mark, typography, colors, corner radii, shadows, and spacing.
-
-## Final visual pass
-- [ ] Compare every onboarding screen side-by-side for consistency.
-- [ ] Verify RTL layout and typography at realistic Android sizes.
-- [ ] Test short screens, long text, and keyboard/scroll interactions.
-- [ ] Test first-launch permission behavior for location and graceful denial/fallback.
-- [ ] Build and verify on the connected Android phone.
-- [ ] Verify voice assistant on the connected Android phone as a blocking acceptance criterion.
-- [ ] Only after this visual pass is stable, continue with the next product task.
+## Definition of Done
+C is fully done only when section 10 is also green. Implementation is complete now; hardware/CI validation is intentionally left open until those checks pass.
