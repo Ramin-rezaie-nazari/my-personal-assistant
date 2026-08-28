@@ -14,6 +14,7 @@ export type OnboardingState = {
   fitnessLevel: 'beginner' | 'foundation' | 'intermediate' | 'advanced';
   diet: 'balanced' | 'high_protein' | 'vegetarian' | 'vegan' | 'halal';
   workoutPlace: WorkoutPlace;
+  trainingDaysPerWeek: 2 | 3 | 4 | 5 | 6;
   equipment: 'none' | 'home' | 'gym';
   sessionMinutes: 20 | 30 | 45 | 60;
   detectedCountry: string;
@@ -26,7 +27,7 @@ export type OnboardingState = {
 };
 
 export const ONBOARDING_STORAGE_KEY = '@my-personal-assistant/onboarding';
-export const ONBOARDING_VERSION = 2;
+export const ONBOARDING_VERSION = 3;
 
 export const DEFAULT_ONBOARDING: OnboardingState = {
   completed: false,
@@ -39,6 +40,7 @@ export const DEFAULT_ONBOARDING: OnboardingState = {
   fitnessLevel: 'beginner',
   diet: 'balanced',
   workoutPlace: 'home',
+  trainingDaysPerWeek: 3,
   equipment: 'none',
   sessionMinutes: 30,
   detectedCountry: '',
