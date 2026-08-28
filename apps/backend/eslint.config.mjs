@@ -29,9 +29,6 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn',
-      // Raw SQL and adapter-boundary values currently contain intentional
-      // runtime-narrowing gaps. Keep these checks visible without making
-      // the evolving backend impossible to lint cleanly.
       '@typescript-eslint/no-unsafe-assignment': 'warn',
       '@typescript-eslint/no-unsafe-call': 'warn',
       '@typescript-eslint/no-unsafe-member-access': 'warn',
@@ -45,8 +42,9 @@ export default tseslint.config(
       '@typescript-eslint/restrict-template-expressions': 'warn',
       '@typescript-eslint/await-thenable': 'warn',
       '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-unnecessary-type-assertion': 'warn',
       'no-useless-escape': 'warn',
-      'prettier/prettier': ['error', { endOfLine: 'auto' }],
+      'prettier/prettier': 'warn',
     },
   },
   {

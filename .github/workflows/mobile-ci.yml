@@ -45,4 +45,9 @@ jobs:
         run: pnpm --filter @my-personal-assistant/mobile exec expo config --type public
 
       - name: Bundle Android JavaScript
-        run: pnpm --filter @my-personal-assistant/mobile exec expo export --platform android --output-dir /tmp/mobile-export
+        working-directory: apps/mobile
+        run: pnpm exec expo export --platform android --output-dir .ci-export/android
+
+      - name: Bundle iOS JavaScript
+        working-directory: apps/mobile
+        run: pnpm exec expo export --platform ios --output-dir .ci-export/ios
