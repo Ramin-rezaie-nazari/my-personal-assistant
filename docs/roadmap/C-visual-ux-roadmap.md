@@ -25,6 +25,12 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 - [ ] Remove the small standalone `Continue ✦` helper text below the options on every onboarding screen; keep only the real primary Continue button.
 - [ ] Establish a richer visual system: depth, subtle gradients/glows, meaningful iconography, stronger cards, motion, and more character while keeping the interface simple.
 - [ ] Ensure the five screens feel like one coherent product journey rather than plain forms.
+- [ ] Do not treat each screen as a separate visual design; define one shared visual language and apply it consistently to all onboarding screens.
+- [ ] Replace plain white / empty backgrounds with a polished, lively composition that has visual depth and avoids feeling sterile, generic, or lifeless.
+- [ ] Replace the current ugly/dark logo treatment on all onboarding screens with the final MYPA brand mark.
+- [ ] Keep `My Personal Assistant` horizontally centered on the true screen axis, independent of the RTL text flow.
+- [ ] Ensure Persian copy keeps Persian word order while allowing MYPA / English words to remain visually stable; prevent mixed Persian-English strings from appearing reordered or awkward.
+- [ ] Design the screens to create a strong first-impression moment within the first few seconds: premium, friendly, energetic, modern, alive, and clearly related to MYPA.
 
 ## Screen 1 — goals
 - [x] Rewrite the question to explicitly ask: `هدفت از تمرینات ورزشی و برنامه غذایی چیه؟`
@@ -34,11 +40,13 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 - [x] Make option 3 muscle-focused: `عضله‌سازی و قدرت بیشتر` (or equivalent concise wording).
 - [ ] Add a fourth option that is clearly understandable as a general health/fitness goal, not an ambiguous catch-all.
 - [ ] Review whether this screen should support one primary goal only or a primary + secondary goal, based on future recommendation logic.
+- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
 
 ## Screen 2 — fitness level
 - [x] Rewrite the question to: `چه سطحی از تمرینات ورزشی برای شما مناسبه؟`
 - [ ] Review option labels so a first-time user immediately understands what each level means.
 - [ ] Consider adding tiny supporting descriptions/examples to reduce ambiguity.
+- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
 
 ## Screen 3 — food preferences
 - [x] Rewrite the question to: `دوست داری برنامه غذاییت چجوری باشه؟`
@@ -46,14 +54,27 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 - [ ] Re-check all food options for clarity and whether they feel relevant to meal recommendations rather than exercise.
 - [ ] Separate dietary style/restrictions from general food preferences later if recommendation quality benefits from it.
 - [ ] Ensure `خوش‌فرم شدن` is treated as a cross-domain goal where appropriate, not an exercise-only concept.
+- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
 
 ## Screen 4 — context
 - [ ] Review the purpose of the country/cuisine question and make the wording immediately understandable.
 - [ ] Make the connection to recommendations explicit without sounding technical.
+- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
 
 ## Screen 5 — exercise setup
 - [ ] Ensure this screen is clearly and exclusively about exercise setup, equipment, and available session time.
 - [ ] Review whether the current split between equipment and duration is the cleanest UX.
+- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
+
+## Shared visual direction — all onboarding screens
+- [ ] Create a cohesive premium visual composition shared by all screens rather than a collection of plain forms.
+- [ ] Use a MYPA-aligned background treatment with subtle depth (for example soft gradients, glow/aura, layered surfaces, or restrained ambient shapes) instead of flat white emptiness.
+- [ ] Use stronger card hierarchy, spacing, shadows, and selected states so options feel tactile and intentional.
+- [ ] Use small meaningful visual cues/icons where they improve comprehension, without turning the screen into clutter.
+- [ ] Maintain a consistent visual rhythm across the five screens: header/brand area → question → supporting copy → options → primary action.
+- [ ] Make the design feel friendly and alive, but not childish or overloaded with effects.
+- [ ] Ensure the design works equally well in Persian RTL and English LTR.
+- [ ] Keep mixed-language labels such as `MYPA` and `My Personal Assistant` visually stable and correctly ordered.
 
 ## Branding
 - [x] Correct Persian word order around MYPA.
