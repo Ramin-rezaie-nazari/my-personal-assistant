@@ -2,7 +2,7 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Latest fully validated locally: 2026-08-18 11:26+03:30. The Food Operating Loop, Meal Planner and Recipe Scaling Metadata slice is fully green on the user's local runtime.
+> Latest fully validated locally before the current branch: 2026-08-18 11:26+03:30. The Food Operating Loop, Meal Planner and Recipe Scaling Metadata slice was fully green on the user's local runtime.
 
 ## Executive status
 
@@ -10,23 +10,55 @@
 
 This is a weighted engineering/product-completion index, not a claim that 65% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans scaling, inventory, shopping handoff, recommendations and daily meal planning. Major unfinished product work remains in the verified global recipe corpus, live market pricing, mobile UX, production hardening, and monetization.
 
-## Latest fully green local checkpoint — 2026-08-18
+## Visual progress map
 
-```text
-Focused Food Operating Loop slice:  5/5 suites, 14/14 tests — PASS
-Full backend Jest:                  152/152 suites, 408/408 tests — PASS
-Backend E2E:                         4/4 suites, 24/24 tests — PASS
-Typecheck:                            PASS
-Build:                                PASS
-Prisma migrate deploy:               PASS
-Prisma migrate status:               Database schema is up to date
+```mermaid
+flowchart LR
+  A[Project ~65%] --> B[Backend Platform 90%]
+  A --> C[Personal Brain 65%]
+  A --> D[Food Intelligence 64%]
+  A --> E[Inventory/Shopping/Price 68%]
+  A --> F[Mobile UX 20%]
+  A --> G[QA/Security/Prod 50%]
+  A --> H[Monetization 0%]
+
+  D --> D1[Food Operating Loop ✅ 100%]
+  D --> D2[Food Decision Brain 🟡 focused tests + typecheck green]
+  D --> D3[Global Recipe Corpus ⏳]
+  D --> D4[Canonical Ingredient/Region/Cuisine ⏳]
+
+  E --> E1[Inventory + Shopping ✅ foundation]
+  E --> E2[Live Market Pricing ⏳]
+
+  F --> F1[Mobile Shell ✅]
+  F --> F2[Core UX ⏳]
+
+  G --> G1[Local Unit/E2E Gate ✅]
+  G --> G2[GitHub Actions ⚠️ runner/log issue]
 ```
 
-The non-fatal E2E worker teardown warning remains, but all E2E suites/tests pass.
+## Latest validated checkpoint — 2026-08-23
 
-## Current unvalidated change — Food Decision Brain
+### Previously completed Quality Gate slice
 
-A new deterministic food-decision layer has now been wired into the backend as the next intelligence slice. It is intentionally built on top of the existing Food Operating Loop and Canonical Ingredient Intelligence rather than creating a parallel recipe-ranking system.
+```text
+Backend unit:             153/153 suites, 410/410 tests — PASS
+Backend lint:             0 errors — PASS
+Backend build:            PASS
+Backend E2E:              4/4 suites, 24/24 tests — PASS
+Prisma validation:        PASS
+Prisma migrations:        37/37 applied, schema up to date — PASS
+Mobile typecheck:         PASS
+Android export:           PASS
+iOS export:               PASS
+E2E teardown warning:     RESOLVED by Prisma disconnect hook
+```
+
+This slice is considered **100% complete for local validation**. GitHub Actions remains a separate infrastructure blocker because previous runs failed before useful job logs were available.
+
+## Current change — Food Decision Brain
+
+A deterministic food-decision layer is being added on top of the existing Food Operating Loop and Canonical Ingredient Intelligence rather than creating a parallel recipe-ranking system.
 
 ### Decision pipeline
 
@@ -60,8 +92,8 @@ Reasons + score breakdown + rejected candidates
 
 ### Implemented
 
-- `RecommendationEngineService` now performs deterministic multi-signal food decisions.
-- `PersonalizationService` builds food context from profile, health, nutrition and recent meals.
+- `RecommendationEngineService` performs deterministic multi-signal food decisions.
+- `PersonalizationService` builds food context from profile, assistant profile, nutrition profile, recent meals and user facts.
 - `RecommendationRankingService` applies score ordering plus near-top recipe-family diversification.
 - Food recommendation endpoint exists under `POST /recommendation-intelligence/food`.
 - Recommendation Intelligence is wired into `AppModule`.
@@ -74,19 +106,40 @@ Reasons + score breakdown + rejected candidates
 - Dietary/allergy hard blocks run before ranking. Uncertainty remains conservative.
 - Missing ingredients are a ranking penalty by default; a caller can explicitly set a maximum missing-ingredient threshold when a strict pantry-only decision is required.
 - Live price values are not fabricated. Budget-aware ranking should be added only after verified market-price coverage is available.
-- Recommendation explanations are derived from the actual scoring evidence, not invented after the decision.
+- Recommendation explanations are derived from actual scoring evidence, not invented after the decision.
 
-### Current validation state
+### Validation ledger — DO NOT REPEAT THESE TESTS UNLESS CODE CHANGES AFFECT THEM
 
-**Not yet fully validated locally.** The next local checkpoint must include:
+| Checkpoint | Result | Date | Notes |
+|---|---|---|---|
+| Backend Prisma Client generation | ✅ PASS | 2026-08-23 | Prisma Client v7.9.1 generated successfully |
+| Backend typecheck | ✅ PASS | 2026-08-23 | `tsc -p tsconfig.json --noEmit` completed with no errors |
+| Recommendation ranking unit tests | ✅ PASS | 2026-08-23 | Included in focused recommendation run |
+| Personalization unit tests | ✅ PASS | 2026-08-23 | Included in focused recommendation run |
+| Recommendation engine unit tests | ✅ PASS | 2026-08-23 | Included in focused recommendation run |
+| Focused Recommendation test total | ✅ 3/3 suites, 4/4 tests | 2026-08-23 | Fully green |
+| Backend lint for current branch | ⏳ NOT VALIDATED AFTER LAST CHANGES | 2026-08-23 | Must run after current branch stabilizes |
+| Backend build for current branch | ⏳ NOT VALIDATED AFTER LAST CHANGES | 2026-08-23 | Must run after current branch stabilizes |
+| Full backend Jest for current branch | ⏳ NOT VALIDATED AFTER LAST CHANGES | 2026-08-23 | Must run after current branch stabilizes |
+| Recommendation API E2E | ⏳ NOT VALIDATED AFTER LAST CHANGES | 2026-08-23 | Must validate endpoint against real local PostgreSQL |
+| Full backend E2E for current branch | ⏳ NOT VALIDATED AFTER LAST CHANGES | 2026-08-23 | Must run after recommendation API E2E |
+| Mobile validation after current branch changes | ⏳ NOT APPLICABLE YET | 2026-08-23 | Recommendation slice is backend-only so far |
 
-1. backend `pnpm install` / dependency state is synchronized;
-2. `pnpm run typecheck` passes;
-3. `pnpm run build` passes;
-4. full Jest passes;
-5. recommendation-engine focused tests cover hard filters, intent/cuisine matching, personalization, missing-ingredient threshold and diversification;
-6. API integration/E2E validation covers `POST /recommendation-intelligence/food`;
-7. only then should this slice be marked fully green.
+### Current slice status
+
+**Food Decision Brain: ~45% of its own validation gate complete.**
+
+Implementation is in place and the focused recommendation tests + backend typecheck are green. It is **NOT 100% yet** because full lint, build, full unit, recommendation API E2E and full backend E2E still need to pass on this branch.
+
+### Next validation sequence
+
+1. Backend lint.
+2. Backend build.
+3. Full backend Jest.
+4. Recommendation API E2E against the isolated local PostgreSQL database.
+5. Full backend E2E.
+6. Re-run only changed/affected suites when fixing failures.
+7. Mark the slice 100% only when all required checks are green.
 
 ## New Slice — Food Operating Loop + Meal Planning + Recipe Scaling Metadata
 
@@ -118,62 +171,11 @@ Deterministic meal recommendation
 Deterministic daily meal plan
 ```
 
-### Persisted RecipeIngredient scaling metadata
-
-Each recipe ingredient now has:
-
-- `measurementKind`
-- `scalingPolicy`
-- `scalingExponent`
-- `batchSize`
-- `maxLinearMultiplier`
-
-The values can be supplied explicitly through the Recipe DTO. When omitted, the backend applies conservative deterministic inference rather than silently changing the user's recipe intent.
-
-### New Food APIs
-
-```text
-GET  /recipes/recommendations?servings=2&countryCode=JP
-GET  /recipes/meal-plan?servings=2&countryCode=JP
-GET  /recipes/:id/food-plan?servings=50&countryCode=JP
-POST /recipes/:id/food-plan/shopping?servings=50
-```
-
-### New Meal Plan API
-
-```text
-GET /budget-intelligence/meal-plan?servings=2&countryCode=JP
-```
-
-### Current guarantees
-
-- Requested serving count is explicit and bounded to `1..10000`.
-- Inventory is compared against **target-serving quantities**.
-- Compatible mass units normalize across g/kg/mg/oz/lb.
-- Compatible volume units normalize across ml/l.
-- Count units normalize across piece/pcs/count.
-- Unknown/incompatible units fail conservatively.
-- Missing quantities are returned in the recipe's requested unit.
-- Missing items can be handed directly to ShoppingService.
-- Recommendations use inventory coverage, nutrition targets and country relevance deterministically.
-- Daily meal planning uses nutrition targets and distinct recommendations where possible.
-- Recipe scaling consumes persisted per-ingredient scaling policies instead of forcing every ingredient into linear scaling.
-- No external Recipe API is required for these flows.
-- Live price values are deliberately not fabricated because global verified price coverage is not complete.
-
 ### Validation state
 
 **Implementation: complete for this current slice.**
 
 **Local validation: 100% green.**
-
-Focused tests:
-
-- `food-operating-loop.service.spec.ts`
-- `recipes.controller.spec.ts`
-- `meal-planning.service.spec.ts`
-- `budget-intelligence.controller.spec.ts`
-- `recipes.service.scaling.spec.ts`
 
 Focused result: **5/5 suites, 14/14 tests — PASS**.
 
@@ -275,7 +277,7 @@ Remaining:
 - Migration-history review.
 - Production deployment runbook.
 - Cost controls and external-API fallback policy.
-- Clean up the non-fatal E2E worker teardown warning.
+- Clean up any remaining non-fatal E2E worker warnings.
 
 ## Business / Monetization — not implemented
 
@@ -297,24 +299,25 @@ Remaining:
 | Personal Brain / deterministic intelligence | 65% |
 | Nutrition foundations | 74% |
 | Fitness / Yoga / Calisthenics / Gym | 75% |
-| Recipe & Food Intelligence | 64% |
+| Recipe & Food Intelligence | 68% |
 | Inventory / Shopping / Price Intelligence | 68% |
 | Mobile product / UX | 20% |
 | AI orchestration / voice / globalization | 40% |
-| QA / Security / Production hardening | 50% |
+| QA / Security / Production hardening | 55% |
 | Business / Monetization | 0% |
 
 **Weighted overall index: ~65%.**
 
 ## Immediate next priorities
 
-1. Add canonical ingredient/region/cuisine normalization.
-2. Expand verified recipe corpus with provenance, allergens and dietary constraints.
-3. Integrate the stacked Global Market workstream after conflict/dependency review.
-4. Connect verified live price data into Food Operating Loop and budget recommendations.
-5. Build the real mobile food journey around these APIs.
-6. Add production hardening and observability.
-7. Add monetization after the core user journey is genuinely strong.
+1. Finish Food Decision Brain validation and mark the slice 100%.
+2. Add canonical ingredient/region/cuisine normalization.
+3. Expand verified recipe corpus with provenance, allergens and dietary constraints.
+4. Integrate the stacked Global Market workstream after conflict/dependency review.
+5. Connect verified live price data into Food Operating Loop and budget recommendations.
+6. Build the real mobile food journey around these APIs.
+7. Add production hardening and observability.
+8. Add monetization after the core user journey is genuinely strong.
 
 ## Working rule
 

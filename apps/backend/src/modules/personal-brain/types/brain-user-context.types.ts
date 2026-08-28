@@ -6,8 +6,13 @@ export type BrainUserContext = {
 
   profile: {
     age?: number;
+    gender?: string;
+    heightCm?: number;
+    weightKg?: number;
     occupation?: string;
     location?: string;
+    activityLevel?: string;
+    targetWeightKg?: number;
   };
 
   lifeAreas: string[];
@@ -15,6 +20,8 @@ export type BrainUserContext = {
   preferences: Record<string, unknown>;
 
   constraints: string[];
+
+  knownFacts?: string[];
 
   rawContext?: BrainUserContextRaw;
 

@@ -25,7 +25,7 @@ describe('BrainStateService', () => {
       { getTargets: jest.fn().mockResolvedValue(nutritionTargets) } as any,
       { getThisWeek: jest.fn().mockResolvedValue(workoutStatus) } as any,
       { getToday: jest.fn().mockResolvedValue(lifeContext) } as any,
-      { build: jest.fn().mockReturnValue({ user: 'ctx' }) },
+      { build: jest.fn().mockReturnValue({ user: 'ctx' }) } as any,
       { buildContext: jest.fn().mockResolvedValue({}) } as any,
       {
         build: jest.fn().mockReturnValue({}),
