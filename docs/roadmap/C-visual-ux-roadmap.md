@@ -31,6 +31,16 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 - [ ] Keep `My Personal Assistant` horizontally centered on the true screen axis, independent of the RTL text flow.
 - [ ] Ensure Persian copy keeps Persian word order while allowing MYPA / English words to remain visually stable; prevent mixed Persian-English strings from appearing reordered or awkward.
 - [ ] Design the screens to create a strong first-impression moment within the first few seconds: premium, friendly, energetic, modern, alive, and clearly related to MYPA.
+- [ ] Treat shared branding/background/typography/iconography as a single system across all onboarding screens.
+
+## Personal profile — location and access
+- [ ] Remove the current country/location question from onboarding completely.
+- [ ] Determine the user's country from the device location instead of asking them to choose a country manually.
+- [ ] Request location permission clearly and intentionally on first app launch, before the app needs country-aware recommendations.
+- [ ] Explain in friendly, non-technical language why location helps (for local food, routines, recommendations, availability/context) before showing the OS permission prompt.
+- [ ] Request the minimum location permission needed for country/region context; do not request background location unless a later feature genuinely requires it.
+- [ ] Handle denied/unavailable location gracefully with a manual country fallback in settings/profile rather than blocking the user.
+- [ ] Keep the local-development implementation independent of Supabase so it can later migrate cleanly.
 
 ## Screen 1 — goals
 - [x] Rewrite the question to explicitly ask: `هدفت از تمرینات ورزشی و برنامه غذایی چیه؟`
@@ -52,14 +62,17 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 - [x] Rewrite the question to: `دوست داری برنامه غذاییت چجوری باشه؟`
 - [x] Rewrite helper copy to: `از این به بعد بهتر می‌تونم غذاهایی رو بهت معرفی کنم که بیشتر خوشت بیاد.`
 - [ ] Re-check all food options for clarity and whether they feel relevant to meal recommendations rather than exercise.
+- [ ] Use distinct dietary options for `گیاه‌خواری` and `وگان`; do not duplicate the meaning.
+- [ ] Replace the duplicate/overlapping food option with `کاهش وزن` as requested for the current onboarding flow.
 - [ ] Separate dietary style/restrictions from general food preferences later if recommendation quality benefits from it.
 - [ ] Ensure `خوش‌فرم شدن` is treated as a cross-domain goal where appropriate, not an exercise-only concept.
 - [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
 
 ## Screen 4 — context
-- [ ] Review the purpose of the country/cuisine question and make the wording immediately understandable.
-- [ ] Make the connection to recommendations explicit without sounding technical.
-- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button.
+- [ ] Remove this onboarding question entirely.
+- [ ] Replace the manual country-selection step with device-location based country/region detection.
+- [ ] Keep a manual country fallback available later in profile/settings when location permission is denied or unavailable.
+- [ ] Remove the current standalone small `ادامه ✦` helper beneath the options; keep only the main Continue button where the shared onboarding action remains.
 
 ## Screen 5 — exercise setup
 - [ ] Ensure this screen is clearly and exclusively about exercise setup, equipment, and available session time.
@@ -71,7 +84,7 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 - [ ] Use a MYPA-aligned background treatment with subtle depth (for example soft gradients, glow/aura, layered surfaces, or restrained ambient shapes) instead of flat white emptiness.
 - [ ] Use stronger card hierarchy, spacing, shadows, and selected states so options feel tactile and intentional.
 - [ ] Use small meaningful visual cues/icons where they improve comprehension, without turning the screen into clutter.
-- [ ] Maintain a consistent visual rhythm across the five screens: header/brand area → question → supporting copy → options → primary action.
+- [ ] Maintain a consistent visual rhythm across the onboarding flow: centered brand → question → supporting copy → options → primary action.
 - [ ] Make the design feel friendly and alive, but not childish or overloaded with effects.
 - [ ] Ensure the design works equally well in Persian RTL and English LTR.
 - [ ] Keep mixed-language labels such as `MYPA` and `My Personal Assistant` visually stable and correctly ordered.
@@ -86,5 +99,6 @@ Goal: make the first-use experience feel polished, lively, coherent, personal, a
 - [ ] Compare every onboarding screen side-by-side for consistency.
 - [ ] Verify RTL layout and typography at realistic Android sizes.
 - [ ] Test short screens, long text, and keyboard/scroll interactions.
+- [ ] Test first-launch permission behavior for location and graceful denial/fallback.
 - [ ] Build and verify on the connected Android phone.
 - [ ] Only after this visual pass is stable, continue with the next product task.
