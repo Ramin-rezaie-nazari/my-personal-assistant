@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 export type Goal = 'fat_loss' | 'body_sculpt' | 'strength' | 'general_fitness';
 export type FitnessLevel = 'beginner' | 'foundation' | 'intermediate' | 'advanced';
 export type Diet = 'balanced' | 'high_protein' | 'vegetarian' | 'vegan' | 'halal';
+export type FoodFocus = 'balanced' | 'high_protein' | 'vegetarian' | 'vegan' | 'weight_loss';
 export type Gender = 'female' | 'male' | 'other' | 'prefer_not_to_say';
 export type ExerciseLocation = 'home' | 'gym';
 export type SessionMinutes = 20 | 30 | 45 | 60 | 90 | 120 | 180;
@@ -21,6 +22,7 @@ export type OnboardingState = {
   goal: Goal | null;
   fitnessLevel: FitnessLevel | null;
   diet: Diet | null;
+  foodFocus: FoodFocus | null;
   exerciseLocation: ExerciseLocation | null;
   sessionMinutes: SessionMinutes | null;
   permissions: {
@@ -29,12 +31,11 @@ export type OnboardingState = {
     camera: PermissionStatus;
     notifications: PermissionStatus;
   };
-  /** Legacy fields kept only for migration compatibility. */
   cuisine?: string | null;
   equipment?: 'none' | 'home' | 'gym' | null;
 };
 
-export const ONBOARDING_VERSION = 2;
+export const ONBOARDING_VERSION = 3;
 export const ONBOARDING_STORAGE_KEY = '@my-personal-assistant/onboarding';
 
 export const DEFAULT_ONBOARDING: OnboardingState = {
@@ -50,6 +51,7 @@ export const DEFAULT_ONBOARDING: OnboardingState = {
   goal: null,
   fitnessLevel: null,
   diet: null,
+  foodFocus: null,
   exerciseLocation: null,
   sessionMinutes: null,
   permissions: {
@@ -102,6 +104,7 @@ export function toPersonalizationContext(state: OnboardingState) {
     goal: state.goal,
     fitnessLevel: state.fitnessLevel,
     diet: state.diet,
+    foodFocus: state.foodFocus,
     exerciseLocation: state.exerciseLocation,
     sessionMinutes: state.sessionMinutes,
   };
