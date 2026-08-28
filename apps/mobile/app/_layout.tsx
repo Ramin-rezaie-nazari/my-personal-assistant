@@ -49,8 +49,8 @@ export default function RootLayout() {
       clearTimeout(timeoutId);
       if (locale) I18nManager.allowRTL(isRTL(locale));
       if (!locale) setTargetRoute('/language');
-      else if (!authenticated) setTargetRoute('/auth');
       else if (!onboarding.completed) setTargetRoute('/onboarding');
+      else if (!authenticated) setTargetRoute('/auth');
       else setTargetRoute('/');
       setBootReady(true);
     }).catch(() => {
