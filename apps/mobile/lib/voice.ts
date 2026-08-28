@@ -26,6 +26,8 @@ const MIN_TTS_TIMEOUT_MS = 15_000;
 const MAX_TTS_TIMEOUT_MS = 60_000;
 const TTS_TIMEOUT_PER_CHARACTER_MS = 90;
 
+let voicesPromise: Promise<Speech.Voice[]> | null = null;
+
 /** Voice character presets; the contract is vendor-agnostic. */
 export const VOICE_PROFILES: VoiceProfile[] = [
   { id: 'venus', name: 'ونوس', gender: 'female', description: 'گرم، مخملی و صمیمی', rate: 0.96, pitch: 1.08, locale: 'fa-IR', nativeStyle: 'tehran' },
@@ -70,6 +72,28 @@ export async function setStoredVoiceProfile(id: string): Promise<void> {
   await AsyncStorage.setItem(STORAGE_KEY, profile.id);
 }
 
+async function getAvailableVoices(): Promise<Speech.Voice[]> {
+  if (!voicesPromise) {
+    voicesPromise = Speech.getAvailableVoicesAsync().catch((error) => {
+      voicesPromise = null;
+      throw error;
+    });
+  }
+  return voicesPromise;
+}
+
+function pickInstalledVoice(voices: Speech.Voice[], locale: string): Speech.Voice | undefined {
+  const normalized = locale.toLowerCase();
+  const languageOnly = normalized.split('-')[0];
+  const exact = voices.filter((voice) => voice.language?.toLowerCase() === normalized);
+  if (exact.length) {
+    return exact.sort((a, b) => Number(b.quality === 'Enhanced') - Number(a.quality === 'Enhanced'))[0];
+  }
+  return voices
+    .filter((voice) => voice.language?.toLowerCase().split('-')[0] === languageOnly)
+    .sort((a, b) => Number(b.quality === 'Enhanced') - Number(a.quality === 'Enhanced'))[0];
+}
+
 export async function speakAssistantText(text: string, profile: VoiceProfile): Promise<void> {
   const normalizedText = text.trim();
   if (!normalizedText) return;
@@ -80,6 +104,13 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
     MAX_TTS_TIMEOUT_MS,
     Math.max(MIN_TTS_TIMEOUT_MS, normalizedText.length * TTS_TIMEOUT_PER_CHARACTER_MS),
   );
+
+  let installedVoice: Speech.Voice | undefined;
+  try {
+    installedVoice = pickInstalledVoice(await getAvailableVoices(), profile.locale);
+  } catch {
+    // Fall back to the platform's language selection below.
+  }
 
   await new Promise<void>((resolve) => {
     let settled = false;
@@ -96,9 +127,11 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
 
     try {
       Speech.speak(normalizedText, {
-        language: profile.locale,
+        language: installedVoice?.language ?? profile.locale,
+        voice: installedVoice?.identifier,
         rate: profile.rate,
         pitch: profile.pitch,
+        volume: 1,
         onDone: finish,
         onStopped: finish,
         onError: finish,
