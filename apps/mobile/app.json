@@ -41,7 +41,9 @@
           "microphonePermission": "Allow $(PRODUCT_NAME) to use your microphone for voice conversations.",
           "speechRecognitionPermission": "Allow $(PRODUCT_NAME) to process your speech for voice recognition.",
           "androidSpeechServicePackages": [
-            "com.google.android.googlequicksearchbox"
+            "com.google.android.tts",
+            "com.google.android.as",
+            "com.samsung.android.bixby.agent"
           ]
         }
       ],
