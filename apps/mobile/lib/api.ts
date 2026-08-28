@@ -1,5 +1,7 @@
+import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+const configuredApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
+const API_URL = __DEV__ && Platform.OS === 'android' ? 'http://127.0.0.1:3000' : (configuredApiUrl ?? 'http://127.0.0.1:3000');
 const ACCESS_TOKEN_KEY = 'mpa.accessToken'; const REFRESH_TOKEN_KEY = 'mpa.refreshToken';
 export type AuthUser = { id:string; email:string; firstName:string|null; lastName:string|null; avatarUrl:string|null };
 export type AuthResponse = { accessToken:string; refreshToken:string; user:AuthUser };
@@ -36,7 +38,7 @@ export async function getStoredRefreshToken(){return AsyncStorage.getItem(REFRES
 export async function hasAuthSession(){const [a,r]=await AsyncStorage.multiGet([ACCESS_TOKEN_KEY,REFRESH_TOKEN_KEY]);return Boolean(a[1]||r[1])}
 export async function clearAuthSession(){await AsyncStorage.multiRemove([ACCESS_TOKEN_KEY,REFRESH_TOKEN_KEY])}
 export function clearAccessToken(){return AsyncStorage.removeItem(ACCESS_TOKEN_KEY)}
-async function rawRequest(path:string,init:RequestInit={},token?:string){const headers=new Headers(init.headers);headers.set('Content-Type','application/json');if(token)headers.set('Authorization',`Bearer ${token}`);return fetch(`${API_URL}${path}`,{...init,headers})}
+async function rawRequest(path:string,init:RequestInit={},token?:string){const headers=new Headers(init.headers);headers.set('Content-Type','application/json');if(token)headers.set('Authorization',`Bearer ${token}`);try{return await fetch(`${API_URL}${path}`,{...init,headers})}catch(error){const detail=error instanceof Error&&error.message?` (${error.message})`:'';throw new Error(`Unable to reach the local API at ${API_URL}${detail}`)}}
 async function refreshAccessToken(){const refreshToken=await getStoredRefreshToken();if(!refreshToken)return null;const response=await rawRequest('/auth/refresh',{method:'POST',body:JSON.stringify({refreshToken})});if(!response.ok){await clearAuthSession();return null}const auth=await response.json() as AuthResponse;await setAuthSession(auth);return auth.accessToken}
 async function request<T>(path:string,init:RequestInit={}):Promise<T>{let token=await getStoredAccessToken();let response=await rawRequest(path,init,token??undefined);if(response.status===401&&token){token=await refreshAccessToken();if(token)response=await rawRequest(path,init,token)}if(!response.ok)throw new Error((await response.text())||`Request failed with ${response.status}`);return response.json() as Promise<T>}
 export function register(data:{email:string;password:string;firstName?:string;lastName?:string}){return request<AuthResponse>('/auth/register',{method:'POST',body:JSON.stringify(data)}).then(async a=>{await setAuthSession(a);return a})}
@@ -79,7 +81,7 @@ export function deleteSupplement(id:string){return request<{deleted:true}>(`/sup
 export function getNotifications(includeRead=false){return request<Notification[]>(`/notifications${includeRead?'?includeRead=true':''}`)}
 export function createNotification(data:{title:string;body?:string;type:string;scheduledAt?:string;priority?:number}){return request<Notification>('/notifications',{method:'POST',body:JSON.stringify(data)})}
 export function markNotificationRead(id:string){return request<{id:string;read:true}>(`/notifications/${id}/read`,{method:'POST'})}
-export function markAllNotificationsRead(){return request<{updated:number}>('/notifications/read-all',{method:'POST'})}
+export function markAllNotificationsRead(){return request<{updated:number}>('/notifications/read-all')}
 export function generateSmartNotifications(dateKey?:string){const q=dateKey?`?dateKey=${encodeURIComponent(dateKey)}`:'';return request<{enabled:boolean;created:number;rules:string[]}>(`/notifications/generate${q}`,{method:'POST'})}
 export function getFoods(q?:string){return request<FoodItem[]>(`/foods${q?`?q=${encodeURIComponent(q)}`:''}`)}
 export function createFood(data:{name:string;category:string;calories?:number;protein?:number;carbs?:number;fat?:number;imageUrl?:string;imageSource?:string}){return request<FoodItem>('/foods',{method:'POST',body:JSON.stringify(data)})}

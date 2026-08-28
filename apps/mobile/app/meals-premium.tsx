@@ -1,0 +1,122 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { getMeals, getNutritionSummary, hasAuthSession, Meal, NutritionSummary } from '../lib/api';
+import { PREMIUM } from '../lib/premium-ui';
+import { PremiumGlow } from '../components/PremiumGlow';
+import { PremiumResultCard } from '../components/PremiumResultCard';
+import { MotionPress } from '../lib/motion-components';
+
+export default function MealsPremiumScreen() {
+  const [meals, setMeals] = useState<Meal[]>([]);
+  const [summary, setSummary] = useState<NutritionSummary | null>(null);
+  const [query, setQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setError(null);
+      const [mealData, nutrition] = await Promise.all([getMeals(), getNutritionSummary()]);
+      setMeals(mealData);
+      setSummary(nutrition);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load meals.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void hasAuthSession().then((ok) => {
+      if (ok) void load();
+      else router.replace('/');
+    });
+  }, [load]);
+
+  const filtered = useMemo(() => {
+    const value = query.trim().toLowerCase();
+    return meals.filter((meal) => !value || meal.name.toLowerCase().includes(value) || meal.type.toLowerCase().includes(value) || meal.items.some((item) => item.food.name.toLowerCase().includes(value)));
+  }, [meals, query]);
+
+  if (loading) return <View style={styles.loading}><PremiumGlow size={250} opacity={0.13} accent="amber"/><ActivityIndicator size="large" color={PREMIUM.colors.primaryBright}/><Text style={styles.loadingText}>Nutrition</Text></View>;
+
+  const calories = Math.round(summary?.meals.calories ?? 0);
+  const protein = Math.round(summary?.meals.protein ?? 0);
+
+  return <SafeAreaView style={styles.safe}>
+    <View style={styles.bg} pointerEvents="none"><PremiumGlow size={330} opacity={0.09} accent="amber"/></View>
+    <ScrollView showsVerticalScrollIndicator={false} refreshControl={<RefreshControl tintColor={PREMIUM.colors.primaryBright} refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />} contentContainerStyle={styles.content}>
+      <View style={styles.topBar}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Back" onPress={() => router.back()} style={styles.iconButton}><Ionicons name="arrow-back" size={19} color={PREMIUM.colors.inkSoft}/></Pressable>
+        <View style={styles.titleWrap}><Text style={styles.kicker}>NUTRITION BRAIN</Text><Text style={styles.title}>Meals</Text></View>
+        <Pressable accessibilityRole="button" accessibilityLabel="Open assistant" onPress={() => router.push('/assistant')} style={styles.iconButton}><Ionicons name="sparkles-outline" size={18} color={PREMIUM.colors.primaryBright}/></Pressable>
+      </View>
+
+      <PremiumResultCard eyebrow="TODAY" title="Your balance" accent="amber" value={`${calories} kcal · ${protein}g protein`} detail={`${summary?.status.calories ?? ''}${summary?.status.protein ? ` · ${summary.status.protein}` : ''}`} actions={[{ label: 'Ask what to eat', icon: 'sparkles-outline', onPress: () => router.push('/assistant') }, { label: 'Log meal', icon: 'add', onPress: () => router.push('/meal-builder') }]} />
+
+      <View style={styles.searchShell}><Ionicons name="search" size={17} color={PREMIUM.colors.muted}/><TextInput value={query} onChangeText={setQuery} placeholder="Search meals or foods…" placeholderTextColor={PREMIUM.colors.muted} style={styles.search}/>{query ? <Pressable onPress={() => setQuery('')}><Ionicons name="close-circle" size={18} color={PREMIUM.colors.muted}/></Pressable> : null}</View>
+
+      {error ? <PremiumResultCard eyebrow="SYSTEM" title="Meals unavailable" detail={error} accent="rose" actions={[{ label: 'Retry', icon: 'refresh', onPress: () => void load() }]} /> : null}
+
+      <View style={styles.sectionHeader}><Text style={styles.sectionKicker}>LOGGED TODAY</Text><Text style={styles.sectionHint}>{filtered.length} meals</Text></View>
+
+      {filtered.length ? filtered.map((meal) => <MotionPress key={meal.id} onPress={() => router.push(`/meal/${meal.id}`)} style={styles.mealCard}>
+        <View style={styles.mealHeader}><View style={styles.mealCopy}><Text style={styles.mealName}>{meal.name}</Text><Text style={styles.mealMeta}>{meal.type} · {new Date(meal.eatenAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text></View><Text style={styles.calorieText}>{Math.round(meal.calories)} kcal</Text></View>
+        <View style={styles.macroRow}><Macro label="Protein" value={`${Math.round(meal.protein)}g`} tone="mint"/><Macro label="Carbs" value={`${Math.round(meal.carbs)}g`} tone="amber"/><Macro label="Fat" value={`${Math.round(meal.fat)}g`} tone="cyan"/><Ionicons name="chevron-forward" size={18} color={PREMIUM.colors.muted} style={{ marginLeft: 'auto' }}/></View>
+        <Text numberOfLines={2} style={styles.foods}>{meal.items.map((item) => `${item.food.name} × ${item.quantity}`).join(' · ')}</Text>
+      </MotionPress>) : <View style={styles.empty}>
+        <View style={styles.emptyIcon}><Ionicons name="restaurant-outline" size={21} color={PREMIUM.colors.primaryBright}/></View>
+        <Text style={styles.emptyTitle}>{query ? 'Nothing matches' : 'No meals logged yet'}</Text>
+        <Text style={styles.emptyBody}>{query ? 'Try another food or meal name.' : 'Your food history will live here as you speak or log meals.'}</Text>
+        <MotionPress onPress={() => router.push('/meal-builder')} style={styles.emptyAction}><Text style={styles.emptyActionText}>Log your first meal</Text></MotionPress>
+      </View>}
+
+      <MotionPress onPress={() => router.push('/daily')} style={styles.backButton}><Text style={styles.backButtonText}>Back to Today</Text><Ionicons name="arrow-forward" size={17} color={PREMIUM.colors.inkSoft}/></MotionPress>
+    </ScrollView>
+  </SafeAreaView>;
+}
+
+function Macro({ label, value, tone }: { label: string; value: string; tone: 'primary' | 'cyan' | 'mint' | 'amber' }) {
+  return <View><Text style={styles.macroLabel}>{label}</Text><Text style={[styles.macroValue, { color: PREMIUM.colors[tone] }]}>{value}</Text></View>;
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: PREMIUM.colors.canvas },
+  bg: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
+  content: { padding: 18, gap: 15, paddingBottom: 120 },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: PREMIUM.colors.canvas },
+  loadingText: { color: PREMIUM.colors.ink, fontSize: 17, fontWeight: '900', marginTop: 14 },
+  topBar: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  iconButton: { width: 42, height: 42, borderRadius: 21, borderWidth: 1, borderColor: PREMIUM.colors.border, backgroundColor: 'rgba(255,255,255,0.035)', alignItems: 'center', justifyContent: 'center' },
+  titleWrap: { flex: 1, alignItems: 'center' },
+  kicker: { color: PREMIUM.colors.muted, fontSize: 8, fontWeight: '900', letterSpacing: 1.5 },
+  title: { color: PREMIUM.colors.ink, fontSize: 18, fontWeight: '900', marginTop: 3 },
+  searchShell: { height: 50, borderRadius: 18, borderWidth: 1, borderColor: PREMIUM.colors.border, backgroundColor: PREMIUM.colors.surfaceGlass, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, gap: 8 },
+  search: { flex: 1, color: PREMIUM.colors.ink, fontSize: 13 },
+  sectionHeader: { paddingHorizontal: 2 },
+  sectionKicker: { color: PREMIUM.colors.muted, fontSize: 8, fontWeight: '900', letterSpacing: 1.4 },
+  sectionHint: { color: PREMIUM.colors.inkSoft, fontSize: 12, fontWeight: '700', marginTop: 3 },
+  mealCard: { borderRadius: 22, backgroundColor: PREMIUM.colors.surfaceGlass, borderWidth: 1, borderColor: PREMIUM.colors.border, padding: 16 },
+  mealHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 10 },
+  mealCopy: { flex: 1 },
+  mealName: { color: PREMIUM.colors.ink, fontSize: 16, fontWeight: '900' },
+  mealMeta: { color: PREMIUM.colors.muted, fontSize: 10, marginTop: 4, textTransform: 'capitalize' },
+  calorieText: { color: PREMIUM.colors.inkSoft, fontSize: 11, fontWeight: '900' },
+  macroRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 18, paddingTop: 12, marginTop: 12, borderTopWidth: 1, borderTopColor: PREMIUM.colors.border },
+  macroLabel: { color: PREMIUM.colors.muted, fontSize: 9, fontWeight: '800' },
+  macroValue: { fontSize: 12, fontWeight: '900', marginTop: 2 },
+  foods: { color: PREMIUM.colors.inkSoft, fontSize: 11, lineHeight: 17, marginTop: 12 },
+  empty: { borderRadius: 24, borderWidth: 1, borderColor: PREMIUM.colors.border, backgroundColor: PREMIUM.colors.surfaceGlass, padding: 28, alignItems: 'center' },
+  emptyIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(139,124,255,0.12)', alignItems: 'center', justifyContent: 'center' },
+  emptyTitle: { color: PREMIUM.colors.ink, fontSize: 17, fontWeight: '900', marginTop: 12 },
+  emptyBody: { color: PREMIUM.colors.muted, fontSize: 12, lineHeight: 18, textAlign: 'center', marginTop: 6, maxWidth: 280 },
+  emptyAction: { marginTop: 15, minHeight: 44, paddingHorizontal: 16, borderRadius: 22, backgroundColor: PREMIUM.colors.primaryBright, alignItems: 'center', justifyContent: 'center' },
+  emptyActionText: { color: PREMIUM.colors.ink, fontSize: 11, fontWeight: '900' },
+  backButton: { minHeight: 48, borderRadius: 22, borderWidth: 1, borderColor: PREMIUM.colors.border, backgroundColor: 'rgba(255,255,255,0.025)', paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  backButtonText: { color: PREMIUM.colors.inkSoft, fontSize: 12, fontWeight: '900' },
+});

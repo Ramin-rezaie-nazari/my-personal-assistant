@@ -121,7 +121,8 @@ export class BrainStateService {
         ? (generatedContext as unknown as BrainContext)
         : { timestamp: new Date().toISOString(), source: 'context-engine' };
 
-    const userContext = this.userContextService.build({
+    const userContext = await this.userContextService.build({
+      userId,
       context: brainContext,
       goals,
       memories: memoryContext.memories,
