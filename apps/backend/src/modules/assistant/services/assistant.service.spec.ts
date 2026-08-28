@@ -1,5 +1,6 @@
 import { BrainOrchestratorService } from '../../personal-brain/services/brain-orchestrator.service';
 import { AssistantService } from './assistant.service';
+import { LocalLanguageUnderstandingService } from './local-language-understanding.service';
 
 describe('AssistantService', () => {
   const makeService = (
@@ -10,6 +11,7 @@ describe('AssistantService', () => {
       append: jest.Mock;
       get: jest.Mock;
       understand: jest.Mock;
+      semanticUnderstand: jest.Mock;
       createPlan: jest.Mock;
     }> = {},
   ) => {
@@ -41,6 +43,18 @@ describe('AssistantService', () => {
           .fn()
           .mockReturnValue({ intent: 'UNKNOWN', confidence: 0, entities: {} }),
     } as any;
+    const semanticMultilingualUnderstanding = {
+      understand:
+        overrides.semanticUnderstand ??
+        jest.fn().mockReturnValue({
+          intent: 'UNKNOWN',
+          confidence: 0,
+          entities: {},
+          normalizedText: '',
+          language: 'en-US',
+          languageConfidence: 0,
+        }),
+    } as any;
     const planning = {
       createPlan:
         overrides.createPlan ??
@@ -59,6 +73,7 @@ describe('AssistantService', () => {
       contextual,
       conversation,
       localLanguageUnderstanding,
+      semanticMultilingualUnderstanding,
       planning,
     );
   };
@@ -177,5 +192,41 @@ describe('AssistantService', () => {
       'یک یادآوری جدید بساز',
     );
     expect(result).toBe(response);
+  });
+
+  it('recognizes representative native-language reminder requests across the supported locale matrix', () => {
+    const service = new LocalLanguageUnderstandingService();
+    const cases: Array<[string, string]> = [
+      ['fa-IR', 'یادم بنداز شام'], ['en-US', 'remind me about dinner'], ['es-ES', 'recuérdame cenar'],
+      ['fr-FR', 'rappelle-moi le dîner'], ['de-DE', 'erinnere mich an das Abendessen'], ['it-IT', 'ricordami della cena'],
+      ['pt-BR', 'me lembre do jantar'], ['ru-RU', 'напомни мне про ужин'], ['tr-TR', 'bana hatırlat akşam yemeğini'],
+      ['ar-SA', 'ذكرني بالعشاء'], ['he-IL', 'תזכיר לי ארוחת ערב'], ['hi-IN', 'मुझे रात के खाने की याद दिलाओ'],
+      ['bn-IN', 'রাতের খাবারের কথা মনে করিয়ে দাও'], ['ur-PK', 'مجھے رات کے کھانے کی یاد دلاؤ'], ['pa-IN', 'ਮੈਨੂੰ ਰਾਤ ਦੇ ਖਾਣੇ ਦੀ ਯਾਦ ਕਰਾਓ'],
+      ['ta-IN', 'இரவு உணவை நினைவூட்டு'], ['te-IN', 'రాత్రి భోజనం గుర్తు చేయు'], ['ja-JP', '夕食を思い出させて'],
+      ['ko-KR', '저녁을 알려줘'], ['zh-CN', '提醒我晚饭'], ['zh-TW', '提醒我晚餐'], ['vi-VN', 'nhắc tôi ăn tối'],
+      ['th-TH', 'เตือนฉันเรื่องอาหารเย็น'], ['id-ID', 'ingatkan saya makan malam'], ['ms-MY', 'ingatkan saya tentang makan malam'],
+      ['fil-PH', 'paalalahanan ako sa hapunan'], ['sv-SE', 'påminn mig om middagen'], ['no-NO', 'minn meg på middag'],
+      ['da-DK', 'mind mig om aftensmad'], ['fi-FI', 'muistuta minua illallisesta'], ['cs-CZ', 'připomeň mi večeři'],
+      ['sk-SK', 'pripomeň mi večeru'], ['hu-HU', 'emlékeztess a vacsorára'], ['ro-RO', 'amintește-mi de cină'],
+      ['bg-BG', 'напомни ми за вечерята'], ['el-GR', 'θύμισέ μου το βραδινό'], ['sr-RS', 'подсети ме на вечеру'],
+      ['hr-HR', 'podsjeti me na večeru'], ['sl-SI', 'opomni me na večerjo'], ['sw-KE', 'nikumbushe chakula cha jioni'],
+      ['am-ET', 'እራት አስታውሰኝ'], ['fa-AF', 'یادم بنداز شام'], ['fa-TJ', 'ба ман хотиррасон кун'], ['en-GB', 'remind me about dinner'],
+      ['es-MX', 'recuérdame cenar'], ['uk-UA', 'нагадай мені про вечерю'], ['pl-PL', 'przypomnij mi o kolacji'],
+      ['nl-NL', 'herinner me aan het avondeten'], ['gu-IN', 'મને રાત્રિભોજનની યાદ કરાવો'], ['mr-IN', 'मला रात्रीच्या जेवणाची आठवण करून दे'],
+    ];
+
+    for (const [locale, input] of cases) {
+      const result = service.understand(input, locale);
+      expect(result.language).toBe(locale);
+      expect(result.intent).toBe('CREATE_REMINDER');
+      expect(result.confidence).toBeGreaterThanOrEqual(0.84);
+    }
+  });
+
+  it('keeps a preferred locale authoritative for code-switched speech', () => {
+    const service = new LocalLanguageUnderstandingService();
+    const result = service.understand('remind me درباره شام', 'fa-IR');
+    expect(result.language).toBe('fa-IR');
+    expect(result.intent).toBe('CREATE_REMINDER');
   });
 });

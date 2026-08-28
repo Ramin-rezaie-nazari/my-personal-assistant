@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getVoiceLanguage, type LanguageCode, VOICE_LANGUAGES } from './voice-language';
 
-export type AppLocale = 'fa' | 'en';
+export type AppLocale = 'fa' | 'en' | LanguageCode;
 export const DEFAULT_LOCALE: AppLocale = 'en';
 export const LOCALE_STORAGE_KEY = '@my-personal-assistant/locale';
 
@@ -21,19 +22,40 @@ export const translations = {
 
 export type TranslationKey = keyof typeof translations.en;
 
+function translationLocale(locale: AppLocale): keyof typeof translations {
+  if (locale === 'fa' || locale.startsWith('fa-')) return 'fa';
+  return 'en';
+}
+
 export function t(locale: AppLocale, key: TranslationKey): string {
-  return translations[locale][key];
+  return translations[translationLocale(locale)][key] ?? translations.en[key];
+}
+
+export function getLanguageOptions() {
+  return VOICE_LANGUAGES.map((language) => ({
+    code: language.code,
+    label: language.language,
+    region: language.region,
+    rtl: language.rtl,
+  }));
 }
 
 export async function getStoredLocale(): Promise<AppLocale | null> {
   const value = await AsyncStorage.getItem(LOCALE_STORAGE_KEY);
-  return value === 'fa' || value === 'en' ? value : null;
+  if (value === 'fa' || value === 'en') return value;
+  return VOICE_LANGUAGES.some((item) => item.code === value) ? (value as LanguageCode) : null;
 }
 
 export async function setStoredLocale(locale: AppLocale): Promise<void> {
   await AsyncStorage.setItem(LOCALE_STORAGE_KEY, locale);
 }
 
+export function normalizeLocale(locale: AppLocale): LanguageCode {
+  if (locale === 'fa') return 'fa-IR';
+  if (locale === 'en') return 'en-US';
+  return getVoiceLanguage(locale).code;
+}
+
 export function isRTL(locale: AppLocale): boolean {
-  return locale === 'fa';
+  return getVoiceLanguage(normalizeLocale(locale)).rtl;
 }

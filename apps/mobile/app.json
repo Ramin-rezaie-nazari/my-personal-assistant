@@ -28,6 +28,13 @@
         {
           "cameraPermission": "اجازه می‌دی دوربین فقط برای مربی یوگا و تحلیل حرکت استفاده بشه؟"
         }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "اجازه می‌دی دستیار برای گفت‌وگوی صوتی به میکروفن دسترسی داشته باشه؟",
+          "speechRecognitionPermission": "اجازه می‌دی دستیار صدات رو برای تشخیص گفتار پردازش کنه؟"
+        }
       ]
     ],
     "experiments": {
