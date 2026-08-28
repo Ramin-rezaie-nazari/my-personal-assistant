@@ -46,6 +46,11 @@ export class LocalIntelligenceProvider implements AiProvider {
           providerId: this.id,
           text: 'باشه، خلاصه تغذیه امروزت رو از اطلاعات ثبت‌شده بررسی می‌کنم.',
         };
+      case 'ADD_WATER':
+        return {
+          providerId: this.id,
+          text: 'حتماً، مقدار آب مصرفی‌ات رو ثبت می‌کنم.',
+        };
       case 'CREATE_REMINDER':
         return {
           providerId: this.id,

@@ -88,6 +88,20 @@ describe('AssistantService', () => {
     expect(processRequest).toHaveBeenCalledWith('hello', 'user-123');
   });
 
+  it('maps a local water intent to add_water', () => {
+    const service = makeService() as any;
+    const result = service.responseForLocalIntent({
+      intent: 'ADD_WATER',
+      entities: { waterAmountMl: 500 },
+      confidence: 0.97,
+      normalizedText: '۵۰۰ میلی لیتر آب خوردم',
+    });
+    expect(result).toMatchObject({
+      intent: 'hydration',
+      nextAction: 'add_water',
+    });
+  });
+
   it('maps a linked workout update to update_workout', () => {
     const service = makeService() as any;
     const result = service.resolveContextualExecution(
