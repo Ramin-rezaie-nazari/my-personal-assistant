@@ -126,6 +126,7 @@ function RootLayoutContent() {
 
   return (
     <View style={[styles.root, { backgroundColor: theme.canvas }]}>
+      <ThemeBackdrop />
       <Stack screenOptions={screenOptions}>
         <Stack.Screen name="index" options={stackScreens['/']} />
         <Stack.Screen name="assistant" options={stackScreens['/assistant']} />
@@ -133,7 +134,6 @@ function RootLayoutContent() {
         <Stack.Screen name="auth" options={stackScreens['/auth']} />
         <Stack.Screen name="onboarding" options={stackScreens['/onboarding']} />
       </Stack>
-      <ThemeBackdrop />
       {showAssistantBubble ? (
         <Pressable
           onPress={() => router.push('/assistant')}
@@ -163,7 +163,6 @@ const styles = StyleSheet.create({
   startupGlow: { position: 'absolute', width: 170, height: 170, borderRadius: 85 },
   startupMark: { marginBottom: 18 },
   startupSubtitle: { marginTop: 6, fontSize: 13, textAlign: 'center' },
-  startupSpinner: { marginTop: 28 },
   assistantBubble: { position: 'absolute', right: 18, bottom: 24, borderRadius: 20, elevation: 6, shadowColor: '#000', shadowOpacity: BRAND.shadow.opacity, shadowRadius: BRAND.shadow.radius, shadowOffset: { width: 0, height: BRAND.shadow.offsetY }, borderWidth: 1 },
   pressed: { opacity: 0.82, transform: [{ scale: 0.96 }] },
 });
