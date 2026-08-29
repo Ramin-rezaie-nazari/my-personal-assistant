@@ -1,6 +1,6 @@
 const fs = require('node:fs');
 const path = require('node:path');
-const { execFileSync, spawnSync } = require('node:child_process');
+const { spawnSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..', '..', '..');
 const mobile = path.join(root, 'apps', 'mobile');
@@ -20,9 +20,28 @@ function readJson(file) {
   }
 }
 
+function resolvePackageJson(pkg) {
+  try {
+    return require.resolve(`${pkg}/package.json`, { paths: [mobile] });
+  } catch {}
+
+  const virtualStore = path.join(root, 'node_modules', '.pnpm');
+  if (!fs.existsSync(virtualStore)) return null;
+
+  const packageDirName = pkg.replace('/', '+').replace('@', '@');
+  const candidates = fs.readdirSync(virtualStore)
+    .filter((entry) => entry.startsWith(`${packageDirName}@`))
+    .sort()
+    .map((entry) => path.join(virtualStore, entry, 'node_modules', pkg, 'package.json'))
+    .filter((file) => fs.existsSync(file));
+
+  return candidates[0] ?? null;
+}
+
 function installedVersion(pkg) {
-  const packageJson = require.resolve(`${pkg}/package.json`, { paths: [mobile] });
-  return { version: readJson(packageJson).version, file: packageJson };
+  const file = resolvePackageJson(pkg);
+  if (!file) throw new Error(`cannot resolve ${pkg}/package.json`);
+  return { version: readJson(file).version, file };
 }
 
 function run(command, args, cwd) {
@@ -61,7 +80,7 @@ for (const [name, expectedVersion] of Object.entries(expected)) {
     const actual = installedVersion(name).version;
     if (actual !== expectedVersion) fail(`${name} resolves to ${actual}; expected ${expectedVersion}`);
   } catch (error) {
-    fail(`${name} is not resolvable from mobile: ${error.message}`);
+    fail(`${name} is not installed correctly: ${error.message}`);
   }
 }
 
@@ -75,16 +94,27 @@ for (const searchRoot of [root, mobile]) {
 }
 if (reactRoots.size > 1) fail(`multiple React versions detected: ${[...reactRoots].join(', ')}`);
 
-const packageList = path.join(android, 'app', 'build', 'generated', 'autolinking', 'src', 'main', 'java', 'com', 'facebook', 'react', 'PackageList.java');
+const packageList = path.join(
+  android,
+  'app',
+  'build',
+  'generated',
+  'autolinking',
+  'src',
+  'main',
+  'java',
+  'com',
+  'facebook',
+  'react',
+  'PackageList.java',
+);
+
 if (fs.existsSync(packageList)) {
   const source = fs.readFileSync(packageList, 'utf8');
   const hasLegacyExpoImport = source.includes('import expo.core.ExpoModulesPackage;') || source.includes('new ExpoModulesPackage()');
   if (hasLegacyExpoImport) {
-    let coreRoot;
-    try {
-      coreRoot = installedVersion('expo-modules-core').file;
-    } catch {}
-    fail(`generated PackageList.java references legacy ExpoModulesPackage, which is incompatible with the installed expo-modules-core. Generated file: ${path.relative(root, packageList)}${coreRoot ? `; expo-modules-core: ${coreRoot}` : ''}`);
+    const core = installedVersion('expo-modules-core');
+    fail(`generated PackageList.java references legacy ExpoModulesPackage, incompatible with expo-modules-core ${core.version}. Generated file: ${path.relative(root, packageList)}`);
   }
 }
 
@@ -102,5 +132,6 @@ if (!config.includes('53.0.')) fail('Expo public config does not report SDK 53')
 console.log('ANDROID BUILD PREFLIGHT PASS');
 console.log(`React: ${[...reactRoots][0] ?? 'unknown'}`);
 console.log(`Expo: ${expected.expo}`);
+console.log('Expo modules: installed and version-aligned');
 console.log('Autolinking PackageList: no legacy ExpoModulesPackage reference');
 console.log('Android SDK: configured');
