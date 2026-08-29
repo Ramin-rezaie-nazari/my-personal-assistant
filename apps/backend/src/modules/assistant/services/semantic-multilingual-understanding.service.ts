@@ -65,10 +65,7 @@ const PARAPHRASES: Partial<Record<SupportedLocalLanguage, Partial<Record<IntentC
     CANCEL_REQUEST: ['بیخیالش', 'اون درخواست رو لغو کن', 'ولش کن', 'کنسلش کن', 'این رو بیخیال شو'],
   },
   'es-ES': {
-    RECOMMEND_MEAL: [
-      'qué puedo comer', 'ayúdame a elegir la cena', 'qué ceno hoy', 'qué puedo cenar esta noche', 'ideas para cenar',
-      'qué me recomiendas para cenar', 'qué podría comer esta noche', 'dame una idea para la cena',
-    ],
+    RECOMMEND_MEAL: ['qué puedo comer', 'ayúdame a elegir la cena', 'qué ceno hoy', 'qué puedo cenar esta noche', 'ideas para cenar', 'qué me recomiendas para cenar', 'qué podría comer esta noche', 'dame una idea para la cena'],
     CREATE_REMINDER: ['no dejes que se me olvide', 'recuérdamelo después', 'recuérdame eso luego', 'ponme un recordatorio', 'acuérdame después'],
     ADD_TO_BASKET: ['pon pollo en mi cesta', 'añade pollo a la compra', 'mete pollo en el carrito', 'añade esto al carrito'],
     GET_NUTRITION_SUMMARY: ['cómo voy de calorías', 'cómo va mi nutrición hoy', 'cuántas calorías llevo hoy', 'cuánta proteína llevo hoy'],
@@ -82,20 +79,14 @@ const PARAPHRASES: Partial<Record<SupportedLocalLanguage, Partial<Record<IntentC
     CANCEL_REQUEST: ['cancela eso', 'olvídalo', 'déjalo', 'ya no'],
   },
   'fr-FR': {
-    RECOMMEND_MEAL: [
-      'qu est-ce que je peux manger', 'aide-moi à choisir le dîner', 'qu est-ce que je mange ce soir', 'des idées pour le dîner',
-      'que me conseilles-tu pour le dîner', 'je mange quoi ce soir', 'une idée pour dîner',
-    ],
+    RECOMMEND_MEAL: ['qu est-ce que je peux manger', 'aide-moi à choisir le dîner', 'qu est-ce que je mange ce soir', 'des idées pour le dîner', 'que me conseilles-tu pour le dîner', 'je mange quoi ce soir', 'une idée pour dîner'],
     CREATE_REMINDER: ['ne me laisse pas oublier', 'rappelle-moi plus tard', 'tu peux me le rappeler', 'mets-moi un rappel', 'rappelle-moi ça après'],
     ADD_TO_BASKET: ['mets du poulet dans mon panier', 'ajoute du poulet aux courses', 'mets ça dans le panier', 'ajoute ça au panier'],
     GET_NUTRITION_SUMMARY: ['comment vont mes calories', 'montre ma nutrition du jour', 'combien de calories aujourd’hui', 'combien de protéines aujourd’hui'],
     CANCEL_REQUEST: ['oublie ça', 'annule cette demande', 'laisse tomber', 'annule ça', 'finalement non'],
   },
   'de-DE': {
-    RECOMMEND_MEAL: [
-      'was kann ich essen', 'hilf mir beim abendessen', 'was soll ich heute abend essen', 'ideen fürs abendessen',
-      'was empfiehlst du zum abendessen', 'was könnte ich heute essen', 'was gibt es zum abendessen',
-    ],
+    RECOMMEND_MEAL: ['was kann ich essen', 'hilf mir beim abendessen', 'was soll ich heute abend essen', 'ideen fürs abendessen', 'was empfiehlst du zum abendessen', 'was könnte ich heute essen', 'was gibt es zum abendessen'],
     CREATE_REMINDER: ['lass mich das nicht vergessen', 'erinnere mich später', 'kannst du mich daran erinnern', 'stell mir eine erinnerung', 'erinnere mich daran später'],
     ADD_TO_BASKET: ['leg hühnchen in meinen warenkorb', 'füge hühnchen zum einkauf hinzu', 'pack das in den warenkorb', 'füge das dem warenkorb hinzu'],
     GET_NUTRITION_SUMMARY: ['wie sind meine kalorien heute', 'wie sieht meine ernährung heute aus', 'wie viel protein hatte ich heute', 'wie viele kalorien habe ich heute'],
@@ -204,7 +195,6 @@ const CANONICAL_INTENTS: Record<string, Exclude<LocalIntent, 'UNKNOWN'>> = {
   'am-ET::እራት አስታውሰኝ': 'CREATE_REMINDER',
   'fa-AF::یادم بنداز شام': 'CREATE_REMINDER',
   'fa-TJ::ба ман хотиррасон кун': 'CREATE_REMINDER',
-
   'fa-IR::برای شام چی بخورم': 'RECOMMEND_MEAL',
   'en-US::what should i eat for dinner': 'RECOMMEND_MEAL',
   'es-ES::¿qué debería comer': 'RECOMMEND_MEAL',
@@ -311,7 +301,7 @@ export class SemanticMultilingualUnderstandingService {
 
   splitClauses(input: string): string[] {
     return input
-      .split(/(?:[.;؛。]+\s*|\s+(?:and then|and|then|also|plus)\s+|\s+و\s+(?=بعد\s+)|\s+(?=بعد\s+)|(?<=،)\s*(?=(?:然后|然後|然后再|その後|それから|そして)\s*)|\s+(?=(?:ثم|ثم بعد)\s+))/iu)
+      .split(/(?:[.;؛۔。]+\s*|\s+(?:and then|and|then|also|plus)\s+|\s+و\s+(?=بعد\s*)|\s+(?=بعد\s*)|\s*(?:[،,])\s*(?=(?:然后|然後|然后再|之后|それから|そして|ثم)\s*)|\s+(?=(?:ثم|ثم بعد)\s+))/iu)
       .map((part) => part.trim())
       .filter(Boolean);
   }
