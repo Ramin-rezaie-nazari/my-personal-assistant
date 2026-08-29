@@ -13,6 +13,7 @@
     "voice:quality": "node scripts/voice-quality-check.cjs",
     "ui:quality": "node scripts/ui-quality-check.cjs",
     "d1:readiness": "node scripts/d1-voice-readiness-check.cjs",
+    "android:preflight": "node scripts/android-build-preflight.cjs",
     "d1:final": "node scripts/d1-final-verification.cjs"
   },
   "dependencies": {
