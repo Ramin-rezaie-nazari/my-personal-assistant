@@ -153,27 +153,9 @@ export class ContextualCommandService {
 
   private referencesPrevious(text: string): boolean {
     return this.matches(text, [
-      'that',
-      'it',
-      'this',
-      'same',
-      'previous',
-      'earlier',
-      'the last one',
-      'همون',
-      'همون قبلی',
-      'همون یکی',
-      'همین',
-      'اینو',
-      'این یکی',
-      'قبلی',
-      'اونو',
-      'اون یکی',
-      'دوباره',
-      'باز هم',
-      'به جاش',
-      'بجاش',
-      'همونی که',
+      'that', 'it', 'this', 'same', 'previous', 'earlier', 'the last one',
+      'همون', 'همون قبلی', 'همون یکی', 'همین', 'اینو', 'این یکی', 'قبلی',
+      'اونو', 'اون یکی', 'دوباره', 'باز هم', 'به جاش', 'بجاش', 'همونی که',
     ]);
   }
 
@@ -185,25 +167,11 @@ export class ContextualCommandService {
     if (quantity) entities.quantity = Number(quantity[1]);
     else {
       const wordQuantity: Record<string, number> = {
-        یک: 1,
-        یه: 1,
-        یکی: 1,
-        دو: 2,
-        سه: 3,
-        چهار: 4,
-        پنج: 5,
-        شش: 6,
-        هفت: 7,
-        هشت: 8,
-        نه: 9,
-        ده: 10,
+        یک: 1, یه: 1, یکی: 1, دو: 2, سه: 3, چهار: 4, پنج: 5,
+        شش: 6, هفت: 7, هشت: 8, نه: 9, ده: 10,
       };
       for (const [word, value] of Object.entries(wordQuantity)) {
-        if (
-          new RegExp(`(?:^|\\s)${word}(?=\\s*(?:تا|عدد|مورد)?(?:\\s|$))`).test(
-            text,
-          )
-        ) {
+        if (new RegExp(`(?:^|\\s)${word}(?=\\s*(?:تا|عدد|مورد)?(?:\\s|$))`).test(text)) {
           entities.quantity = value;
           break;
         }
@@ -211,58 +179,31 @@ export class ContextualCommandService {
     }
     const time = text.match(/\b([01]?\d|2[0-3])\s*(?::|\.)([0-5]\d)\b/);
     if (time) entities.time = `${time[1].padStart(2, '0')}:${time[2]}`;
-    const duration = text.match(
-      /(?:^|\s)(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)(?=\s|$)/i,
-    );
+    const duration = text.match(/(?:^|\s)(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)(?=\s|$)/i);
     if (duration) entities.durationMinutes = Number(duration[1]);
-    const relative = text.match(
-      /(?:^|\s)(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\s*(?:بعد|دیگه|later|from now)(?=\s|$)/i,
-    );
+    const relative = text.match(/(?:^|\s)(\d{1,3})\s*(?:min|mins|minute|minutes|دقیقه)\s*(?:بعد|دیگه|later|from now)(?=\s|$)/i);
     if (relative) entities.relativeMinutes = Number(relative[1]);
     if (this.matches(text, ['اول', 'اولی', 'first'])) entities.ordinal = 1;
-    else if (this.matches(text, ['دوم', 'دومی', 'second']))
-      entities.ordinal = 2;
+    else if (this.matches(text, ['دوم', 'دومی', 'second'])) entities.ordinal = 2;
     else if (this.matches(text, ['سوم', 'سومی', 'third'])) entities.ordinal = 3;
     if (this.matches(text, ['امروز', 'today'])) entities.date = 'today';
-    else if (this.matches(text, ['فردا', 'tomorrow']))
-      entities.date = 'tomorrow';
-    else if (this.matches(text, ['پس فردا', 'پس‌فردا']))
-      entities.date = 'day_after_tomorrow';
-    if (
-      this.matches(text, [
-        'نه',
-        'نخیر',
-        'نه ممنون',
-        'نمیخوام',
-        'نمی خوام',
-        'no',
-        'nope',
-      ])
-    )
-      entities.confirmation = 'no';
-    else if (
-      this.matches(text, [
-        'بله',
-        'آره',
-        'اره',
-        'حتما',
-        'باشه',
-        'اوکی',
-        'yes',
-        'sure',
-      ])
-    )
-      entities.confirmation = 'yes';
-    if (this.matches(text, ['نه', 'بدون', 'نذار', 'نمیخوام', 'نمی خوام']))
-      entities.negated = true;
+    else if (this.matches(text, ['فردا', 'tomorrow'])) entities.date = 'tomorrow';
+    else if (this.matches(text, ['پس فردا', 'پس‌فردا'])) entities.date = 'day_after_tomorrow';
+    if (this.matches(text, ['نه', 'نخیر', 'نه ممنون', 'نمیخوام', 'نمی خوام', 'no', 'nope'])) entities.confirmation = 'no';
+    else if (this.matches(text, ['بله', 'آره', 'اره', 'حتما', 'باشه', 'اوکی', 'yes', 'sure'])) entities.confirmation = 'yes';
+    if (this.matches(text, ['نه', 'بدون', 'نذار', 'نمیخوام', 'نمی خوام'])) entities.negated = true;
     return entities;
   }
 
   private splitClauses(text: string): string[] {
-    return text
-      .split(/\s+(?:و|ولی|اما|بعد|سپس|then|and|but)\s+/i)
-      .map((part) => part.trim())
-      .filter(Boolean);
+    const clauses = text
+      .split(/[;؛.。]+\s*/u)
+      .flatMap((part) =>
+        part.split(/(?:\s+(?:and then|and|but|then|also|plus|et puis|et|puis|y luego|y|luego|und danach|und dann|und|e poi|e|depois|e depois|и потом|и|sonra|ve sonra|ve|و بعدش|و همچنین|سپس|هم|یا|ولی|اما|ثم)(?=\s)|\s+و\s*(?=بعد\b)|\s+(?=بعد\b))/iu),
+      )
+      .flatMap((part) => part.replace(/[،,]\s*(?=(?:然后|然後|然后再|その後|それから|そして|ثم)\s*)/gu, '\n').split('\n'));
+
+    return clauses.map((part) => part.trim()).filter(Boolean);
   }
 
   private detectContradictions(
