@@ -2,8 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { Gender, getOnboardingState } from './onboarding';
 
+export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
 export type AppThemeMode = 'default' | 'female';
 
 export const APP_THEME_STORAGE_KEY = '@my-personal-assistant/theme';
@@ -86,14 +86,7 @@ function themeForMode(mode: AppThemeMode): AppTheme {
 
 export async function getStoredThemeMode(): Promise<AppThemeMode> {
   const stored = await AsyncStorage.getItem(APP_THEME_STORAGE_KEY);
-  if (stored === 'female' || stored === 'default') return stored;
-
-  try {
-    const onboarding = await getOnboardingState();
-    return modeForGender(onboarding.gender);
-  } catch {
-    return 'default';
-  }
+  return stored === 'female' || stored === 'default' ? stored : 'default';
 }
 
 export function AppThemeProvider({ children }: { children: ReactNode }) {
@@ -145,9 +138,9 @@ export function ThemeBackdrop() {
 }
 
 /**
- * Very subtle foreground atmosphere keeps legacy hard-coded screens visually
- * connected to the selected feminine theme until each screen is migrated to
- * semantic theme tokens. It never intercepts touches.
+ * Subtle foreground atmosphere keeps legacy hard-coded screens visually
+ * connected to the selected feminine theme until semantic token migration.
+ * It never intercepts touches.
  */
 export function ThemeAtmosphere() {
   const { theme } = useAppTheme();
@@ -166,43 +159,13 @@ export function ThemeAtmosphere() {
 
 const styles = StyleSheet.create({
   wash: { ...StyleSheet.absoluteFillObject, opacity: 0.72 },
-  pinkOrb: {
-    position: 'absolute', width: 290, height: 290, borderRadius: 145,
-    top: -100, right: -95,
-  },
-  turquoiseOrb: {
-    position: 'absolute', width: 240, height: 240, borderRadius: 120,
-    top: 185, left: -110,
-  },
-  roseRibbon: {
-    position: 'absolute', left: -100, right: -100, height: 190,
-    bottom: -120, borderRadius: 100, backgroundColor: 'rgba(255,111,97,0.055)',
-    transform: [{ rotate: '-7deg' }],
-  },
-  skyRibbon: {
-    position: 'absolute', left: -110, right: -110, height: 130,
-    bottom: -78, borderRadius: 100, backgroundColor: 'rgba(86,167,255,0.045)',
-    transform: [{ rotate: '5deg' }],
-  },
-  foregroundPink: {
-    position: 'absolute', width: 360, height: 360, borderRadius: 180,
-    top: -170, left: -110, backgroundColor: 'rgba(232,62,120,0.035)',
-  },
-  foregroundCoral: {
-    position: 'absolute', width: 280, height: 280, borderRadius: 140,
-    top: 90, right: -130, backgroundColor: 'rgba(255,111,97,0.03)',
-  },
-  foregroundTurquoise: {
-    position: 'absolute', width: 320, height: 320, borderRadius: 160,
-    bottom: -170, left: -90, backgroundColor: 'rgba(24,183,176,0.035)',
-  },
-  foregroundSky: {
-    position: 'absolute', width: 260, height: 260, borderRadius: 130,
-    bottom: -80, right: -120, backgroundColor: 'rgba(86,167,255,0.03)',
-  },
-  foregroundVignette: {
-    ...StyleSheet.absoluteFillObject,
-    borderWidth: 7,
-    borderColor: 'rgba(232,62,120,0.022)',
-  },
+  pinkOrb: { position: 'absolute', width: 290, height: 290, borderRadius: 145, top: -100, right: -95 },
+  turquoiseOrb: { position: 'absolute', width: 240, height: 240, borderRadius: 120, top: 185, left: -110 },
+  roseRibbon: { position: 'absolute', left: -100, right: -100, height: 190, bottom: -120, borderRadius: 100, backgroundColor: 'rgba(255,111,97,0.055)', transform: [{ rotate: '-7deg' }] },
+  skyRibbon: { position: 'absolute', left: -110, right: -110, height: 130, bottom: -78, borderRadius: 100, backgroundColor: 'rgba(86,167,255,0.045)', transform: [{ rotate: '5deg' }] },
+  foregroundPink: { position: 'absolute', width: 360, height: 360, borderRadius: 180, top: -170, left: -110, backgroundColor: 'rgba(232,62,120,0.035)' },
+  foregroundCoral: { position: 'absolute', width: 280, height: 280, borderRadius: 140, top: 90, right: -130, backgroundColor: 'rgba(255,111,97,0.03)' },
+  foregroundTurquoise: { position: 'absolute', width: 320, height: 320, borderRadius: 160, bottom: -170, left: -90, backgroundColor: 'rgba(24,183,176,0.035)' },
+  foregroundSky: { position: 'absolute', width: 260, height: 260, borderRadius: 130, bottom: -80, right: -120, backgroundColor: 'rgba(86,167,255,0.03)' },
+  foregroundVignette: { ...StyleSheet.absoluteFillObject, borderWidth: 7, borderColor: 'rgba(232,62,120,0.022)' },
 });
