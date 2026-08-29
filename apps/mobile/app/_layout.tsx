@@ -8,7 +8,7 @@ import { BrandWordmark } from '../components/BrandWordmark';
 import { getStoredLocale, isRTL } from '../lib/i18n';
 import { hasAuthSession } from '../lib/api';
 import { getOnboardingState } from '../lib/onboarding';
-import { AppThemeProvider, ThemeBackdrop, useAppTheme } from '../lib/app-theme';
+import { AppThemeProvider, ThemeAtmosphere, ThemeBackdrop, useAppTheme } from '../lib/app-theme';
 import { BRAND } from '../lib/branding';
 
 function StartupScreen() {
@@ -134,6 +134,7 @@ function RootLayoutContent() {
         <Stack.Screen name="auth" options={stackScreens['/auth']} />
         <Stack.Screen name="onboarding" options={stackScreens['/onboarding']} />
       </Stack>
+      <ThemeAtmosphere />
       {showAssistantBubble ? (
         <Pressable
           onPress={() => router.push('/assistant')}
@@ -163,6 +164,7 @@ const styles = StyleSheet.create({
   startupGlow: { position: 'absolute', width: 170, height: 170, borderRadius: 85 },
   startupMark: { marginBottom: 18 },
   startupSubtitle: { marginTop: 6, fontSize: 13, textAlign: 'center' },
+  startupSpinner: { marginTop: 28 },
   assistantBubble: { position: 'absolute', right: 18, bottom: 24, borderRadius: 20, elevation: 6, shadowColor: '#000', shadowOpacity: BRAND.shadow.opacity, shadowRadius: BRAND.shadow.radius, shadowOffset: { width: 0, height: BRAND.shadow.offsetY }, borderWidth: 1 },
   pressed: { opacity: 0.82, transform: [{ scale: 0.96 }] },
 });
