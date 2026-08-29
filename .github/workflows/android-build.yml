@@ -6,6 +6,8 @@ on:
     paths:
       - 'apps/mobile/**'
       - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
       - '.github/workflows/android-build.yml'
 
 permissions:
@@ -53,6 +55,9 @@ jobs:
 
       - name: Expo prebuild
         run: npx expo prebuild --platform android --non-interactive
+
+      - name: Android build preflight
+        run: pnpm android:preflight
 
       - name: Gradle assemble debug APK
         working-directory: apps/mobile/android
