@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Gender, getOnboardingState } from './onboarding';
 
@@ -95,7 +96,7 @@ export async function getStoredThemeMode(): Promise<AppThemeMode> {
   }
 }
 
-export function AppThemeProvider({ children }: { children: React.ReactNode }) {
+export function AppThemeProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<AppThemeMode>('default');
 
   useEffect(() => {
@@ -127,64 +128,81 @@ export function useAppTheme() {
   return useContext(ThemeContext);
 }
 
-/**
- * Persistent visual layer shared by every route.
- * The female mode intentionally uses pink/rose, coral, turquoise and sky-blue
- * accents while preserving the same information architecture as the default theme.
- */
+/** Background decoration rendered underneath route content. */
 export function ThemeBackdrop() {
   const { theme } = useAppTheme();
-  const female = theme.mode === 'female';
+  if (theme.mode !== 'female') return null;
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
-      {female ? (
-        <>
-          <View style={[styles.wash, { backgroundColor: 'rgba(255,247,251,0.92)' }]} />
-          <View style={[styles.pinkOrb, { backgroundColor: theme.decorativePink }]} />
-          <View style={[styles.turquoiseOrb, { backgroundColor: theme.decorativeBlue }]} />
-          <View style={[styles.roseRibbon, { backgroundColor: 'rgba(232,62,120,0.06)' }]} />
-          <View style={[styles.skyRibbon, { backgroundColor: 'rgba(86,167,255,0.05)' }]} />
-        </>
-      ) : null}
+      <View style={[styles.wash, { backgroundColor: theme.canvas }]} />
+      <View style={[styles.pinkOrb, { backgroundColor: theme.decorativePink }]} />
+      <View style={[styles.turquoiseOrb, { backgroundColor: theme.decorativeBlue }]} />
+      <View style={styles.roseRibbon} />
+      <View style={styles.skyRibbon} />
+    </View>
+  );
+}
+
+/**
+ * Very subtle foreground atmosphere keeps legacy hard-coded screens visually
+ * connected to the selected feminine theme until each screen is migrated to
+ * semantic theme tokens. It never intercepts touches.
+ */
+export function ThemeAtmosphere() {
+  const { theme } = useAppTheme();
+  if (theme.mode !== 'female') return null;
+
+  return (
+    <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      <View style={styles.foregroundPink} />
+      <View style={styles.foregroundCoral} />
+      <View style={styles.foregroundTurquoise} />
+      <View style={styles.foregroundSky} />
+      <View style={styles.foregroundVignette} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wash: { ...StyleSheet.absoluteFillObject },
+  wash: { ...StyleSheet.absoluteFillObject, opacity: 0.72 },
   pinkOrb: {
-    position: 'absolute',
-    width: 270,
-    height: 270,
-    borderRadius: 135,
-    top: -92,
-    right: -78,
+    position: 'absolute', width: 290, height: 290, borderRadius: 145,
+    top: -100, right: -95,
   },
   turquoiseOrb: {
-    position: 'absolute',
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    top: 180,
-    left: -96,
+    position: 'absolute', width: 240, height: 240, borderRadius: 120,
+    top: 185, left: -110,
   },
   roseRibbon: {
-    position: 'absolute',
-    left: -90,
-    right: -90,
-    height: 170,
-    bottom: -103,
-    borderRadius: 100,
+    position: 'absolute', left: -100, right: -100, height: 190,
+    bottom: -120, borderRadius: 100, backgroundColor: 'rgba(255,111,97,0.055)',
     transform: [{ rotate: '-7deg' }],
   },
   skyRibbon: {
-    position: 'absolute',
-    left: -110,
-    right: -110,
-    height: 120,
-    bottom: -74,
-    borderRadius: 100,
+    position: 'absolute', left: -110, right: -110, height: 130,
+    bottom: -78, borderRadius: 100, backgroundColor: 'rgba(86,167,255,0.045)',
     transform: [{ rotate: '5deg' }],
+  },
+  foregroundPink: {
+    position: 'absolute', width: 360, height: 360, borderRadius: 180,
+    top: -170, left: -110, backgroundColor: 'rgba(232,62,120,0.035)',
+  },
+  foregroundCoral: {
+    position: 'absolute', width: 280, height: 280, borderRadius: 140,
+    top: 90, right: -130, backgroundColor: 'rgba(255,111,97,0.03)',
+  },
+  foregroundTurquoise: {
+    position: 'absolute', width: 320, height: 320, borderRadius: 160,
+    bottom: -170, left: -90, backgroundColor: 'rgba(24,183,176,0.035)',
+  },
+  foregroundSky: {
+    position: 'absolute', width: 260, height: 260, borderRadius: 130,
+    bottom: -80, right: -120, backgroundColor: 'rgba(86,167,255,0.03)',
+  },
+  foregroundVignette: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 7,
+    borderColor: 'rgba(232,62,120,0.022)',
   },
 });
