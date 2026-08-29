@@ -257,6 +257,20 @@ Remaining:
 - Real-device iOS/Android validation.
 - Store-release hardening.
 
+### New UX requirement — gender-aware visual theme from onboarding
+
+The onboarding experience must establish a persistent visual direction immediately after the user chooses language and then selects gender.
+
+- [ ] If the user selects **female**, switch the visual system immediately to a distinctly feminine, premium and friendly theme and keep that direction through the remaining onboarding questions and the main app experience.
+- [ ] The female visual direction should feel elegant, warm, playful and highly polished, using a coordinated feminine palette (for example soft pink/rose/red-accent families where appropriate), refined surfaces, illustrations/icons and micro-animations without becoming childish, cluttered or stereotypical.
+- [ ] The female theme should be attractive enough that female users can genuinely love the environment and feel that the product was thoughtfully designed for them.
+- [ ] Preserve the same product architecture, functionality and information hierarchy across genders; the theme change must be a visual/experiential layer, not a forked application.
+- [ ] If the user selects **male**, keep the existing visual environment as the default unless a later personalization system explicitly changes it.
+- [ ] Apply the selected gender theme immediately after the gender step and persist it so it remains consistent through onboarding and later app sessions.
+- [ ] Ensure the theme system remains extensible so future personalization can support more nuanced visual preferences without coupling UI components to gender-specific business logic.
+- [ ] Add focused mobile tests for theme selection, persistence, onboarding transitions and regression coverage for the existing male/default theme.
+- [ ] Validate the final female and male experiences on real iOS/Android devices for layout, typography, animations, contrast and performance before declaring the UX slice complete.
+
 ## Production hardening — incomplete
 
 Remaining:
@@ -313,8 +327,9 @@ Remaining:
 3. Integrate the stacked Global Market workstream after conflict/dependency review.
 4. Connect verified live price data into Food Operating Loop and budget recommendations.
 5. Build the real mobile food journey around these APIs.
-6. Add production hardening and observability.
-7. Add monetization after the core user journey is genuinely strong.
+6. Implement and validate the gender-aware onboarding theme requirement.
+7. Add production hardening and observability.
+8. Add monetization after the core user journey is genuinely strong.
 
 ## Working rule
 
