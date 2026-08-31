@@ -94,6 +94,14 @@ function pickInstalledVoice(voices: Speech.Voice[], locale: string): Speech.Voic
     .sort((a, b) => Number(b.quality === 'Enhanced') - Number(a.quality === 'Enhanced'))[0];
 }
 
+function localeForText(text: string, profile: VoiceProfile): LanguageCode {
+  if (/[\u0600-\u06ff]/u.test(text)) return 'fa-IR';
+  if (/[\u4e00-\u9fff]/u.test(text)) return 'zh-CN';
+  if (/[\u3040-\u30ff]/u.test(text)) return 'ja-JP';
+  if (/[\uac00-\ud7af]/u.test(text)) return 'ko-KR';
+  return profile.locale;
+}
+
 export async function speakAssistantText(text: string, profile: VoiceProfile): Promise<void> {
   const normalizedText = text.trim();
   if (!normalizedText) return;
@@ -105,9 +113,10 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
     Math.max(MIN_TTS_TIMEOUT_MS, normalizedText.length * TTS_TIMEOUT_PER_CHARACTER_MS),
   );
 
+  const textLocale = localeForText(normalizedText, profile);
   let installedVoice: Speech.Voice | undefined;
   try {
-    installedVoice = pickInstalledVoice(await getAvailableVoices(), profile.locale);
+    installedVoice = pickInstalledVoice(await getAvailableVoices(), textLocale);
   } catch {
     // Fall back to the platform's language selection below.
   }
@@ -127,7 +136,7 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
 
     try {
       Speech.speak(normalizedText, {
-        language: installedVoice?.language ?? profile.locale,
+        language: installedVoice?.language ?? textLocale,
         voice: installedVoice?.identifier,
         rate: profile.rate,
         pitch: profile.pitch,
