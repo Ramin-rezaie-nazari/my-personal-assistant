@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 
 import { PrismaModule } from '../../common/database/prisma.module';
 import { PersonalBrainModule } from '../personal-brain/personal-brain.module';
+import { RecommendationIntelligenceModule } from '../recommendation-intelligence/recommendation-intelligence.module';
 import { AssistantController } from './controllers/assistant.controller';
 import { AssistantService } from './services/assistant.service';
 import { MemoryService } from './services/memory.service';
@@ -23,7 +24,7 @@ import { LocalIntelligenceProvider } from './providers/local-intelligence.provid
 import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter';
 
 @Module({
-  imports: [PrismaModule, PersonalBrainModule],
+  imports: [PrismaModule, PersonalBrainModule, RecommendationIntelligenceModule],
   controllers: [AssistantController],
   providers: [
     KnowledgeService,
