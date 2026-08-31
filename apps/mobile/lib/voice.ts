@@ -85,13 +85,25 @@ async function getAvailableVoices(): Promise<Speech.Voice[]> {
 function pickInstalledVoice(voices: Speech.Voice[], locale: string): Speech.Voice | undefined {
   const normalized = locale.toLowerCase();
   const languageOnly = normalized.split('-')[0];
-  const exact = voices.filter((voice) => voice.language?.toLowerCase() === normalized);
-  if (exact.length) {
-    return exact.sort((a, b) => Number(b.quality === 'Enhanced') - Number(a.quality === 'Enhanced'))[0];
-  }
-  return voices
-    .filter((voice) => voice.language?.toLowerCase().split('-')[0] === languageOnly)
-    .sort((a, b) => Number(b.quality === 'Enhanced') - Number(a.quality === 'Enhanced'))[0];
+  const candidates = voices.filter((voice) => {
+    const voiceLanguage = voice.language?.toLowerCase() ?? '';
+    return voiceLanguage === normalized || voiceLanguage.split('-')[0] === languageOnly;
+  });
+  if (!candidates.length) return undefined;
+
+  const exactMatch = (voice: Speech.Voice) =>
+    Number(voice.language?.toLowerCase() === normalized);
+  const enhanced = (voice: Speech.Voice) => Number(voice.quality === 'Enhanced');
+  const localName = (voice: Speech.Voice) => {
+    const value = `${voice.name ?? ''} ${voice.identifier ?? ''}`.toLowerCase();
+    return Number(/farsi|persian|فارسی|iran|iranian|prs|pes/.test(value));
+  };
+
+  return [...candidates].sort((a, b) =>
+    exactMatch(b) - exactMatch(a) ||
+    enhanced(b) - enhanced(a) ||
+    localName(b) - localName(a),
+  )[0];
 }
 
 function localeForText(text: string, profile: VoiceProfile): LanguageCode {
@@ -114,11 +126,33 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
   );
 
   const textLocale = localeForText(normalizedText, profile);
+  let availableVoices: Speech.Voice[] = [];
   let installedVoice: Speech.Voice | undefined;
   try {
-    installedVoice = pickInstalledVoice(await getAvailableVoices(), textLocale);
+    availableVoices = await getAvailableVoices();
+    installedVoice = pickInstalledVoice(availableVoices, textLocale);
   } catch {
     // Fall back to the platform's language selection below.
+  }
+
+  if (__DEV__) {
+    const matchingCount = availableVoices.filter((voice) => {
+      const language = voice.language?.toLowerCase() ?? '';
+      const target = textLocale.toLowerCase();
+      return language === target || language.split('-')[0] === target.split('-')[0];
+    }).length;
+    console.debug('[MYPA][TTS]', {
+      targetLocale: textLocale,
+      matchingVoiceCount: matchingCount,
+      voice: installedVoice
+        ? {
+            identifier: installedVoice.identifier,
+            language: installedVoice.language,
+            quality: installedVoice.quality,
+            name: installedVoice.name,
+          }
+        : null,
+    });
   }
 
   await new Promise<void>((resolve) => {
