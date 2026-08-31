@@ -17,6 +17,10 @@ let enginePromise: Promise<TtsEngine> | null = null;
 let activeSound: Audio.Sound | null = null;
 let activePlaybackToken = 0;
 
+function nativeFilePath(uri: string): string {
+  return uri.startsWith('file://') ? uri.slice('file://'.length) : uri;
+}
+
 function isRealFile(path: string): Promise<boolean> {
   return FileSystem.getInfoAsync(path)
     .then((info) => Boolean(info.exists && (info.size ?? 0) > 0))
@@ -31,25 +35,25 @@ async function ensureDirectory(path: string): Promise<void> {
   }
 }
 
-async function downloadFile(url: string, destination: string): Promise<void> {
-  const existing = await isRealFile(destination);
+async function downloadFile(url: string, destinationUri: string): Promise<void> {
+  const existing = await isRealFile(destinationUri);
   if (existing) return;
 
-  const temporary = `${destination}.partial`;
+  const temporaryUri = `${destinationUri}.partial`;
   try {
-    await FileSystem.deleteAsync(temporary, { idempotent: true });
+    await FileSystem.deleteAsync(temporaryUri, { idempotent: true });
   } catch {
     // Ignore stale partial-file cleanup failures.
   }
 
   try {
-    await FileSystem.downloadAsync(url, temporary);
-    const downloaded = await isRealFile(temporary);
+    await FileSystem.downloadAsync(url, temporaryUri);
+    const downloaded = await isRealFile(temporaryUri);
     if (!downloaded) throw new Error(`TTS model download was empty: ${url}`);
-    await FileSystem.moveAsync({ from: temporary, to: destination });
+    await FileSystem.moveAsync({ from: temporaryUri, to: destinationUri });
   } catch (error) {
     try {
-      await FileSystem.deleteAsync(temporary, { idempotent: true });
+      await FileSystem.deleteAsync(temporaryUri, { idempotent: true });
     } catch {
       // Best-effort cleanup.
     }
@@ -64,7 +68,7 @@ async function ensurePersianModel(): Promise<string> {
     `${MODEL_BASE_URL}/${MODEL_CONFIG_FILE}?download=true`,
     MODEL_CONFIG_PATH,
   );
-  return MODEL_DIR;
+  return nativeFilePath(MODEL_DIR);
 }
 
 async function getEngine(): Promise<TtsEngine> {
@@ -133,8 +137,9 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
     });
 
     await ensureDirectory(PLAYBACK_DIR);
-    const outputPath = `${PLAYBACK_DIR}response-${Date.now()}-${token}.wav`;
-    await saveAudioToFile(audio, outputPath);
+    const outputUri = `${PLAYBACK_DIR}response-${Date.now()}-${token}.wav`;
+    const outputNativePath = nativeFilePath(outputUri);
+    await saveAudioToFile(audio, outputNativePath);
 
     if (token !== activePlaybackToken) return false;
 
@@ -145,7 +150,7 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
     });
 
     const { sound } = await Audio.Sound.createAsync(
-      { uri: outputPath },
+      { uri: outputUri },
       { shouldPlay: true, volume: 1.0 },
     );
     activeSound = sound;
@@ -164,7 +169,7 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
     if (activeSound === sound) activeSound = null;
     await sound.unloadAsync();
     try {
-      await FileSystem.deleteAsync(outputPath, { idempotent: true });
+      await FileSystem.deleteAsync(outputUri, { idempotent: true });
     } catch {
       // Cache cleanup is best-effort.
     }
