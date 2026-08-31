@@ -1,1 +1,1 @@
-export { default } from './command-center-ultra';
+export { default } from './command-center-luxe';
