@@ -32,6 +32,22 @@ export type SequentialPlanResult = {
   recovered?: string[];
 };
 
+const EXECUTABLE_ACTIONS = new Set([
+  'create_reminder',
+  'update_reminder',
+  'cancel_reminder',
+  'update_calendar_event',
+  'cancel_calendar_event',
+  'update_workout',
+  'delete_workout',
+  'complete_habit',
+  'update_habit',
+  'delete_habit',
+  'take_supplement',
+  'update_supplement',
+  'delete_supplement',
+]);
+
 @Injectable()
 export class NaturalActionExecutionService {
   constructor(
@@ -48,9 +64,19 @@ export class NaturalActionExecutionService {
       return {
         executed: false,
         action: 'none',
-        message: 'No executable action was selected.',
+        message: response.message,
         intent: response.intent,
       };
+
+    if (!EXECUTABLE_ACTIONS.has(response.nextAction)) {
+      return {
+        executed: false,
+        action: 'none',
+        message: this.localizedNonExecutableMessage(input, response.message),
+        intent: response.intent,
+      };
+    }
+
     const candidate: DecisionCandidate = {
       id: this.buildId(userId, input, response.nextAction),
       domain: this.domainFor(response.intent),
@@ -65,7 +91,7 @@ export class NaturalActionExecutionService {
       input,
       contextualState,
     });
-    return this.fromReceipt(candidate, response.intent, receipt);
+    return this.fromReceipt(candidate, response.intent, receipt, input);
   }
 
   async executePlan(
@@ -91,6 +117,7 @@ export class NaturalActionExecutionService {
         step.candidate,
         step.candidate.action,
         receipt,
+        step.candidate.action,
       );
 
       if (result.executed) {
@@ -154,6 +181,7 @@ export class NaturalActionExecutionService {
           step.candidate,
           step.candidate.action,
           recoveredReceipt,
+          step.candidate.action,
         );
         completed.push(recoveredResult);
         resultsByStep[step.id] = recoveredResult.receipt;
@@ -195,12 +223,15 @@ export class NaturalActionExecutionService {
     candidate: DecisionCandidate,
     intent: string,
     receipt: any,
+    sourceInput: string,
   ): NaturalActionExecution {
+    const persian = /[\u0600-\u06ff]/u.test(sourceInput);
+
     if (receipt.status === 'completed')
       return {
         executed: true,
         action: candidate.action,
-        message: 'Done. I completed that action.',
+        message: persian ? 'انجامش دادم. ✅' : 'Done. I completed that action.',
         intent,
         receipt,
       };
@@ -208,7 +239,9 @@ export class NaturalActionExecutionService {
       return {
         executed: false,
         action: candidate.action,
-        message: 'I can do that, but I need your confirmation first.',
+        message: persian
+          ? 'می‌تونم انجامش بدم، ولی اول تأییدت رو لازم دارم.'
+          : 'I can do that, but I need your confirmation first.',
         intent,
         receipt,
       };
@@ -216,8 +249,9 @@ export class NaturalActionExecutionService {
       return {
         executed: false,
         action: candidate.action,
-        message:
-          'I did not execute that action because a safety rule blocked it.',
+        message: persian
+          ? 'برای رعایت امنیت و قوانین ایمنی، این کار رو انجام ندادم.'
+          : 'I did not execute that action because a safety rule blocked it.',
         intent,
         receipt,
       };
@@ -225,18 +259,24 @@ export class NaturalActionExecutionService {
       return {
         executed: false,
         action: candidate.action,
-        message:
-          'I understood what you want, but that action is not connected yet.',
+        message: persian
+          ? 'این درخواست رو فهمیدم، ولی این قابلیت هنوز به بخش اجرایی خودش وصل نشده.'
+          : 'I understood what you want, but that action is not connected yet.',
         intent,
         receipt,
       };
     return {
       executed: false,
       action: candidate.action,
-      message: receipt.reason || 'I could not complete that action safely.',
+      message: receipt.reason || (persian ? 'نتونستم این کار رو با اطمینان انجام بدم.' : 'I could not complete that action safely.'),
       intent,
       receipt,
     };
+  }
+
+  private localizedNonExecutableMessage(input: string, originalMessage: string): string {
+    if (/[\u0600-\u06ff]/u.test(input)) return originalMessage;
+    return originalMessage;
   }
 
   private buildId(userId: string, input: string, action: string): string {
