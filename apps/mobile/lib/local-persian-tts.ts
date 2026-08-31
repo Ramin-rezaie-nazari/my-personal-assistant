@@ -1,6 +1,6 @@
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
-import { DocumentDirectoryPath, exists, readDir, unlink } from '@dr.pogodin/react-native-fs';
+import { exists } from '@dr.pogodin/react-native-fs';
 import {
   createTTS,
   detectTtsModel,
@@ -9,8 +9,9 @@ import {
 } from 'react-native-sherpa-onnx/tts';
 import { resolveModelPath } from 'react-native-sherpa-onnx';
 
-const MODEL_ARCHIVE_DIR = 'vits-piper-fa_IR-ganji-medium';
-const MODEL_ASSET_PATH = MODEL_ARCHIVE_DIR;
+const MODEL_ARCHIVE_DIR = 'vits-piper-fa_IR-ganji-medium-v4';
+const SOURCE_MODEL_ASSET_PATH = 'vits-piper-fa_IR-ganji-medium';
+const MODEL_ASSET_PATH = SOURCE_MODEL_ASSET_PATH;
 const PLAYBACK_DIR = `${FileSystem.cacheDirectory}mypa-tts/`;
 
 let enginePromise: Promise<TtsEngine> | null = null;
@@ -23,25 +24,11 @@ function nativeFilePath(uri: string): string {
 }
 
 async function removeDirectoryRecursive(dirPath: string): Promise<void> {
-  if (!(await exists(dirPath))) return;
+  const uri = dirPath.startsWith('file://') ? dirPath : `file://${dirPath}`;
   try {
-    const entries = await readDir(dirPath);
-    for (const entry of entries) {
-      const childPath = `${dirPath}/${entry.name}`.replace(/\/+/g, '/');
-      try {
-        if (entry.isDirectory()) await removeDirectoryRecursive(childPath);
-        else await unlink(childPath);
-      } catch {
-        // Best-effort cleanup before re-extraction.
-      }
-    }
+    await FileSystem.deleteAsync(uri, { idempotent: true });
   } catch {
-    // Continue to the final unlink attempt.
-  }
-  try {
-    await unlink(dirPath);
-  } catch {
-    // Best-effort cleanup.
+    // Best-effort cleanup; resolver will report if re-extraction still fails.
   }
 }
 
@@ -58,9 +45,7 @@ async function resolveReadyBundledModel(): Promise<string> {
       const ready = (await Promise.all(requiredFiles.map((filePath) => exists(filePath)))).every(Boolean);
 
       if (!ready) {
-        const fallbackRuntimePath = `${DocumentDirectoryPath}/models/${MODEL_ARCHIVE_DIR}`;
         await removeDirectoryRecursive(resolvedPath);
-        if (fallbackRuntimePath !== resolvedPath) await removeDirectoryRecursive(fallbackRuntimePath);
         resolvedPath = await resolveModelPath({ type: 'asset', path: MODEL_ASSET_PATH });
       }
 
@@ -109,28 +94,15 @@ async function stopCurrentPlayback(): Promise<void> {
   const sound = activeSound;
   activeSound = null;
   if (!sound) return;
-  try {
-    await sound.stopAsync();
-  } catch {
-    // Already stopped or unloaded.
-  }
-  try {
-    await sound.unloadAsync();
-  } catch {
-    // Best-effort cleanup.
-  }
+  try { await sound.stopAsync(); } catch {}
+  try { await sound.unloadAsync(); } catch {}
 }
 
 export async function isLocalPersianTtsAvailable(): Promise<boolean> {
   try {
     const resolvedPath = await resolveReadyBundledModel();
-    const result = await detectTtsModel(
-      { type: 'file', path: resolvedPath },
-      { modelType: 'vits' },
-    );
-    if (__DEV__) {
-      console.warn('[MYPA][LOCAL_TTS_STATUS]', JSON.stringify(result));
-    }
+    const result = await detectTtsModel({ type: 'file', path: resolvedPath }, { modelType: 'vits' });
+    if (__DEV__) console.warn('[MYPA][LOCAL_TTS_STATUS]', JSON.stringify(result));
     return Boolean(result.success && result.detectedModels.some((item) => item.type === 'vits'));
   } catch (error) {
     if (__DEV__) console.warn('[MYPA][LOCAL_TTS_STATUS]', 'model detection failed', error);
@@ -141,107 +113,49 @@ export async function isLocalPersianTtsAvailable(): Promise<boolean> {
 export async function speakPersianLocally(text: string, rate = 1): Promise<boolean> {
   const normalizedText = text.trim();
   if (!normalizedText) return false;
-
   await stopCurrentPlayback();
   const token = activePlaybackToken;
-
   try {
-    if (__DEV__) {
-      console.warn('[MYPA][LOCAL_TTS]', JSON.stringify({
-        status: 'starting',
-        provider: 'sherpa-onnx-piper',
-        model: MODEL_ARCHIVE_DIR,
-      }));
-    }
-
+    if (__DEV__) console.warn('[MYPA][LOCAL_TTS]', JSON.stringify({ status: 'starting', provider: 'sherpa-onnx-piper', model: MODEL_ARCHIVE_DIR }));
     const engine = await ensureEngine();
-    const audio = await engine.generateSpeech(normalizedText, {
-      sid: 0,
-      speed: Math.min(1.25, Math.max(0.8, rate)),
-    });
-
+    const audio = await engine.generateSpeech(normalizedText, { sid: 0, speed: Math.min(1.25, Math.max(0.8, rate)) });
     await FileSystem.makeDirectoryAsync(PLAYBACK_DIR, { intermediates: true });
     const outputUri = `${PLAYBACK_DIR}response-${Date.now()}-${token}.wav`;
-    const outputNativePath = nativeFilePath(outputUri);
-    await saveAudioToFile(audio, outputNativePath);
-
+    await saveAudioToFile(audio, nativeFilePath(outputUri));
     if (token !== activePlaybackToken) return false;
-
-    await Audio.setAudioModeAsync({
-      playsInSilentModeIOS: true,
-      staysActiveInBackground: false,
-      shouldDuckAndroid: false,
-    });
-
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: outputUri },
-      { shouldPlay: true, volume: 1.0 },
-    );
+    await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false, shouldDuckAndroid: false });
+    const { sound } = await Audio.Sound.createAsync({ uri: outputUri }, { shouldPlay: true, volume: 1.0 });
     activeSound = sound;
-
-    if (__DEV__) {
-      console.warn('[MYPA][LOCAL_TTS]', JSON.stringify({
-        status: 'playing',
-        provider: 'sherpa-onnx-piper',
-        model: MODEL_ARCHIVE_DIR,
-        sampleRate: audio.sampleRate,
-        samples: audio.samples.length,
-      }));
-    }
-
+    if (__DEV__) console.warn('[MYPA][LOCAL_TTS]', JSON.stringify({ status: 'playing', provider: 'sherpa-onnx-piper', model: MODEL_ARCHIVE_DIR, sampleRate: audio.sampleRate, samples: audio.samples.length }));
     await new Promise<void>((resolve, reject) => {
       const handleStatus = (status: Audio.AVPlaybackStatus) => {
-        if (!status.isLoaded) {
-          if (status.error) reject(new Error(status.error));
-          return;
-        }
+        if (!status.isLoaded) { if (status.error) reject(new Error(status.error)); return; }
         if (status.didJustFinish) resolve();
       };
       sound.setOnPlaybackStatusUpdate(handleStatus);
     });
-
     if (activeSound === sound) activeSound = null;
     await sound.unloadAsync();
-    try {
-      await FileSystem.deleteAsync(outputUri, { idempotent: true });
-    } catch {
-      // Cache cleanup is best-effort.
-    }
+    try { await FileSystem.deleteAsync(outputUri, { idempotent: true }); } catch {}
     return true;
   } catch (error) {
-    if (__DEV__) {
-      console.warn('[MYPA][LOCAL_TTS]', JSON.stringify({
-        status: 'failed',
-        provider: 'sherpa-onnx-piper',
-        model: MODEL_ARCHIVE_DIR,
-        error: error instanceof Error ? error.message : String(error),
-      }));
-    }
+    if (__DEV__) console.warn('[MYPA][LOCAL_TTS]', JSON.stringify({ status: 'failed', provider: 'sherpa-onnx-piper', model: MODEL_ARCHIVE_DIR, error: error instanceof Error ? error.message : String(error) }));
     await stopCurrentPlayback();
     return false;
   }
 }
 
-export async function stopLocalPersianTts(): Promise<void> {
-  await stopCurrentPlayback();
-}
+export async function stopLocalPersianTts(): Promise<void> { await stopCurrentPlayback(); }
 
 export async function releaseLocalPersianTts(): Promise<void> {
   await stopCurrentPlayback();
   if (!enginePromise) return;
-  try {
-    const engine = await enginePromise;
-    await engine.destroy();
-  } catch {
-    // Best-effort native resource cleanup.
-  } finally {
-    enginePromise = null;
-    resolvedModelPathPromise = null;
-  }
+  try { const engine = await enginePromise; await engine.destroy(); } catch {}
+  finally { enginePromise = null; resolvedModelPathPromise = null; }
 }
 
 export const LOCAL_PERSIAN_TTS_MODEL = {
-  version: '20260831-sherpa-piper-fa-ganji-medium-bundled-v3',
+  version: '20260831-sherpa-piper-fa-ganji-medium-bundled-v4',
   locale: 'fa-IR',
   voice: 'ganji',
   quality: 'medium',
