@@ -1,1 +1,1 @@
-export { default } from './command-center-girly';
+export { default } from './command-center-pastel';
