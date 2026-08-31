@@ -33,12 +33,6 @@ export class PlanningService {
         requiresClarification: true,
         reason: 'conflicting_request',
       };
-    if (confidence > 0 && confidence < 0.55)
-      return {
-        steps: [],
-        requiresClarification: true,
-        reason: 'low_confidence',
-      };
 
     const steps = clauses
       .map((clause, index) => {
@@ -95,13 +89,14 @@ export class PlanningService {
         reason: 'confirmation_required_for_dependent_cancel',
       };
 
+    // A low-confidence or unknown conversational request is not itself a
+    // clarification-worthy action plan. It must continue to the Personal
+    // Brain so the Brain can answer naturally. Clarification is reserved for
+    // genuine contradictions or partially understood multi-step requests.
     return {
       steps,
-      requiresClarification: steps.length === 0 && clauses.length > 0,
-      reason:
-        steps.length === 0 && clauses.length > 0
-          ? 'no_actionable_intent'
-          : undefined,
+      requiresClarification: false,
+      reason: confidence > 0 && confidence < 0.55 ? 'low_confidence' : undefined,
     };
   }
 }
