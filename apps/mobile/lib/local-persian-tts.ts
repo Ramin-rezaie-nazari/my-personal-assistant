@@ -1,8 +1,10 @@
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
+import { DocumentDirectoryPath, exists, readDir, unlink } from '@dr.pogodin/react-native-fs';
 import {
   createTTS,
   detectTtsModel,
+  resolveModelPath,
   saveAudioToFile,
   type TtsEngine,
 } from 'react-native-sherpa-onnx/tts';
@@ -14,15 +16,77 @@ const PLAYBACK_DIR = `${FileSystem.cacheDirectory}mypa-tts/`;
 let enginePromise: Promise<TtsEngine> | null = null;
 let activeSound: Audio.Sound | null = null;
 let activePlaybackToken = 0;
+let resolvedModelPathPromise: Promise<string> | null = null;
 
 function nativeFilePath(uri: string): string {
   return uri.startsWith('file://') ? uri.slice('file://'.length) : uri;
 }
 
+async function removeDirectoryRecursive(dirPath: string): Promise<void> {
+  if (!(await exists(dirPath))) return;
+  try {
+    const entries = await readDir(dirPath);
+    for (const entry of entries) {
+      const childPath = `${dirPath}/${entry.name}`.replace(/\/+/g, '/');
+      try {
+        if (entry.isDirectory()) await removeDirectoryRecursive(childPath);
+        else await unlink(childPath);
+      } catch {
+        // Best-effort cleanup before re-extraction.
+      }
+    }
+  } catch {
+    // Continue to the final unlink attempt.
+  }
+  try {
+    await unlink(dirPath);
+  } catch {
+    // Best-effort cleanup.
+  }
+}
+
+async function resolveReadyBundledModel(): Promise<string> {
+  if (!resolvedModelPathPromise) {
+    resolvedModelPathPromise = (async () => {
+      let resolvedPath = await resolveModelPath({ type: 'asset', path: MODEL_ASSET_PATH });
+      const requiredFiles = [
+        `${resolvedPath}/fa_IR-ganji-medium.onnx`,
+        `${resolvedPath}/tokens.txt`,
+        `${resolvedPath}/espeak-ng-data/phontab`,
+        `${resolvedPath}/espeak-ng-data/phonindex`,
+      ];
+      const ready = (await Promise.all(requiredFiles.map((filePath) => exists(filePath)))).every(Boolean);
+
+      if (!ready) {
+        const fallbackRuntimePath = `${DocumentDirectoryPath}/models/${MODEL_ARCHIVE_DIR}`;
+        await removeDirectoryRecursive(resolvedPath);
+        if (fallbackRuntimePath !== resolvedPath) await removeDirectoryRecursive(fallbackRuntimePath);
+        resolvedPath = await resolveModelPath({ type: 'asset', path: MODEL_ASSET_PATH });
+      }
+
+      const finalRequiredFiles = [
+        `${resolvedPath}/fa_IR-ganji-medium.onnx`,
+        `${resolvedPath}/tokens.txt`,
+        `${resolvedPath}/espeak-ng-data/phontab`,
+        `${resolvedPath}/espeak-ng-data/phonindex`,
+      ];
+      const finalReady = (await Promise.all(finalRequiredFiles.map((filePath) => exists(filePath)))).every(Boolean);
+      if (!finalReady) {
+        throw new Error(`Persian TTS model extraction incomplete at ${resolvedPath}`);
+      }
+      return resolvedPath;
+    })().catch((error) => {
+      resolvedModelPathPromise = null;
+      throw error;
+    });
+  }
+  return resolvedModelPathPromise;
+}
+
 async function ensureEngine(): Promise<TtsEngine> {
   if (!enginePromise) {
-    enginePromise = createTTS({
-      modelPath: { type: 'asset', path: MODEL_ASSET_PATH },
+    enginePromise = resolveReadyBundledModel().then((resolvedPath) => createTTS({
+      modelPath: { type: 'file', path: resolvedPath },
       modelType: 'vits',
       numThreads: 2,
       modelOptions: {
@@ -32,7 +96,7 @@ async function ensureEngine(): Promise<TtsEngine> {
           noiseScaleW: 0.8,
         },
       },
-    }).catch((error) => {
+    })).catch((error) => {
       enginePromise = null;
       throw error;
     });
@@ -59,8 +123,9 @@ async function stopCurrentPlayback(): Promise<void> {
 
 export async function isLocalPersianTtsAvailable(): Promise<boolean> {
   try {
+    const resolvedPath = await resolveReadyBundledModel();
     const result = await detectTtsModel(
-      { type: 'asset', path: MODEL_ASSET_PATH },
+      { type: 'file', path: resolvedPath },
       { modelType: 'vits' },
     );
     if (__DEV__) {
@@ -175,7 +240,7 @@ export async function releaseLocalPersianTts(): Promise<void> {
 }
 
 export const LOCAL_PERSIAN_TTS_MODEL = {
-  version: '20260831-sherpa-piper-fa-ganji-medium-bundled-v2',
+  version: '20260831-sherpa-piper-fa-ganji-medium-bundled-v3',
   locale: 'fa-IR',
   voice: 'ganji',
   quality: 'medium',
