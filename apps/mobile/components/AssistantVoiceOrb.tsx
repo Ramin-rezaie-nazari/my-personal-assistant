@@ -7,7 +7,7 @@ import { useReducedMotion } from '../lib/use-reduced-motion';
 export type VoiceInteractionState = 'idle' | 'listening' | 'thinking' | 'acting' | 'speaking' | 'done';
 type Props = { state: VoiceInteractionState; label: string; hint?: string; onPress?: () => void };
 
-const stateAccent = (state: VoiceInteractionState) => state === 'listening' ? PREMIUM.colors.cyan : state === 'thinking' ? PREMIUM.colors.primaryBright : state === 'acting' ? PREMIUM.colors.gold : state === 'speaking' ? PREMIUM.colors.mint : state === 'done' ? PREMIUM.colors.gold : PREMIUM.colors.primary;
+const stateAccent = (state: VoiceInteractionState) => state === 'listening' ? PREMIUM.colors.cyan : state === 'thinking' ? PREMIUM.colors.primaryBright : state === 'acting' ? PREMIUM.colors.gold : state === 'speaking' ? PREMIUM.colors.mint : state === 'done' ? PREMIUM.colors.gold : PREMIUM.colors.berry;
 
 export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const reduced = useReducedMotion();
@@ -32,7 +32,7 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
       ]),
       Animated.sequence([
         Animated.timing(ring, { toValue: state === 'acting' ? 1.14 : 1.08, duration: state === 'acting' ? 760 : 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }),
-        Animated.timing(ring, { toValue: 0.82, duration: state === 'acting' ? 760 : 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+        Animated.timing(ring, { toValue: state === 'acting' ? 0.90 : 0.82, duration: state === 'acting' ? 760 : 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }),
       ]),
       Animated.timing(rotation, { toValue: 1, duration: state === 'acting' ? 3600 : 5200, useNativeDriver: true }),
     ]));
@@ -47,13 +47,13 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const isBusy = state === 'listening' || state === 'thinking' || state === 'acting' || state === 'speaking';
 
   const core = <>
-    <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.18 : 0.34, transform: [{ scale: ring }] }]} />
+    <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.22 : 0.30, transform: [{ scale: ring }] }]} />
     <Animated.View style={[styles.orbit, { borderColor: accent, transform: [{ rotate: spin }, { scale: ring }] }]} />
-    <View style={styles.orbitBead} />
+    <View style={[styles.orbitBead, { backgroundColor: PREMIUM.colors.gold, borderColor: '#FFF8EA' }]} />
     <Animated.View style={[styles.core, { transform: [{ scale: pulse }], borderColor: accent }]}>
       <View style={[styles.coreInner, { shadowColor: accent }]}>
-        <View style={[styles.iconHalo, { borderColor: `${accent}55` }]}>
-          <Ionicons name={iconName} size={31} color={PREMIUM.colors.white} />
+        <View style={[styles.iconHalo, { borderColor: `${accent}66`, backgroundColor: `${accent}22` }]}>
+          <Ionicons name={iconName} size={31} color={PREMIUM.colors.berry} />
         </View>
       </View>
     </Animated.View>
@@ -70,11 +70,11 @@ const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center', minHeight: 190, paddingVertical: 10 },
   hitArea: { width: 196, height: 160, alignItems: 'center', justifyContent: 'center' },
   outerGlow: { position: 'absolute', width: 182, height: 182, borderRadius: 91 },
-  orbit: { position: 'absolute', width: 142, height: 142, borderRadius: 71, borderWidth: 1.2, borderStyle: 'dashed', opacity: 0.72 },
-  orbitBead: { position: 'absolute', width: 8, height: 8, borderRadius: 4, right: 22, top: 42, backgroundColor: PREMIUM.colors.gold, borderWidth: 1, borderColor: '#FFF4D4' },
-  core: { width: 116, height: 116, borderRadius: 58, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center', backgroundColor: '#321326', shadowColor: '#7E295D', shadowOpacity: 0.36, shadowRadius: 30, shadowOffset: { width: 0, height: 16 }, elevation: 14 },
-  coreInner: { width: 94, height: 94, borderRadius: 47, alignItems: 'center', justifyContent: 'center', backgroundColor: '#4A1E3A', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', shadowOpacity: 0.22, shadowRadius: 20, shadowOffset: { width: 0, height: 9 }, elevation: 8 },
-  iconHalo: { width: 58, height: 58, borderRadius: 29, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,114,167,0.12)' },
+  orbit: { position: 'absolute', width: 142, height: 142, borderRadius: 71, borderWidth: 1.2, borderStyle: 'dashed', opacity: 0.58 },
+  orbitBead: { position: 'absolute', width: 8, height: 8, borderRadius: 4, right: 22, top: 42, borderWidth: 1 },
+  core: { width: 116, height: 116, borderRadius: 58, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF9FC', shadowColor: '#D9B6C7', shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 8 },
+  coreInner: { width: 94, height: 94, borderRadius: 47, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FBEAF2', borderWidth: 1, borderColor: 'rgba(255,255,255,0.92)', shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
+  iconHalo: { width: 58, height: 58, borderRadius: 29, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
   label: { marginTop: 12, color: PREMIUM.colors.ink, fontSize: 14, fontWeight: '800', textAlign: 'center' },
   hint: { marginTop: 5, color: PREMIUM.colors.muted, fontSize: 10, letterSpacing: 0.2, textAlign: 'center' },
   pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
