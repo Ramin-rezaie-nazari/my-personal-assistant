@@ -49,7 +49,7 @@ export class BrainDecisionService {
         blockers,
         intent: 'goal',
         recommendation: `Your current primary goal is: ${primaryGoal.title}`,
-        nextAction: 'Use primary goal as personal context',
+        nextAction: undefined,
       };
     }
 
@@ -67,7 +67,7 @@ export class BrainDecisionService {
           intent: 'nutrition-targets',
           recommendation:
             'I do not have your nutrition targets yet. Set your daily calorie, protein, or water goals and I can track your progress against them.',
-          nextAction: 'Set nutrition targets',
+          nextAction: undefined,
         };
       }
       const parts: string[] = [];
@@ -98,7 +98,7 @@ export class BrainDecisionService {
         blockers: targetBlockers,
         intent: 'nutrition-targets',
         recommendation: `Today: ${parts.join(', ')}. Remaining: ${remaining.join(', ')}.`,
-        nextAction: 'Continue logging against today targets',
+        nextAction: undefined,
       };
     }
 
@@ -111,7 +111,7 @@ export class BrainDecisionService {
           blockers: [...blockers, 'missing-life-context'],
           intent: 'habit-status',
           recommendation: 'I do not have your habit progress available yet.',
-          nextAction: 'Load habit progress',
+          nextAction: undefined,
         };
       if (life.habits.active === 0)
         return {
@@ -121,7 +121,7 @@ export class BrainDecisionService {
           intent: 'habit-status',
           recommendation:
             'You do not have any active habits yet. Add one small habit and I can track completions and streaks for you.',
-          nextAction: 'Create a habit',
+          nextAction: undefined,
         };
       const weakest = [...life.habits.items].sort(
         (a, b) =>
@@ -137,7 +137,7 @@ export class BrainDecisionService {
         blockers,
         intent: 'habit-status',
         recommendation: `Habits: ${life.habits.active} active, ${life.habits.completedThisWeek} completions this week, ${life.habits.completionPercent}% completion, best current streak ${life.habits.currentStreak} days.${detail}`,
-        nextAction: 'Keep your habit streaks alive',
+        nextAction: undefined,
       };
     }
 
@@ -150,7 +150,7 @@ export class BrainDecisionService {
           blockers: [...blockers, 'missing-life-context'],
           intent: 'reminders',
           recommendation: 'I do not have your reminders available yet.',
-          nextAction: 'Load reminders',
+          nextAction: undefined,
         };
       if (!life.reminders.next)
         return {
@@ -161,7 +161,7 @@ export class BrainDecisionService {
           recommendation: life.reminders.pending
             ? `You have ${life.reminders.pending} pending reminders, but nothing scheduled next.`
             : 'You have no pending reminders right now.',
-          nextAction: 'Review reminders',
+          nextAction: undefined,
         };
       const next = life.reminders.next;
       return {
@@ -170,7 +170,7 @@ export class BrainDecisionService {
         blockers,
         intent: 'reminders',
         recommendation: `Your next reminder is “${next.title}” (${next.type}) at ${new Date(next.scheduledAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. You have ${life.reminders.pending} pending reminders.`,
-        nextAction: 'Complete or review the next reminder',
+        nextAction: undefined,
       };
     }
 
@@ -183,7 +183,7 @@ export class BrainDecisionService {
           blockers: [...blockers, 'missing-life-context'],
           intent: 'supplements',
           recommendation: 'I do not have your supplement status available yet.',
-          nextAction: 'Load supplement status',
+          nextAction: undefined,
         };
       if (life.supplements.total === 0)
         return {
@@ -192,7 +192,7 @@ export class BrainDecisionService {
           blockers,
           intent: 'supplements',
           recommendation: 'You have no active supplements tracked yet.',
-          nextAction: 'Add a supplement',
+          nextAction: undefined,
         };
       const next = life.supplements.next
         ? ` Next: ${life.supplements.next.name}${life.supplements.next.dosage ? ` (${life.supplements.next.dosage})` : ''} at ${life.supplements.next.scheduledTime}.`
@@ -203,9 +203,7 @@ export class BrainDecisionService {
         blockers,
         intent: 'supplements',
         recommendation: `Today: ${life.supplements.taken}/${life.supplements.total} supplements taken (${life.supplements.completionPercent}%).${next}`,
-        nextAction: life.supplements.remaining
-          ? 'Take the next scheduled supplement'
-          : 'Keep your supplement routine',
+        nextAction: undefined,
       };
     }
 
@@ -221,7 +219,7 @@ export class BrainDecisionService {
           blockers: [...workoutBlockers, 'missing-workout-status'],
           intent: 'workout-status',
           recommendation: 'I do not have your workout progress data yet.',
-          nextAction: 'Load workout progress',
+          nextAction: undefined,
         };
       if (workoutStatus.workoutCount === 0)
         return {
@@ -231,7 +229,7 @@ export class BrainDecisionService {
           intent: 'workout-status',
           recommendation:
             'You have not logged a workout in the last seven days. Start logging your exercise and I will track consistency, minutes, and calories burned.',
-          nextAction: 'Log a workout',
+          nextAction: undefined,
         };
       const lastWorkout = workoutStatus.lastWorkout
         ? ` Last workout: ${workoutStatus.lastWorkout.name} (${workoutStatus.lastWorkout.type}).`
@@ -242,7 +240,7 @@ export class BrainDecisionService {
         blockers: workoutBlockers,
         intent: 'workout-status',
         recommendation: `This week: ${workoutStatus.workoutCount} workouts across ${workoutStatus.activeDays} active days, ${workoutStatus.totalMinutes} minutes, ${workoutStatus.totalCaloriesBurned} kcal burned, ${workoutStatus.consistencyPercent}% consistency, current streak ${workoutStatus.currentStreak} days.${lastWorkout}`,
-        nextAction: 'Keep training and continue logging workouts',
+        nextAction: undefined,
       };
     }
 
@@ -258,7 +256,7 @@ export class BrainDecisionService {
           blockers: [...weeklyBlockers, 'missing-weekly-status'],
           intent: 'weekly-status',
           recommendation: 'I do not have your weekly progress data yet.',
-          nextAction: 'Load weekly progress',
+          nextAction: undefined,
         };
       if (weeklyStatus.loggedDays === 0)
         return {
@@ -268,7 +266,7 @@ export class BrainDecisionService {
           intent: 'weekly-status',
           recommendation:
             'You have not logged any days this week yet. Start tracking today and I will build your weekly progress view.',
-          nextAction: 'Log today activity',
+          nextAction: undefined,
         };
       return {
         canDecide: weeklyBlockers.length === 0,
@@ -276,7 +274,7 @@ export class BrainDecisionService {
         blockers: weeklyBlockers,
         intent: 'weekly-status',
         recommendation: `This week: ${weeklyStatus.loggedDays}/7 days logged (${weeklyStatus.consistencyPercent}% consistency), ${weeklyStatus.totalCalories} kcal, ${weeklyStatus.totalProtein} g protein, ${weeklyStatus.totalWaterMl} ml water. Current streak: ${weeklyStatus.currentStreak} days.`,
-        nextAction: 'Review weekly progress and continue logging',
+        nextAction: undefined,
       };
     }
 
@@ -293,7 +291,7 @@ export class BrainDecisionService {
           intent: 'daily-status',
           recommendation:
             'I do not have a daily log for today yet. Start tracking today to see your progress here.',
-          nextAction: 'Log today activity',
+          nextAction: undefined,
         };
       return {
         canDecide: dailyBlockers.length === 0,
@@ -301,21 +299,20 @@ export class BrainDecisionService {
         blockers: dailyBlockers,
         intent: 'daily-status',
         recommendation: `Today: ${dailyStatus.calories} kcal, ${dailyStatus.protein} g protein, ${dailyStatus.waterMl} ml water.`,
-        nextAction: 'Review today and continue logging',
+        nextAction: undefined,
       };
     }
 
+    const persian = /[\u0600-\u06ff]/u.test(context.input);
     return {
-      canDecide: blockers.length === 0 && hasGoal,
+      canDecide: false,
       confidence: context.reasoning.confidence,
       blockers: hasGoal ? blockers : [...blockers, 'missing-primary-goal'],
-      intent: primaryGoal?.category ?? 'general',
-      recommendation: primaryGoal
-        ? `Support user goal: ${primaryGoal.title}`
-        : 'Understand user objective first',
-      nextAction: primaryGoal
-        ? 'Provide goal-specific guidance'
-        : 'Ask user about desired outcome',
+      intent: 'conversation',
+      recommendation: persian
+        ? 'باشه 🌷 من اینجام. بگو دقیقاً دوست داری چه کمکی ازم بگیری.'
+        : 'I’m here. Tell me what you would like me to help you with.',
+      nextAction: undefined,
     };
   }
 }
