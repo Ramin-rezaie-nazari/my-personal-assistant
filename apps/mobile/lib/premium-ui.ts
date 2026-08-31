@@ -2,31 +2,34 @@ import { Easing } from 'react-native';
 
 export const PREMIUM = {
   colors: {
-    canvas: '#FFF7FB',
-    canvasSoft: '#FFF0F7',
+    canvas: '#FFF9FC',
+    canvasSoft: '#FFF1F7',
     surface: '#FFFFFF',
-    surfaceElevated: '#FFF3F8',
-    surfaceGlass: 'rgba(255,255,255,0.90)',
-    surfaceWarm: '#FFF0F5',
-    ink: '#57263F',
-    inkSoft: '#774861',
-    muted: '#9C7289',
-    invertedMuted: '#F6DCE9',
-    border: '#F2C9DB',
-    primary: '#E85D9E',
-    primaryBright: '#FF91BF',
-    cyan: '#59D8D0',
-    mint: '#8ADBCB',
-    amber: '#F4B66A',
-    rose: '#FF5F8F',
+    surfaceElevated: '#FFF7FB',
+    surfaceGlass: 'rgba(255,255,255,0.84)',
+    surfaceWarm: '#FFF4F8',
+    ink: '#442336',
+    inkSoft: '#6D4860',
+    muted: '#A37F92',
+    invertedMuted: '#F9E3ED',
+    border: '#F1D4E1',
+    primary: '#D94F8A',
+    primaryBright: '#F778AA',
+    cyan: '#57CFC6',
+    mint: '#92D8C8',
+    amber: '#F1B56A',
+    rose: '#FF6C95',
+    lilac: '#A98CE6',
+    coral: '#FF8792',
+    berry: '#9D3E73',
     white: '#FFFFFF',
-    black: '#2E1823',
+    black: '#291722',
   },
   radius: {
-    sm: 12,
-    md: 18,
-    lg: 24,
-    xl: 32,
+    sm: 14,
+    md: 20,
+    lg: 26,
+    xl: 34,
     pill: 999,
   },
   spacing: {
@@ -44,13 +47,13 @@ export const PREMIUM = {
     ease: Easing.out(Easing.cubic),
   },
   shadow: {
-    color: '#C65D8D',
-    opacity: 0.18,
-    radius: 22,
+    color: '#B84F83',
+    opacity: 0.14,
+    radius: 24,
     offset: { width: 0, height: 12 },
   },
 } as const;
 
-export type PremiumAccent = 'primary' | 'cyan' | 'mint' | 'amber' | 'rose';
+export type PremiumAccent = 'primary' | 'cyan' | 'mint' | 'amber' | 'rose' | 'lilac' | 'coral' | 'berry';
 
 export const accentColor = (accent: PremiumAccent) => PREMIUM.colors[accent];
