@@ -7,7 +7,24 @@ import { useReducedMotion } from '../lib/use-reduced-motion';
 export type VoiceInteractionState = 'idle' | 'listening' | 'thinking' | 'acting' | 'speaking' | 'done';
 type Props = { state: VoiceInteractionState; label: string; hint?: string; onPress?: () => void };
 
-const stateAccent = (state: VoiceInteractionState) => state === 'listening' ? PREMIUM.colors.cyan : state === 'thinking' ? PREMIUM.colors.primaryBright : state === 'acting' ? PREMIUM.colors.gold : state === 'speaking' ? PREMIUM.colors.mint : state === 'done' ? PREMIUM.colors.gold : PREMIUM.colors.berry;
+const PASTEL = {
+  pink: '#F5B7CE',
+  pinkSoft: '#FCE5EF',
+  blue: '#B8D9EF',
+  blueSoft: '#EAF5FC',
+  lavender: '#D7C8EC',
+  mint: '#BFE8DB',
+  gold: '#F2D89A',
+  ink: '#6D6170',
+  white: '#FFFFFF',
+};
+
+const stateAccent = (state: VoiceInteractionState) =>
+  state === 'listening' ? PASTEL.blue :
+  state === 'thinking' ? PASTEL.pink :
+  state === 'acting' ? PASTEL.gold :
+  state === 'speaking' ? PASTEL.mint :
+  state === 'done' ? PASTEL.gold : PASTEL.lavender;
 
 export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const reduced = useReducedMotion();
@@ -27,11 +44,11 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
     }
     const loop = Animated.loop(Animated.parallel([
       Animated.sequence([
-        Animated.timing(pulse, { toValue: state === 'thinking' ? 1.09 : state === 'acting' ? 1.12 : 1.16, duration: state === 'acting' ? 720 : 900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.98, duration: 900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: state === 'thinking' ? 1.05 : state === 'acting' ? 1.08 : 1.1, duration: state === 'acting' ? 720 : 900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.99, duration: 900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
       ]),
       Animated.sequence([
-        Animated.timing(ring, { toValue: state === 'acting' ? 1.14 : 1.08, duration: state === 'acting' ? 760 : 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+        Animated.timing(ring, { toValue: state === 'acting' ? 1.08 : 1.04, duration: state === 'acting' ? 760 : 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }),
         Animated.timing(ring, { toValue: state === 'acting' ? 0.90 : 0.82, duration: state === 'acting' ? 760 : 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }),
       ]),
       Animated.timing(rotation, { toValue: 1, duration: state === 'acting' ? 3600 : 5200, useNativeDriver: true }),
@@ -47,13 +64,13 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const isBusy = state === 'listening' || state === 'thinking' || state === 'acting' || state === 'speaking';
 
   const core = <>
-    <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.22 : 0.30, transform: [{ scale: ring }] }]} />
+    <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.24 : 0.30, transform: [{ scale: ring }] }]} />
     <Animated.View style={[styles.orbit, { borderColor: accent, transform: [{ rotate: spin }, { scale: ring }] }]} />
-    <View style={[styles.orbitBead, { backgroundColor: PREMIUM.colors.gold, borderColor: '#FFF8EA' }]} />
+    <View style={styles.orbitBead} />
     <Animated.View style={[styles.core, { transform: [{ scale: pulse }], borderColor: accent }]}>
-      <View style={[styles.coreInner, { shadowColor: accent }]}>
-        <View style={[styles.iconHalo, { borderColor: `${accent}66`, backgroundColor: `${accent}22` }]}>
-          <Ionicons name={iconName} size={31} color={PREMIUM.colors.berry} />
+      <View style={styles.coreInner}>
+        <View style={[styles.iconHalo, { borderColor: `${accent}99` }]}>
+          <Ionicons name={iconName} size={31} color={PASTEL.ink} />
         </View>
       </View>
     </Animated.View>
@@ -70,12 +87,12 @@ const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center', minHeight: 190, paddingVertical: 10 },
   hitArea: { width: 196, height: 160, alignItems: 'center', justifyContent: 'center' },
   outerGlow: { position: 'absolute', width: 182, height: 182, borderRadius: 91 },
-  orbit: { position: 'absolute', width: 142, height: 142, borderRadius: 71, borderWidth: 1.2, borderStyle: 'dashed', opacity: 0.58 },
-  orbitBead: { position: 'absolute', width: 8, height: 8, borderRadius: 4, right: 22, top: 42, borderWidth: 1 },
-  core: { width: 116, height: 116, borderRadius: 58, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF9FC', shadowColor: '#D9B6C7', shadowOpacity: 0.18, shadowRadius: 24, shadowOffset: { width: 0, height: 12 }, elevation: 8 },
-  coreInner: { width: 94, height: 94, borderRadius: 47, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FBEAF2', borderWidth: 1, borderColor: 'rgba(255,255,255,0.92)', shadowOpacity: 0.16, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 6 },
-  iconHalo: { width: 58, height: 58, borderRadius: 29, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
-  label: { marginTop: 12, color: PREMIUM.colors.ink, fontSize: 14, fontWeight: '800', textAlign: 'center' },
+  orbit: { position: 'absolute', width: 142, height: 142, borderRadius: 71, borderWidth: 1.2, borderStyle: 'dashed', opacity: 0.72 },
+  orbitBead: { position: 'absolute', width: 8, height: 8, borderRadius: 4, right: 22, top: 42, backgroundColor: PASTEL.gold, borderWidth: 1, borderColor: PASTEL.white },
+  core: { width: 116, height: 116, borderRadius: 58, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.pinkSoft, shadowColor: PASTEL.pink, shadowOpacity: 0.22, shadowRadius: 26, shadowOffset: { width: 0, height: 12 }, elevation: 8 },
+  coreInner: { width: 94, height: 94, borderRadius: 47, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.blueSoft, borderWidth: 1, borderColor: 'rgba(255,255,255,0.92)', shadowColor: PASTEL.blue, shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 5 },
+  iconHalo: { width: 58, height: 58, borderRadius: 29, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.white },
+  label: { marginTop: 12, color: PREMIUM.colors.inkSoft, fontSize: 14, fontWeight: '800', textAlign: 'center' },
   hint: { marginTop: 5, color: PREMIUM.colors.muted, fontSize: 10, letterSpacing: 0.2, textAlign: 'center' },
   pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
 });
