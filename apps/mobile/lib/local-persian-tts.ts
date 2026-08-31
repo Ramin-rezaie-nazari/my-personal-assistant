@@ -4,10 +4,10 @@ import { DocumentDirectoryPath, exists, readDir, unlink } from '@dr.pogodin/reac
 import {
   createTTS,
   detectTtsModel,
-  resolveModelPath,
   saveAudioToFile,
   type TtsEngine,
 } from 'react-native-sherpa-onnx/tts';
+import { resolveModelPath } from 'react-native-sherpa-onnx';
 
 const MODEL_ARCHIVE_DIR = 'vits-piper-fa_IR-ganji-medium';
 const MODEL_ASSET_PATH = MODEL_ARCHIVE_DIR;
@@ -236,6 +236,7 @@ export async function releaseLocalPersianTts(): Promise<void> {
     // Best-effort native resource cleanup.
   } finally {
     enginePromise = null;
+    resolvedModelPathPromise = null;
   }
 }
 
