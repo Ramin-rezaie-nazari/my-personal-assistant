@@ -136,15 +136,23 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
   }
 
   if (__DEV__) {
-    const matchingCount = availableVoices.filter((voice) => {
-      const language = voice.language?.toLowerCase() ?? '';
-      const target = textLocale.toLowerCase();
-      return language === target || language.split('-')[0] === target.split('-')[0];
-    }).length;
-    console.debug('[MYPA][TTS]', {
+    const target = textLocale.toLowerCase();
+    const matchingVoices = availableVoices
+      .filter((voice) => {
+        const language = voice.language?.toLowerCase() ?? '';
+        return language === target || language.split('-')[0] === target.split('-')[0];
+      })
+      .map((voice) => ({
+        identifier: voice.identifier,
+        language: voice.language,
+        quality: voice.quality,
+        name: voice.name,
+      }));
+
+    console.warn('[MYPA][TTS]', JSON.stringify({
       targetLocale: textLocale,
-      matchingVoiceCount: matchingCount,
-      voice: installedVoice
+      matchingVoiceCount: matchingVoices.length,
+      selectedVoice: installedVoice
         ? {
             identifier: installedVoice.identifier,
             language: installedVoice.language,
@@ -152,7 +160,8 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
             name: installedVoice.name,
           }
         : null,
-    });
+      matchingVoices,
+    }));
   }
 
   await new Promise<void>((resolve) => {
