@@ -5,7 +5,7 @@ import {
   detectTtsModel,
   saveAudioToFile,
   type TtsEngine,
-} from 'react-native-sherpa-onnx';
+} from 'react-native-sherpa-onnx/tts';
 
 const MODEL_ARCHIVE_DIR = 'vits-piper-fa_IR-ganji-medium';
 const MODEL_ASSET_PATH = MODEL_ARCHIVE_DIR;
