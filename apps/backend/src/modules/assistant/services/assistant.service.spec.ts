@@ -13,6 +13,7 @@ describe('AssistantService', () => {
       get: jest.Mock;
       understand: jest.Mock;
       createPlan: jest.Mock;
+      generateFoodRecommendations: jest.Mock;
     }> = {},
   ) => {
     const orchestrator = { processRequest: overrides.processRequest ?? jest.fn() } as unknown as BrainOrchestratorService;
@@ -33,7 +34,10 @@ describe('AssistantService', () => {
     const planning = {
       createPlan: overrides.createPlan ?? jest.fn().mockResolvedValue({ requiresClarification: false, reason: 'ok', clauses: [], intents: [], contradictions: [], confidence: 0.7 }),
     } as any;
-    return new AssistantService(orchestrator, execution, contextual, conversation, lexical, semantic, planning);
+    const recommendationEngine = {
+      generateFoodRecommendations: overrides.generateFoodRecommendations ?? jest.fn().mockResolvedValue({ recommendations: [] }),
+    } as any;
+    return new AssistantService(orchestrator, execution, contextual, conversation, recommendationEngine, lexical, semantic, planning);
   };
 
   it('returns the assistant status', async () => {
@@ -101,7 +105,7 @@ describe('AssistantService', () => {
     expect(result.intent).toBe('CREATE_REMINDER');
   });
 
-  it('responds in the active locale for locally understood intents', async () => {
+  it('returns a real deterministic meal recommendation for a natural meal request', async () => {
     const understand = jest.fn().mockReturnValue({
       intent: 'RECOMMEND_MEAL',
       confidence: 0.93,
@@ -110,10 +114,17 @@ describe('AssistantService', () => {
       language: 'en-US',
       languageConfidence: 0.98,
     });
-    const service = makeService({ understand });
+    const generateFoodRecommendations = jest.fn().mockResolvedValue({
+      recommendations: [
+        { name: 'Chicken Rice Bowl', caloriesPerServing: 520, proteinPerServing: 38 },
+        { name: 'Greek Chicken Salad', caloriesPerServing: 430, proteinPerServing: 35 },
+      ],
+    });
+    const service = makeService({ understand, generateFoodRecommendations });
     const result = await service.process('dinner ideas', 'user-123');
+    expect(generateFoodRecommendations).toHaveBeenCalledWith('user-123', { targetServings: 2, limit: 3 });
     expect(result.intent).toBe('nutrition');
-    expect(result.nextAction).toBe('recommend_meal');
-    expect(result.message).toBe('Absolutely. I’ll find a good option based on your profile.');
+    expect(result.nextAction).toBeUndefined();
+    expect(result.message).toContain('Chicken Rice Bowl');
   });
 });
