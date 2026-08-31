@@ -7,7 +7,7 @@ import { useReducedMotion } from '../lib/use-reduced-motion';
 export type VoiceInteractionState = 'idle' | 'listening' | 'thinking' | 'acting' | 'speaking' | 'done';
 type Props = { state: VoiceInteractionState; label: string; hint?: string; onPress?: () => void };
 
-const stateAccent = (state: VoiceInteractionState) => state === 'listening' ? PREMIUM.colors.cyan : state === 'thinking' ? PREMIUM.colors.primaryBright : state === 'acting' ? PREMIUM.colors.amber : state === 'speaking' ? PREMIUM.colors.mint : state === 'done' ? PREMIUM.colors.amber : PREMIUM.colors.primary;
+const stateAccent = (state: VoiceInteractionState) => state === 'listening' ? PREMIUM.colors.cyan : state === 'thinking' ? PREMIUM.colors.primaryBright : state === 'acting' ? PREMIUM.colors.gold : state === 'speaking' ? PREMIUM.colors.mint : state === 'done' ? PREMIUM.colors.gold : PREMIUM.colors.primary;
 
 export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const reduced = useReducedMotion();
@@ -16,7 +16,9 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const rotation = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    pulse.stopAnimation(); ring.stopAnimation(); rotation.stopAnimation();
+    pulse.stopAnimation();
+    ring.stopAnimation();
+    rotation.stopAnimation();
     if (reduced || state === 'idle') {
       pulse.setValue(1);
       ring.setValue(0.8);
@@ -45,22 +47,20 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const isBusy = state === 'listening' || state === 'thinking' || state === 'acting' || state === 'speaking';
 
   const core = <>
-    <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.14 : 0.28, transform: [{ scale: ring }] }]} />
+    <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.18 : 0.34, transform: [{ scale: ring }] }]} />
     <Animated.View style={[styles.orbit, { borderColor: accent, transform: [{ rotate: spin }, { scale: ring }] }]} />
+    <View style={styles.orbitBead} />
     <Animated.View style={[styles.core, { transform: [{ scale: pulse }], borderColor: accent }]}>
-      <View style={[styles.coreInner, { shadowColor: accent }]}><Ionicons name={iconName} size={36} color={PREMIUM.colors.white} /></View>
+      <View style={[styles.coreInner, { shadowColor: accent }]}>
+        <View style={[styles.iconHalo, { borderColor: `${accent}55` }]}>
+          <Ionicons name={iconName} size={31} color={PREMIUM.colors.white} />
+        </View>
+      </View>
     </Animated.View>
   </>;
 
   return <View style={styles.wrap}>
-    {onPress ? <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityHint={hint || 'Activate MYPA voice assistant'}
-      accessibilityState={{ busy: isBusy }}
-      onPress={onPress}
-      style={({ pressed }) => [styles.hitArea, pressed && styles.pressed]}
-    >{core}</Pressable> : core}
+    {onPress ? <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityHint={hint || 'Activate MYPA voice assistant'} accessibilityState={{ busy: isBusy }} onPress={onPress} style={({ pressed }) => [styles.hitArea, pressed && styles.pressed]}>{core}</Pressable> : core}
     {label ? <Text accessibilityLiveRegion="polite" style={styles.label}>{label}</Text> : null}
     {onPress && hint ? <Text style={styles.hint}>{hint}</Text> : null}
   </View>;
@@ -69,10 +69,12 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
 const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center', minHeight: 190, paddingVertical: 10 },
   hitArea: { width: 196, height: 160, alignItems: 'center', justifyContent: 'center' },
-  outerGlow: { position: 'absolute', width: 180, height: 180, borderRadius: 90 },
-  orbit: { position: 'absolute', width: 136, height: 136, borderRadius: 68, borderWidth: 1, borderStyle: 'dashed', opacity: 0.65 },
-  core: { width: 112, height: 112, borderRadius: 56, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(9,13,23,0.96)', shadowColor: '#000', shadowOpacity: 0.42, shadowRadius: 26, shadowOffset: { width: 0, height: 14 }, elevation: 12 },
-  coreInner: { width: 94, height: 94, borderRadius: 47, alignItems: 'center', justifyContent: 'center', backgroundColor: '#121A2D', shadowOpacity: 0.34, shadowRadius: 24, shadowOffset: { width: 0, height: 10 }, elevation: 8 },
+  outerGlow: { position: 'absolute', width: 182, height: 182, borderRadius: 91 },
+  orbit: { position: 'absolute', width: 142, height: 142, borderRadius: 71, borderWidth: 1.2, borderStyle: 'dashed', opacity: 0.72 },
+  orbitBead: { position: 'absolute', width: 8, height: 8, borderRadius: 4, right: 22, top: 42, backgroundColor: PREMIUM.colors.gold, borderWidth: 1, borderColor: '#FFF4D4' },
+  core: { width: 116, height: 116, borderRadius: 58, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center', backgroundColor: '#321326', shadowColor: '#7E295D', shadowOpacity: 0.36, shadowRadius: 30, shadowOffset: { width: 0, height: 16 }, elevation: 14 },
+  coreInner: { width: 94, height: 94, borderRadius: 47, alignItems: 'center', justifyContent: 'center', backgroundColor: '#4A1E3A', borderWidth: 1, borderColor: 'rgba(255,255,255,0.12)', shadowOpacity: 0.22, shadowRadius: 20, shadowOffset: { width: 0, height: 9 }, elevation: 8 },
+  iconHalo: { width: 58, height: 58, borderRadius: 29, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,114,167,0.12)' },
   label: { marginTop: 12, color: PREMIUM.colors.ink, fontSize: 14, fontWeight: '800', textAlign: 'center' },
   hint: { marginTop: 5, color: PREMIUM.colors.muted, fontSize: 10, letterSpacing: 0.2, textAlign: 'center' },
   pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
