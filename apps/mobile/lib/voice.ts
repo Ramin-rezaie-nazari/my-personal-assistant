@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Speech from 'expo-speech';
 import { getVoiceLanguage, type LanguageCode } from './voice-language';
+import { speakPersianLocally, stopLocalPersianTts } from './local-persian-tts';
 
 export type VoiceGender = 'female' | 'male';
 
@@ -114,10 +115,15 @@ function localeForText(text: string, profile: VoiceProfile): LanguageCode {
   return profile.locale;
 }
 
-export async function speakAssistantText(text: string, profile: VoiceProfile): Promise<void> {
-  const normalizedText = text.trim();
-  if (!normalizedText) return;
+function isPersianLocale(locale: LanguageCode): boolean {
+  return locale === 'fa-IR' || locale === 'fa-AF' || locale === 'fa-TJ';
+}
 
+async function speakWithSystemTts(
+  normalizedText: string,
+  profile: VoiceProfile,
+  textLocale: LanguageCode,
+): Promise<void> {
   await Speech.stop();
 
   const timeoutMs = Math.min(
@@ -125,14 +131,17 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
     Math.max(MIN_TTS_TIMEOUT_MS, normalizedText.length * TTS_TIMEOUT_PER_CHARACTER_MS),
   );
 
-  const textLocale = localeForText(normalizedText, profile);
   let availableVoices: Speech.Voice[] = [];
   let installedVoice: Speech.Voice | undefined;
   try {
     availableVoices = await getAvailableVoices();
     installedVoice = pickInstalledVoice(availableVoices, textLocale);
   } catch {
-    // Fall back to the platform's language selection below.
+    // Use platform language routing if the voice list cannot be inspected.
+  }
+
+  if (isPersianLocale(textLocale) && !installedVoice) {
+    throw new Error('No installed Persian system TTS voice is available.');
   }
 
   if (__DEV__) {
@@ -149,7 +158,7 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
         name: voice.name,
       }));
 
-    console.warn('[MYPA][TTS]', JSON.stringify({
+    console.warn('[MYPA][SYSTEM_TTS]', JSON.stringify({
       targetLocale: textLocale,
       matchingVoiceCount: matchingVoices.length,
       selectedVoice: installedVoice
@@ -160,11 +169,10 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
             name: installedVoice.name,
           }
         : null,
-      matchingVoices,
     }));
   }
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
     let settled = false;
     let timeout: ReturnType<typeof setTimeout> | undefined;
 
@@ -173,6 +181,13 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
       settled = true;
       if (timeout) clearTimeout(timeout);
       resolve();
+    };
+
+    const fail = (error?: unknown) => {
+      if (settled) return;
+      settled = true;
+      if (timeout) clearTimeout(timeout);
+      reject(error instanceof Error ? error : new Error('System TTS failed.'));
     };
 
     timeout = setTimeout(finish, timeoutMs);
@@ -186,15 +201,53 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
         volume: 1,
         onDone: finish,
         onStopped: finish,
-        onError: finish,
+        onError: fail,
       });
-    } catch {
-      finish();
+    } catch (error) {
+      fail(error);
     }
   });
 }
 
+export async function speakAssistantText(text: string, profile: VoiceProfile): Promise<void> {
+  const normalizedText = text.trim();
+  if (!normalizedText) return;
+
+  const textLocale = localeForText(normalizedText, profile);
+
+  // Persian deliberately prefers our on-device neural provider. Android's
+  // installed system voices are not guaranteed to expose a Persian voice.
+  if (isPersianLocale(textLocale)) {
+    try {
+      const localStarted = await speakPersianLocally(normalizedText, profile.rate);
+      if (localStarted) return;
+    } catch (error) {
+      if (__DEV__) console.warn('[MYPA][LOCAL_TTS]', error);
+    }
+
+    try {
+      await speakWithSystemTts(normalizedText, profile, textLocale);
+      return;
+    } catch (error) {
+      // Never silently speak Persian through a non-Persian fallback voice.
+      if (__DEV__) console.warn('[MYPA][TTS]', 'Persian system fallback unavailable.', error);
+      return;
+    }
+  }
+
+  try {
+    await speakWithSystemTts(normalizedText, profile, textLocale);
+  } catch (error) {
+    if (__DEV__) console.warn('[MYPA][TTS]', 'System TTS failed.', error);
+  }
+}
+
 export async function stopAssistantSpeech(): Promise<void> {
+  try {
+    await stopLocalPersianTts();
+  } catch {
+    // Continue cleanup even if local provider is unavailable.
+  }
   try {
     await Speech.stop();
   } catch {
