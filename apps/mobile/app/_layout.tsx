@@ -1,7 +1,7 @@
 import { Stack, router, useSegments } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, I18nManager, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Animated, I18nManager, StyleSheet, View } from 'react-native';
 import { AppErrorState } from '../components/app-error-state';
 import { BrandMark } from '../components/BrandMark';
 import { BrandWordmark } from '../components/BrandWordmark';
@@ -12,36 +12,76 @@ import { getOnboardingState } from '../lib/onboarding';
 import { BRAND } from '../lib/branding';
 import { PREMIUM } from '../lib/premium-ui';
 
+function Petal({ color, size, rotation, style }: { color: string; size: number; rotation: string; style?: object }) {
+  return (
+    <View style={[styles.petal, { width: size, height: size * 1.65, borderRadius: size, backgroundColor: color, transform: [{ rotate: rotation }] }, style]} />
+  );
+}
+
+function FlowerCluster({ size = 52, color = PREMIUM.colors.primary, center = PREMIUM.colors.white, style }: { size?: number; color?: string; center?: string; style?: object }) {
+  const petalSize = size * 0.34;
+  return (
+    <View pointerEvents="none" style={[{ width: size, height: size }, style]}>
+      <Petal color={color} size={petalSize} rotation="0deg" style={styles.petalTop} />
+      <Petal color={color} size={petalSize} rotation="72deg" style={styles.petalTop} />
+      <Petal color={color} size={petalSize} rotation="144deg" style={styles.petalTop} />
+      <Petal color={color} size={petalSize} rotation="216deg" style={styles.petalTop} />
+      <Petal color={color} size={petalSize} rotation="288deg" style={styles.petalTop} />
+      <View style={[styles.flowerCenter, { width: size * 0.23, height: size * 0.23, borderRadius: size, backgroundColor: center }]} />
+    </View>
+  );
+}
+
+function Sparkle({ size = 10, color = PREMIUM.colors.rose, style }: { size?: number; color?: string; style?: object }) {
+  return <View pointerEvents="none" style={[styles.sparkle, { width: size, height: size, backgroundColor: color, transform: [{ rotate: '45deg' }] }, style]} />;
+}
+
+function AmbientDecoration() {
+  return (
+    <View pointerEvents="none" style={styles.ambient}>
+      <View style={styles.blobPink} />
+      <View style={styles.blobAqua} />
+      <View style={styles.blobLilac} />
+      <View style={styles.blobPeach} />
+      <FlowerCluster size={58} style={styles.flowerOne} />
+      <FlowerCluster size={44} color={PREMIUM.colors.cyan} center={PREMIUM.colors.surface} style={styles.flowerTwo} />
+      <FlowerCluster size={38} color={PREMIUM.colors.lilac} center={PREMIUM.colors.surface} style={styles.flowerThree} />
+      <Sparkle size={9} style={styles.sparkleOne} />
+      <Sparkle size={7} color={PREMIUM.colors.cyan} style={styles.sparkleTwo} />
+      <Sparkle size={6} color={PREMIUM.colors.lilac} style={styles.sparkleThree} />
+    </View>
+  );
+}
+
 function StartupScreen() {
   const glow = useRef(new Animated.Value(0.35)).current;
-  const scale = useRef(new Animated.Value(0.94)).current;
+  const scale = useRef(new Animated.Value(0.96)).current;
   useEffect(() => {
     const loop = Animated.loop(Animated.parallel([
       Animated.sequence([
-        Animated.timing(glow, { toValue: 0.9, duration: 820, useNativeDriver: true }),
-        Animated.timing(glow, { toValue: 0.35, duration: 820, useNativeDriver: true }),
+        Animated.timing(glow, { toValue: 0.75, duration: 1000, useNativeDriver: true }),
+        Animated.timing(glow, { toValue: 0.35, duration: 1000, useNativeDriver: true }),
       ]),
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.04, duration: 820, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 0.94, duration: 820, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 1.035, duration: 1000, useNativeDriver: true }),
+        Animated.timing(scale, { toValue: 0.96, duration: 1000, useNativeDriver: true }),
       ]),
     ]));
     loop.start();
     return () => loop.stop();
   }, [glow, scale]);
+
   return (
     <View style={styles.startup} accessible accessibilityLabel="Starting My Personal Assistant">
-      <View pointerEvents="none" style={styles.floralLayer}>
-        <Text style={[styles.flower, styles.flowerTop]}>✿</Text>
-        <Text style={[styles.flower, styles.flowerRight]}>❀</Text>
-        <Text style={[styles.flower, styles.flowerLeft]}>✿</Text>
-        <Text style={[styles.sparkle, styles.sparkleTop]}>✦</Text>
-        <Text style={[styles.sparkle, styles.sparkleBottom]}>✧</Text>
-      </View>
-      <Animated.View style={[styles.startupGlow, { opacity: glow, transform: [{ scale }] }]} />
-      <View style={styles.startupMark}><BrandMark size={104} /></View>
+      <AmbientDecoration />
+      <Animated.View style={[styles.startupHalo, { opacity: glow, transform: [{ scale }] }]} />
+      <View style={styles.startupMark}><BrandMark size={110} /></View>
       <BrandWordmark dark={false} />
-      <Text style={styles.startupSubtitle}>Your day, your goals, your assistant.</Text>
+      <View style={styles.startupAccentRow}>
+        <View style={styles.startupDot} />
+        <View style={[styles.startupDot, styles.startupDotAqua]} />
+        <View style={[styles.startupDot, styles.startupDotLilac]} />
+      </View>
       <ActivityIndicator color={BRAND.colors.primary} style={styles.startupSpinner} />
     </View>
   );
@@ -108,17 +148,8 @@ export default function RootLayout() {
 
   return (
     <View style={styles.root}>
-      <View pointerEvents="none" style={styles.globalDecor}>
-        <View style={styles.decorBlobPink} />
-        <View style={styles.decorBlobTurquoise} />
-        <View style={styles.decorBlobLilac} />
-        <Text style={[styles.globalFlower, styles.globalFlowerOne]}>✿</Text>
-        <Text style={[styles.globalFlower, styles.globalFlowerTwo]}>❀</Text>
-        <Text style={[styles.globalFlower, styles.globalFlowerThree]}>✾</Text>
-        <Text style={[styles.globalSparkle, styles.globalSparkleOne]}>✦</Text>
-        <Text style={[styles.globalSparkle, styles.globalSparkleTwo]}>✧</Text>
-      </View>
-      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: PREMIUM.colors.canvas }, animation: 'fade' }}>
+      <AmbientDecoration />
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: 'transparent' }, animation: 'fade' }}>
         <Stack.Screen name="index" options={{ animation: 'fade' }} />
         <Stack.Screen name="assistant" options={{ animation: 'slide_from_right' }} />
         <Stack.Screen name="language" options={{ animation: 'fade' }} />
@@ -133,29 +164,28 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: PREMIUM.colors.canvas },
-  globalDecor: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
-  decorBlobPink: { position: 'absolute', width: 300, height: 300, borderRadius: 150, right: -150, top: 40, backgroundColor: '#FF9AC4', opacity: 0.22 },
-  decorBlobTurquoise: { position: 'absolute', width: 240, height: 240, borderRadius: 120, left: -140, bottom: 80, backgroundColor: '#74DED6', opacity: 0.15 },
-  decorBlobLilac: { position: 'absolute', width: 260, height: 260, borderRadius: 130, left: '35%', top: '28%', backgroundColor: '#C9A7F5', opacity: 0.11 },
-  globalFlower: { position: 'absolute', color: '#E85D9E', opacity: 0.16, fontWeight: '800' },
-  globalFlowerOne: { fontSize: 62, right: 14, top: 110, transform: [{ rotate: '15deg' }] },
-  globalFlowerTwo: { fontSize: 46, left: 12, top: '42%', color: '#59D8D0', transform: [{ rotate: '-18deg' }] },
-  globalFlowerThree: { fontSize: 54, right: 28, bottom: 130, color: '#B58BEA', transform: [{ rotate: '25deg' }] },
-  globalSparkle: { position: 'absolute', color: '#FF5F8F', opacity: 0.26 },
-  globalSparkleOne: { fontSize: 30, left: '22%', top: 90 },
-  globalSparkleTwo: { fontSize: 22, right: '30%', bottom: 105, color: '#59D8D0' },
+  ambient: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
+  blobPink: { position: 'absolute', width: 330, height: 330, borderRadius: 165, right: -175, top: -70, backgroundColor: '#F8A7C7', opacity: 0.24 },
+  blobAqua: { position: 'absolute', width: 250, height: 250, borderRadius: 125, left: -150, top: '34%', backgroundColor: '#7CDED6', opacity: 0.14 },
+  blobLilac: { position: 'absolute', width: 310, height: 310, borderRadius: 155, right: -130, bottom: 60, backgroundColor: '#C7B0EF', opacity: 0.12 },
+  blobPeach: { position: 'absolute', width: 190, height: 190, borderRadius: 95, left: '34%', bottom: -90, backgroundColor: '#FFD2B8', opacity: 0.12 },
+  petal: { position: 'absolute', left: '50%', top: '50%' },
+  petalTop: { marginLeft: -3, marginTop: -14, transformOrigin: '50% 100%' as any, opacity: 0.8 },
+  flowerCenter: { position: 'absolute', left: '50%', top: '50%', marginLeft: -6, marginTop: -6, borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)' },
+  flowerOne: { position: 'absolute', right: 18, top: 115, opacity: 0.48 },
+  flowerTwo: { position: 'absolute', left: 18, top: '43%', opacity: 0.4 },
+  flowerThree: { position: 'absolute', right: 38, bottom: 126, opacity: 0.28 },
+  sparkle: { position: 'absolute', borderRadius: 3, opacity: 0.48 },
+  sparkleOne: { left: '20%', top: 98 },
+  sparkleTwo: { right: '29%', bottom: 128 },
+  sparkleThree: { left: '42%', top: '28%' },
   startup: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.surfaceWarm, paddingHorizontal: 28 },
-  floralLayer: { ...StyleSheet.absoluteFillObject },
-  flower: { position: 'absolute', color: '#E85D9E', opacity: 0.18, fontWeight: '800' },
-  flowerTop: { fontSize: 70, right: 28, top: 76 },
-  flowerRight: { fontSize: 54, left: 22, top: '28%', color: '#59D8D0' },
-  flowerLeft: { fontSize: 48, right: 30, bottom: 110, color: '#B58BEA' },
-  sparkle: { position: 'absolute', color: '#FF5F8F', opacity: 0.32 },
-  sparkleTop: { fontSize: 26, left: 52, top: 138 },
-  sparkleBottom: { fontSize: 22, right: 76, bottom: 182, color: '#59D8D0' },
-  startupGlow: { position: 'absolute', width: 190, height: 190, borderRadius: 95, backgroundColor: BRAND.colors.primarySoft },
+  startupHalo: { position: 'absolute', width: 235, height: 235, borderRadius: 118, backgroundColor: '#FFD9EA', opacity: 0.58 },
   startupMark: { marginBottom: 18 },
-  startupSubtitle: { marginTop: 8, color: BRAND.colors.muted, fontSize: 13, textAlign: 'center' },
-  startupSpinner: { marginTop: 28 },
+  startupAccentRow: { flexDirection: 'row', gap: 7, marginTop: 18 },
+  startupDot: { width: 7, height: 7, borderRadius: 5, backgroundColor: PREMIUM.colors.primary },
+  startupDotAqua: { backgroundColor: PREMIUM.colors.cyan },
+  startupDotLilac: { backgroundColor: PREMIUM.colors.lilac },
+  startupSpinner: { marginTop: 20 },
   dock: { position: 'absolute', right: 18, bottom: 24, left: 18 },
 });
