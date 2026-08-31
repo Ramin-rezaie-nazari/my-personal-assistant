@@ -69,7 +69,16 @@ export class AssistantService {
           confidence: contextualCommand.confidence,
         })
       : ({ requiresClarification: false, reason: 'not_available' } as any);
-    const response = plan.requiresClarification
+
+    // Planning is a safety/action-routing layer. It must not block ordinary
+    // conversation just because deterministic parsing cannot map a sentence
+    // to an actionable command. Natural language still needs to reach Brain.
+    const shouldClarify =
+      plan.requiresClarification &&
+      plan.reason !== 'low_confidence' &&
+      plan.reason !== 'no_actionable_intent';
+
+    const response = shouldClarify
       ? ({
           intent: 'assistant',
           nextAction: undefined,
@@ -78,7 +87,11 @@ export class AssistantService {
               ? 'یه بخش از درخواستت با بخش دیگه تناقض داره؛ قبل از انجامش باید مشخص کنی دقیقاً کدوم رو می‌خوای.'
               : 'برای اینکه درست انجامش بدم، یه بخش از درخواستت نیاز به توضیح بیشتر داره.',
           confidence: contextualCommand.confidence,
-          metadata: { local: true, clarification: true },
+          metadata: {
+            local: true,
+            clarification: true,
+            clarificationReason: plan.reason,
+          },
         } as BrainResponse)
       : ((local ? this.responseForLocalIntent(local) : undefined) ??
         (await this.brainOrchestratorService.processRequest(input, userId)));
