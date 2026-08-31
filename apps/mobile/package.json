@@ -5,6 +5,7 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
+    "android": "node scripts/prepare-persian-tts-model.cjs && expo run:android",
     "android:tts-model": "node scripts/prepare-persian-tts-model.cjs",
     "android:usb": "node scripts/android-usb-dev.cjs",
     "ios": "expo start --ios",
