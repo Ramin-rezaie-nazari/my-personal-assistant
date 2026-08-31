@@ -1,7 +1,7 @@
 import { Stack, router, useSegments } from 'expo-router';
 import type { ErrorBoundaryProps } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, I18nManager, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Animated, Image, I18nManager, StyleSheet, View } from 'react-native';
 import { AppErrorState } from '../components/app-error-state';
 import { BrandMark } from '../components/BrandMark';
 import { BrandWordmark } from '../components/BrandWordmark';
@@ -12,76 +12,49 @@ import { getOnboardingState } from '../lib/onboarding';
 import { BRAND } from '../lib/branding';
 import { PREMIUM } from '../lib/premium-ui';
 
-function Petal({ color, size, rotation, style }: { color: string; size: number; rotation: string; style?: object }) {
-  return (
-    <View style={[styles.petal, { width: size, height: size * 1.65, borderRadius: size, backgroundColor: color, transform: [{ rotate: rotation }] }, style]} />
-  );
-}
-
-function FlowerCluster({ size = 52, color = PREMIUM.colors.primary, center = PREMIUM.colors.white, style }: { size?: number; color?: string; center?: string; style?: object }) {
-  const petalSize = size * 0.34;
-  return (
-    <View pointerEvents="none" style={[{ width: size, height: size }, style]}>
-      <Petal color={color} size={petalSize} rotation="0deg" style={styles.petalTop} />
-      <Petal color={color} size={petalSize} rotation="72deg" style={styles.petalTop} />
-      <Petal color={color} size={petalSize} rotation="144deg" style={styles.petalTop} />
-      <Petal color={color} size={petalSize} rotation="216deg" style={styles.petalTop} />
-      <Petal color={color} size={petalSize} rotation="288deg" style={styles.petalTop} />
-      <View style={[styles.flowerCenter, { width: size * 0.23, height: size * 0.23, borderRadius: size, backgroundColor: center }]} />
-    </View>
-  );
-}
-
-function Sparkle({ size = 10, color = PREMIUM.colors.rose, style }: { size?: number; color?: string; style?: object }) {
-  return <View pointerEvents="none" style={[styles.sparkle, { width: size, height: size, backgroundColor: color, transform: [{ rotate: '45deg' }] }, style]} />;
-}
-
 function AmbientDecoration() {
   return (
     <View pointerEvents="none" style={styles.ambient}>
-      <View style={styles.blobPink} />
-      <View style={styles.blobAqua} />
-      <View style={styles.blobLilac} />
-      <View style={styles.blobPeach} />
-      <FlowerCluster size={58} style={styles.flowerOne} />
-      <FlowerCluster size={44} color={PREMIUM.colors.cyan} center={PREMIUM.colors.surface} style={styles.flowerTwo} />
-      <FlowerCluster size={38} color={PREMIUM.colors.lilac} center={PREMIUM.colors.surface} style={styles.flowerThree} />
-      <Sparkle size={9} style={styles.sparkleOne} />
-      <Sparkle size={7} color={PREMIUM.colors.cyan} style={styles.sparkleTwo} />
-      <Sparkle size={6} color={PREMIUM.colors.lilac} style={styles.sparkleThree} />
+      <View style={styles.softPinkWash} />
+      <View style={styles.softAquaWash} />
+      <View style={styles.softLilacWash} />
+      <Image source={require('../assets/decor/feminine-botanical.svg')} style={styles.botanicalTop} resizeMode="contain" />
+      <Image source={require('../assets/decor/feminine-botanical.svg')} style={styles.botanicalBottom} resizeMode="contain" />
+      <View style={styles.microSparkleOne} />
+      <View style={styles.microSparkleTwo} />
+      <View style={styles.microDot} />
     </View>
   );
 }
 
 function StartupScreen() {
-  const glow = useRef(new Animated.Value(0.35)).current;
-  const scale = useRef(new Animated.Value(0.96)).current;
+  const pulse = useRef(new Animated.Value(0.98)).current;
+  const glow = useRef(new Animated.Value(0.24)).current;
+
   useEffect(() => {
     const loop = Animated.loop(Animated.parallel([
       Animated.sequence([
-        Animated.timing(glow, { toValue: 0.75, duration: 1000, useNativeDriver: true }),
-        Animated.timing(glow, { toValue: 0.35, duration: 1000, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1.025, duration: 1300, useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 0.98, duration: 1300, useNativeDriver: true }),
       ]),
       Animated.sequence([
-        Animated.timing(scale, { toValue: 1.035, duration: 1000, useNativeDriver: true }),
-        Animated.timing(scale, { toValue: 0.96, duration: 1000, useNativeDriver: true }),
+        Animated.timing(glow, { toValue: 0.44, duration: 1300, useNativeDriver: true }),
+        Animated.timing(glow, { toValue: 0.24, duration: 1300, useNativeDriver: true }),
       ]),
     ]));
     loop.start();
     return () => loop.stop();
-  }, [glow, scale]);
+  }, [glow, pulse]);
 
   return (
     <View style={styles.startup} accessible accessibilityLabel="Starting My Personal Assistant">
-      <AmbientDecoration />
-      <Animated.View style={[styles.startupHalo, { opacity: glow, transform: [{ scale }] }]} />
-      <View style={styles.startupMark}><BrandMark size={110} /></View>
-      <BrandWordmark dark={false} />
-      <View style={styles.startupAccentRow}>
-        <View style={styles.startupDot} />
-        <View style={[styles.startupDot, styles.startupDotAqua]} />
-        <View style={[styles.startupDot, styles.startupDotLilac]} />
+      <View style={styles.startupOrnamentWrap}>
+        <Animated.View style={[styles.startupHaloOuter, { opacity: glow, transform: [{ scale: pulse }] }]} />
+        <Animated.View style={[styles.startupHaloInner, { transform: [{ scale: pulse }] }]} />
+        <View style={styles.startupMark}><BrandMark size={108} /></View>
       </View>
+      <BrandWordmark dark={false} />
+      <View style={styles.startupRule} />
       <ActivityIndicator color={BRAND.colors.primary} style={styles.startupSpinner} />
     </View>
   );
@@ -165,27 +138,20 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: PREMIUM.colors.canvas },
   ambient: { ...StyleSheet.absoluteFillObject, overflow: 'hidden' },
-  blobPink: { position: 'absolute', width: 330, height: 330, borderRadius: 165, right: -175, top: -70, backgroundColor: '#F8A7C7', opacity: 0.24 },
-  blobAqua: { position: 'absolute', width: 250, height: 250, borderRadius: 125, left: -150, top: '34%', backgroundColor: '#7CDED6', opacity: 0.14 },
-  blobLilac: { position: 'absolute', width: 310, height: 310, borderRadius: 155, right: -130, bottom: 60, backgroundColor: '#C7B0EF', opacity: 0.12 },
-  blobPeach: { position: 'absolute', width: 190, height: 190, borderRadius: 95, left: '34%', bottom: -90, backgroundColor: '#FFD2B8', opacity: 0.12 },
-  petal: { position: 'absolute', left: '50%', top: '50%' },
-  petalTop: { marginLeft: -3, marginTop: -14, transformOrigin: '50% 100%' as any, opacity: 0.8 },
-  flowerCenter: { position: 'absolute', left: '50%', top: '50%', marginLeft: -6, marginTop: -6, borderWidth: 2, borderColor: 'rgba(255,255,255,0.9)' },
-  flowerOne: { position: 'absolute', right: 18, top: 115, opacity: 0.48 },
-  flowerTwo: { position: 'absolute', left: 18, top: '43%', opacity: 0.4 },
-  flowerThree: { position: 'absolute', right: 38, bottom: 126, opacity: 0.28 },
-  sparkle: { position: 'absolute', borderRadius: 3, opacity: 0.48 },
-  sparkleOne: { left: '20%', top: 98 },
-  sparkleTwo: { right: '29%', bottom: 128 },
-  sparkleThree: { left: '42%', top: '28%' },
+  softPinkWash: { position: 'absolute', width: 360, height: 360, borderRadius: 180, right: -190, top: -150, backgroundColor: '#F8A7C7', opacity: 0.16 },
+  softAquaWash: { position: 'absolute', width: 290, height: 290, borderRadius: 145, left: -185, top: '38%', backgroundColor: '#72D8D0', opacity: 0.08 },
+  softLilacWash: { position: 'absolute', width: 330, height: 330, borderRadius: 165, right: -180, bottom: -155, backgroundColor: '#B8A1E9', opacity: 0.08 },
+  botanicalTop: { position: 'absolute', width: 250, height: 300, right: -55, top: 42, opacity: 0.19, transform: [{ rotate: '8deg' }] },
+  botanicalBottom: { position: 'absolute', width: 210, height: 245, left: -80, bottom: 28, opacity: 0.10, transform: [{ rotate: '188deg' }] },
+  microSparkleOne: { position: 'absolute', width: 8, height: 8, borderRadius: 2, backgroundColor: PREMIUM.colors.rose, opacity: 0.40, top: 130, left: '18%', transform: [{ rotate: '45deg' }] },
+  microSparkleTwo: { position: 'absolute', width: 7, height: 7, borderRadius: 2, backgroundColor: PREMIUM.colors.lilac, opacity: 0.34, bottom: 154, right: '24%', transform: [{ rotate: '45deg' }] },
+  microDot: { position: 'absolute', width: 5, height: 5, borderRadius: 3, backgroundColor: PREMIUM.colors.cyan, opacity: 0.46, top: '31%', right: '17%' },
   startup: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.surfaceWarm, paddingHorizontal: 28 },
-  startupHalo: { position: 'absolute', width: 235, height: 235, borderRadius: 118, backgroundColor: '#FFD9EA', opacity: 0.58 },
-  startupMark: { marginBottom: 18 },
-  startupAccentRow: { flexDirection: 'row', gap: 7, marginTop: 18 },
-  startupDot: { width: 7, height: 7, borderRadius: 5, backgroundColor: PREMIUM.colors.primary },
-  startupDotAqua: { backgroundColor: PREMIUM.colors.cyan },
-  startupDotLilac: { backgroundColor: PREMIUM.colors.lilac },
-  startupSpinner: { marginTop: 20 },
+  startupOrnamentWrap: { width: 220, height: 220, alignItems: 'center', justifyContent: 'center', marginBottom: 22 },
+  startupHaloOuter: { position: 'absolute', width: 205, height: 205, borderRadius: 103, backgroundColor: '#FBC1D9' },
+  startupHaloInner: { position: 'absolute', width: 168, height: 168, borderRadius: 84, backgroundColor: '#FFF8FC', borderWidth: 1, borderColor: '#F2D5E2' },
+  startupMark: { borderRadius: 56, padding: 9, backgroundColor: 'rgba(255,255,255,0.84)', borderWidth: 1, borderColor: '#F0D1E0', shadowColor: '#B84F83', shadowOpacity: 0.14, shadowRadius: 28, shadowOffset: { width: 0, height: 14 }, elevation: 8 },
+  startupRule: { width: 62, height: 2, borderRadius: 2, backgroundColor: BRAND.colors.primary, opacity: 0.30, marginTop: 18 },
+  startupSpinner: { marginTop: 18 },
   dock: { position: 'absolute', right: 18, bottom: 24, left: 18 },
 });
