@@ -21,8 +21,8 @@ export function AssistantDock({ onPress, accessibilityLabel }: { onPress?: () =>
       return;
     }
     const loop = Animated.loop(Animated.sequence([
-      Animated.timing(pulse, { toValue: 1.04, duration: 1900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
-      Animated.timing(pulse, { toValue: 0.992, duration: 1900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 1.025, duration: 1900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 0.995, duration: 1900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
     ]));
     loop.start();
     return () => loop.stop();
@@ -34,8 +34,8 @@ export function AssistantDock({ onPress, accessibilityLabel }: { onPress?: () =>
     <Animated.View style={[styles.shell, { transform: [{ scale: pulse }] }]}>
       <View style={[styles.dock, rtl && styles.rtlRow]}>
         <Pressable accessibilityRole="button" accessibilityLabel={labels.today} onPress={() => router.push('/daily')} style={({ pressed }) => [styles.sideItem, pressed && styles.pressed]}>
-          <Ionicons name="today-outline" size={19} color={PREMIUM.colors.inkSoft} />
-          <View style={styles.activeLine} />
+          <Ionicons name="today-outline" size={20} color={PREMIUM.colors.berry} />
+          <View style={[styles.activeLine, { backgroundColor: PREMIUM.colors.cyan }]} />
         </Pressable>
 
         <View style={styles.centerSlot}>
@@ -46,8 +46,8 @@ export function AssistantDock({ onPress, accessibilityLabel }: { onPress?: () =>
         </View>
 
         <Pressable accessibilityRole="button" accessibilityLabel={labels.settings} onPress={() => router.push('/settings')} style={({ pressed }) => [styles.sideItem, pressed && styles.pressed]}>
-          <Ionicons name="options-outline" size={19} color={PREMIUM.colors.inkSoft} />
-          <View style={styles.activeLine} />
+          <Ionicons name="options-outline" size={20} color={PREMIUM.colors.berry} />
+          <View style={[styles.activeLine, { backgroundColor: PREMIUM.colors.lilac }]} />
         </Pressable>
       </View>
     </Animated.View>
@@ -58,29 +58,29 @@ const styles = StyleSheet.create({
   shell: { position: 'absolute', left: 18, right: 18, bottom: 18, alignItems: 'center' },
   dock: {
     width: '100%',
-    maxWidth: 300,
+    maxWidth: 292,
     height: 74,
     paddingHorizontal: 10,
-    borderRadius: 38,
+    borderRadius: 37,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: 'rgba(126,55,91,0.96)',
+    backgroundColor: 'rgba(255,255,255,0.94)',
     borderWidth: 1,
-    borderColor: 'rgba(255,145,191,0.32)',
+    borderColor: PREMIUM.colors.border,
     shadowColor: PREMIUM.shadow.color,
-    shadowOpacity: 0.28,
-    shadowRadius: 28,
-    shadowOffset: { width: 0, height: 14 },
-    elevation: 16,
+    shadowOpacity: 0.18,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 12 },
+    elevation: 12,
   },
   rtlRow: { flexDirection: 'row-reverse' },
-  sideItem: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center' },
+  sideItem: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,240,247,0.72)' },
   centerSlot: { width: 88, height: 74, alignItems: 'center', justifyContent: 'center' },
-  coreOuter: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.34)', shadowColor: PREMIUM.colors.primary, shadowOpacity: 0.38, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
-  coreGlow: { position: 'absolute', width: 54, height: 54, borderRadius: 27, backgroundColor: PREMIUM.colors.primary, opacity: 0.28 },
-  coreInner: { width: 58, height: 58, borderRadius: 29, alignItems: 'center', justifyContent: 'center', backgroundColor: PREMIUM.colors.surface, borderWidth: 1, borderColor: 'rgba(255,255,255,0.82)' },
-  activeLine: { position: 'absolute', bottom: 2, width: 5, height: 5, borderRadius: 3, backgroundColor: PREMIUM.colors.primaryBright, opacity: 0.75 },
-  pressed: { opacity: 0.7, transform: [{ scale: 0.94 }] },
+  coreOuter: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFF1F7', borderWidth: 1.5, borderColor: 'rgba(217,79,138,0.30)', shadowColor: PREMIUM.colors.primary, shadowOpacity: 0.24, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 10 },
+  coreGlow: { position: 'absolute', width: 56, height: 56, borderRadius: 28, backgroundColor: PREMIUM.colors.primary, opacity: 0.11 },
+  coreInner: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: PREMIUM.colors.surface, borderWidth: 1, borderColor: 'rgba(255,255,255,0.95)' },
+  activeLine: { position: 'absolute', bottom: 1, width: 5, height: 5, borderRadius: 3, opacity: 0.8 },
+  pressed: { opacity: 0.72, transform: [{ scale: 0.94 }] },
   corePressed: { transform: [{ scale: 0.94 }] },
 });
