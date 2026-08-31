@@ -5,7 +5,7 @@ import { createTTS, saveAudioToFile, type TtsEngine } from 'react-native-sherpa-
 const MODEL_VERSION = '20260831-ganji-medium-v1';
 const MODEL_DIR_NAME = `mypa-tts-${MODEL_VERSION}`;
 const MODEL_BASE_URL =
-  'https://huggingface.co/rhasspy/piper-voices/resolve/main/fa/fa_IR/ganji/medium';
+  'https://huggingface.co/rhasspy/piper-voices/resolve/5b44ec7bab7c5822cfec48fbd5aa99db71a823d6/fa/fa_IR/ganji/medium';
 const MODEL_FILE = 'fa_IR-ganji-medium.onnx';
 const MODEL_CONFIG_FILE = 'fa_IR-ganji-medium.onnx.json';
 const MODEL_DIR = `${FileSystem.documentDirectory}${MODEL_DIR_NAME}/`;
