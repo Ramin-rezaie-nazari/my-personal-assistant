@@ -79,7 +79,7 @@ async function getEngine(): Promise<TtsEngine> {
           vits: {
             noiseScale: 0.667,
             lengthScale: 1.02,
-            noiseW: 0.8,
+            noiseScaleW: 0.8,
           },
         },
       });
@@ -122,9 +122,8 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
   const normalizedText = text.trim();
   if (!normalizedText) return false;
 
-  const token = activePlaybackToken + 1;
-  activePlaybackToken = token;
   await stopCurrentPlayback();
+  const token = activePlaybackToken;
 
   try {
     const engine = await getEngine();
@@ -138,6 +137,12 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
     await saveAudioToFile(audio, outputPath);
 
     if (token !== activePlaybackToken) return false;
+
+    await Audio.setAudioModeAsync({
+      playsInSilentModeIOS: true,
+      staysActiveInBackground: false,
+      shouldDuckAndroid: false,
+    });
 
     const { sound } = await Audio.Sound.createAsync(
       { uri: outputPath },
