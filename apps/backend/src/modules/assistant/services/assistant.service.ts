@@ -2,6 +2,7 @@ import { Injectable, Optional } from '@nestjs/common';
 
 import { BrainOrchestratorService } from '../../personal-brain/services/brain-orchestrator.service';
 import { BrainResponse } from '../../personal-brain/types';
+import { RecommendationEngineService } from '../../recommendation-intelligence/services/recommendation-engine.service';
 import { ContextualCommandService } from './contextual-command.service';
 import { ConversationContextService } from './conversation-context.service';
 import { LocalLanguageUnderstandingService } from './local-language-understanding.service';
@@ -61,6 +62,7 @@ export class AssistantService {
     private readonly naturalActionExecutionService: NaturalActionExecutionService,
     private readonly contextualCommandService: ContextualCommandService,
     private readonly conversationContextService: ConversationContextService,
+    private readonly recommendationEngineService: RecommendationEngineService,
     @Optional() private readonly localLanguageUnderstandingService?: LocalLanguageUnderstandingService,
     @Optional() private readonly semanticMultilingualUnderstandingService?: SemanticMultilingualUnderstandingService,
     @Optional() private readonly planningService?: PlanningService,
@@ -90,9 +92,23 @@ export class AssistantService {
     const plan = this.planningService
       ? await this.planningService.createPlan({ clauses: contextualCommand.clauses, intents: contextualCommand.intents, contradictions: contextualCommand.contradictions, confidence: contextualCommand.confidence })
       : ({ requiresClarification: false, reason: 'not_available' } as any);
-    const response = plan.requiresClarification
-      ? ({ intent: 'assistant', nextAction: undefined, message: plan.reason === 'conflicting_request' ? 'یه بخش از درخواستت با بخش دیگه تناقض داره؛ قبل از انجامش باید مشخص کنی دقیقاً کدوم رو می‌خوای.' : 'برای اینکه درست انجامش بدم، یه بخش از درخواستت نیاز به توضیح بیشتر داره.', confidence: contextualCommand.confidence, metadata: { local: true, clarification: true } } as BrainResponse)
-      : ((local ? this.responseForLocalIntent(local) : undefined) ?? (await this.brainOrchestratorService.processRequest(input, userId)));
+
+    let response: BrainResponse;
+    if (plan.requiresClarification) {
+      response = {
+        intent: 'assistant',
+        nextAction: undefined,
+        message: plan.reason === 'conflicting_request'
+          ? 'یه بخش از درخواستت با بخش دیگه تناقض داره؛ قبل از انجامش باید مشخص کنی دقیقاً کدوم رو می‌خوای.'
+          : 'برای اینکه درست انجامش بدم، یه بخش از درخواستت نیاز به توضیح بیشتر داره.',
+        confidence: contextualCommand.confidence,
+        metadata: { local: true, clarification: true },
+      } as BrainResponse;
+    } else if (local?.intent === 'RECOMMEND_MEAL' && local.confidence >= 0.7) {
+      response = await this.buildMealRecommendationResponse(userId, input, local.language);
+    } else {
+      response = ((local ? this.responseForLocalIntent(local) : undefined) ?? (await this.brainOrchestratorService.processRequest(input, userId)));
+    }
 
     const executionResponse = this.resolveContextualExecution(response, contextualCommand, input);
     const safeExecutionResponse =
@@ -125,6 +141,53 @@ export class AssistantService {
     const resourceType = this.resourceTypeFor(execution?.action ?? finalResponse.nextAction);
     await this.conversationContextService.append({ userId, role: 'assistant', text: finalResponse.message, intent: finalResponse.intent, action: execution?.action ?? finalResponse.nextAction, executionId, resourceType, resourceId });
     return finalResponse;
+  }
+
+  private async buildMealRecommendationResponse(userId: string, input: string, language?: string): Promise<BrainResponse> {
+    try {
+      const result = await this.recommendationEngineService.generateFoodRecommendations(userId, {
+        targetServings: 2,
+        limit: 3,
+      });
+      const top = result.recommendations[0];
+      if (!top) {
+        return {
+          intent: 'nutrition',
+          nextAction: undefined,
+          message: language === 'fa-IR' || /[\u0600-\u06ff]/u.test(input)
+            ? 'چندتا گزینه غذایی بررسی کردم، ولی فعلاً گزینه مناسبی پیدا نکردم. اگر بگی چه غذایی دوست داری یا چه محدودیتی داری، دقیق‌تر می‌گردم.'
+            : 'I checked your available food options, but I could not find a strong match yet. Tell me what you like or avoid and I’ll narrow it down.',
+          confidence: 0.88,
+          metadata: { local: true, recommendation: result },
+        };
+      }
+
+      const isPersian = language === 'fa-IR' || /[\u0600-\u06ff]/u.test(input);
+      const alternatives = result.recommendations.slice(1, 3).map((item) => item.name).join('، ');
+      return {
+        intent: 'nutrition',
+        nextAction: undefined,
+        message: isPersian
+          ? `پیشنهاد من برای تو «${top.name}»ه 🌷 حدود ${Math.round(top.caloriesPerServing)} کالری و ${Math.round(top.proteinPerServing)} گرم پروتئین در هر وعده داره. ${alternatives ? `دو گزینه دیگه هم: ${alternatives}.` : ''}`
+          : `My pick for you is “${top.name}”. It has about ${Math.round(top.caloriesPerServing)} kcal and ${Math.round(top.proteinPerServing)}g protein per serving. ${alternatives ? `Two other options: ${alternatives}.` : ''}`,
+        confidence: 0.93,
+        metadata: {
+          local: true,
+          recommendation: result,
+          source: 'recommendation-intelligence',
+        },
+      };
+    } catch (error) {
+      return {
+        intent: 'nutrition',
+        nextAction: undefined,
+        message: /[\u0600-\u06ff]/u.test(input)
+          ? 'می‌تونم برات غذا پیشنهاد بدم، ولی سرویس پیشنهاد غذا الان در دسترس نیست. بعداً دوباره امتحان کن.'
+          : 'I can recommend a meal, but the recommendation engine is not available right now. Please try again in a moment.',
+        confidence: 0.72,
+        metadata: { local: true, recommendationError: error instanceof Error ? error.message : String(error) },
+      };
+    }
   }
 
   private responseForLocalIntent(local: ReturnType<LocalLanguageUnderstandingService['understand']>): BrainResponse | undefined {
@@ -179,6 +242,7 @@ export class AssistantService {
     if (text.includes('supplement') || text.includes('vitamin')) return 'supplement';
     if (text.includes('notification')) return 'notification';
     if (text.includes('basket')) return 'shopping';
+    if (text.includes('meal') || text.includes('food') || text.includes('nutrition')) return 'nutrition';
     return undefined;
   }
 }
