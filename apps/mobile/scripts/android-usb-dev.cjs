@@ -5,6 +5,8 @@ function run(command, args, options = {}) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
+run('node', ['scripts/prepare-persian-tts-model.cjs']);
+run('npx', ['expo', 'prebuild', '--platform', 'android']);
 run('adb', ['reverse', 'tcp:3000', 'tcp:3000']);
 run('adb', ['reverse', 'tcp:8081', 'tcp:8081']);
 
