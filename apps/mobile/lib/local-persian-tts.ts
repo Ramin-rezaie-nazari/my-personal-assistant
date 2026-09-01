@@ -12,7 +12,7 @@ import { resolveModelPath } from 'react-native-sherpa-onnx';
 const MODEL_ARCHIVE_DIR = 'vits-piper-fa_IR-ganji-medium-v4';
 const SOURCE_MODEL_ASSET_PATH = 'vits-piper-fa_IR-ganji-medium';
 const KHADIJAH_MODEL_ASSET_PATH = 'matcha-tts-fa_en-khadijah';
-const KHADIJAH_VOCODER_ASSET_PATH = 'vocos-22khz-univ.onnx';
+const KHADIJAH_VOCODER_FILE = 'vocos-22khz-univ.onnx';
 const PLAYBACK_DIR = `${FileSystem.cacheDirectory}mypa-tts/`;
 
 let enginePromises: Record<string, Promise<TtsEngine> | null> = { ganji: null, khadijah: null };
@@ -28,7 +28,7 @@ async function resolveReadyBundledModel(kind: 'ganji' | 'khadijah'): Promise<str
       const assetPath = kind === 'khadijah' ? KHADIJAH_MODEL_ASSET_PATH : SOURCE_MODEL_ASSET_PATH;
       const resolvedPath = await resolveModelPath({ type: 'asset', path: assetPath });
       const requiredFiles = kind === 'khadijah'
-        ? [`${resolvedPath}/model.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`]
+        ? [`${resolvedPath}/model.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/${KHADIJAH_VOCODER_FILE}`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`]
         : [`${resolvedPath}/fa_IR-ganji-medium.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`];
       const ready = (await Promise.all(requiredFiles.map((filePath) => exists(filePath)))).every(Boolean);
       if (!ready) throw new Error(`Persian TTS model extraction incomplete at ${resolvedPath}`);
@@ -42,21 +42,20 @@ async function ensureEngine(kind: 'ganji' | 'khadijah'): Promise<TtsEngine> {
   if (!enginePromises[kind]) {
     enginePromises[kind] = resolveReadyBundledModel(kind).then((resolvedPath) => {
       if (kind === 'khadijah') {
-        const vocoderPathPromise = resolveModelPath({ type: 'asset', path: KHADIJAH_VOCODER_ASSET_PATH });
-        return vocoderPathPromise.then((vocoderPath) => createTTS({
+        return createTTS({
           modelPath: { type: 'file', path: resolvedPath },
           modelType: 'matcha',
           modelOptions: {
             matcha: {
               acousticModel: `${resolvedPath}/model.onnx`,
-              vocoder: vocoderPath,
+              vocoder: `${resolvedPath}/${KHADIJAH_VOCODER_FILE}`,
               tokens: `${resolvedPath}/tokens.txt`,
               dataDir: `${resolvedPath}/espeak-ng-data`,
               lengthScale: 1.0,
             },
           },
           numThreads: 2,
-        }));
+        });
       }
       return createTTS({
         modelPath: { type: 'file', path: resolvedPath },
