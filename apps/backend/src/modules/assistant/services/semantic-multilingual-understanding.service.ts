@@ -14,58 +14,24 @@ type IntentCandidate = {
 
 const PARAPHRASES: Partial<Record<SupportedLocalLanguage, Partial<Record<IntentCandidate['intent'], readonly string[]>>>> = {
   'en-US': {
-    RECOMMEND_MEAL: [
-      'what can i eat', 'what would be good to eat', 'help me choose dinner', 'give me something healthy to eat',
-      'what should i have', 'what should i have tonight', 'any ideas for dinner', 'dinner ideas', 'what can i have for dinner',
-      'what do you suggest for dinner', 'what sounds good to eat', 'what could i eat tonight', 'i need dinner ideas',
-      'what can i eat tonight', 'got any meal ideas', 'what should i grab for dinner', 'something good for dinner',
-    ],
-    CREATE_REMINDER: [
-      'make sure i remember', 'remind me later', 'don’t let me forget', 'dont let me forget', 'remind me about it later',
-      'can you remind me', 'remind me about that', 'set me a reminder', 'remember this for later',
-    ],
-    ADD_TO_BASKET: [
-      'put chicken in my basket', 'add some chicken', 'include chicken in my shopping list', 'throw chicken in the cart',
-      'put that in the cart', 'add that to my basket', 'can you add chicken to the cart', 'i need chicken in the basket',
-    ],
-    GET_NUTRITION_SUMMARY: [
-      'how did i do on calories', 'what have i eaten today', 'show my nutrition for today', 'how am i doing on calories',
-      'how are my calories today', 'how much protein did i get today', 'what is my nutrition looking like',
-    ],
+    RECOMMEND_MEAL: ['what can i eat', 'what would be good to eat', 'help me choose dinner', 'give me something healthy to eat', 'what should i have', 'what should i have tonight', 'any ideas for dinner', 'dinner ideas', 'what can i have for dinner', 'what do you suggest for dinner', 'what sounds good to eat', 'what could i eat tonight', 'i need dinner ideas', 'what can i eat tonight', 'got any meal ideas', 'what should i grab for dinner', 'something good for dinner'],
+    CREATE_REMINDER: ['make sure i remember', 'remind me later', 'don’t let me forget', 'dont let me forget', 'remind me about it later', 'can you remind me', 'remind me about that', 'set me a reminder', 'remember this for later'],
+    ADD_TO_BASKET: ['put chicken in my basket', 'add some chicken', 'include chicken in my shopping list', 'throw chicken in the cart', 'put that in the cart', 'add that to my basket', 'can you add chicken to the cart', 'i need chicken in the basket'],
+    GET_NUTRITION_SUMMARY: ['how did i do on calories', 'what have i eaten today', 'show my nutrition for today', 'how am i doing on calories', 'how are my calories today', 'how much protein did i get today', 'what is my nutrition looking like'],
     CANCEL_REQUEST: ['forget that', 'never mind that', 'stop that request', 'never mind', 'forget it', 'drop that request'],
   },
   'en-GB': {
-    RECOMMEND_MEAL: [
-      'what can i eat', 'what should i have tonight', 'any ideas for dinner', 'dinner ideas', 'what shall i eat tonight',
-      'what do you suggest for dinner', 'what could i have for dinner',
-    ],
+    RECOMMEND_MEAL: ['what can i eat', 'what should i have tonight', 'any ideas for dinner', 'dinner ideas', 'what shall i eat tonight', 'what do you suggest for dinner', 'what could i have for dinner'],
     CREATE_REMINDER: ['remind me later', 'don’t let me forget', 'dont let me forget', 'can you remind me', 'set me a reminder'],
     ADD_TO_BASKET: ['put chicken in my basket', 'add chicken to the trolley', 'put that in the basket', 'add that to my shopping'],
     GET_NUTRITION_SUMMARY: ['how are my calories today', 'what have i eaten today', 'show my nutrition today', 'how much protein did i get'],
     CANCEL_REQUEST: ['forget that', 'never mind', 'stop that request', 'forget it'],
   },
   'fa-IR': {
-    RECOMMEND_MEAL: [
-      'چی خوبه بخورم', 'واسه شام چی پیشنهاد میدی', 'یه غذای سالم پیشنهاد بده', 'امشب چی بخورم', 'برای امشب چی درست کنم',
-      'شام چی بزنم', 'برای شام چی خوبه', 'یه ایده برای شام بده', 'برای شام چی پیشنهاد میکنی', 'شام چی پیشنهاد میدی',
-      'چی درست کنم امشب', 'امشب چی میچسبه', 'چی بخورم امشب', 'یه شام خوب چی هست', 'برای خوردن چی پیشنهاد داری',
-      'یه غذا معرفی کن', 'یک غذا معرفی کن', 'یه غذا بهم معرفی کن', 'یک غذا بهم معرفی کن', 'غذا معرفی کن',
-      'یه غذا پیشنهاد کن', 'یک غذا پیشنهاد کن', 'غذا پیشنهاد بده', 'یه غذای خوب معرفی کن', 'یه غذای خوشمزه معرفی کن',
-      'چی پیشنهاد میدی بخورم', 'چی پیشنهاد میکنی بخورم', 'برای غذا چی پیشنهاد داری', 'چه غذایی پیشنهاد میدی', 'چه غذایی معرفی میکنی',
-      'یه غذای مناسب معرفی کن', 'یه غذای مناسب پیشنهاد بده', 'برای خوردن یه غذا معرفی کن',
-    ],
-    CREATE_REMINDER: [
-      'بعداً یادم بنداز', 'نذار یادم بره', 'که یادم بمونه', 'بعدا یادآوری کن', 'یادآوریش کن', 'برای بعد یادم بنداز',
-      'یادت نره بهم یادآوری کنی',
-    ],
-    ADD_TO_BASKET: [
-      'مرغ رو بذار تو سبد', 'یه مرغ هم به خرید اضافه کن', 'مرغ هم بزن تو سبد', 'اینم بذار تو سبد', 'این رو هم به خرید اضافه کن',
-      'مرغ بخر و بذار تو سبد',
-    ],
-    GET_NUTRITION_SUMMARY: [
-      'امروز تغذیه‌ام چطور بوده', 'امروز چقدر کالری خوردم', 'کالری امروزم چطوره', 'امروز چقدر پروتئین گرفتم',
-      'امروز وضع تغذیه‌ام چطور بوده', 'امروز چقدر خوردم',
-    ],
+    RECOMMEND_MEAL: ['چی خوبه بخورم', 'واسه شام چی پیشنهاد میدی', 'یه غذای سالم پیشنهاد بده', 'امشب چی بخورم', 'برای امشب چی درست کنم', 'شام چی بزنم', 'برای شام چی خوبه', 'یه ایده برای شام بده', 'برای شام چی پیشنهاد میکنی', 'شام چی پیشنهاد میدی', 'چی درست کنم امشب', 'امشب چی میچسبه', 'چی بخورم امشب', 'یه شام خوب چی هست', 'برای خوردن چی پیشنهاد داری', 'یه غذا معرفی کن', 'یک غذا معرفی کن', 'یه غذا بهم معرفی کن', 'یک غذا بهم معرفی کن', 'غذا معرفی کن', 'یه غذا پیشنهاد کن', 'یک غذا پیشنهاد کن', 'غذا پیشنهاد بده', 'یه غذای خوب معرفی کن', 'یه غذای خوشمزه معرفی کن', 'چی پیشنهاد میدی بخورم', 'چی پیشنهاد میکنی بخورم', 'برای غذا چی پیشنهاد داری', 'چه غذایی پیشنهاد میدی', 'چه غذایی معرفی میکنی', 'یه غذای مناسب معرفی کن', 'یه غذای مناسب پیشنهاد بده', 'برای خوردن یه غذا معرفی کن'],
+    CREATE_REMINDER: ['بعداً یادم بنداز', 'نذار یادم بره', 'که یادم بمونه', 'بعدا یادآوری کن', 'یادآوریش کن', 'برای بعد یادم بنداز', 'یادت نره بهم یادآوری کنی'],
+    ADD_TO_BASKET: ['مرغ رو بذار تو سبد', 'یه مرغ هم به خرید اضافه کن', 'مرغ هم بزن تو سبد', 'اینم بذار تو سبد', 'این رو هم به خرید اضافه کن', 'مرغ بخر و بذار تو سبد'],
+    GET_NUTRITION_SUMMARY: ['امروز تغذیه‌ام چطور بوده', 'امروز چقدر کالری خوردم', 'کالری امروزم چطوره', 'امروز چقدر پروتئین گرفتم', 'امروز وضع تغذیه‌ام چطور بوده', 'امروز چقدر خوردم'],
     CANCEL_REQUEST: ['بیخیالش', 'اون درخواست رو لغو کن', 'ولش کن', 'کنسلش کن', 'این رو بیخیال شو'],
   },
   'es-ES': {
@@ -148,21 +114,23 @@ const PARAPHRASES: Partial<Record<SupportedLocalLanguage, Partial<Record<IntentC
 };
 
 const FILLERS: Partial<Record<SupportedLocalLanguage, readonly string[]>> = {
-  'en-US': ['uh', 'um', 'please', 'just', 'hey', 'like'],
-  'en-GB': ['uh', 'um', 'please', 'just', 'hey', 'like'],
-  'fa-IR': ['لطفاً', 'فقط', 'یه', 'خب', 'راستی'],
-  'es-ES': ['por favor', 'solo', 'oye', 'bueno'],
-  'es-MX': ['porfa', 'por favor', 'oye', 'pues'],
-  'fr-FR': ['s il te plaît', 'sil te plait', 'juste', 'bon'],
-  'de-DE': ['bitte', 'einfach', 'also'],
-  'it-IT': ['per favore', 'solo', 'allora'],
-  'pt-BR': ['por favor', 'só', 'então'],
-  'ru-RU': ['пожалуйста', 'просто', 'ну'],
-  'tr-TR': ['lütfen', 'sadece', 'yani'],
-  'ja-JP': ['お願いします', 'ちょっと', 'えっと'],
-  'zh-CN': ['请', '就', '那个', '嗯'],
-  'ar-SA': ['من فضلك', 'فقط', 'يعني'],
+  'en-US': ['uh', 'um', 'please', 'just', 'hey', 'like'], 'en-GB': ['uh', 'um', 'please', 'just', 'hey', 'like'],
+  'fa-IR': ['لطفاً', 'فقط', 'یه', 'خب', 'راستی'], 'es-ES': ['por favor', 'solo', 'oye', 'bueno'], 'es-MX': ['porfa', 'por favor', 'oye', 'pues'],
+  'fr-FR': ['s il te plaît', 'sil te plait', 'juste', 'bon'], 'de-DE': ['bitte', 'einfach', 'also'], 'it-IT': ['per favore', 'solo', 'allora'],
+  'pt-BR': ['por favor', 'só', 'então'], 'ru-RU': ['пожалуйста', 'просто', 'ну'], 'tr-TR': ['lütfen', 'sadece', 'yani'],
+  'ja-JP': ['お願いします', 'ちょっと', 'えっと'], 'zh-CN': ['请', '就', '那个', '嗯'], 'ar-SA': ['من فضلك', 'فقط', 'يعني'],
 };
+
+function canonicalNormalize(value: string): string {
+  return value.trim().toLowerCase().replace(/[’‘`]/g, "'").replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[ۀة]/g, 'ه').replace(/‌/g, ' ').replace(/[؟?!،؛,.]/g, ' ').replace(/\s+/g, ' ');
+}
+
+const CANONICAL_INTENTS: Record<string, IntentCandidate['intent']> = Object.entries(PARAPHRASES).reduce((acc, [language, intentGroups]) => {
+  for (const [intent, phrases] of Object.entries(intentGroups ?? {}) as Array<[IntentCandidate['intent'], readonly string[]]>) {
+    for (const phrase of phrases) acc[`${language}::${canonicalNormalize(phrase)}`] = intent;
+  }
+  return acc;
+}, {} as Record<string, IntentCandidate['intent']>);
 
 @Injectable()
 export class SemanticMultilingualUnderstandingService {
@@ -177,43 +145,22 @@ export class SemanticMultilingualUnderstandingService {
     if (base.intent === 'CANCEL_REQUEST') {
       const normalizedForRecovery = this.semanticNormalize(base.normalizedText, base.language);
       const recovery = this.rank(base.language, normalizedForRecovery).find((candidate) => candidate.intent === 'RECOMMEND_MEAL');
-      if (recovery && recovery.score >= 0.9) {
-        return {
-          ...base,
-          normalizedText: normalizedForRecovery,
-          intent: 'RECOMMEND_MEAL',
-          confidence: Math.min(0.96, 0.72 + recovery.score * 0.22),
-        };
-      }
+      if (recovery && recovery.score >= 0.9) return { ...base, normalizedText: normalizedForRecovery, intent: 'RECOMMEND_MEAL', confidence: Math.min(0.96, 0.72 + recovery.score * 0.22) };
       return base;
     }
 
     if (base.intent !== 'UNKNOWN') return base;
-
     const normalized = this.semanticNormalize(base.normalizedText, base.language);
     const candidates = this.rank(base.language, normalized);
     if (!candidates.length) return base;
-
     const best = candidates[0];
     const second = candidates[1];
-
-    if (best.score >= 0.78 && (!second || best.score - second.score >= 0.12)) {
-      return {
-        ...base,
-        normalizedText: normalized,
-        intent: best.intent,
-        confidence: Math.min(0.96, 0.72 + best.score * 0.22),
-      };
-    }
-
+    if (best.score >= 0.78 && (!second || best.score - second.score >= 0.12)) return { ...base, normalizedText: normalized, intent: best.intent, confidence: Math.min(0.96, 0.72 + best.score * 0.22) };
     return { ...base, normalizedText: normalized };
   }
 
   splitClauses(input: string): string[] {
-    return input
-      .split(/(?:[.;؛۔。]+\s*|\s+(?:and then|and|then|also|plus)\s+|\s+و\s+(?=بعد\s*)|\s+(?=بعد\s*)|\s*(?:[،,])\s*(?=(?:然后|然後|然后再|之后|それから|そして|ثم)\s*)|\s+(?=(?:ثم|ثم بعد)\s+))/iu)
-      .map((part) => part.trim())
-      .filter(Boolean);
+    return input.split(/(?:[.;؛۔。]+\s*|\s+(?:and then|and|then|also|plus)\s+|\s+و\s+(?=بعد\s*)|\s+(?=بعد\s*)|\s*(?:[،,])\s*(?=(?:然后|然後|然后再|之后|それから|そして|ثم)\s*)|\s+(?=(?:ثم|ثم بعد)\s+))/iu).map((part) => part.trim()).filter(Boolean);
   }
 
   private rank(language: SupportedLocalLanguage, normalized: string): IntentCandidate[] {
@@ -222,9 +169,7 @@ export class SemanticMultilingualUnderstandingService {
     const candidates: IntentCandidate[] = [];
     for (const [intent, phrases] of Object.entries(lexicon) as Array<[IntentCandidate['intent'], readonly string[]]>) {
       let best = 0;
-      for (const phrase of phrases) {
-        best = Math.max(best, this.similarity(normalized, this.semanticNormalize(phrase, language)));
-      }
+      for (const phrase of phrases) best = Math.max(best, this.similarity(normalized, this.semanticNormalize(phrase, language)));
       if (best >= 0.42) candidates.push({ intent, score: best });
     }
     return candidates.sort((a, b) => b.score - a.score);
@@ -234,29 +179,18 @@ export class SemanticMultilingualUnderstandingService {
     if (!text || !phrase) return 0;
     if (text === phrase) return 1;
     if (text.includes(phrase) || phrase.includes(text)) return Math.max(0.9, Math.min(1, Math.min(text.length, phrase.length) / Math.max(text.length, phrase.length) + 0.15));
-
-    const textTokens = this.tokens(text);
-    const phraseTokens = this.tokens(phrase);
+    const textTokens = this.tokens(text); const phraseTokens = this.tokens(phrase);
     if (!textTokens.length || !phraseTokens.length) return 0;
-
     const overlap = phraseTokens.filter((token) => textTokens.includes(token)).length;
-    const coverage = overlap / phraseTokens.length;
-    const reverse = overlap / textTokens.length;
+    const coverage = overlap / phraseTokens.length; const reverse = overlap / textTokens.length;
     const orderedOverlap = this.orderedTokenOverlap(textTokens, phraseTokens);
     return coverage * 0.58 + reverse * 0.22 + orderedOverlap * 0.20;
   }
 
   private orderedTokenOverlap(textTokens: string[], phraseTokens: string[]): number {
     if (!phraseTokens.length) return 0;
-    let cursor = 0;
-    let hits = 0;
-    for (const token of phraseTokens) {
-      const index = textTokens.indexOf(token, cursor);
-      if (index >= cursor) {
-        hits += 1;
-        cursor = index + 1;
-      }
-    }
+    let cursor = 0; let hits = 0;
+    for (const token of phraseTokens) { const index = textTokens.indexOf(token, cursor); if (index >= cursor) { hits += 1; cursor = index + 1; } }
     return hits / phraseTokens.length;
   }
 
@@ -267,39 +201,12 @@ export class SemanticMultilingualUnderstandingService {
 
   private semanticNormalize(value: string, language: SupportedLocalLanguage): string {
     let normalized = this.normalize(value);
-    if (language === 'en-US' || language === 'en-GB') {
-      normalized = normalized
-        .replace(/\bwhat's\b/g, 'what is')
-        .replace(/\bwhat'd\b/g, 'what did')
-        .replace(/\bi'm\b/g, 'i am')
-        .replace(/\bi'd\b/g, 'i would')
-        .replace(/\bi'll\b/g, 'i will')
-        .replace(/\bcan't\b/g, 'cannot')
-        .replace(/\bwon't\b/g, 'will not')
-        .replace(/\bdon't\b/g, 'do not');
-    }
-
-    for (const filler of FILLERS[language] ?? []) {
-      normalized = normalized.replace(new RegExp(`(^|\\s)${this.escapeRegExp(this.normalize(filler))}(?=\\s|$)`, 'giu'), ' ');
-    }
-
+    if (language === 'en-US' || language === 'en-GB') normalized = normalized.replace(/\bwhat's\b/g, 'what is').replace(/\bwhat'd\b/g, 'what did').replace(/\bi'm\b/g, 'i am').replace(/\bi'd\b/g, 'i would').replace(/\bi'll\b/g, 'i will').replace(/\bcan't\b/g, 'cannot').replace(/\bwon't\b/g, 'will not').replace(/\bdon't\b/g, 'do not');
+    for (const filler of FILLERS[language] ?? []) normalized = normalized.replace(new RegExp(`(^|\\s)${this.escapeRegExp(this.normalize(filler))}(?=\\s|$)`, 'giu'), ' ');
     return normalized.replace(/\s+/g, ' ').trim();
   }
 
-  private escapeRegExp(value: string): string {
-    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
+  private escapeRegExp(value: string): string { return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
-  private normalize(value: string): string {
-    return value
-      .trim()
-      .toLowerCase()
-      .replace(/[’‘`]/g, "'")
-      .replace(/ي/g, 'ی')
-      .replace(/ك/g, 'ک')
-      .replace(/[ۀة]/g, 'ه')
-      .replace(/‌/g, ' ')
-      .replace(/[؟?!،؛,.]/g, ' ')
-      .replace(/\s+/g, ' ');
-  }
+  private normalize(value: string): string { return value.trim().toLowerCase().replace(/[’‘`]/g, "'").replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[ۀة]/g, 'ه').replace(/‌/g, ' ').replace(/[؟?!،؛,.]/g, ' ').replace(/\s+/g, ' '); }
 }
