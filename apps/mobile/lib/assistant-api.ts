@@ -1,5 +1,9 @@
 import { getStoredLocale, normalizeLocale } from './i18n';
-import { getStoredAccessToken } from './api';
+import {
+  getStoredAccessToken,
+  getStoredRefreshToken,
+  refreshAccessToken,
+} from './api';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 const ASSISTANT_REQUEST_TIMEOUT_MS = 30_000;
@@ -82,12 +86,16 @@ async function authorizedFetch(
   init: RequestInit = {},
   timeoutMs = ASSISTANT_REQUEST_TIMEOUT_MS,
 ) {
-  const token = await getStoredAccessToken();
+  let token = await getStoredAccessToken();
+  if (!token) {
+    const refreshToken = await getStoredRefreshToken();
+    if (refreshToken) token = await refreshAccessToken();
+  }
   if (!token) throw new AssistantNetworkError('AUTH_REQUIRED', 'AUTH_REQUIRED');
 
   const request = mergeAbortSignals(init.signal ?? undefined, timeoutMs);
   try {
-    const response = await fetch(`${API_URL}${path}`, {
+    let response = await fetch(`${API_URL}${path}`, {
       ...init,
       signal: request.signal,
       headers: {
@@ -96,6 +104,22 @@ async function authorizedFetch(
         ...(init.headers ?? {}),
       },
     });
+
+    if (response.status === 401) {
+      const refreshed = await refreshAccessToken();
+      if (refreshed) {
+        response = await fetch(`${API_URL}${path}`, {
+          ...init,
+          signal: request.signal,
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${refreshed}`,
+            ...(init.headers ?? {}),
+          },
+        });
+      }
+    }
+
     return response;
   } catch (error) {
     if (request.didTimeout()) {
