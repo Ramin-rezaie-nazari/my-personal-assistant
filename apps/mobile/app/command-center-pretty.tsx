@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Animated, Pressable, RefreshControl, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -57,7 +57,6 @@ export default function CommandCenterPretty() {
   const [locale, setLocale] = useState<AppLocale>('en');
   const [data, setData] = useState<DailyCommandCenterResponse | null>(null);
   const [nutrition, setNutrition] = useState<NutritionSummary | null>(null);
-  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const reveal = useRef(new Animated.Value(0)).current;
   const rtl = isRTL(locale);
@@ -68,15 +67,21 @@ export default function CommandCenterPretty() {
     try {
       const [daily, summary] = await Promise.all([getDailyCommandCenter(), getNutritionSummary()]);
       setData(daily); setNutrition(summary);
-    } finally { setLoading(false); setRefreshing(false); }
+    } finally { setRefreshing(false); }
   }, []);
 
-  useEffect(() => { let mounted = true; void Promise.all([getStoredLocale(), hasAuthSession()]).then(async ([stored, auth]) => {
-    if (!mounted) return; if (stored) setLocale(stored); if (!auth) { router.replace('/auth'); return; }
-    await load(); Animated.timing(reveal, { toValue: 1, duration: 650, useNativeDriver: true }).start();
-  }); return () => { mounted = false; }; }, [load, reveal]);
-
-  if (loading) return <View style={styles.loading}><Petal size={76} /><Text style={styles.loadingBrand}>MYPA</Text><Text style={styles.loadingSub}>YOUR LITTLE LIFE STUDIO</Text><ActivityIndicator color={C.pink} style={{ marginTop: 18 }} /></View>;
+  useEffect(() => {
+    let mounted = true;
+    void Promise.all([getStoredLocale(), hasAuthSession()]).then(([stored, auth]) => {
+      if (!mounted) return;
+      if (stored) setLocale(stored);
+      if (!auth) { router.replace('/auth'); return; }
+      setRefreshing(true);
+      void load();
+      Animated.timing(reveal, { toValue: 1, duration: 650, useNativeDriver: true }).start();
+    });
+    return () => { mounted = false; };
+  }, [load, reveal]);
 
   const calories = Math.round(nutrition?.meals.calories ?? data?.nutrition.calories ?? 0);
   const protein = Math.round(nutrition?.meals.protein ?? data?.nutrition.protein ?? 0);
