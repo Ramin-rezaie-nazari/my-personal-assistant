@@ -5,11 +5,13 @@ function run(command, args, options = {}) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
+// Native autolinking output must be regenerated before validation so preflight
+// never inspects a stale PackageList.java from an older Expo module layout.
+run('npx', ['expo', 'prebuild', '--platform', 'android']);
 run('node', ['scripts/prepare-persian-tts-model.cjs']);
 run('node', ['scripts/prepare-khadijah-tts-model.cjs']);
 run('node', ['scripts/android-tts-preflight.cjs']);
 run('node', ['scripts/android-build-preflight.cjs']);
-run('npx', ['expo', 'prebuild', '--platform', 'android']);
 run('adb', ['reverse', 'tcp:3000', 'tcp:3000']);
 run('adb', ['reverse', 'tcp:8081', 'tcp:8081']);
 
