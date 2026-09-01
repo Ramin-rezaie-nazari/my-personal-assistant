@@ -8,14 +8,15 @@ export type VoiceInteractionState = 'idle' | 'listening' | 'thinking' | 'acting'
 type Props = { state: VoiceInteractionState; label: string; hint?: string; onPress?: () => void };
 
 const PASTEL = {
-  pink: '#F5B7CE',
-  pinkSoft: '#FCE5EF',
-  blue: '#B8D9EF',
-  blueSoft: '#EAF5FC',
-  lavender: '#D7C8EC',
-  mint: '#BFE8DB',
-  gold: '#F2D89A',
-  ink: '#6D6170',
+  pink: '#FF78AD',
+  pinkBright: '#FF9FC4',
+  pinkSoft: '#FFE4EE',
+  blue: '#BFE5F6',
+  blueSoft: '#EDF8FD',
+  lavender: '#D9CCF0',
+  mint: '#C4EBDD',
+  gold: '#F4D99E',
+  ink: '#9A7187',
   white: '#FFFFFF',
 };
 
@@ -24,7 +25,7 @@ const stateAccent = (state: VoiceInteractionState) =>
   state === 'thinking' ? PASTEL.pink :
   state === 'acting' ? PASTEL.gold :
   state === 'speaking' ? PASTEL.mint :
-  state === 'done' ? PASTEL.gold : PASTEL.lavender;
+  state === 'done' ? PASTEL.gold : PASTEL.pinkBright;
 
 export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const reduced = useReducedMotion();
@@ -64,13 +65,13 @@ export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
   const isBusy = state === 'listening' || state === 'thinking' || state === 'acting' || state === 'speaking';
 
   const core = <>
-    <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.24 : 0.30, transform: [{ scale: ring }] }]} />
+    <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.28 : 0.34, transform: [{ scale: ring }] }]} />
     <Animated.View style={[styles.orbit, { borderColor: accent, transform: [{ rotate: spin }, { scale: ring }] }]} />
     <View style={styles.orbitBead} />
     <Animated.View style={[styles.core, { transform: [{ scale: pulse }], borderColor: accent }]}>
       <View style={styles.coreInner}>
         <View style={[styles.iconHalo, { borderColor: `${accent}99` }]}>
-          <Ionicons name={iconName} size={31} color={PASTEL.ink} />
+          <Ionicons name={iconName} size={31} color={PASTEL.pink} />
         </View>
       </View>
     </Animated.View>
@@ -87,11 +88,11 @@ const styles = StyleSheet.create({
   wrap: { alignItems: 'center', justifyContent: 'center', minHeight: 190, paddingVertical: 10 },
   hitArea: { width: 196, height: 160, alignItems: 'center', justifyContent: 'center' },
   outerGlow: { position: 'absolute', width: 182, height: 182, borderRadius: 91 },
-  orbit: { position: 'absolute', width: 142, height: 142, borderRadius: 71, borderWidth: 1.2, borderStyle: 'dashed', opacity: 0.72 },
-  orbitBead: { position: 'absolute', width: 8, height: 8, borderRadius: 4, right: 22, top: 42, backgroundColor: PASTEL.gold, borderWidth: 1, borderColor: PASTEL.white },
-  core: { width: 116, height: 116, borderRadius: 58, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.pinkSoft, shadowColor: PASTEL.pink, shadowOpacity: 0.22, shadowRadius: 26, shadowOffset: { width: 0, height: 12 }, elevation: 8 },
-  coreInner: { width: 94, height: 94, borderRadius: 47, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.blueSoft, borderWidth: 1, borderColor: 'rgba(255,255,255,0.92)', shadowColor: PASTEL.blue, shadowOpacity: 0.18, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 5 },
-  iconHalo: { width: 58, height: 58, borderRadius: 29, borderWidth: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.white },
+  orbit: { position: 'absolute', width: 142, height: 142, borderRadius: 71, borderWidth: 1.4, borderStyle: 'dashed', opacity: 0.82 },
+  orbitBead: { position: 'absolute', width: 9, height: 9, borderRadius: 5, right: 22, top: 40, backgroundColor: PASTEL.gold, borderWidth: 1, borderColor: PASTEL.white },
+  core: { width: 116, height: 116, borderRadius: 58, borderWidth: 2, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.pinkSoft, shadowColor: PASTEL.pinkBright, shadowOpacity: 0.28, shadowRadius: 30, shadowOffset: { width: 0, height: 12 }, elevation: 8 },
+  coreInner: { width: 92, height: 92, borderRadius: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.blueSoft, borderWidth: 1, borderColor: PASTEL.white, shadowColor: PASTEL.blue, shadowOpacity: 0.20, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 5 },
+  iconHalo: { width: 60, height: 60, borderRadius: 30, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.white },
   label: { marginTop: 12, color: PREMIUM.colors.inkSoft, fontSize: 14, fontWeight: '800', textAlign: 'center' },
   hint: { marginTop: 5, color: PREMIUM.colors.muted, fontSize: 10, letterSpacing: 0.2, textAlign: 'center' },
   pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
