@@ -1,1 +1,1 @@
-export { default } from './command-center-vivid';
+export { default } from './command-center-pretty';
