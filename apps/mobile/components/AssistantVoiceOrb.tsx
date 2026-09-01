@@ -7,93 +7,14 @@ import { useReducedMotion } from '../lib/use-reduced-motion';
 export type VoiceInteractionState = 'idle' | 'listening' | 'thinking' | 'acting' | 'speaking' | 'done';
 type Props = { state: VoiceInteractionState; label: string; hint?: string; onPress?: () => void };
 
-const PASTEL = {
-  pink: '#FF78AD',
-  pinkBright: '#FF9FC4',
-  pinkSoft: '#FFE4EE',
-  blue: '#BFE5F6',
-  blueSoft: '#EDF8FD',
-  lavender: '#D9CCF0',
-  mint: '#C4EBDD',
-  gold: '#F4D99E',
-  ink: '#9A7187',
-  white: '#FFFFFF',
-};
-
-const stateAccent = (state: VoiceInteractionState) =>
-  state === 'listening' ? PASTEL.blue :
-  state === 'thinking' ? PASTEL.pink :
-  state === 'acting' ? PASTEL.gold :
-  state === 'speaking' ? PASTEL.mint :
-  state === 'done' ? PASTEL.gold : PASTEL.pinkBright;
+const PASTEL = { pink: '#FF78AD', pinkBright: '#FF9FC4', pinkSoft: '#FFE4EE', lavender: '#D9CCF0', blue: '#BFE5F6', mint: '#C4EBDD', gold: '#F4D99E', ink: '#8C6277', white: '#FFFFFF' };
+const stateAccent = (state: VoiceInteractionState) => state === 'listening' ? PASTEL.pink : state === 'thinking' ? PASTEL.lavender : state === 'acting' ? PASTEL.gold : state === 'speaking' ? PASTEL.mint : PASTEL.pinkBright;
 
 export function AssistantVoiceOrb({ state, label, hint = '', onPress }: Props) {
-  const reduced = useReducedMotion();
-  const pulse = useRef(new Animated.Value(1)).current;
-  const ring = useRef(new Animated.Value(0.8)).current;
-  const rotation = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    pulse.stopAnimation();
-    ring.stopAnimation();
-    rotation.stopAnimation();
-    if (reduced || state === 'idle') {
-      pulse.setValue(1);
-      ring.setValue(0.8);
-      rotation.setValue(0);
-      return;
-    }
-    const loop = Animated.loop(Animated.parallel([
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: state === 'thinking' ? 1.05 : state === 'acting' ? 1.08 : 1.1, duration: state === 'acting' ? 720 : 900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.99, duration: 900, easing: PREMIUM.motion.ease, useNativeDriver: true }),
-      ]),
-      Animated.sequence([
-        Animated.timing(ring, { toValue: state === 'acting' ? 1.08 : 1.04, duration: state === 'acting' ? 760 : 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }),
-        Animated.timing(ring, { toValue: state === 'acting' ? 0.90 : 0.82, duration: state === 'acting' ? 760 : 1100, easing: PREMIUM.motion.ease, useNativeDriver: true }),
-      ]),
-      Animated.timing(rotation, { toValue: 1, duration: state === 'acting' ? 3600 : 5200, useNativeDriver: true }),
-    ]));
-    loop.start();
-    return () => loop.stop();
-  }, [pulse, reduced, ring, rotation, state]);
-
-  const spin = rotation.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-  const accent = stateAccent(state);
-  const iconName = state === 'listening' ? 'mic' : state === 'thinking' ? 'sparkles' : state === 'acting' ? 'flash' : state === 'speaking' ? 'volume-high' : state === 'done' ? 'checkmark' : 'mic-outline';
-  const accessibilityLabel = label || 'MYPA voice assistant';
-  const isBusy = state === 'listening' || state === 'thinking' || state === 'acting' || state === 'speaking';
-
-  const core = <>
-    <Animated.View style={[styles.outerGlow, { backgroundColor: accent, opacity: state === 'idle' ? 0.28 : 0.34, transform: [{ scale: ring }] }]} />
-    <Animated.View style={[styles.orbit, { borderColor: accent, transform: [{ rotate: spin }, { scale: ring }] }]} />
-    <View style={styles.orbitBead} />
-    <Animated.View style={[styles.core, { transform: [{ scale: pulse }], borderColor: accent }]}>
-      <View style={styles.coreInner}>
-        <View style={[styles.iconHalo, { borderColor: `${accent}99` }]}>
-          <Ionicons name={iconName} size={31} color={PASTEL.pink} />
-        </View>
-      </View>
-    </Animated.View>
-  </>;
-
-  return <View style={styles.wrap}>
-    {onPress ? <Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityHint={hint || 'Activate MYPA voice assistant'} accessibilityState={{ busy: isBusy }} onPress={onPress} style={({ pressed }) => [styles.hitArea, pressed && styles.pressed]}>{core}</Pressable> : core}
-    {label ? <Text accessibilityLiveRegion="polite" style={styles.label}>{label}</Text> : null}
-    {onPress && hint ? <Text style={styles.hint}>{hint}</Text> : null}
-  </View>;
+  const reduced = useReducedMotion(); const pulse = useRef(new Animated.Value(1)).current; const ring = useRef(new Animated.Value(0.8)).current; const rotation = useRef(new Animated.Value(0)).current;
+  useEffect(() => { pulse.stopAnimation(); ring.stopAnimation(); rotation.stopAnimation(); if (reduced || state === 'idle') { pulse.setValue(1); ring.setValue(0.8); rotation.setValue(0); return; } const loop = Animated.loop(Animated.parallel([Animated.sequence([Animated.timing(pulse,{toValue:state==='thinking'?1.05:state==='acting'?1.08:1.1,duration:state==='acting'?720:900,easing:PREMIUM.motion.ease,useNativeDriver:true}),Animated.timing(pulse,{toValue:.99,duration:900,easing:PREMIUM.motion.ease,useNativeDriver:true})]),Animated.sequence([Animated.timing(ring,{toValue:state==='acting'?1.08:1.04,duration:state==='acting'?760:1100,easing:PREMIUM.motion.ease,useNativeDriver:true}),Animated.timing(ring,{toValue:state==='acting'?.9:.82,duration:state==='acting'?760:1100,easing:PREMIUM.motion.ease,useNativeDriver:true})]),Animated.timing(rotation,{toValue:1,duration:state==='acting'?3600:5200,useNativeDriver:true})])); loop.start(); return()=>loop.stop(); },[pulse,reduced,ring,rotation,state]);
+  const spin=rotation.interpolate({inputRange:[0,1],outputRange:['0deg','360deg']}); const accent=stateAccent(state); const iconName=state==='listening'?'mic':state==='thinking'?'sparkles':state==='acting'?'flash':state==='speaking'?'volume-high':state==='done'?'checkmark':'mic-outline'; const accessibilityLabel=label||'MYPA voice assistant'; const isBusy=['listening','thinking','acting','speaking'].includes(state);
+  const core=<><Animated.View style={[styles.outerGlow,{backgroundColor:accent,opacity:.28,transform:[{scale:ring}]}]}/><Animated.View style={[styles.orbit,{borderColor:accent,transform:[{rotate:spin},{scale:ring}]}]}/><View style={styles.orbitBead}/><Animated.View style={[styles.core,{transform:[{scale:pulse}],borderColor:PASTEL.pinkBright}]}><View style={styles.coreInner}><View style={styles.iconHalo}><Ionicons name={iconName} size={31} color={PASTEL.white}/></View></View></Animated.View></>;
+  return <View style={styles.wrap}>{onPress?<Pressable accessibilityRole="button" accessibilityLabel={accessibilityLabel} accessibilityHint={hint||'Activate MYPA voice assistant'} accessibilityState={{busy:isBusy}} onPress={onPress} style={({pressed})=>[styles.hitArea,pressed&&styles.pressed]}>{core}</Pressable>:core}{label?<Text accessibilityLiveRegion="polite" style={styles.label}>{label}</Text>:null}{onPress&&hint?<Text style={styles.hint}>{hint}</Text>:null}</View>;
 }
-
-const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', justifyContent: 'center', minHeight: 190, paddingVertical: 10 },
-  hitArea: { width: 196, height: 160, alignItems: 'center', justifyContent: 'center' },
-  outerGlow: { position: 'absolute', width: 182, height: 182, borderRadius: 91 },
-  orbit: { position: 'absolute', width: 142, height: 142, borderRadius: 71, borderWidth: 1.4, borderStyle: 'dashed', opacity: 0.82 },
-  orbitBead: { position: 'absolute', width: 9, height: 9, borderRadius: 5, right: 22, top: 40, backgroundColor: PASTEL.gold, borderWidth: 1, borderColor: PASTEL.white },
-  core: { width: 116, height: 116, borderRadius: 58, borderWidth: 2, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.pinkSoft, shadowColor: PASTEL.pinkBright, shadowOpacity: 0.28, shadowRadius: 30, shadowOffset: { width: 0, height: 12 }, elevation: 8 },
-  coreInner: { width: 92, height: 92, borderRadius: 46, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.blueSoft, borderWidth: 1, borderColor: PASTEL.white, shadowColor: PASTEL.blue, shadowOpacity: 0.20, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 5 },
-  iconHalo: { width: 60, height: 60, borderRadius: 30, borderWidth: 1.2, alignItems: 'center', justifyContent: 'center', backgroundColor: PASTEL.white },
-  label: { marginTop: 12, color: PREMIUM.colors.inkSoft, fontSize: 14, fontWeight: '800', textAlign: 'center' },
-  hint: { marginTop: 5, color: PREMIUM.colors.muted, fontSize: 10, letterSpacing: 0.2, textAlign: 'center' },
-  pressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
-});
+const styles=StyleSheet.create({wrap:{alignItems:'center',justifyContent:'center',minHeight:190,paddingVertical:10},hitArea:{width:196,height:160,alignItems:'center',justifyContent:'center'},outerGlow:{position:'absolute',width:182,height:182,borderRadius:91},orbit:{position:'absolute',width:142,height:142,borderRadius:71,borderWidth:1.4,borderStyle:'dashed',opacity:.82},orbitBead:{position:'absolute',width:9,height:9,borderRadius:5,right:22,top:40,backgroundColor:PASTEL.gold,borderWidth:1,borderColor:PASTEL.white},core:{width:116,height:116,borderRadius:58,borderWidth:2,alignItems:'center',justifyContent:'center',backgroundColor:PASTEL.pink,shadowColor:PASTEL.pinkBright,shadowOpacity:.3,shadowRadius:30,shadowOffset:{width:0,height:12},elevation:8},coreInner:{width:92,height:92,borderRadius:46,alignItems:'center',justifyContent:'center',backgroundColor:PASTEL.pinkBright,borderWidth:1,borderColor:PASTEL.white,shadowColor:PASTEL.pink,shadowOpacity:.22,shadowRadius:18,shadowOffset:{width:0,height:8},elevation:5},iconHalo:{width:60,height:60,borderRadius:30,borderWidth:1.5,borderColor:'rgba(255,255,255,.85)',alignItems:'center',justifyContent:'center',backgroundColor:PASTEL.pink},label:{marginTop:12,color:PREMIUM.colors.inkSoft,fontSize:14,fontWeight:'800',textAlign:'center'},hint:{marginTop:5,color:PREMIUM.colors.muted,fontSize:10,letterSpacing:.2,textAlign:'center'},pressed:{opacity:.92,transform:[{scale:.98}]}});
