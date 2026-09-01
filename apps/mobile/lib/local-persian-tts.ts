@@ -42,20 +42,21 @@ async function ensureEngine(kind: 'ganji' | 'khadijah'): Promise<TtsEngine> {
   if (!enginePromises[kind]) {
     enginePromises[kind] = resolveReadyBundledModel(kind).then((resolvedPath) => {
       if (kind === 'khadijah') {
-        return createTTS({
+        const vocoderPathPromise = resolveModelPath({ type: 'asset', path: KHADIJAH_VOCODER_ASSET_PATH });
+        return vocoderPathPromise.then((vocoderPath) => createTTS({
           modelPath: { type: 'file', path: resolvedPath },
           modelType: 'matcha',
           modelOptions: {
             matcha: {
               acousticModel: `${resolvedPath}/model.onnx`,
-              vocoder: KHADIJAH_VOCODER_ASSET_PATH,
+              vocoder: vocoderPath,
               tokens: `${resolvedPath}/tokens.txt`,
               dataDir: `${resolvedPath}/espeak-ng-data`,
               lengthScale: 1.0,
             },
           },
           numThreads: 2,
-        });
+        }));
       }
       return createTTS({
         modelPath: { type: 'file', path: resolvedPath },
