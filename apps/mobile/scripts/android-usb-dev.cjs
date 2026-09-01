@@ -6,6 +6,7 @@ function run(command, args, options = {}) {
 }
 
 run('node', ['scripts/prepare-persian-tts-model.cjs']);
+run('node', ['scripts/prepare-khadijah-tts-model.cjs']);
 run('npx', ['expo', 'prebuild', '--platform', 'android']);
 run('adb', ['reverse', 'tcp:3000', 'tcp:3000']);
 run('adb', ['reverse', 'tcp:8081', 'tcp:8081']);
