@@ -1,1 +1,1 @@
-export { default } from './command-center-final';
+export { default } from './command-center-vivid';
