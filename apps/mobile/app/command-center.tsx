@@ -1,1 +1,1 @@
-export { default } from './command-center-polished';
+export { default } from './command-center-beautiful';
