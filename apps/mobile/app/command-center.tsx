@@ -1,1 +1,1 @@
-export { default } from './command-center-pastel-v2';
+export { default } from './command-center-final';
