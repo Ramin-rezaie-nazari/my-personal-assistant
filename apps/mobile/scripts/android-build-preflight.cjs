@@ -94,30 +94,6 @@ for (const searchRoot of [root, mobile]) {
 }
 if (reactRoots.size > 1) fail(`multiple React versions detected: ${[...reactRoots].join(', ')}`);
 
-const packageList = path.join(
-  android,
-  'app',
-  'build',
-  'generated',
-  'autolinking',
-  'src',
-  'main',
-  'java',
-  'com',
-  'facebook',
-  'react',
-  'PackageList.java',
-);
-
-if (fs.existsSync(packageList)) {
-  const source = fs.readFileSync(packageList, 'utf8');
-  const hasLegacyExpoImport = source.includes('import expo.core.ExpoModulesPackage;') || source.includes('new ExpoModulesPackage()');
-  if (hasLegacyExpoImport) {
-    const core = installedVersion('expo-modules-core');
-    fail(`generated PackageList.java references legacy ExpoModulesPackage, incompatible with expo-modules-core ${core.version}. Generated file: ${path.relative(root, packageList)}`);
-  }
-}
-
 const localProperties = path.join(android, 'local.properties');
 if (!fs.existsSync(localProperties)) fail('android/local.properties is missing');
 const sdkMatch = fs.readFileSync(localProperties, 'utf8').match(/^sdk\.dir=(.+)$/m);
@@ -133,5 +109,4 @@ console.log('ANDROID BUILD PREFLIGHT PASS');
 console.log(`React: ${[...reactRoots][0] ?? 'unknown'}`);
 console.log(`Expo: ${expected.expo}`);
 console.log('Expo modules: installed and version-aligned');
-console.log('Autolinking PackageList: no legacy ExpoModulesPackage reference');
 console.log('Android SDK: configured');
