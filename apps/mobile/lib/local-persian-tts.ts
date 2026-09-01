@@ -22,29 +22,16 @@ let resolvedModelPathPromises: Record<string, Promise<string> | null> = { ganji:
 
 function nativeFilePath(uri: string): string { return uri.startsWith('file://') ? uri.slice('file://'.length) : uri; }
 
-async function removeDirectoryRecursive(dirPath: string): Promise<void> {
-  const uri = dirPath.startsWith('file://') ? dirPath : `file://${dirPath}`;
-  try { await FileSystem.deleteAsync(uri, { idempotent: true }); } catch {}
-}
-
 async function resolveReadyBundledModel(kind: 'ganji' | 'khadijah'): Promise<string> {
   if (!resolvedModelPathPromises[kind]) {
     resolvedModelPathPromises[kind] = (async () => {
       const assetPath = kind === 'khadijah' ? KHADIJAH_MODEL_ASSET_PATH : SOURCE_MODEL_ASSET_PATH;
-      let resolvedPath = await resolveModelPath({ type: 'asset', path: assetPath });
+      const resolvedPath = await resolveModelPath({ type: 'asset', path: assetPath });
       const requiredFiles = kind === 'khadijah'
         ? [`${resolvedPath}/model.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`]
         : [`${resolvedPath}/fa_IR-ganji-medium.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`];
       const ready = (await Promise.all(requiredFiles.map((filePath) => exists(filePath)))).every(Boolean);
-      if (!ready) {
-        await removeDirectoryRecursive(resolvedPath);
-        resolvedPath = await resolveModelPath({ type: 'asset', path: assetPath });
-      }
-      const finalRequiredFiles = kind === 'khadijah'
-        ? [`${resolvedPath}/model.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`]
-        : [`${resolvedPath}/fa_IR-ganji-medium.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`];
-      const finalReady = (await Promise.all(finalRequiredFiles.map((filePath) => exists(filePath)))).every(Boolean);
-      if (!finalReady) throw new Error(`Persian TTS model extraction incomplete at ${resolvedPath}`);
+      if (!ready) throw new Error(`Persian TTS model extraction incomplete at ${resolvedPath}`);
       return resolvedPath;
     })().catch((error) => { resolvedModelPathPromises[kind] = null; throw error; });
   }
@@ -56,15 +43,14 @@ async function ensureEngine(kind: 'ganji' | 'khadijah'): Promise<TtsEngine> {
     enginePromises[kind] = resolveReadyBundledModel(kind).then((resolvedPath) => {
       if (kind === 'khadijah') {
         return createTTS({
-          modelPath: { type: 'asset', path: KHADIJAH_MODEL_ASSET_PATH },
+          modelPath: { type: 'file', path: resolvedPath },
           modelType: 'matcha',
           modelOptions: {
             matcha: {
-              acousticModel: `${KHADIJAH_MODEL_ASSET_PATH}/model.onnx`,
+              acousticModel: `${resolvedPath}/model.onnx`,
               vocoder: KHADIJAH_VOCODER_ASSET_PATH,
-              tokens: `${KHADIJAH_MODEL_ASSET_PATH}/tokens.txt`,
-              dataDir: `${KHADIJAH_MODEL_ASSET_PATH}/espeak-ng-data`,
-              noiseScale: 0.667,
+              tokens: `${resolvedPath}/tokens.txt`,
+              dataDir: `${resolvedPath}/espeak-ng-data`,
               lengthScale: 1.0,
             },
           },
