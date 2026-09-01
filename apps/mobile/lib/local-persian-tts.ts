@@ -28,7 +28,7 @@ async function resolveReadyBundledModel(kind: 'ganji' | 'khadijah'): Promise<str
       const assetPath = kind === 'khadijah' ? KHADIJAH_MODEL_ASSET_PATH : SOURCE_MODEL_ASSET_PATH;
       const resolvedPath = await resolveModelPath({ type: 'asset', path: assetPath });
       const requiredFiles = kind === 'khadijah'
-        ? [`${resolvedPath}/model.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/${KHADIJAH_VOCODER_FILE}`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`]
+        ? [`${resolvedPath}/model.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/${KHADIJAH_VOCODER_FILE}`]
         : [`${resolvedPath}/fa_IR-ganji-medium.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`];
       const ready = (await Promise.all(requiredFiles.map((filePath) => exists(filePath)))).every(Boolean);
       if (!ready) throw new Error(`Persian TTS model extraction incomplete at ${resolvedPath}`);
@@ -40,8 +40,10 @@ async function resolveReadyBundledModel(kind: 'ganji' | 'khadijah'): Promise<str
 
 async function ensureEngine(kind: 'ganji' | 'khadijah'): Promise<TtsEngine> {
   if (!enginePromises[kind]) {
-    enginePromises[kind] = resolveReadyBundledModel(kind).then((resolvedPath) => {
+    enginePromises[kind] = (async () => {
+      const resolvedPath = await resolveReadyBundledModel(kind);
       if (kind === 'khadijah') {
+        const ganjiPath = await resolveReadyBundledModel('ganji');
         return createTTS({
           modelPath: { type: 'file', path: resolvedPath },
           modelType: 'matcha',
@@ -50,7 +52,7 @@ async function ensureEngine(kind: 'ganji' | 'khadijah'): Promise<TtsEngine> {
               acousticModel: `${resolvedPath}/model.onnx`,
               vocoder: `${resolvedPath}/${KHADIJAH_VOCODER_FILE}`,
               tokens: `${resolvedPath}/tokens.txt`,
-              dataDir: `${resolvedPath}/espeak-ng-data`,
+              dataDir: `${ganjiPath}/espeak-ng-data`,
               lengthScale: 1.0,
             },
           },
@@ -63,7 +65,7 @@ async function ensureEngine(kind: 'ganji' | 'khadijah'): Promise<TtsEngine> {
         numThreads: 2,
         modelOptions: { vits: { noiseScale: 0.667, lengthScale: 1.0, noiseScaleW: 0.8 } },
       });
-    }).catch((error) => { enginePromises[kind] = null; throw error; });
+    })().catch((error) => { enginePromises[kind] = null; throw error; });
   }
   return enginePromises[kind]!;
 }
