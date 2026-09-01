@@ -2,7 +2,8 @@ import { getStoredLocale, normalizeLocale } from './i18n';
 import {
   getStoredAccessToken,
   getStoredRefreshToken,
-  refreshAccessToken,
+  setAuthSession,
+  type AuthResponse,
 } from './api';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
@@ -43,34 +44,22 @@ export type AssistantResponse = {
 class AssistantNetworkError extends Error {
   code: 'AUTH_REQUIRED' | 'TIMEOUT' | 'ABORTED' | 'HTTP' | 'INVALID_RESPONSE';
 
-  constructor(
-    code: AssistantNetworkError['code'],
-    message: string,
-  ) {
+  constructor(code: AssistantNetworkError['code'], message: string) {
     super(message);
     this.name = 'AssistantNetworkError';
     this.code = code;
   }
 }
 
-function mergeAbortSignals(
-  externalSignal: AbortSignal | undefined,
-  timeoutMs: number,
-) {
+function mergeAbortSignals(externalSignal: AbortSignal | undefined, timeoutMs: number) {
   const controller = new AbortController();
   let timedOut = false;
-
   const abortFromExternal = () => controller.abort();
   if (externalSignal) {
     if (externalSignal.aborted) controller.abort();
     else externalSignal.addEventListener('abort', abortFromExternal, { once: true });
   }
-
-  const timeout = setTimeout(() => {
-    timedOut = true;
-    controller.abort();
-  }, timeoutMs);
-
+  const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, timeoutMs);
   return {
     signal: controller.signal,
     didTimeout: () => timedOut,
@@ -81,16 +70,28 @@ function mergeAbortSignals(
   };
 }
 
-async function authorizedFetch(
-  path: string,
-  init: RequestInit = {},
-  timeoutMs = ASSISTANT_REQUEST_TIMEOUT_MS,
-) {
-  let token = await getStoredAccessToken();
-  if (!token) {
-    const refreshToken = await getStoredRefreshToken();
-    if (refreshToken) token = await refreshAccessToken();
+async function refreshAssistantSession(): Promise<string | null> {
+  const refreshToken = await getStoredRefreshToken();
+  if (!refreshToken) return null;
+  try {
+    const response = await fetch(`${API_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!response.ok) return null;
+    const auth = await response.json() as AuthResponse;
+    if (!auth?.accessToken || !auth?.refreshToken || !auth?.user) return null;
+    await setAuthSession(auth);
+    return auth.accessToken;
+  } catch {
+    return null;
   }
+}
+
+async function authorizedFetch(path: string, init: RequestInit = {}, timeoutMs = ASSISTANT_REQUEST_TIMEOUT_MS) {
+  let token = await getStoredAccessToken();
+  if (!token) token = await refreshAssistantSession();
   if (!token) throw new AssistantNetworkError('AUTH_REQUIRED', 'AUTH_REQUIRED');
 
   const request = mergeAbortSignals(init.signal ?? undefined, timeoutMs);
@@ -106,7 +107,7 @@ async function authorizedFetch(
     });
 
     if (response.status === 401) {
-      const refreshed = await refreshAccessToken();
+      const refreshed = await refreshAssistantSession();
       if (refreshed) {
         response = await fetch(`${API_URL}${path}`, {
           ...init,
@@ -122,12 +123,8 @@ async function authorizedFetch(
 
     return response;
   } catch (error) {
-    if (request.didTimeout()) {
-      throw new AssistantNetworkError('TIMEOUT', 'ASSISTANT_REQUEST_TIMEOUT');
-    }
-    if (init.signal?.aborted) {
-      throw new AssistantNetworkError('ABORTED', 'ASSISTANT_REQUEST_ABORTED');
-    }
+    if (request.didTimeout()) throw new AssistantNetworkError('TIMEOUT', 'ASSISTANT_REQUEST_TIMEOUT');
+    if (init.signal?.aborted) throw new AssistantNetworkError('ABORTED', 'ASSISTANT_REQUEST_ABORTED');
     throw error;
   } finally {
     request.cleanup();
@@ -139,64 +136,36 @@ async function responseError(response: Response): Promise<AssistantNetworkError>
   return new AssistantNetworkError('HTTP', body || `Request failed with ${response.status}`);
 }
 
-export async function getAssistantHistory(
-  limit = 24,
-  signal?: AbortSignal,
-): Promise<AssistantHistoryTurn[]> {
+export async function getAssistantHistory(limit = 24, signal?: AbortSignal): Promise<AssistantHistoryTurn[]> {
   const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
-  const response = await authorizedFetch(
-    `/assistant/history?limit=${encodeURIComponent(String(safeLimit))}`,
-    { signal },
-    HISTORY_REQUEST_TIMEOUT_MS,
-  );
+  const response = await authorizedFetch(`/assistant/history?limit=${encodeURIComponent(String(safeLimit))}`, { signal }, HISTORY_REQUEST_TIMEOUT_MS);
   if (!response.ok) throw await responseError(response);
-
   let data: unknown;
-  try {
-    data = await response.json();
-  } catch {
-    throw new AssistantNetworkError('INVALID_RESPONSE', 'ASSISTANT_INVALID_HISTORY_RESPONSE');
-  }
+  try { data = await response.json(); }
+  catch { throw new AssistantNetworkError('INVALID_RESPONSE', 'ASSISTANT_INVALID_HISTORY_RESPONSE'); }
   return Array.isArray(data) ? data as AssistantHistoryTurn[] : [];
 }
 
-export async function sendAssistantMessage(
-  message: string,
-  signal?: AbortSignal,
-  locale?: string,
-): Promise<AssistantResponse> {
+export async function sendAssistantMessage(message: string, signal?: AbortSignal, locale?: string): Promise<AssistantResponse> {
   const normalizedMessage = message.trim();
   if (!normalizedMessage) throw new AssistantNetworkError('INVALID_RESPONSE', 'MESSAGE_REQUIRED');
-  if (normalizedMessage.length > MAX_ASSISTANT_MESSAGE_LENGTH) {
-    throw new AssistantNetworkError('INVALID_RESPONSE', 'MESSAGE_TOO_LONG');
-  }
+  if (normalizedMessage.length > MAX_ASSISTANT_MESSAGE_LENGTH) throw new AssistantNetworkError('INVALID_RESPONSE', 'MESSAGE_TOO_LONG');
 
   const storedLocale = await getStoredLocale();
   const preferredLocale = locale ?? (storedLocale ? normalizeLocale(storedLocale) : 'en-US');
-
   const response = await authorizedFetch('/assistant', {
     method: 'POST',
     signal,
-    body: JSON.stringify({
-      message: normalizedMessage,
-      locale: preferredLocale,
-    }),
+    body: JSON.stringify({ message: normalizedMessage, locale: preferredLocale }),
   });
-
   if (!response.ok) throw await responseError(response);
 
   let data: unknown;
-  try {
-    data = await response.json();
-  } catch {
-    throw new AssistantNetworkError('INVALID_RESPONSE', 'ASSISTANT_INVALID_RESPONSE');
-  }
+  try { data = await response.json(); }
+  catch { throw new AssistantNetworkError('INVALID_RESPONSE', 'ASSISTANT_INVALID_RESPONSE'); }
 
   const parsed = data as Partial<AssistantResponse> | null;
-  return {
-    ...parsed,
-    message: typeof parsed?.message === 'string' ? parsed.message : 'I could not understand the response.',
-  };
+  return { ...parsed, message: typeof parsed?.message === 'string' ? parsed.message : 'I could not understand the response.' };
 }
 
 export { AssistantNetworkError };
