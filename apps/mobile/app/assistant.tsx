@@ -1,1 +1,1 @@
-export { default } from './assistant-premium';
+export { default } from './assistant-pastel';
