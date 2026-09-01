@@ -14,6 +14,7 @@ run('adb', ['reverse', 'tcp:8081', 'tcp:8081']);
 const env = {
   ...process.env,
   EXPO_PUBLIC_API_URL: 'http://127.0.0.1:3000',
+  REACT_NATIVE_PACKAGER_HOSTNAME: '127.0.0.1',
 };
 
 run('npx', ['expo', 'run:android'], { env });
