@@ -1,34 +1,30 @@
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { exists } from '@dr.pogodin/react-native-fs';
-import {
-  createTTS,
-  detectTtsModel,
-  saveAudioToFile,
-  type TtsEngine,
-} from 'react-native-sherpa-onnx/tts';
+import { createTTS, detectTtsModel, saveAudioToFile, type TtsEngine } from 'react-native-sherpa-onnx/tts';
 import { resolveModelPath } from 'react-native-sherpa-onnx';
 
 const MODEL_ARCHIVE_DIR = 'vits-piper-fa_IR-ganji-medium-v4';
-const SOURCE_MODEL_ASSET_PATH = 'vits-piper-fa_IR-ganji-medium';
-const KHADIJAH_MODEL_ASSET_PATH = 'matcha-tts-fa_en-khadijah';
+const GANJI_MODEL_ASSET_PATH = 'vits-piper-fa_IR-ganji-medium';
+const KHADIJAH_MODEL_ASSET_PATH = 'matcha-tts-fa_en-khadijah-v2';
 const KHADIJAH_VOCODER_FILE = 'vocos-22khz-univ.onnx';
 const PLAYBACK_DIR = `${FileSystem.cacheDirectory}mypa-tts/`;
 
-let enginePromises: Record<string, Promise<TtsEngine> | null> = { ganji: null, khadijah: null };
+type TtsKind = 'ganji' | 'khadijah';
+let enginePromises: Record<TtsKind, Promise<TtsEngine> | null> = { ganji: null, khadijah: null };
 let activeSound: Audio.Sound | null = null;
 let activePlaybackToken = 0;
-let resolvedModelPathPromises: Record<string, Promise<string> | null> = { ganji: null, khadijah: null };
+let resolvedModelPathPromises: Record<TtsKind, Promise<string> | null> = { ganji: null, khadijah: null };
 
 function nativeFilePath(uri: string): string { return uri.startsWith('file://') ? uri.slice('file://'.length) : uri; }
 
-async function resolveReadyBundledModel(kind: 'ganji' | 'khadijah'): Promise<string> {
+async function resolveReadyBundledModel(kind: TtsKind): Promise<string> {
   if (!resolvedModelPathPromises[kind]) {
     resolvedModelPathPromises[kind] = (async () => {
-      const assetPath = kind === 'khadijah' ? KHADIJAH_MODEL_ASSET_PATH : SOURCE_MODEL_ASSET_PATH;
+      const assetPath = kind === 'khadijah' ? KHADIJAH_MODEL_ASSET_PATH : GANJI_MODEL_ASSET_PATH;
       const resolvedPath = await resolveModelPath({ type: 'asset', path: assetPath });
       const requiredFiles = kind === 'khadijah'
-        ? [`${resolvedPath}/model.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/${KHADIJAH_VOCODER_FILE}`]
+        ? [`${resolvedPath}/model.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/${KHADIJAH_VOCODER_FILE}`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`]
         : [`${resolvedPath}/fa_IR-ganji-medium.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`];
       const ready = (await Promise.all(requiredFiles.map((filePath) => exists(filePath)))).every(Boolean);
       if (!ready) throw new Error(`Persian TTS model extraction incomplete at ${resolvedPath}`);
@@ -38,12 +34,11 @@ async function resolveReadyBundledModel(kind: 'ganji' | 'khadijah'): Promise<str
   return resolvedModelPathPromises[kind]!;
 }
 
-async function ensureEngine(kind: 'ganji' | 'khadijah'): Promise<TtsEngine> {
+async function ensureEngine(kind: TtsKind): Promise<TtsEngine> {
   if (!enginePromises[kind]) {
     enginePromises[kind] = (async () => {
       const resolvedPath = await resolveReadyBundledModel(kind);
       if (kind === 'khadijah') {
-        const ganjiPath = await resolveReadyBundledModel('ganji');
         return createTTS({
           modelPath: { type: 'file', path: resolvedPath },
           modelType: 'matcha',
@@ -52,7 +47,7 @@ async function ensureEngine(kind: 'ganji' | 'khadijah'): Promise<TtsEngine> {
               acousticModel: `${resolvedPath}/model.onnx`,
               vocoder: `${resolvedPath}/${KHADIJAH_VOCODER_FILE}`,
               tokens: `${resolvedPath}/tokens.txt`,
-              dataDir: `${ganjiPath}/espeak-ng-data`,
+              dataDir: `${resolvedPath}/espeak-ng-data`,
               lengthScale: 1.0,
             },
           },
@@ -92,9 +87,9 @@ export async function speakPersianLocally(text: string, rate = 1, voiceId = 'gan
   if (!normalizedText) return false;
   await stopCurrentPlayback();
   const token = activePlaybackToken;
-  const kind = voiceId === 'venus' ? 'khadijah' : 'ganji';
+  const kind: TtsKind = voiceId === 'venus' ? 'khadijah' : 'ganji';
   try {
-    if (__DEV__) console.warn('[MYPA][LOCAL_TTS]', JSON.stringify({ status: 'starting', provider: kind === 'khadijah' ? 'sherpa-onnx-matcha' : 'sherpa-onnx-piper', voiceId, model: kind === 'khadijah' ? 'khadijah' : MODEL_ARCHIVE_DIR }));
+    if (__DEV__) console.warn('[MYPA][LOCAL_TTS]', JSON.stringify({ status: 'starting', provider: kind === 'khadijah' ? 'sherpa-onnx-matcha' : 'sherpa-onnx-piper', voiceId, model: kind === 'khadijah' ? KHADIJAH_MODEL_ASSET_PATH : MODEL_ARCHIVE_DIR }));
     const engine = await ensureEngine(kind);
     const audio = await engine.generateSpeech(normalizedText, { sid: 0, speed: Math.min(1.25, Math.max(0.8, rate)) });
     await FileSystem.makeDirectoryAsync(PLAYBACK_DIR, { intermediates: true });
