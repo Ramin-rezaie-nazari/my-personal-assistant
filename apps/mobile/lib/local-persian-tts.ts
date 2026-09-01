@@ -5,9 +5,9 @@ import {
   createTTS,
   detectTtsModel,
   saveAudioToFile,
-  resolveModelPath,
   type TtsEngine,
 } from 'react-native-sherpa-onnx/tts';
+import { resolveModelPath } from 'react-native-sherpa-onnx';
 
 const MODEL_ARCHIVE_DIR = 'vits-piper-fa_IR-ganji-medium-v4';
 const SOURCE_MODEL_ASSET_PATH = 'vits-piper-fa_IR-ganji-medium';
@@ -15,26 +15,16 @@ const KHADIJAH_MODEL_ASSET_PATH = 'matcha-tts-fa_en-khadijah';
 const KHADIJAH_VOCODER_ASSET_PATH = 'vocos-22khz-univ.onnx';
 const PLAYBACK_DIR = `${FileSystem.cacheDirectory}mypa-tts/`;
 
-let enginePromises: Record<string, Promise<TtsEngine> | null> = {
-  ganji: null,
-  khadijah: null,
-};
+let enginePromises: Record<string, Promise<TtsEngine> | null> = { ganji: null, khadijah: null };
 let activeSound: Audio.Sound | null = null;
 let activePlaybackToken = 0;
-let resolvedModelPathPromises: Record<string, Promise<string> | null> = {
-  ganji: null,
-  khadijah: null,
-};
+let resolvedModelPathPromises: Record<string, Promise<string> | null> = { ganji: null, khadijah: null };
 
-function nativeFilePath(uri: string): string {
-  return uri.startsWith('file://') ? uri.slice('file://'.length) : uri;
-}
+function nativeFilePath(uri: string): string { return uri.startsWith('file://') ? uri.slice('file://'.length) : uri; }
 
 async function removeDirectoryRecursive(dirPath: string): Promise<void> {
   const uri = dirPath.startsWith('file://') ? dirPath : `file://${dirPath}`;
-  try {
-    await FileSystem.deleteAsync(uri, { idempotent: true });
-  } catch {}
+  try { await FileSystem.deleteAsync(uri, { idempotent: true }); } catch {}
 }
 
 async function resolveReadyBundledModel(kind: 'ganji' | 'khadijah'): Promise<string> {
@@ -43,45 +33,20 @@ async function resolveReadyBundledModel(kind: 'ganji' | 'khadijah'): Promise<str
       const assetPath = kind === 'khadijah' ? KHADIJAH_MODEL_ASSET_PATH : SOURCE_MODEL_ASSET_PATH;
       let resolvedPath = await resolveModelPath({ type: 'asset', path: assetPath });
       const requiredFiles = kind === 'khadijah'
-        ? [
-            `${resolvedPath}/model.onnx`,
-            `${resolvedPath}/tokens.txt`,
-            `${resolvedPath}/espeak-ng-data/phontab`,
-            `${resolvedPath}/espeak-ng-data/phonindex`,
-          ]
-        : [
-            `${resolvedPath}/fa_IR-ganji-medium.onnx`,
-            `${resolvedPath}/tokens.txt`,
-            `${resolvedPath}/espeak-ng-data/phontab`,
-            `${resolvedPath}/espeak-ng-data/phonindex`,
-          ];
+        ? [`${resolvedPath}/model.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`]
+        : [`${resolvedPath}/fa_IR-ganji-medium.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`];
       const ready = (await Promise.all(requiredFiles.map((filePath) => exists(filePath)))).every(Boolean);
-
       if (!ready) {
         await removeDirectoryRecursive(resolvedPath);
         resolvedPath = await resolveModelPath({ type: 'asset', path: assetPath });
       }
-
       const finalRequiredFiles = kind === 'khadijah'
-        ? [
-            `${resolvedPath}/model.onnx`,
-            `${resolvedPath}/tokens.txt`,
-            `${resolvedPath}/espeak-ng-data/phontab`,
-            `${resolvedPath}/espeak-ng-data/phonindex`,
-          ]
-        : [
-            `${resolvedPath}/fa_IR-ganji-medium.onnx`,
-            `${resolvedPath}/tokens.txt`,
-            `${resolvedPath}/espeak-ng-data/phontab`,
-            `${resolvedPath}/espeak-ng-data/phonindex`,
-          ];
+        ? [`${resolvedPath}/model.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`]
+        : [`${resolvedPath}/fa_IR-ganji-medium.onnx`, `${resolvedPath}/tokens.txt`, `${resolvedPath}/espeak-ng-data/phontab`, `${resolvedPath}/espeak-ng-data/phonindex`];
       const finalReady = (await Promise.all(finalRequiredFiles.map((filePath) => exists(filePath)))).every(Boolean);
       if (!finalReady) throw new Error(`Persian TTS model extraction incomplete at ${resolvedPath}`);
       return resolvedPath;
-    })().catch((error) => {
-      resolvedModelPathPromises[kind] = null;
-      throw error;
-    });
+    })().catch((error) => { resolvedModelPathPromises[kind] = null; throw error; });
   }
   return resolvedModelPathPromises[kind]!;
 }
@@ -95,10 +60,10 @@ async function ensureEngine(kind: 'ganji' | 'khadijah'): Promise<TtsEngine> {
           modelType: 'matcha',
           modelOptions: {
             matcha: {
-              acousticModel: { type: 'asset', path: `${KHADIJAH_MODEL_ASSET_PATH}/model.onnx` },
-              vocoder: { type: 'asset', path: KHADIJAH_VOCODER_ASSET_PATH },
-              tokens: { type: 'asset', path: `${KHADIJAH_MODEL_ASSET_PATH}/tokens.txt` },
-              dataDir: { type: 'asset', path: `${KHADIJAH_MODEL_ASSET_PATH}/espeak-ng-data` },
+              acousticModel: `${KHADIJAH_MODEL_ASSET_PATH}/model.onnx`,
+              vocoder: KHADIJAH_VOCODER_ASSET_PATH,
+              tokens: `${KHADIJAH_MODEL_ASSET_PATH}/tokens.txt`,
+              dataDir: `${KHADIJAH_MODEL_ASSET_PATH}/espeak-ng-data`,
               noiseScale: 0.667,
               lengthScale: 1.0,
             },
@@ -110,18 +75,9 @@ async function ensureEngine(kind: 'ganji' | 'khadijah'): Promise<TtsEngine> {
         modelPath: { type: 'file', path: resolvedPath },
         modelType: 'vits',
         numThreads: 2,
-        modelOptions: {
-          vits: {
-            noiseScale: 0.667,
-            lengthScale: 1.0,
-            noiseScaleW: 0.8,
-          },
-        },
+        modelOptions: { vits: { noiseScale: 0.667, lengthScale: 1.0, noiseScaleW: 0.8 } },
       });
-    }).catch((error) => {
-      enginePromises[kind] = null;
-      throw error;
-    });
+    }).catch((error) => { enginePromises[kind] = null; throw error; });
   }
   return enginePromises[kind]!;
 }
@@ -140,9 +96,7 @@ export async function isLocalPersianTtsAvailable(): Promise<boolean> {
     const resolvedPath = await resolveReadyBundledModel('ganji');
     const result = await detectTtsModel({ type: 'file', path: resolvedPath }, { modelType: 'vits' });
     return Boolean(result.success && result.detectedModels.some((item) => item.type === 'vits'));
-  } catch {
-    return false;
-  }
+  } catch { return false; }
 }
 
 export async function speakPersianLocally(text: string, rate = 1, voiceId = 'ganji'): Promise<boolean> {
@@ -162,7 +116,6 @@ export async function speakPersianLocally(text: string, rate = 1, voiceId = 'gan
     await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: false, shouldDuckAndroid: false });
     const { sound } = await Audio.Sound.createAsync({ uri: outputUri }, { shouldPlay: true, volume: 1.0 });
     activeSound = sound;
-    if (__DEV__) console.warn('[MYPA][LOCAL_TTS]', JSON.stringify({ status: 'playing', provider: kind === 'khadijah' ? 'sherpa-onnx-matcha' : 'sherpa-onnx-piper', voiceId, sampleRate: audio.sampleRate, samples: audio.samples.length }));
     await new Promise<void>((resolve, reject) => {
       const handleStatus = (status: Audio.AVPlaybackStatus) => {
         if (!status.isLoaded) { if (status.error) reject(new Error(status.error)); return; }
@@ -192,14 +145,3 @@ export async function releaseLocalPersianTts(): Promise<void> {
     finally { enginePromises[kind] = null; resolvedModelPathPromises[kind] = null; }
   }
 }
-
-export const LOCAL_PERSIAN_TTS_MODEL = {
-  version: '20260831-sherpa-piper-fa-ganji-medium-bundled-v4',
-  locale: 'fa-IR',
-  voice: 'ganji',
-  quality: 'medium',
-  archive: MODEL_ARCHIVE_DIR,
-  modelFile: 'fa_IR-ganji-medium.onnx',
-  tokensFile: 'tokens.txt',
-  dataDir: 'espeak-ng-data',
-};
