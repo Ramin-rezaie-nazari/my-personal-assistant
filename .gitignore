@@ -11,3 +11,13 @@ apps/backend/recipe-image-dataset/
 .kaggle-venv/
 My-Personal-Assistant-Data/
 processed-images/
+
+# Local TTS candidate downloads/conversion environments and generated model artifacts
+.tts-download-env/
+.tts-convert-env/
+apps/mobile/tts-candidates/
+apps/mobile/tts-converted/
+apps/mobile/android/app/src/main/assets/vits-piper-fa_IR-ganji-medium/
+apps/mobile/android/app/src/main/assets/matcha-tts-fa_en-khadijah-v2/
+apps/mobile/android/app/src/main/assets/vits-coqui-fa-iran-female/
+apps/mobile/android/app/src/main/assets/vits-coqui-fa-iran-male/
