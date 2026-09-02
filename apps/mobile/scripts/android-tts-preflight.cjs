@@ -14,6 +14,10 @@ const files = {
   khadijahVocoder: path.join(assetsDir, 'matcha-tts-fa_en-khadijah-v2', 'vocos-22khz-univ.onnx'),
   khadijahPhontab: path.join(assetsDir, 'matcha-tts-fa_en-khadijah-v2', 'espeak-ng-data', 'phontab'),
   khadijahPhonindex: path.join(assetsDir, 'matcha-tts-fa_en-khadijah-v2', 'espeak-ng-data', 'phonindex'),
+  kamteraFemaleModel: path.join(assetsDir, 'vits-coqui-fa-iran-female', 'model.onnx'),
+  kamteraFemaleTokens: path.join(assetsDir, 'vits-coqui-fa-iran-female', 'tokens.txt'),
+  kamteraMaleModel: path.join(assetsDir, 'vits-coqui-fa-iran-male', 'model.onnx'),
+  kamteraMaleTokens: path.join(assetsDir, 'vits-coqui-fa-iran-male', 'tokens.txt'),
 };
 
 for (const [name, filePath] of Object.entries(files)) {
@@ -24,9 +28,12 @@ for (const [name, filePath] of Object.entries(files)) {
 }
 
 const sizes = Object.fromEntries(Object.entries(files).map(([name, filePath]) => [name, fs.statSync(filePath).size]));
-if (sizes.khadijahModel < 50_000_000) throw new Error(`ANDROID TTS PREFLIGHT FAILED: Khadijah model too small (${sizes.khadijahModel})`);
-if (sizes.khadijahVocoder < 40_000_000) throw new Error(`ANDROID TTS PREFLIGHT FAILED: Khadijah vocoder too small (${sizes.khadijahVocoder})`);
-if (sizes.ganjiModel < 1_000_000) throw new Error(`ANDROID TTS PREFLIGHT FAILED: Ganji model too small (${sizes.ganjiModel})`);
+for (const [name, min] of Object.entries({ khadijahModel: 50_000_000, khadijahVocoder: 40_000_000, ganjiModel: 1_000_000, kamteraFemaleModel: 10_000_000, kamteraMaleModel: 10_000_000 })) {
+  if (sizes[name] < min) {
+    console.error(`ANDROID TTS PREFLIGHT FAILED: ${name} is too small (${sizes[name]})`);
+    process.exit(1);
+  }
+}
 
 console.log('ANDROID TTS PREFLIGHT PASS');
 console.log(JSON.stringify(sizes));
