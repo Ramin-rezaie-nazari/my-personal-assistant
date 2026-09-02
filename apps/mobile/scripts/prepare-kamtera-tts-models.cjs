@@ -34,7 +34,8 @@ function pickPython() {
   }
   if (spawnSync('uv', ['--version'], { stdio: 'ignore' }).status === 0) return { command: 'uv', version: 'uv' };
   if (process.platform === 'darwin' && spawnSync('brew', ['--version'], { stdio: 'ignore' }).status === 0) {
-    const brewPython = path.join(String(spawnSync('brew', ['--prefix', 'python@3.11'], { encoding: 'utf8' }).stdout || '').trim(), 'bin', 'python3.11');
+    const brewPrefix = String(spawnSync('brew', ['--prefix', 'python@3.11'], { encoding: 'utf8' }).stdout || '').trim();
+    const brewPython = path.join(brewPrefix, 'bin', 'python3.11');
     if (!fs.existsSync(brewPython)) {
       console.log('[MYPA] Installing Homebrew python@3.11 for deterministic Coqui export...');
       run('brew', ['install', 'python@3.11']);
@@ -48,17 +49,39 @@ function ensureVenv(runtime) {
   const venv = path.join(root, '.tts-convert-env');
   const bin = process.platform === 'win32' ? path.join(venv, 'Scripts') : path.join(venv, 'bin');
   const py = path.join(bin, 'python');
+
   if (fs.existsSync(py)) return { venv, python: py };
+
   if (runtime.command === 'uv') run('uv', ['venv', '--python', '3.11', venv]);
   else run(runtime.command, ['-m', 'venv', venv]);
+
   return { venv, python: py };
 }
 
-function ensureDependencies(py) {
-  const probe = spawnSync(py, ['-c', "import TTS, onnx, onnxruntime"], { stdio: 'ignore' });
+function ensurePip(env) {
+  const probe = spawnSync(env.python, ['-m', 'pip', '--version'], { stdio: 'ignore' });
   if (probe.status === 0) return;
-  run(py, ['-m', 'pip', 'install', '--upgrade', 'pip', 'setuptools', 'wheel']);
-  run(py, ['-m', 'pip', 'install', 'TTS==0.22.0', 'onnx', 'onnxruntime']);
+
+  console.log('[MYPA] Bootstrapping pip inside .tts-convert-env...');
+  const ensurePipResult = spawnSync(env.python, ['-m', 'ensurepip', '--upgrade'], { stdio: 'inherit' });
+  if (ensurePipResult.status === 0) return;
+
+  if (spawnSync('uv', ['--version'], { stdio: 'ignore' }).status === 0) {
+    console.log('[MYPA] Falling back to uv pip bootstrap...');
+    run('uv', ['pip', 'install', '--python', env.python, 'pip']);
+    return;
+  }
+
+  fail('The Python venv has no pip and neither ensurepip nor uv pip bootstrap is available.');
+}
+
+function ensureDependencies(env) {
+  ensurePip(env);
+  const probe = spawnSync(env.python, ['-c', "import TTS, onnx, onnxruntime"], { stdio: 'ignore' });
+  if (probe.status === 0) return;
+
+  run(env.python, ['-m', 'pip', 'install', '--upgrade', 'pip', 'setuptools', 'wheel']);
+  run(env.python, ['-m', 'pip', 'install', 'TTS==0.22.0', 'onnx', 'onnxruntime']);
 }
 
 const requiredCandidates = [
@@ -71,7 +94,7 @@ for (const file of requiredCandidates) if (!fs.existsSync(file)) fail(`missing c
 
 const runtime = pickPython();
 const env = ensureVenv(runtime);
-ensureDependencies(env.python);
+ensureDependencies(env);
 run(env.python, [path.join(__dirname, 'convert-kamtera-vits-to-sherpa.py')]);
 
 const prepared = [
