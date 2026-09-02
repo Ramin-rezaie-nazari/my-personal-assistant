@@ -2,14 +2,15 @@ const { spawnSync } = require('node:child_process');
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { stdio: 'inherit', shell: false, ...options });
+  if (result.error) process.exit(1);
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-// Native autolinking output must be regenerated before validation so preflight
-// never inspects a stale PackageList.java from an older Expo module layout.
+// Always regenerate native files before validating them.
 run('npx', ['expo', 'prebuild', '--platform', 'android']);
 run('node', ['scripts/prepare-persian-tts-model.cjs']);
 run('node', ['scripts/prepare-khadijah-tts-model.cjs']);
+run('node', ['scripts/prepare-kamtera-tts-models.cjs']);
 run('node', ['scripts/android-tts-preflight.cjs']);
 run('node', ['scripts/android-build-preflight.cjs']);
 run('adb', ['reverse', 'tcp:3000', 'tcp:3000']);
