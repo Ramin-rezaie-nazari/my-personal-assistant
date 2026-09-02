@@ -95,6 +95,38 @@ function ensureDependencies(env) {
   run(env.python, ['-m', 'pip', 'install', 'TTS==0.22.0', 'onnx', 'onnxruntime']);
 }
 
+function ensureEspeakNg() {
+  if (process.platform !== 'darwin') return {};
+
+  const brew = spawnSync('brew', ['--version'], { stdio: 'ignore' });
+  if (brew.status !== 0) {
+    fail('Homebrew is required on macOS to install the eSpeak NG phonemizer backend automatically.');
+  }
+
+  const prefixProbe = spawnSync('brew', ['--prefix', 'espeak-ng'], { encoding: 'utf8' });
+  let prefix = prefixProbe.status === 0 ? String(prefixProbe.stdout || '').trim() : '';
+  const libraryCandidates = prefix
+    ? [path.join(prefix, 'lib', 'libespeak-ng.dylib')]
+    : [];
+  const existingLibrary = libraryCandidates.find((file) => fs.existsSync(file));
+  if (!existingLibrary) {
+    console.log('[MYPA] Installing Homebrew espeak-ng for Coqui phonemizer...');
+    run('brew', ['install', 'espeak-ng']);
+    prefix = String(spawnSync('brew', ['--prefix', 'espeak-ng'], { encoding: 'utf8' }).stdout || '').trim();
+  }
+
+  const library = path.join(prefix, 'lib', 'libespeak-ng.dylib');
+  if (!fs.existsSync(library)) fail(`eSpeak NG library not found after installation: ${library}`);
+
+  console.log(`[MYPA] eSpeak NG ready: ${library}`);
+  return {
+    env: {
+      PHONEMIZER_ESPEAK_LIBRARY: library,
+      PATH: `${path.join(prefix, 'bin')}${path.delimiter}${process.env.PATH || ''}`,
+    },
+  };
+}
+
 const requiredCandidates = [
   path.join(candidates, 'kamtera-female', 'best_model_30824.pth'),
   path.join(candidates, 'kamtera-female', 'config.json'),
@@ -106,7 +138,8 @@ for (const file of requiredCandidates) if (!fs.existsSync(file)) fail(`missing c
 const runtime = pickPython();
 const env = ensureVenv(runtime);
 ensureDependencies(env);
-run(env.python, [path.join(__dirname, 'convert-kamtera-vits-to-sherpa.py')]);
+const espeak = ensureEspeakNg();
+run(env.python, [path.join(__dirname, 'convert-kamtera-vits-to-sherpa.py')], espeak);
 
 const prepared = [
   ['kamtera-female', path.join(outputs, 'kamtera-female')],
