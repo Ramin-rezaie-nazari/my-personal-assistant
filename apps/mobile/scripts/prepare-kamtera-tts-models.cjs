@@ -33,7 +33,15 @@ function pickPython() {
     if (major === 3 && minor >= 10 && minor <= 11) return { command: candidate, version };
   }
   if (spawnSync('uv', ['--version'], { stdio: 'ignore' }).status === 0) return { command: 'uv', version: 'uv' };
-  fail('Python 3.10/3.11 or uv is required for Coqui VITS export. Python 3.14 is intentionally not used.');
+  if (process.platform === 'darwin' && spawnSync('brew', ['--version'], { stdio: 'ignore' }).status === 0) {
+    const brewPython = path.join(String(spawnSync('brew', ['--prefix', 'python@3.11'], { encoding: 'utf8' }).stdout || '').trim(), 'bin', 'python3.11');
+    if (!fs.existsSync(brewPython)) {
+      console.log('[MYPA] Installing Homebrew python@3.11 for deterministic Coqui export...');
+      run('brew', ['install', 'python@3.11']);
+    }
+    if (fs.existsSync(brewPython)) return { command: brewPython, version: pythonVersion(brewPython) || '3.11' };
+  }
+  fail('Python 3.10/3.11 is required for Coqui VITS export. The script can use uv or Homebrew python@3.11 when available.');
 }
 
 function ensureVenv(runtime) {
