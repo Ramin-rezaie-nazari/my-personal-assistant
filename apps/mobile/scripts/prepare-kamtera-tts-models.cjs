@@ -18,42 +18,52 @@ function run(command, args, options = {}) {
   if (result.status !== 0) fail(`${command} exited with ${result.status}`);
 }
 
-function pickPython() {
-  for (const candidate of ['python3.11', 'python3.10', 'python3']) {
-    const probe = spawnSync(candidate, ['--version'], { encoding: 'utf8' });
-    if (probe.status !== 0) continue;
-    const match = `${probe.stdout || ''}${probe.stderr || ''}`.match(/Python (\d+)\.(\d+)/);
-    if (!match) continue;
-    const major = Number(match[1]);
-    const minor = Number(match[2]);
-    if (major === 3 && minor >= 10 && minor <= 11) return candidate;
-  }
-  fail('Python 3.10 or 3.11 is required for Coqui TTS export. Python 3.14 is intentionally not used.');
+function pythonVersion(command) {
+  const probe = spawnSync(command, ['--version'], { encoding: 'utf8' });
+  if (probe.status !== 0) return null;
+  const match = `${probe.stdout || ''}${probe.stderr || ''}`.match(/Python (\d+)\.(\d+)/);
+  return match ? `${match[1]}.${match[2]}` : null;
 }
 
-function ensureVenv(python) {
+function pickPython() {
+  for (const candidate of ['python3.11', 'python3.10', 'python3']) {
+    const version = pythonVersion(candidate);
+    if (!version) continue;
+    const [major, minor] = version.split('.').map(Number);
+    if (major === 3 && minor >= 10 && minor <= 11) return { command: candidate, version };
+  }
+  if (spawnSync('uv', ['--version'], { stdio: 'ignore' }).status === 0) return { command: 'uv', version: 'uv' };
+  fail('Python 3.10/3.11 or uv is required for Coqui VITS export. Python 3.14 is intentionally not used.');
+}
+
+function ensureVenv(runtime) {
   const venv = path.join(root, '.tts-convert-env');
   const bin = process.platform === 'win32' ? path.join(venv, 'Scripts') : path.join(venv, 'bin');
   const py = path.join(bin, 'python');
-  if (!fs.existsSync(py)) run(python, ['-m', 'venv', venv]);
+  if (fs.existsSync(py)) return { venv, python: py };
+  if (runtime.command === 'uv') run('uv', ['venv', '--python', '3.11', venv]);
+  else run(runtime.command, ['-m', 'venv', venv]);
   return { venv, python: py };
 }
 
 function ensureDependencies(py) {
+  const probe = spawnSync(py, ['-c', "import TTS, onnx, onnxruntime"], { stdio: 'ignore' });
+  if (probe.status === 0) return;
   run(py, ['-m', 'pip', 'install', '--upgrade', 'pip', 'setuptools', 'wheel']);
   run(py, ['-m', 'pip', 'install', 'TTS==0.22.0', 'onnx', 'onnxruntime']);
 }
 
-const female = path.join(candidates, 'kamtera-female', 'best_model_30824.pth');
-const femaleConfig = path.join(candidates, 'kamtera-female', 'config.json');
-const male = path.join(candidates, 'kamtera-male', 'best_model_91323.pth');
-const maleConfig = path.join(candidates, 'kamtera-male', 'config.json');
-for (const file of [female, femaleConfig, male, maleConfig]) if (!fs.existsSync(file)) fail(`missing candidate file: ${file}`);
+const requiredCandidates = [
+  path.join(candidates, 'kamtera-female', 'best_model_30824.pth'),
+  path.join(candidates, 'kamtera-female', 'config.json'),
+  path.join(candidates, 'kamtera-male', 'best_model_91323.pth'),
+  path.join(candidates, 'kamtera-male', 'config.json'),
+];
+for (const file of requiredCandidates) if (!fs.existsSync(file)) fail(`missing candidate file: ${file}`);
 
-const python = pickPython();
-const env = ensureVenv(python);
+const runtime = pickPython();
+const env = ensureVenv(runtime);
 ensureDependencies(env.python);
-
 run(env.python, [path.join(__dirname, 'convert-kamtera-vits-to-sherpa.py')]);
 
 const prepared = [
@@ -65,9 +75,9 @@ for (const [name, dir] of prepared) {
   const model = path.join(dir, 'model.onnx');
   const tokens = path.join(dir, 'tokens.txt');
   if (!fs.existsSync(model) || !fs.existsSync(tokens)) fail(`${name}: conversion output incomplete`);
-  fs.mkdirSync(dir, { recursive: true });
   const target = path.join(androidAssets, `vits-coqui-fa-iran-${name.replace('kamtera-', '')}`);
   if (fs.existsSync(target)) fs.rmSync(target, { recursive: true, force: true });
+  fs.mkdirSync(path.dirname(target), { recursive: true });
   fs.cpSync(dir, target, { recursive: true });
   if (fs.statSync(path.join(target, 'model.onnx')).size < 10_000_000) fail(`${name}: Android model is unexpectedly small`);
 }
