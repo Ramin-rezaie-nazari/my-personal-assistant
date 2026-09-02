@@ -103,7 +103,8 @@ async function getEngine(): Promise<TtsEngine> {
       return createTTS({
         modelPath: { type: 'file', path: modelDir },
         modelType: 'vits',
-        numThreads: 2,
+        // reduce threads to lower memory pressure on constrained devices
+        numThreads: 1,
         modelOptions: {
           vits: {
             noiseScale: 0.667,
@@ -166,6 +167,18 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
     const outputNativePath = nativeFilePath(outputUri);
     await saveAudioToFile(audio, outputNativePath);
 
+    // quick size check to avoid huge files causing memory pressure
+    try {
+      const info = await FileSystem.getInfoAsync(outputNativePath);
+      if ((info.size ?? 0) > 6 * 1024 * 1024) { // 6 MB
+        // file too large for safe playback on constrained devices
+        await FileSystem.deleteAsync(outputUri, { idempotent: true });
+        return false;
+      }
+    } catch {
+      // ignore and continue
+    }
+
     if (token !== activePlaybackToken) return false;
 
     await Audio.setAudioModeAsync({
@@ -174,27 +187,36 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
       shouldDuckAndroid: false,
     });
 
-    const { sound } = await Audio.Sound.createAsync(
-      { uri: outputUri },
-      { shouldPlay: true, volume: 1.0 },
-    );
-    activeSound = sound;
+    let sound: Audio.Sound | null = null;
+    try {
+      const result = await Audio.Sound.createAsync(
+        { uri: outputUri },
+        { shouldPlay: true, volume: 1.0 },
+      );
+      sound = result.sound;
+      activeSound = sound;
 
-    await new Promise<void>((resolve, reject) => {
-      const handleStatus = (status: Audio.AVPlaybackStatus) => {
-        if (!status.isLoaded) {
-          if (status.error) reject(new Error(status.error));
-          return;
-        }
-        if (status.didJustFinish) resolve();
-      };
-      sound.setOnPlaybackStatusUpdate(handleStatus);
-    });
+      await new Promise<void>((resolve, reject) => {
+        const handleStatus = (status: Audio.AVPlaybackStatus) => {
+          if (!status.isLoaded) {
+            if (status.error) reject(new Error(status.error));
+            return;
+          }
+          if (status.didJustFinish) resolve();
+        };
+        sound?.setOnPlaybackStatusUpdate(handleStatus);
+      });
 
-    if (activeSound === sound) activeSound = null;
-    await sound.unloadAsync();
-    await FileSystem.deleteAsync(outputUri, { idempotent: true });
-    return true;
+      if (activeSound === sound) activeSound = null;
+      try { await sound.unloadAsync(); } catch {}
+      try { await FileSystem.deleteAsync(outputUri, { idempotent: true }); } catch {}
+      return true;
+    } catch (innerError) {
+      if (__DEV__) console.warn('[MYPA][LOCAL_TTS][PLAYBACK]', innerError);
+      try { if (sound) await sound.unloadAsync(); } catch {}
+      try { await FileSystem.deleteAsync(outputUri, { idempotent: true }); } catch {}
+      return false;
+    }
   } catch (error) {
     if (__DEV__) {
       console.warn('[MYPA][LOCAL_TTS] Persian local TTS failed; caller may use fallback.', error);
