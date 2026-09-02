@@ -81,6 +81,17 @@ function ensureDependencies(env) {
   if (probe.status === 0) return;
 
   run(env.python, ['-m', 'pip', 'install', '--upgrade', 'pip', 'setuptools', 'wheel']);
+
+  // Prevent pip from selecting a newer llvmlite that has to compile locally with LLVM.
+  // These versions have CPython 3.11 macOS wheels and are compatible with TTS 0.22.
+  run(env.python, [
+    '-m', 'pip', 'install',
+    '--only-binary=:all:',
+    'numpy==1.25.2',
+    'numba==0.58.1',
+    'llvmlite==0.41.1',
+  ]);
+
   run(env.python, ['-m', 'pip', 'install', 'TTS==0.22.0', 'onnx', 'onnxruntime']);
 }
 
