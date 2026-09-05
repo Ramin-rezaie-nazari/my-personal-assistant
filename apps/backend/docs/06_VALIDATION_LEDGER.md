@@ -134,17 +134,18 @@ Introduced a single reactive locale store for the mobile application with persis
 
 - Root layout initializes the locale once at app startup and synchronizes RTL configuration.
 - Language selection persists and immediately publishes the selected locale.
-- Auth, Assistant, Command Center, Daily, Calendar, Notifications, Habits, Inventory and Shopping now consume the global reactive locale.
-- Common Farsi/English navigation labels, loading states, errors, empty states and action labels were localized in these high-frequency screens.
-- Calendar and notification date formatting now follow the selected locale.
+- Auth, Assistant, Command Center, Daily, Calendar, Notifications, Habits, Inventory, Shopping, Meals, Smart Meals, Reminders, Recipe Match, Insights, Brain Overview, Supplements and Yoga now consume the global locale on this branch.
+- Common Farsi/English navigation labels, loading states, errors, empty states and action labels were localized across the migrated routes.
+- Calendar, notification, meal and reminder date/time formatting now follow the selected locale where displayed by the UI.
+- Reminders was replaced with a locale-aware implementation behind the same route so its original route contract remains stable.
 
 ### Design boundary
 
-This is a localization architecture hardening pass, not a claim that every remaining mobile screen is fully translated. Remaining routes/components with embedded English strings still need migration to the shared locale contract.
+This is a localization architecture hardening pass across the current top-level mobile route set, not a claim that every future nested screen/component or server-provided free-form content is linguistically translated. Dynamic domain content may still originate from backend data and must not be silently mistranslated.
 
 ### Runtime status
 
-Mobile typecheck and Expo export/device validation are still required on the user's runtime after this batch because the GitHub connector cannot execute the local Expo toolchain.
+Mobile typecheck and Expo export/device validation are still required on the user's runtime after this batch because the GitHub connector cannot execute the local Expo toolchain. CI status for the latest branch head is also not currently surfaced by the available status endpoint.
 
 ## Checkpoint status
 
@@ -156,14 +157,14 @@ Mobile typecheck and Expo export/device validation are still required on the use
 
 **Mobile visual theme: foundation implemented; full UI wiring/device validation pending.**
 
-**Mobile localization: reactive global locale foundation plus core-screen rollout implemented; remaining route migration and runtime validation pending.**
+**Mobile localization: global reactive locale architecture plus the current top-level route rollout implemented; mobile runtime validation pending.**
 
 **Voice P0: lifecycle race narrowed in tracked JS/native boundary; unresolved pending lockfile validation and direct Android WIP/device evidence.**
 
 ## Next engineering priorities
 
 1. Validate the updated mobile dependency graph and backend security regression tests on the user's runtime.
-2. Continue migrating remaining mobile routes/components to the shared locale contract and run mobile typecheck/export validation.
+2. Audit any remaining nested mobile routes/components for hardcoded user-facing English and migrate them to the shared locale contract.
 3. Resolve the P0 Android voice lifecycle issue using the local candidate WIP and real-device evidence.
 4. Complete the feminine/default theme rollout and mobile food journey.
 5. Complete the two-pass Prisma review for durable canonical recipe metadata.
