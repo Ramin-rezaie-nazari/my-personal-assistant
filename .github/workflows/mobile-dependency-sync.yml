@@ -40,14 +40,61 @@ jobs:
         working-directory: apps/mobile
         run: pnpm exec expo install expo-location expo-speech
 
-      - name: Commit synchronized package manifest and lockfile
+      - name: Repair mobile compatibility code
+        shell: python
         run: |
-          if git diff --quiet -- apps/mobile/package.json pnpm-lock.yaml; then
-            echo 'Expo dependencies already synchronized.'
+          from pathlib import Path
+
+          def replace(path, pairs):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              original = text
+              for old, new in pairs:
+                  text = text.replace(old, new)
+              if text != original:
+                  p.write_text(text, encoding='utf-8')
+                  print(f'updated {path}')
+
+          replace('apps/mobile/app/daily.tsx', [
+              ("style={[styles.metric, rtl ? styles.rtl : undefined]}", "style={rtl ? { ...styles.metric, ...styles.rtl } : styles.metric}"),
+          ])
+
+          replace('apps/mobile/app/onboarding.tsx', [
+              ('  const rtl = locale === \'fa\';\n', "  const rtl = locale === 'fa';\n  const [, requestCameraPermission] = Camera.useCameraPermissions();\n  const [, requestMicrophonePermission] = Camera.useMicrophonePermissions();\n"),
+              ("const result = await Camera.requestCameraPermissionsAsync();\n        updatePermission(key, result.status === 'granted');", "const result = await requestCameraPermission();\n        updatePermission(key, result.granted);"),
+              ("const result = await Camera.requestMicrophonePermissionsAsync();\n        updatePermission(key, result.status === 'granted');", "const result = await requestMicrophonePermission();\n        updatePermission(key, result.granted);"),
+              ('name=\"sparkles\"', 'name=\"assistant\"'),
+          ])
+
+          replace('apps/mobile/app/reminders-localized.tsx', [
+              ('rtl&&styles.rtl', 'rtl ? styles.rtl : undefined'),
+              ('!showAll&&styles.filterActive', '!showAll ? styles.filterActive : undefined'),
+              ('showAll&&styles.filterActive', 'showAll ? styles.filterActive : undefined'),
+              ('!showAll&&styles.filterTextActive', '!showAll ? styles.filterTextActive : undefined'),
+              ('showAll&&styles.filterTextActive', 'showAll ? styles.filterTextActive : undefined'),
+              ('item.completed&&styles.completedBadge', 'item.completed ? styles.completedBadge : undefined'),
+              ('index===items.length-1&&styles.lastRow', 'index===items.length-1 ? styles.lastRow : undefined'),
+              ("actions:{flexDirection:'row',gap:7", "modalActions:{flexDirection:'row',gap:10},actions:{flexDirection:'row',gap:7"),
+          ])
+
+          replace('apps/mobile/lib/local-persian-tts.ts', [
+              ("from 'expo-file-system/legacy'", "from 'expo-file-system'"),
+              ("from 'react-native-sherpa-onnx'", "from 'react-native-sherpa-onnx/tts'"),
+              ("      const handleStatus = (status: Audio.AVPlaybackStatus) => {", "      const handleStatus = (status) => {"),
+          ])
+
+          replace('apps/mobile/lib/voice.ts', [
+              ("    voicesPromise = Speech.getAvailableVoicesAsync().then((voices) => voices ?? []).catch((error) => {", "    voicesPromise = Speech.getAvailableVoicesAsync().then((voices) => voices ?? []).catch((error: unknown) => {"),
+          ])
+
+      - name: Commit synchronized fixes
+        run: |
+          if git diff --quiet -- apps/mobile/package.json pnpm-lock.yaml apps/mobile/app/daily.tsx apps/mobile/app/onboarding.tsx apps/mobile/app/reminders-localized.tsx apps/mobile/lib/local-persian-tts.ts apps/mobile/lib/voice.ts; then
+            echo 'Nothing to synchronize.'
             exit 0
           fi
           git config user.name 'MYPA Automation'
           git config user.email 'actions@users.noreply.github.com'
-          git add apps/mobile/package.json pnpm-lock.yaml
-          git commit -m '[skip ci] chore(mobile): sync Expo dependency lockfile'
+          git add apps/mobile/package.json pnpm-lock.yaml apps/mobile/app/daily.tsx apps/mobile/app/onboarding.tsx apps/mobile/app/reminders-localized.tsx apps/mobile/lib/local-persian-tts.ts apps/mobile/lib/voice.ts
+          git commit -m '[skip ci] fix(mobile): align Expo and TTS APIs'
           git push origin HEAD:agent/mypa-autonomous-control-plane
