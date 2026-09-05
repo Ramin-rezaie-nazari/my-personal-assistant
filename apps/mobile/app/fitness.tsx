@@ -1,26 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useAppLocale } from '../lib/i18n';
 import { hasAuthSession } from '../lib/api';
 import { FitnessDiscipline, FitnessItem, getFitnessLibrary } from '../lib/fitness-api';
 
 const copy = {
-  en: { back:'Back', title:'Fitness', subtitle:'Choose a branch, a level, and train at your pace.', gym:'Gym', calisthenics:'Calisthenics', yoga:'Yoga', level:'Skill level', search:'Search exercises…', start:'Start session', details:'View exercise', more:'Load more', empty:'No exercises found.', media:'images', complete:'complete', refresh:'Refresh' },
-  fa: { back:'برگشت', title:'تمرین و ورزش', subtitle:'رشته، سطح و تمرین مناسب خودت را انتخاب کن.', gym:'جیم', calisthenics:'کالیستنیکس', yoga:'یوگا', level:'سطح مهارت', search:'حرکت را جست‌وجو کن…', start:'شروع جلسه', details:'مشاهده حرکت', more:'نمایش بیشتر', empty:'حرکتی پیدا نشد.', media:'تصویر', complete:'کامل', refresh:'به‌روزرسانی' },
+  en: { back:'Back', title:'Fitness', subtitle:'Choose a branch, a level, and train at your pace.', gym:'Gym', calisthenics:'Calisthenics', yoga:'Yoga', level:'Skill level', search:'Search exercises…', start:'Start session', details:'View exercise', more:'Load more', empty:'No exercises found.', media:'images', complete:'complete' },
+  fa: { back:'برگشت', title:'تمرین و ورزش', subtitle:'رشته، سطح و تمرین مناسب خودت را انتخاب کن.', gym:'جیم', calisthenics:'کالیستنیکس', yoga:'یوگا', level:'سطح مهارت', search:'حرکت را جست‌وجو کن…', start:'شروع جلسه', details:'مشاهده حرکت', more:'نمایش بیشتر', empty:'حرکتی پیدا نشد.', media:'تصویر', complete:'کامل' },
 } as const;
 
 const levelNames = ['Beginner','Beginner+','Foundation','Foundation+','Intermediate','Intermediate+','Advanced','Advanced+','Expert','Elite'];
-const levelMap: Record<FitnessDiscipline, string[]> = {
-  gym:['beginner','beginner','foundation','foundation','intermediate','intermediate','advanced','advanced','expert','expert'],
-  calisthenics:['beginner','beginner','foundation','foundation','intermediate','intermediate','advanced','advanced','expert','elite'],
-  yoga:['beginner','beginner','foundation','foundation','intermediate','intermediate','advanced','advanced','expert','expert'],
-};
 
 export default function FitnessScreen() {
   const locale = useAppLocale(); const text = copy[locale]; const rtl = locale === 'fa';
-  const [discipline,setDiscipline]=useState<FitnessDiscipline>('gym'); const [level,setLevel]=useState(5); const [query,setQuery]=useState(''); const [items,setItems]=useState<FitnessItem[]>([]); const [page,setPage]=useState(1); const [hasNext,setHasNext]=useState(false); const [loading,setLoading]=useState(true); const [loadingMore,setLoadingMore]=useState(false); const [refreshing,setRefreshing]=useState(false); const [error,setError]=useState<string|null>(null);
+  const params = useLocalSearchParams<{ discipline?: string }>();
+  const initialDiscipline: FitnessDiscipline = params.discipline === 'calisthenics' ? 'calisthenics' : params.discipline === 'yoga' ? 'yoga' : 'gym';
+  const [discipline,setDiscipline]=useState<FitnessDiscipline>(initialDiscipline); const [level,setLevel]=useState(5); const [query,setQuery]=useState(''); const [items,setItems]=useState<FitnessItem[]>([]); const [page,setPage]=useState(1); const [hasNext,setHasNext]=useState(false); const [loading,setLoading]=useState(true); const [loadingMore,setLoadingMore]=useState(false); const [refreshing,setRefreshing]=useState(false); const [error,setError]=useState<string|null>(null);
   const load=useCallback(async(reset=true)=>{try{setError(null);if(reset)setRefreshing(true);else setLoadingMore(true);const nextPage=reset?1:page+1;const response=await getFitnessLibrary(discipline,level,nextPage,24,query);setItems(current=>reset?response.items:[...current,...response.items]);setPage(response.page);setHasNext(response.hasNextPage);}catch(err){setError(err instanceof Error?err.message:'Unable to load fitness catalog.');}finally{setLoading(false);setLoadingMore(false);setRefreshing(false);}},[discipline,level,page,query]);
   useEffect(()=>{void hasAuthSession().then(ok=>{if(!ok)router.replace('/auth');else void load(true);});},[discipline,level]);
   useEffect(()=>{if(loading)return;const timer=setTimeout(()=>void load(true),300);return()=>clearTimeout(timer);},[query]);
