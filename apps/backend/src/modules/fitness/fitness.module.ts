@@ -7,6 +7,7 @@ import { FitnessController } from './controllers/fitness.controller';
 import { FitnessProfileService } from './services/fitness-profile.service';
 import { FitnessProfilePersistenceService } from './services/fitness-profile-persistence.service';
 import { FitnessCatalogService } from './services/fitness-catalog.service';
+import { FitnessProgressService } from './services/fitness-progress.service';
 
 @Module({
   imports: [PrismaModule, GymModule, CalisthenicsModule, YogaModule],
@@ -14,11 +15,12 @@ import { FitnessCatalogService } from './services/fitness-catalog.service';
   providers: [
     FitnessProfilePersistenceService,
     FitnessCatalogService,
+    FitnessProgressService,
     {
       provide: FitnessProfileService,
       useExisting: FitnessProfilePersistenceService,
     },
   ],
-  exports: [FitnessProfileService, FitnessProfilePersistenceService, FitnessCatalogService],
+  exports: [FitnessProfileService, FitnessProfilePersistenceService, FitnessCatalogService, FitnessProgressService],
 })
 export class FitnessModule {}
