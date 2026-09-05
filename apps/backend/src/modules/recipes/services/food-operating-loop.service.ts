@@ -65,8 +65,18 @@ export class FoodOperatingLoopService {
     };
   }
 
-  async recommend(userId: string, targetServings: number, countryCode = '', maxCalories?: number, minProteinGrams?: number) {
+  async recommend(
+    userId: string,
+    targetServings: number,
+    countryCode = '',
+    maxCalories?: number,
+    minProteinGrams?: number,
+    maxMissingIngredients?: number,
+  ) {
     this.validateServings(targetServings);
+    if (maxMissingIngredients !== undefined && (!Number.isInteger(maxMissingIngredients) || maxMissingIngredients < 0)) {
+      throw new NotFoundException('maxMissingIngredients must be a non-negative integer');
+    }
     const [recipes, inventory, nutritionProfile] = await Promise.all([
       this.prisma.recipe.findMany({ where: { OR: [{ userId: null }, { userId }] }, include: { ingredients: { include: { food: true } } } }),
       this.prisma.inventoryItem.findMany({ where: { userId } }),
@@ -77,16 +87,24 @@ export class FoodOperatingLoopService {
     const proteinFloor = minProteinGrams ?? (nutritionProfile?.proteinGoalGrams ? nutritionProfile.proteinGoalGrams * 0.30 : undefined);
     const ranked = this.countryFood.rankRecipesForCountry(countryCode, recipes as Array<{ name: string; cuisineFamily?: string | null }>);
     const rankIndex = new Map(ranked.map((recipe, index) => [recipe.name, index]));
-    return recipes.map((recipe) => {
-      const scaled = this.buildScaledRecipe(recipe, targetServings);
-      const { missing } = this.matchScaledIngredients(recipe.ingredients, scaled.ingredients, inventoryByFood);
-      const coveragePercent = scaled.ingredients.length === 0 ? 0 : Math.round(((scaled.ingredients.length - missing.length) / scaled.ingredients.length) * 100);
-      const calories = scaled.nutritionForFullBatch.calories / targetServings;
-      const protein = scaled.nutritionPerServing.proteinGrams;
-      const nutritionScore = (calorieLimit && calories <= calorieLimit ? 15 : 0) + (proteinFloor && protein >= proteinFloor ? 15 : 0);
-      const score = Math.min(100, coveragePercent + nutritionScore + Math.max(0, 20 - (rankIndex.get(recipe.name) ?? recipes.length)));
-      return { recipeId: recipe.id, name: recipe.name, score, coveragePercent, missingCount: missing.length, caloriesPerServing: Number(calories.toFixed(1)), proteinPerServing: Number(protein.toFixed(1)), targetServings, missingIngredients: missing };
-    }).filter((recipe) => (calorieLimit === undefined || recipe.caloriesPerServing <= calorieLimit) && (proteinFloor === undefined || recipe.proteinPerServing >= proteinFloor)).sort((a, b) => b.score - a.score || b.coveragePercent - a.coveragePercent || a.name.localeCompare(b.name)).slice(0, 10);
+    return recipes
+      .map((recipe) => {
+        const scaled = this.buildScaledRecipe(recipe, targetServings);
+        const { missing } = this.matchScaledIngredients(recipe.ingredients, scaled.ingredients, inventoryByFood);
+        const coveragePercent = scaled.ingredients.length === 0 ? 0 : Math.round(((scaled.ingredients.length - missing.length) / scaled.ingredients.length) * 100);
+        const calories = scaled.nutritionForFullBatch.calories / targetServings;
+        const protein = scaled.nutritionPerServing.proteinGrams;
+        const nutritionScore = (calorieLimit && calories <= calorieLimit ? 15 : 0) + (proteinFloor && protein >= proteinFloor ? 15 : 0);
+        const score = Math.min(100, coveragePercent + nutritionScore + Math.max(0, 20 - (rankIndex.get(recipe.name) ?? recipes.length)));
+        return { recipeId: recipe.id, name: recipe.name, score, coveragePercent, missingCount: missing.length, caloriesPerServing: Number(calories.toFixed(1)), proteinPerServing: Number(protein.toFixed(1)), targetServings, missingIngredients: missing };
+      })
+      .filter((recipe) =>
+        (calorieLimit === undefined || recipe.caloriesPerServing <= calorieLimit) &&
+        (proteinFloor === undefined || recipe.proteinPerServing >= proteinFloor) &&
+        (maxMissingIngredients === undefined || recipe.missingCount <= maxMissingIngredients),
+      )
+      .sort((a, b) => b.score - a.score || b.coveragePercent - a.coveragePercent || a.name.localeCompare(b.name))
+      .slice(0, 10);
   }
 
   async addMissingToShopping(userId: string, recipeId: string, targetServings: number) {
@@ -148,16 +166,6 @@ export class FoodOperatingLoopService {
   }
 }
 
-function inferMeasurementKind(unit: string): 'mass' | 'volume' | 'count' | 'package' | 'unitless' {
-  const normalized = unit.trim().toLowerCase();
-  if (['g', 'kg', 'mg', 'oz', 'lb', 'gr', 'کیلو', 'گرم'].includes(normalized)) return 'mass';
-  if (['ml', 'l', 'tsp', 'tbsp', 'cup', 'cups', 'ml.'].includes(normalized)) return 'volume';
-  if (['piece', 'pieces', 'pcs', 'count', 'عدد'].includes(normalized)) return 'count';
-  if (['package', 'pack', 'box', 'بسته'].includes(normalized)) return 'package';
-  return 'unitless';
-}
-
-type NormalizedUnit = { kind: ComparableUnitKind; value: number } | null;
 function normalizeUnit(quantity: number, unit: string): NormalizedUnit {
   const normalized = unit.trim().toLowerCase();
   if (['g', 'gr', 'gram', 'grams', 'گرم'].includes(normalized)) return { kind: 'mass', value: quantity };
@@ -170,6 +178,8 @@ function normalizeUnit(quantity: number, unit: string): NormalizedUnit {
   if (['piece', 'pieces', 'pcs', 'count', 'عدد'].includes(normalized)) return { kind: 'count', value: quantity };
   return null;
 }
+
+type NormalizedUnit = { kind: ComparableUnitKind; value: number } | null;
 function denormalizeUnit(value: number, kind: ComparableUnitKind, unit: string): number {
   const normalized = unit.trim().toLowerCase();
   if (kind === 'mass') {
