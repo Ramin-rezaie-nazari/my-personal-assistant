@@ -17,22 +17,24 @@ export type CanonicalIngredient = {
   displayName: string;
   foodGroup: CanonicalFoodGroup;
   matchedBy: 'canonical' | 'alias' | 'unknown';
+  confidence: number;
+  provenance: 'internal-starter-registry' | 'unresolved-input';
 };
 
 type RegistryEntry = Omit<CanonicalIngredient, 'matchedBy'> & { aliases: string[] };
 
 const REGISTRY: RegistryEntry[] = [
-  { canonicalKey: 'salt', displayName: 'Salt', foodGroup: 'seasoning', aliases: ['salt', 'نمک', 'نمک طعام'] },
-  { canonicalKey: 'black-pepper', displayName: 'Black pepper', foodGroup: 'seasoning', aliases: ['black pepper', 'pepper', 'فلفل سیاه', 'فلفل'] },
-  { canonicalKey: 'egg', displayName: 'Egg', foodGroup: 'protein', aliases: ['egg', 'eggs', 'تخم مرغ', 'تخم‌مرغ'] },
-  { canonicalKey: 'chicken-breast', displayName: 'Chicken breast', foodGroup: 'protein', aliases: ['chicken breast', 'سینه مرغ', 'سینهٔ مرغ'] },
-  { canonicalKey: 'rice', displayName: 'Rice', foodGroup: 'grain', aliases: ['rice', 'برنج'] },
-  { canonicalKey: 'flour', displayName: 'Flour', foodGroup: 'grain', aliases: ['flour', 'all-purpose flour', 'آرد'] },
-  { canonicalKey: 'milk', displayName: 'Milk', foodGroup: 'dairy', aliases: ['milk', 'شیر'] },
-  { canonicalKey: 'olive-oil', displayName: 'Olive oil', foodGroup: 'fat', aliases: ['olive oil', 'روغن زیتون'] },
-  { canonicalKey: 'sugar', displayName: 'Sugar', foodGroup: 'sweetener', aliases: ['sugar', 'شکر'] },
-  { canonicalKey: 'onion', displayName: 'Onion', foodGroup: 'vegetable', aliases: ['onion', 'پیاز'] },
-  { canonicalKey: 'tomato', displayName: 'Tomato', foodGroup: 'vegetable', aliases: ['tomato', 'tomatoes', 'گوجه', 'گوجه فرنگی', 'گوجه‌فرنگی'] },
+  { canonicalKey: 'salt', displayName: 'Salt', foodGroup: 'seasoning', confidence: 1, provenance: 'internal-starter-registry', aliases: ['salt', 'نمک', 'نمک طعام'] },
+  { canonicalKey: 'black-pepper', displayName: 'Black pepper', foodGroup: 'seasoning', confidence: 1, provenance: 'internal-starter-registry', aliases: ['black pepper', 'pepper', 'فلفل سیاه', 'فلفل'] },
+  { canonicalKey: 'egg', displayName: 'Egg', foodGroup: 'protein', confidence: 1, provenance: 'internal-starter-registry', aliases: ['egg', 'eggs', 'تخم مرغ', 'تخم‌مرغ'] },
+  { canonicalKey: 'chicken-breast', displayName: 'Chicken breast', foodGroup: 'protein', confidence: 1, provenance: 'internal-starter-registry', aliases: ['chicken breast', 'سینه مرغ', 'سینهٔ مرغ'] },
+  { canonicalKey: 'rice', displayName: 'Rice', foodGroup: 'grain', confidence: 1, provenance: 'internal-starter-registry', aliases: ['rice', 'برنج'] },
+  { canonicalKey: 'flour', displayName: 'Flour', foodGroup: 'grain', confidence: 1, provenance: 'internal-starter-registry', aliases: ['flour', 'all-purpose flour', 'آرد'] },
+  { canonicalKey: 'milk', displayName: 'Milk', foodGroup: 'dairy', confidence: 1, provenance: 'internal-starter-registry', aliases: ['milk', 'شیر'] },
+  { canonicalKey: 'olive-oil', displayName: 'Olive oil', foodGroup: 'fat', confidence: 1, provenance: 'internal-starter-registry', aliases: ['olive oil', 'روغن زیتون'] },
+  { canonicalKey: 'sugar', displayName: 'Sugar', foodGroup: 'sweetener', confidence: 1, provenance: 'internal-starter-registry', aliases: ['sugar', 'شکر'] },
+  { canonicalKey: 'onion', displayName: 'Onion', foodGroup: 'vegetable', confidence: 1, provenance: 'internal-starter-registry', aliases: ['onion', 'پیاز'] },
+  { canonicalKey: 'tomato', displayName: 'Tomato', foodGroup: 'vegetable', confidence: 1, provenance: 'internal-starter-registry', aliases: ['tomato', 'tomatoes', 'گوجه', 'گوجه فرنگی', 'گوجه‌فرنگی'] },
 ];
 
 function normalizeName(value: string): string {
@@ -45,7 +47,14 @@ function normalizeName(value: string): string {
     .replace(/[.,،؛;:!?()[\]{}]/gu, ' ')
     .replace(/\s+/gu, ' ')
     .trim()
-    .toLocaleLowerCase();
+    .toLowerCase();
+}
+
+const LOOKUP = new Map<string, RegistryEntry>();
+for (const entry of REGISTRY) {
+  LOOKUP.set(normalizeName(entry.canonicalKey), entry);
+  LOOKUP.set(normalizeName(entry.displayName), entry);
+  for (const alias of entry.aliases) LOOKUP.set(normalizeName(alias), entry);
 }
 
 @Injectable()
@@ -58,16 +67,21 @@ export class IngredientTaxonomyService {
         displayName: '',
         foodGroup: 'other',
         matchedBy: 'unknown',
+        confidence: 0,
+        provenance: 'unresolved-input',
       };
     }
 
-    for (const entry of REGISTRY) {
-      if (normalized === normalizeName(entry.canonicalKey) || normalized === normalizeName(entry.displayName)) {
-        return { ...entry, matchedBy: 'canonical' };
-      }
-      if (entry.aliases.some((alias) => normalizeName(alias) === normalized)) {
-        return { ...entry, matchedBy: 'alias' };
-      }
+    const entry = LOOKUP.get(normalized);
+    if (entry) {
+      const canonicalMatch =
+        normalized === normalizeName(entry.canonicalKey) ||
+        normalized === normalizeName(entry.displayName);
+      return {
+        ...entry,
+        aliases: undefined as never,
+        matchedBy: canonicalMatch ? 'canonical' : 'alias',
+      };
     }
 
     return {
@@ -75,7 +89,13 @@ export class IngredientTaxonomyService {
       displayName: name.normalize('NFKC').trim(),
       foodGroup: 'other',
       matchedBy: 'unknown',
+      confidence: 0,
+      provenance: 'unresolved-input',
     };
+  }
+
+  canonicalizeMany(names: string[]): CanonicalIngredient[] {
+    return names.map((name) => this.canonicalize(name));
   }
 
   isKnown(name: string): boolean {
