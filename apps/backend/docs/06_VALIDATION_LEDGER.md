@@ -51,16 +51,26 @@ This is intentionally a **foundation**, not a claim that the full global ingredi
 
 `ingredient-taxonomy.service.spec.ts` covers Persian normalization, trusted alias matching, unknown-input behavior, empty input, and deterministic output.
 
-### Next step
+## 2026-09-05 — Food context normalization foundation
 
-Expand the taxonomy from verified data and connect canonical IDs to durable recipe metadata only after a two-pass database design review. Do not infer allergen safety from free-text recipe names.
+### Scope
+
+Added `FoodContextNormalizationService` for conservative cuisine-family and country-code normalization. It accepts known aliases, converts valid two-letter country codes to uppercase, and returns `other`/`null` instead of inventing unsupported semantic matches.
+
+### Tests added
+
+`food-context-normalization.service.spec.ts` covers cuisine aliases, unknown cuisine safety, country-code normalization, and Persian orthography handling.
+
+### Safety boundary
+
+This layer is normalization infrastructure only. It does not replace missing durable recipe metadata and does not enable hard dietary/allergy filtering.
 
 ## Next engineering priorities
 
 1. Two-pass review of the validated slice and PR #66 without changing green behavior unnecessarily.
 2. Address the P0 Android native voice crash reported for specific Persian TTS voices before expanding voice coverage.
 3. Preserve the working Venus/Ganji/Khadijah voice paths while isolating the failing native model/resource lifecycle.
-4. Continue canonical ingredient/region/cuisine normalization and verified recipe-corpus expansion after the voice P0 is contained.
+4. Expand canonical ingredient/region/cuisine normalization from verified data and then design durable recipe metadata.
 5. Build the mobile food journey against the validated Recommendation Intelligence API.
 6. Implement and validate the gender-aware onboarding visual system.
 7. Continue production hardening, observability and E2E teardown cleanup.
