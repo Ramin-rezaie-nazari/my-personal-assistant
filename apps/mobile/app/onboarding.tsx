@@ -12,6 +12,7 @@ import { AppLocale, getStoredLocale } from '../lib/i18n';
 import { DEFAULT_ONBOARDING, OnboardingState, calculateBMI, setOnboardingState } from '../lib/onboarding';
 import { BRAND } from '../lib/branding';
 import { BrandWordmark } from '../components/BrandWordmark';
+import { useAppTheme } from '../lib/app-theme';
 
 const QUESTION_COUNT = 5;
 const LAST_SCREEN = 7;
@@ -29,6 +30,7 @@ export default function OnboardingScreen() {
   const fade = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(18)).current;
   const rtl = locale === 'fa';
+  const { setThemeForGender } = useAppTheme();
 
   useEffect(() => { void getStoredLocale().then((value) => value && setLocale(value)); }, []);
   useEffect(() => {
@@ -38,6 +40,9 @@ export default function OnboardingScreen() {
       Animated.timing(slide, { toValue: 0, duration: 400, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ]).start();
   }, [fade, screen, slide]);
+  useEffect(() => {
+    if (state.gender) void setThemeForGender(state.gender);
+  }, [setThemeForGender, state.gender]);
 
   const copy = useMemo(() => getCopy(rtl, screen), [rtl, screen]);
   const bmi = calculateBMI(Number(state.heightCm), Number(state.weightKg));
