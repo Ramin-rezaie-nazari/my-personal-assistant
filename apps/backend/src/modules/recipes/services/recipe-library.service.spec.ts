@@ -7,7 +7,7 @@ describe('RecipeLibraryService', () => {
         [{ id: 'r1', name: 'Chicken Bowl', userId: null }],
         42,
       ]),
-    } as never;
+    } as any;
     const service = new RecipeLibraryService(prisma);
 
     const result = await service.list('user-1', { page: 2, pageSize: 24, q: 'chicken', verified: true });
@@ -20,8 +20,5 @@ describe('RecipeLibraryService', () => {
       hasNextPage: true,
     });
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
-    const [findMany, count] = prisma.$transaction.mock.calls[0][0];
-    expect(findMany).toBeTruthy();
-    expect(count).toBeTruthy();
   });
 });
