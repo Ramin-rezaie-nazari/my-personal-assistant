@@ -77,11 +77,21 @@ This layer is normalization infrastructure only. It does not replace missing dur
 
 ### Static finding
 
-The tracked Persian local TTS provider caches a shared native `TtsEngine`. Playback cancellation uses a token, but in-flight `generateSpeech()` work is not explicitly serialized against subsequent generation or engine destruction. This is a credible native-lifecycle hypothesis for the reported Android mutex crash, but it is **not** proof of the root cause.
+The tracked Persian local TTS provider caches a shared native `TtsEngine`. Playback cancellation used a token, but in-flight `generateSpeech()` work was not explicitly serialized against subsequent generation or engine destruction. This is a credible native-lifecycle hypothesis for the reported Android mutex crash, but it is **not** proof of the root cause.
 
-### Tracking
+### Hardening implemented
 
-GitHub issue **#67 — P0 Android voice crash: Sherpa-ONNX native mutex lifecycle** was created with the reproduction family, investigation matrix and safety constraints.
+`apps/mobile/lib/local-persian-tts.ts` now serializes native TTS operations through a single promise queue. Release marks the provider as releasing before entering that queue, so new generations are blocked while an already-running native generation is allowed to finish. Engine destruction is then queued after the active native operation.
+
+Generated audio cleanup and stale playback-token protection remain in place.
+
+### Runtime dependency correction
+
+The mobile manifest now explicitly declares the packages used by the tracked local voice path: `expo-av`, `expo-file-system`, and `react-native-sherpa-onnx`.
+
+The manifest currently targets Expo SDK 53 / React Native 0.79, with `expo-av ~15.1.7` and `react-native-sherpa-onnx ^0.4.3`.
+
+This change still requires a fresh lockfile update plus mobile typecheck/Expo export validation on the user's runtime before it can be marked green.
 
 ### Required device validation
 
@@ -93,13 +103,13 @@ The local Android candidate WIP must still be inspected and tested for shared-en
 
 **Food taxonomy/context: foundation implemented; durable schema work intentionally deferred pending two-pass Prisma review.**
 
-**Voice P0: contained and tracked; unresolved pending direct Android WIP/device evidence.**
+**Voice P0: lifecycle race narrowed in tracked JS/native boundary; unresolved pending lockfile validation and direct Android WIP/device evidence.**
 
 ## Next engineering priorities
 
-1. Complete the two-pass review of the validated Recommendation slice and current branch dependency surface.
+1. Validate the updated mobile dependency graph and type/bundle the app.
 2. Resolve the P0 Android voice lifecycle issue using the local candidate WIP and real-device evidence.
-3. Expand canonical ingredient/region/cuisine normalization from verified data and finalize durable recipe metadata relations/indexes.
+3. Complete the two-pass Prisma review for durable canonical recipe metadata.
 4. Build the mobile food journey against the validated Recommendation Intelligence API.
 5. Implement and validate the gender-aware onboarding visual system.
 6. Continue production hardening, observability and E2E teardown cleanup.
