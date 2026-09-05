@@ -97,20 +97,50 @@ This change still requires a fresh lockfile update plus mobile typecheck/Expo ex
 
 The local Android candidate WIP must still be inspected and tested for shared-engine vs fresh-engine behavior, repeated generation, stop/interruption, voice switching, background/foreground and release. Known-good Venus/Ganji/Khadijah paths remain protected from speculative changes.
 
+## 2026-09-05 — Shopping authorization hardening
+
+### Finding
+
+`ShoppingService` previously loaded `foodItem` and `recipe` by ID alone. That allowed a caller with another user's identifier to reference a private food item or recipe while creating shopping data under the caller's own account.
+
+### Fix
+
+- Food lookup is now constrained to global food (`userId: null`) or the authenticated caller.
+- Recipe lookup is now constrained to global recipe (`userId: null`) or the authenticated caller.
+- Invalid shopping quantities are now rejected with `BadRequestException` and require a finite positive number.
+- Added regression tests covering cross-user food and recipe access boundaries.
+
+### Result
+
+The shopping write path now follows the same ownership boundary already used by Inventory and Recipes services.
+
+## 2026-09-05 — Mobile visual theme foundation
+
+### Scope
+
+Added a provider-independent visual theme contract with `default` and `feminine` themes, plus persisted onboarding theme state derived from the selected gender. The design keeps the theme as a presentation concern rather than branching business logic.
+
+### Status
+
+**Foundation implemented; full UI rollout and physical-device validation remain pending.**
+
 ## Checkpoint status
 
 **Backend Recommendation Intelligence: validated green locally.**
 
 **Food taxonomy/context: foundation implemented; durable schema work intentionally deferred pending two-pass Prisma review.**
 
+**Shopping authorization: ownership boundary hardened; regression coverage added; user-runtime validation still required.**
+
+**Mobile visual theme: foundation implemented; full UI wiring/device validation pending.**
+
 **Voice P0: lifecycle race narrowed in tracked JS/native boundary; unresolved pending lockfile validation and direct Android WIP/device evidence.**
 
 ## Next engineering priorities
 
-1. Validate the updated mobile dependency graph and type/bundle the app.
+1. Validate the updated mobile dependency graph and backend security regression tests on the user's runtime.
 2. Resolve the P0 Android voice lifecycle issue using the local candidate WIP and real-device evidence.
-3. Complete the two-pass Prisma review for durable canonical recipe metadata.
-4. Build the mobile food journey against the validated Recommendation Intelligence API.
-5. Implement and validate the gender-aware onboarding visual system.
-6. Continue production hardening, observability and E2E teardown cleanup.
-7. Keep the current validation rule: success output should remain quiet; only failures/errors need to be surfaced during user-runtime test commands.
+3. Complete the feminine/default theme rollout and mobile food journey.
+4. Complete the two-pass Prisma review for durable canonical recipe metadata.
+5. Continue production hardening, observability and E2E teardown cleanup.
+6. Keep the current validation rule: success output should remain quiet; only failures/errors need to be surfaced during user-runtime test commands.
