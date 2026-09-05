@@ -18,6 +18,7 @@ export const translations = {
     goal: 'Goal', habits: 'Habits', reminders: 'Reminders', supplements: 'Supplements', workout: 'Workout', progress: 'Progress', settings: 'Settings', logOut: 'Log out', retry: 'Retry',
     home: 'Home', calendar: 'Calendar', inbox: 'Inbox', meals: 'Meals', nutrition: 'Nutrition', inventory: 'Inventory', shopping: 'Shopping', fitness: 'Fitness', assistant: 'Assistant',
     loading: 'Loading…', save: 'Save', cancel: 'Cancel', back: 'Back', next: 'Next', done: 'Done', open: 'Open', close: 'Close', edit: 'Edit', delete: 'Delete', add: 'Add',
+    commandWaterLogged: '500 ml of water logged.', commandWalkLogged: '20 min walk logged.', commandStrengthLogged: '45 min strength workout logged.', commandReminderCreated: 'Reminder created for 20:00.', commandReminderTitle: 'Check in with My Personal Assistant',
   },
   fa: {
     languageTitle: 'زبان خودت را انتخاب کن', languageSubtitle: 'دستیار تو همه‌جا با همین زبان با تو صحبت می‌کند.', persian: 'فارسی', english: 'English', continue: 'ادامه',
@@ -26,6 +27,7 @@ export const translations = {
     goal: 'هدف', habits: 'عادت‌ها', reminders: 'یادآوری‌ها', supplements: 'مکمل‌ها', workout: 'ورزش', progress: 'پیشرفت', settings: 'تنظیمات', logOut: 'خروج', retry: 'تلاش دوباره',
     home: 'خانه', calendar: 'تقویم', inbox: 'صندوق اعلان‌ها', meals: 'غذاها', nutrition: 'تغذیه', inventory: 'موجودی خانه', shopping: 'خرید', fitness: 'تمرین', assistant: 'دستیار',
     loading: 'در حال بارگذاری…', save: 'ذخیره', cancel: 'لغو', back: 'برگشت', next: 'بعدی', done: 'انجام شد', open: 'باز کردن', close: 'بستن', edit: 'ویرایش', delete: 'حذف', add: 'افزودن',
+    commandWaterLogged: '۵۰۰ میلی‌لیتر آب ثبت شد.', commandWalkLogged: '۲۰ دقیقه پیاده‌روی ثبت شد.', commandStrengthLogged: 'تمرین قدرتی ۴۵ دقیقه‌ای ثبت شد.', commandReminderCreated: 'یادآوری برای ساعت ۲۰:۰۰ ساخته شد.', commandReminderTitle: 'پیگیری با دستیار شخصی من',
   },
 } as const;
 
