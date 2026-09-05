@@ -1,10 +1,16 @@
 import { CalisthenicsLibraryService } from '../../calisthenics/services/calisthenics-library.service';
 import { GymLibraryService } from '../../gym/services/gym-library.service';
 import { YogaLibraryService } from '../../yoga/services/yoga-library.service';
+import { PrismaService } from '../../../common/database/prisma.service';
 import { FitnessCatalogService } from './fitness-catalog.service';
 
 describe('FitnessCatalogService', () => {
+  const prisma = {
+    $queryRaw: jest.fn().mockRejectedValue(new Error('persistent fitness catalog unavailable')),
+    $executeRaw: jest.fn(),
+  } as unknown as PrismaService;
   const service = new FitnessCatalogService(
+    prisma,
     new GymLibraryService(),
     new CalisthenicsLibraryService(),
     new YogaLibraryService(),
@@ -12,6 +18,7 @@ describe('FitnessCatalogService', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
   it('exposes exactly ten progression levels and never leaks harder items into a lower level', async () => {
