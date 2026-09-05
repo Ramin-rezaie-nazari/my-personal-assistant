@@ -65,9 +65,13 @@ export class FitnessCatalogService {
     const equipment = new Set((input.equipment ?? []).map(normalize).filter(Boolean));
 
     const local = this.localItems(input.discipline);
-    const external = input.discipline === 'yoga' ? [] : (await this.externalItems()).filter((item) => this.matchesDiscipline(item, input.discipline)).map((item) => this.normalizeExternal(item, input.discipline));
+    const external = input.discipline === 'yoga'
+      ? []
+      : (await this.externalItems())
+          .filter((item) => this.matchesDiscipline(item, input.discipline))
+          .map((item) => this.normalizeExternal(item, input.discipline));
     const merged = dedupeByName([...local, ...external])
-      .filter((item) => item.difficultyLevel <= level + 1 || item.difficultyLevel >= level)
+      .filter((item) => item.difficultyLevel <= level)
       .filter((item) => !query || normalize(`${item.name} ${item.focus.join(' ')}`).includes(query))
       .filter((item) => !equipment.size || item.equipment.some((value) => equipment.has(normalize(value))))
       .sort((a, b) => a.difficultyLevel - b.difficultyLevel || a.name.localeCompare(b.name));
@@ -89,8 +93,11 @@ export class FitnessCatalogService {
   }
 
   async getOne(discipline: FitnessDiscipline, id: string) {
-    const result = await this.list({ discipline, page: 1, pageSize: 50, query: id });
-    return result.items.find((item) => item.id === id || normalize(item.name) === normalize(id)) ?? null;
+    const local = this.localItems(discipline).find((item) => item.id === id);
+    if (local) return local;
+    if (discipline === 'yoga') return null;
+    const external = (await this.externalItems()).find((item) => `public-${item.id}` === id);
+    return external ? this.normalizeExternal(external, discipline) : null;
   }
 
   private localItems(discipline: FitnessDiscipline): FitnessCatalogItem[] {
