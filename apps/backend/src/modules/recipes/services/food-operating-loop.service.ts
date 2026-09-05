@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { RecipeServingScalingService } from '../../nutrition/recipe-intelligence/recipe-serving-scaling.service';
 import { ShoppingService } from '../../shopping/shopping.service';
@@ -75,7 +75,7 @@ export class FoodOperatingLoopService {
   ) {
     this.validateServings(targetServings);
     if (maxMissingIngredients !== undefined && (!Number.isInteger(maxMissingIngredients) || maxMissingIngredients < 0)) {
-      throw new NotFoundException('maxMissingIngredients must be a non-negative integer');
+      throw new BadRequestException('maxMissingIngredients must be a non-negative integer');
     }
     const [recipes, inventory, nutritionProfile] = await Promise.all([
       this.prisma.recipe.findMany({ where: { OR: [{ userId: null }, { userId }] }, include: { ingredients: { include: { food: true } } } }),
@@ -134,7 +134,7 @@ export class FoodOperatingLoopService {
   }
 
   private validateServings(targetServings: number) {
-    if (!Number.isInteger(targetServings) || targetServings <= 0 || targetServings > 10000) throw new NotFoundException('targetServings must be an integer between 1 and 10000');
+    if (!Number.isInteger(targetServings) || targetServings <= 0 || targetServings > 10000) throw new BadRequestException('targetServings must be an integer between 1 and 10000');
   }
 
   private buildScaledRecipe(recipe: { id: string; name: string; servings: number; verified: boolean; userId: string | null; calories: number; protein: number; carbs: number; fat: number; ingredients: RecipeIngredientPersisted[] }, targetServings: number) {
@@ -166,6 +166,7 @@ export class FoodOperatingLoopService {
   }
 }
 
+type NormalizedUnit = { kind: ComparableUnitKind; value: number } | null;
 function normalizeUnit(quantity: number, unit: string): NormalizedUnit {
   const normalized = unit.trim().toLowerCase();
   if (['g', 'gr', 'gram', 'grams', 'گرم'].includes(normalized)) return { kind: 'mass', value: quantity };
@@ -179,7 +180,6 @@ function normalizeUnit(quantity: number, unit: string): NormalizedUnit {
   return null;
 }
 
-type NormalizedUnit = { kind: ComparableUnitKind; value: number } | null;
 function denormalizeUnit(value: number, kind: ComparableUnitKind, unit: string): number {
   const normalized = unit.trim().toLowerCase();
   if (kind === 'mass') {
