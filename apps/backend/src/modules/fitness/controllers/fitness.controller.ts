@@ -1,23 +1,29 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
   Get,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { FitnessGoal, FitnessProfile } from '../models/fitness.model';
 import { FitnessProfileService } from '../services/fitness-profile.service';
+import { FitnessCatalogService, FitnessDiscipline } from '../services/fitness-catalog.service';
 
 type AuthenticatedRequest = { user: { sub: string } };
 
 @Controller('fitness')
 @UseGuards(JwtAuthGuard)
 export class FitnessController {
-  constructor(private readonly profile: FitnessProfileService) {}
+  constructor(
+    private readonly profile: FitnessProfileService,
+    private readonly catalog: FitnessCatalogService,
+  ) {}
 
   @Get('profile')
   getProfile(@Req() req: AuthenticatedRequest) {
@@ -27,6 +33,38 @@ export class FitnessController {
   @Get('context')
   context(@Req() req: AuthenticatedRequest) {
     return this.profile.buildRecommendationContext(req.user.sub);
+  }
+
+  @Get('catalog')
+  catalogList(
+    @Query('discipline') discipline?: FitnessDiscipline,
+    @Query('level') levelText?: string,
+    @Query('q') query?: string,
+    @Query('page') pageText?: string,
+    @Query('pageSize') pageSizeText?: string,
+    @Query('equipment') equipmentCsv?: string,
+  ) {
+    if (!discipline || !['gym', 'calisthenics', 'yoga'].includes(discipline)) {
+      throw new BadRequestException('discipline must be gym, calisthenics or yoga');
+    }
+    return this.catalog.list({
+      discipline,
+      level: parseOptionalInt(levelText, 'level', 1, 10),
+      page: parseOptionalInt(pageText, 'page', 1, 100000),
+      pageSize: parseOptionalInt(pageSizeText, 'pageSize', 1, 50),
+      query,
+      equipment: equipmentCsv?.split(',').map((value) => value.trim()).filter(Boolean),
+    });
+  }
+
+  @Get('catalog/:discipline/:id')
+  async catalogOne(@Param('discipline') discipline: string, @Param('id') id: string) {
+    if (!['gym', 'calisthenics', 'yoga'].includes(discipline)) {
+      throw new BadRequestException('discipline must be gym, calisthenics or yoga');
+    }
+    const item = await this.catalog.getOne(discipline as FitnessDiscipline, id);
+    if (!item) throw new BadRequestException('exercise not found');
+    return item;
   }
 
   @Post('profile')
@@ -62,4 +100,13 @@ export class FitnessController {
   parseGoal(@Body() body: { text: string }) {
     return this.profile.parseNaturalGoal(body.text);
   }
+}
+
+function parseOptionalInt(value: string | undefined, name: string, min: number, max: number) {
+  if (!value?.trim()) return undefined;
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < min || parsed > max) {
+    throw new BadRequestException(`${name} must be an integer between ${min} and ${max}`);
+  }
+  return parsed;
 }
