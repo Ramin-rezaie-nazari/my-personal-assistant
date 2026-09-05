@@ -12,8 +12,9 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { FitnessGoal, FitnessProfile } from '../models/fitness.model';
+import { FitnessCatalogService } from '../services/fitness-catalog.service';
+import type { FitnessDiscipline } from '../services/fitness-catalog.service';
 import { FitnessProfileService } from '../services/fitness-profile.service';
-import { FitnessCatalogService, FitnessDiscipline } from '../services/fitness-catalog.service';
 import { FitnessProgressService } from '../services/fitness-progress.service';
 
 type AuthenticatedRequest = { user: { sub: string } };
