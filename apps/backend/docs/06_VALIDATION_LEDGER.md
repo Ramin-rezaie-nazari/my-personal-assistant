@@ -37,10 +37,31 @@ The E2E run has historically emitted a Jest open-handle / worker-teardown warnin
 
 The user's local workspace contains unrelated voice/native experimentation and runner WIP. Those files are intentionally not included in the Recommendation Intelligence change set.
 
+## 2026-09-05 — Canonical ingredient taxonomy foundation
+
+### Scope
+
+Added a conservative, provider-independent `IngredientTaxonomyService` with explicit trusted aliases for a small starter registry. The service normalizes Persian/Arabic orthography, preserves unknown ingredients without guessing, exposes food-group classification, and is registered by `RecipesModule`.
+
+### Safety boundary
+
+This is intentionally a **foundation**, not a claim that the full global ingredient corpus is normalized. Unknown inputs remain `matchedBy: 'unknown'`; no hard allergy/dietary filtering is derived from fuzzy name matching.
+
+### Tests added
+
+`ingredient-taxonomy.service.spec.ts` covers Persian normalization, trusted alias matching, unknown-input behavior, empty input, and deterministic output.
+
+### Next step
+
+Expand the taxonomy from verified data and connect canonical IDs to durable recipe metadata only after a two-pass database design review. Do not infer allergen safety from free-text recipe names.
+
 ## Next engineering priorities
 
 1. Two-pass review of the validated slice and PR #66 without changing green behavior unnecessarily.
 2. Address the P0 Android native voice crash reported for specific Persian TTS voices before expanding voice coverage.
 3. Preserve the working Venus/Ganji/Khadijah voice paths while isolating the failing native model/resource lifecycle.
-4. Continue with canonical ingredient/region/cuisine normalization and verified recipe-corpus expansion after the voice P0 is contained.
-5. Keep the current validation rule: success output should remain quiet; only failures/errors need to be surfaced during user-runtime test commands.
+4. Continue canonical ingredient/region/cuisine normalization and verified recipe-corpus expansion after the voice P0 is contained.
+5. Build the mobile food journey against the validated Recommendation Intelligence API.
+6. Implement and validate the gender-aware onboarding visual system.
+7. Continue production hardening, observability and E2E teardown cleanup.
+8. Keep the current validation rule: success output should remain quiet; only failures/errors need to be surfaced during user-runtime test commands.
