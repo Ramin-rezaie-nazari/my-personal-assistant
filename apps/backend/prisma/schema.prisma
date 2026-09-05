@@ -290,7 +290,7 @@ model Meal {
   type String
   eatenAt DateTime @default(now())
   calories Int @default(0)
-  protein Int @default(0)
+  protein Float @default(0)
   carbs Float @default(0)
   fat Float @default(0)
   createdAt DateTime @default(now())
@@ -345,7 +345,7 @@ model Recipe {
   imageSource String?
   servings Int @default(2)
   calories Int @default(0)
-  protein Int @default(0)
+  protein Float @default(0)
   carbs Float @default(0)
   fat Float @default(0)
   verified Boolean @default(false)
