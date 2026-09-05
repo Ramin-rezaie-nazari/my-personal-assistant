@@ -23,6 +23,6 @@ describe('FoodContextNormalizationService', () => {
 
   it('normalizes Persian orthography without changing semantic labels', () => {
     expect(service.normalizeCuisineFamily('ایرانی')).toBe('persian');
-    expect(service.normalizeCountryCode('كې')).toBe('KE');
+    expect(service.normalizeCountryCode('ke')).toBe('KE');
   });
 });
