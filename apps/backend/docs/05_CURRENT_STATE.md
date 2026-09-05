@@ -2,7 +2,7 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Latest validated local backend checkpoint: 2026-09-05. Recommendation Intelligence is green locally; shopping ownership hardening has been implemented with focused regression tests. CI/mobile/device validation is not yet claimed green.
+> Latest validated local backend checkpoint: 2026-09-05. Recommendation Intelligence is green locally; shopping ownership hardening is green under focused user-runtime regression; the food taxonomy persistence layer has passed two explicit design reviews and is awaiting runtime/CI migration validation. CI/mobile/device validation is not yet claimed green.
 
 ## Executive status
 
@@ -17,14 +17,17 @@ Frozen-lockfile backend install:       PASS
 Backend typecheck:                     PASS
 Backend build:                         PASS
 Recommendation focused tests:          PASS (2 suites / 5 tests)
-Full backend Jest:                     PASS
+Full backend Jest:                     PASS (160 suites / 429 tests)
 Recommendation Intelligence E2E:       PASS
-Shopping ownership regression tests:   ADDED (runtime execution pending)
+Shopping ownership regression tests:   PASS (1 suite / 2 tests)
+Food taxonomy Prisma design review:    PASS (two-pass review completed)
+Food taxonomy migration runtime/CI:    PENDING
+Mobile typecheck/export/device:        PENDING
 ```
 
 The historical non-fatal Jest E2E worker teardown/open-handle warning remains a production-hardening item.
 
-CI for the current branch head has not been independently confirmed through GitHub status data, so this document does not claim CI-green.
+CI for the latest branch head is running after the current changes; this document does not claim CI-green until the runs finish successfully.
 
 ## Current work — Food Decision Brain / Recommendation Intelligence
 
@@ -72,15 +75,28 @@ Known non-blocking issue: the E2E run can emit a Jest worker-teardown/open-handl
 - Deterministic `FoodContextNormalizationService` for cuisine-family aliases and conservative two-letter country-code normalization.
 - Explicit unresolved behavior for unknown values rather than guessed semantic matches.
 
+### Durable persistence foundation
+
+After two explicit reviews, the branch now contains an additive Prisma schema and migration for canonical metadata:
+
+- `IngredientCanonical` + `IngredientCanonicalAlias` with provenance/version metadata.
+- Nullable/indexed `FoodItem.canonicalIngredientId` and `RecipeIngredient.canonicalIngredientId`.
+- `CuisineCanonical` with explicit hierarchy.
+- `RegionCanonical` with country/region separation.
+- `RecipeCuisine` and `RecipeRegion` many-to-many joins.
+- `RecipeSafetyAssertion` for explicit provenance-backed dietary/allergen assertions with verification state.
+
+The migration does not rewrite historical free-text, does not auto-backfill canonical IDs, and uses `SET NULL` when canonical references are removed.
+
 ### Still not complete
 
 - Large verified ingredient corpus.
-- Durable canonical ingredient/cuisine schema and relations.
-- Region/cuisine structured joins across recipes.
+- Verified seed data with provenance.
+- Runtime/CI migration deployment and idempotence validation.
+- Region/cuisine structured joins populated across recipes.
 - Provenance/versioning at catalog scale.
-- Allergens/dietary assertions with provenance.
-
-No database migration has been introduced yet; this remains intentionally deferred until a two-pass Prisma review is complete.
+- Allergens/dietary assertions with trusted catalog coverage.
+- Integration of canonical linkage into recipe/inventory/recommendation matching.
 
 ## Current work — Shopping / inventory security
 
@@ -97,7 +113,7 @@ Regression coverage was added for:
 
 ### Validation state
 
-**Implementation complete; user-runtime regression execution still required.**
+**Runtime regression validated: PASS (1 suite / 2 tests).**
 
 The existing Inventory and Recipes services already apply equivalent ownership boundaries.
 
@@ -115,6 +131,16 @@ Remaining:
 - use the same theme consistently through the main app;
 - add focused mobile theme/onboarding tests;
 - validate default/feminine visual behavior on real iOS/Android devices.
+
+## Current work — Mobile localization
+
+A single reactive locale store now controls the current top-level mobile routes and persists the first-run language choice. Quick Command result messages were additionally moved onto the shared locale contract so user-facing confirmation text is not hardcoded in English.
+
+### Status
+
+**Architecture + top-level rollout implemented; nested UI audit and runtime validation remain.**
+
+Known remaining risk: some future or nested components may still contain hardcoded user-facing English. Server-provided free-form content is not silently translated.
 
 ## Current work — Voice P0
 
@@ -251,25 +277,26 @@ Remaining:
 | Personal Brain / deterministic intelligence | 66% |
 | Nutrition foundations | 74% |
 | Fitness / Yoga / Calisthenics / Gym | 75% |
-| Recipe & Food Intelligence | 66% |
-| Inventory / Shopping / Price Intelligence | 71% |
-| Mobile product / UX | 24% |
-| AI orchestration / voice / globalization | 42% |
-| QA / Security / Production hardening | 53% |
+| Recipe & Food Intelligence | 68% |
+| Inventory / Shopping / Price Intelligence | 72% |
+| Mobile product / UX | 25% |
+| AI orchestration / voice / globalization | 43% |
+| QA / Security / Production hardening | 54% |
 | Business / Monetization | 0% |
 
 **Weighted overall index: ~66%.**
 
 ## Immediate next priorities
 
-1. Run the new shopping security regression suite plus the current backend validation gates on the user's runtime, keeping output quiet on success.
-2. Finish the two-pass Prisma review for durable ingredient/cuisine/allergen metadata before any migration.
-3. Complete the mobile visual theme rollout and wire the validated Recommendation API into the mobile food journey.
-4. Resolve Voice P0 with the user's local Android WIP and real-device evidence.
-5. Continue authorization, rate-limit, observability and E2E teardown hardening.
-6. Integrate Global Market / Price Intelligence only after conflict/dependency/regression review.
-7. Expand verified recipe corpus and provenance.
-8. Add monetization only after the core user journey is genuinely release-ready.
+1. Validate the new Prisma migration with schema generation, migration deploy/status/idempotence and full backend gates on the user's runtime/CI.
+2. Add a small verified ingredient/cuisine seed set with explicit provenance and keep unverified rows unresolved.
+3. Finish the nested mobile localization audit and wire the validated Recommendation API into the mobile food journey.
+4. Complete the feminine/default theme rollout and focused mobile validation.
+5. Resolve Voice P0 with the user's local Android WIP and real-device evidence.
+6. Continue authorization, rate-limit, observability and E2E teardown hardening.
+7. Integrate Global Market / Price Intelligence only after conflict/dependency/regression review.
+8. Expand the verified recipe corpus and provenance.
+9. Add monetization only after the core user journey is genuinely release-ready.
 
 ## Working rule
 
