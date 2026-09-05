@@ -3,10 +3,11 @@ import { RecipeLibraryService } from './recipe-library.service';
 describe('RecipeLibraryService', () => {
   it('keeps library queries bounded, searchable and owner-aware', async () => {
     const prisma = {
-      $transaction: jest.fn().mockResolvedValue([
-        [{ id: 'r1', name: 'Chicken Bowl', userId: null }],
-        42,
-      ]),
+      recipe: {
+        findMany: jest.fn().mockResolvedValue([{ id: 'r1', name: 'Chicken Bowl', userId: null }]),
+        count: jest.fn().mockResolvedValue(42),
+      },
+      $transaction: jest.fn((queries: Promise<unknown>[]) => Promise.all(queries)),
     } as any;
     const service = new RecipeLibraryService(prisma);
 
@@ -20,5 +21,7 @@ describe('RecipeLibraryService', () => {
       hasNextPage: true,
     });
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.recipe.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 24, take: 24 }));
+    expect(prisma.recipe.count).toHaveBeenCalledTimes(1);
   });
 });
