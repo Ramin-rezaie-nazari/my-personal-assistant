@@ -101,6 +101,31 @@ No production dietary/allergen hard filtering should depend on this first slice 
 6. Integrate recipe/inventory/recommendation matching.
 7. Add true hard dietary/allergen filtering only after verified metadata exists.
 
+## Current implementation checkpoint — 2026-09-05
+
+### Completed
+
+- `IngredientTaxonomyService` added as a deterministic provider-independent foundation.
+- Trusted starter aliases cover a small verified seed set rather than pretending to be a complete global corpus.
+- Persian/Arabic orthography, zero-width-joiner, punctuation and spacing normalization are handled consistently.
+- Unknown ingredients remain explicit unresolved values instead of being fuzzy-matched into a canonical identity.
+- Canonical results expose `confidence` and `provenance` so downstream safety logic can distinguish trusted mappings from unresolved input.
+- `canonicalizeMany(...)` provides deterministic batch normalization without introducing shared mutable result state.
+- `FoodContextNormalizationService` provides conservative country-code and cuisine-family normalization for routing/context.
+- `RecipesModule` owns both normalization services without creating a second food-calculation engine.
+- Focused tests cover trusted aliases, Persian normalization, unknown/empty behavior, provenance, batch normalization, cuisine aliases and country-code validation.
+
+### Explicit non-goals
+
+- No Prisma migration has been created.
+- No hard allergy/dietary filter is enabled from these services.
+- No fuzzy matching or machine-learned guessing is used for canonical safety decisions.
+- No attempt is made to claim full global ingredient coverage.
+
+### Next checkpoint
+
+Expand the canonical seed registry from verified data, then perform the required two-pass Prisma relation/index review before introducing durable canonical IDs into `FoodItem`, `RecipeIngredient`, `Recipe`, inventory or recipe metadata. The existing Recommendation Intelligence slice remains the canonical recommendation execution path and must not be duplicated here.
+
 ## Current status
 
-**Design started; no schema migration created.** The validated Recommendation Intelligence slice remains untouched while taxonomy work is isolated behind explicit contracts.
+**Foundation implemented; schema migration intentionally deferred until the canonical data contract and persistence relations pass two explicit reviews.**
