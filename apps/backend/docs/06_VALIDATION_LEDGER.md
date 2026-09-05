@@ -1,0 +1,46 @@
+# Validation Ledger — My Personal Assistant
+
+> Append-only engineering checkpoint record for validated repository/runtime gates. This file complements `05_CURRENT_STATE.md` and must never be used to overstate CI or device validation.
+
+## 2026-09-05 — Recommendation Intelligence vertical slice
+
+### Scope
+
+Deterministic Recommendation Intelligence built on top of the canonical Food Operating Loop, including personalization, stable ranking/diversification, explainability, authenticated API exposure, and strict request validation.
+
+### User-runtime validation
+
+All required backend gates completed successfully on the user's local macOS runtime:
+
+```text
+pnpm install --frozen-lockfile    PASS
+pnpm run typecheck                PASS
+pnpm run build                    PASS
+focused Recommendation tests     PASS (2 suites, 5 tests)
+full backend Jest                 PASS
+Recommendation Intelligence E2E   PASS
+```
+
+The focused tests include the controller validation regressions and recipe image compression regression that were fixed immediately before this checkpoint.
+
+### Result
+
+**Recommendation Intelligence backend vertical slice: VALIDATED GREEN locally.**
+
+No database migration was required for this slice. Existing Food Operating Loop logic remains the canonical recipe/serving/inventory/nutrition execution path.
+
+### Known non-blocking issue
+
+The E2E run has historically emitted a Jest open-handle / worker-teardown warning after tests complete. The warning does not change the observed E2E result, but it remains a production-hardening item and must not be silently forgotten.
+
+### Repository state note
+
+The user's local workspace contains unrelated voice/native experimentation and runner WIP. Those files are intentionally not included in the Recommendation Intelligence change set.
+
+## Next engineering priorities
+
+1. Two-pass review of the validated slice and PR #66 without changing green behavior unnecessarily.
+2. Address the P0 Android native voice crash reported for specific Persian TTS voices before expanding voice coverage.
+3. Preserve the working Venus/Ganji/Khadijah voice paths while isolating the failing native model/resource lifecycle.
+4. Continue with canonical ingredient/region/cuisine normalization and verified recipe-corpus expansion after the voice P0 is contained.
+5. Keep the current validation rule: success output should remain quiet; only failures/errors need to be surfaced during user-runtime test commands.
