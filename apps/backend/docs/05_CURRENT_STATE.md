@@ -60,6 +60,13 @@ A deterministic Recommendation Intelligence vertical slice is now implemented on
 
 **NOT YET VALIDATED GREEN.** Code and focused tests have been committed to the autonomous branch, but this environment cannot execute the repository's local `pnpm` toolchain against the user's database/runtime. CI status for the latest branch commit is not yet surfaced by the available GitHub status endpoint.
 
+The first user-runtime attempt exposed two integration/setup issues that have now been addressed in the branch:
+
+- The backend manifest had accidentally dropped the existing `sharp` dependency and loosened the Prisma package pins while leaving the lockfile unchanged. The manifest has been restored to the lock-compatible dependency intent, including `sharp` and exact Prisma 7.9.1 client/adapter versions.
+- The Recommendation Intelligence request DTO had no `class-validator` metadata. Because the test app uses a global whitelist/forbid-non-whitelisted validation pipe, this could reject valid request payloads. The DTO now has explicit validation/transformation decorators and bounds.
+
+The user-runtime output also showed that passing `--runInBand` as `pnpm test -- --runInBand` results in Jest receiving a literal `--` argument. The correct invocation is `pnpm test --runInBand`; the existing `test:e2e` script already includes `--runInBand`, so it should be invoked as `pnpm test:e2e` without another separator/flag.
+
 Required next validation checkpoint:
 
 1. `pnpm install --frozen-lockfile` from the repository root;
@@ -214,7 +221,7 @@ Focused result: **5/5 suites, 14/14 tests — PASS**.
 
 A larger stacked workstream exists in PR #48/#49 with 195-country market/source registry, routing, discovery-only fallbacks, cached FX, local-time scheduling, confidence scoring and price-source infrastructure.
 
-It is **not on `main`** because the workstream is stacked and PR #48 currently has merge conflicts. It must be integrated deliberately after dependency/dependency review rather than force-merged.
+It is **not on `main`** because the workstream is stacked and PR #48 currently has merge conflicts. It must be integrated deliberately after dependency review rather than force-merged.
 
 ## Mobile product — major work remains
 
