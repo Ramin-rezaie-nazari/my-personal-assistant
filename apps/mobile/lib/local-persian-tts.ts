@@ -1,6 +1,6 @@
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system/legacy';
-import { createTTS, saveAudioToFile, type TtsEngine } from 'react-native-sherpa-onnx';
+import * as FileSystem from 'expo-file-system';
+import { createTTS, saveAudioToFile, type TtsEngine } from 'react-native-sherpa-onnx/tts';
 import {
   extractArchive,
   listBundledArchives,
@@ -51,11 +51,11 @@ async function downloadArchive(): Promise<void> {
   const temporaryPath = `${ARCHIVE_PATH}.partial`;
   await FileSystem.deleteAsync(temporaryPath, { idempotent: true });
   try {
-    await FileSystem.downloadAsync(MODEL_URL, temporaryPath);
-    if (!(await isRealFile(temporaryPath))) {
+    const result = await FileSystem.downloadAsync(MODEL_URL, temporaryPath);
+    if (!(await isRealFile(result.uri || temporaryPath))) {
       throw new Error('Persian TTS model archive download was empty.');
     }
-    await FileSystem.moveAsync({ from: temporaryPath, to: ARCHIVE_PATH });
+    await FileSystem.moveAsync({ from: result.uri || temporaryPath, to: ARCHIVE_PATH });
   } catch (error) {
     await FileSystem.deleteAsync(temporaryPath, { idempotent: true });
     throw error;
@@ -203,7 +203,7 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
     activeSound = sound;
 
     await new Promise<void>((resolve, reject) => {
-      const handleStatus = (status: Audio.AVPlaybackStatus) => {
+      const handleStatus = (status: Parameters<NonNullable<Parameters<Audio.Sound['setOnPlaybackStatusUpdate']>[0]>>[0]) => {
         if (!status.isLoaded) {
           if (status.error) reject(new Error(status.error));
           return;
