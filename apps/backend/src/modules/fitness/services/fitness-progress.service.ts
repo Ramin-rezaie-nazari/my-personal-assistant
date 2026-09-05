@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { FitnessDiscipline } from '../models/fitness.model';
 
@@ -47,13 +48,14 @@ export class FitnessProgressService {
   }): Promise<FitnessProgress> {
     const difficulty = clamp(input.difficulty, 1, 10);
     const formScore = input.formScore == null ? null : clamp(input.formScore, 0, 100);
+    const id = randomUUID();
     await this.prisma.$executeRaw(Prisma.sql`
       INSERT INTO "FitnessDisciplineProgress" (
         "id", "userId", "discipline", "currentLevel", "sessionsCompleted", "completionRate",
         "formScoreAvg", "recentDifficulty", "createdAt", "updatedAt"
       )
       VALUES (
-        gen_random_uuid()::text, ${input.userId}, ${input.discipline}, ${difficulty},
+        ${id}, ${input.userId}, ${input.discipline}, ${difficulty},
         ${input.completed ? 1 : 0}, ${input.completed ? 1 : 0}, ${formScore}, ${difficulty}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       ON CONFLICT ("userId", "discipline") DO UPDATE SET
