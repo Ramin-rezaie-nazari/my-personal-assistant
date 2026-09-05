@@ -203,7 +203,7 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
     activeSound = sound;
 
     await new Promise<void>((resolve, reject) => {
-      const handleStatus = (status: Parameters<NonNullable<Parameters<Audio.Sound['setOnPlaybackStatusUpdate']>[0]>>[0]) => {
+      const handleStatus = (status) => {
         if (!status.isLoaded) {
           if (status.error) reject(new Error(status.error));
           return;
