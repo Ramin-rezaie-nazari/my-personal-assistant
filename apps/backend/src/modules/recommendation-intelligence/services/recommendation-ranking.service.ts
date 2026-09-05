@@ -24,26 +24,21 @@ export class RecommendationRankingService {
     );
 
     const result: RankedFoodRecommendation[] = [];
+    const remaining = [...sorted];
     const familyCounts = new Map<string, number>();
 
-    for (const candidate of sorted) {
-      const family = familyKey(candidate.name);
-      const count = familyCounts.get(family) ?? 0;
-      if (result.length < 3 && count >= 1) {
-        const laterDifferent = sorted.find(
-          (item) => !result.includes(item) && (familyCounts.get(familyKey(item.name)) ?? 0) === 0,
-        );
-        if (laterDifferent) continue;
-      }
+    while (remaining.length > 0 && result.length < Math.min(10, sorted.length)) {
+      const candidateIndex = result.length < 3
+        ? remaining.findIndex((item) => (familyCounts.get(familyKey(item.name)) ?? 0) === 0)
+        : 0;
+      const selectedIndex = candidateIndex >= 0 ? candidateIndex : 0;
+      const [candidate] = remaining.splice(selectedIndex, 1);
       result.push(candidate);
-      familyCounts.set(family, count + 1);
+      const family = familyKey(candidate.name);
+      familyCounts.set(family, (familyCounts.get(family) ?? 0) + 1);
     }
 
-    for (const candidate of sorted) {
-      if (!result.includes(candidate)) result.push(candidate);
-    }
-
-    return result.slice(0, 10).map((item, index) => ({ ...item, rank: index + 1 }));
+    return result.map((item, index) => ({ ...item, rank: index + 1 }));
   }
 }
 
