@@ -10,46 +10,35 @@ const copy = {
   en: { back:'Back', title:'Recipe library', subtitle:'Browse the recipes available to you.', search:'Search recipes…', verified:'Verified', servings:'servings', kcal:'kcal', protein:'protein', loadMore:'Load more', empty:'No recipes match your search.', error:'Could not load recipes.', retry:'Retry', done:'Showing all matching recipes' },
   fa: { back:'برگشت', title:'کتابخانه دستورها', subtitle:'همه دستورهایی که در اختیار توست.', search:'دستور غذا را جست‌وجو کن…', verified:'تأییدشده', servings:'نفر', kcal:'کالری', protein:'پروتئین', loadMore:'نمایش بیشتر', empty:'دستوری مطابق جست‌وجو پیدا نشد.', error:'دستورها بارگذاری نشدند.', retry:'تلاش دوباره', done:'همه موارد مطابق نمایش داده شد' },
 } as const;
+type RecipeCopy = typeof copy.en;
 
 export default function RecipeLibraryScreen() {
-  const locale = useAppLocale(); const text = copy[locale]; const rtl = locale === 'fa';
+  const locale = useAppLocale(); const text = copy[locale] as RecipeCopy; const rtl = locale === 'fa';
   const [items, setItems] = useState<RecipeLibraryItem[]>([]); const [page, setPage] = useState(1); const [hasNext, setHasNext] = useState(false); const [query, setQuery] = useState(''); const [loading, setLoading] = useState(true); const [moreLoading, setMoreLoading] = useState(false); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState<string | null>(null);
-
   const load = useCallback(async (reset: boolean) => {
-    try {
-      setError(null);
-      if (reset) setRefreshing(true); else setMoreLoading(true);
-      const nextPage = reset ? 1 : page + 1;
-      const response = await getRecipeLibrary(nextPage, 24, query);
-      setItems((current) => reset ? response.items : [...current, ...response.items]);
-      setPage(response.page); setHasNext(response.hasNextPage);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : text.error);
-    } finally {
-      setLoading(false); setMoreLoading(false); setRefreshing(false);
-    }
+    try { setError(null); if (reset) setRefreshing(true); else setMoreLoading(true); const nextPage = reset ? 1 : page + 1; const response = await getRecipeLibrary(nextPage, 24, query); setItems((current) => reset ? response.items : [...current, ...response.items]); setPage(response.page); setHasNext(response.hasNextPage); }
+    catch (err) { setError(err instanceof Error ? err.message : text.error); }
+    finally { setLoading(false); setMoreLoading(false); setRefreshing(false); }
   }, [page, query, text.error]);
-
   useEffect(() => { void hasAuthSession().then((ok) => { if (!ok) router.replace('/auth'); else void load(true); }); }, [load]);
   useEffect(() => { const timer = setTimeout(() => { if (!loading) void load(true); }, 300); return () => clearTimeout(timer); }, [query]);
-
   if (loading) return <View style={styles.center}><ActivityIndicator size="large"/></View>;
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void load(true)}/>}>
-    <View style={[styles.nav, rtl && styles.rtl]}><Pressable onPress={() => router.back()}><Text style={styles.back}>{rtl ? '→' : '←'} {text.back}</Text></Pressable><Text style={styles.count}>{items.length}</Text></View>
-    <Text style={[styles.title, rtl && styles.textRtl]}>{text.title}</Text><Text style={[styles.subtitle, rtl && styles.textRtl]}>{text.subtitle}</Text>
-    <TextInput value={query} onChangeText={setQuery} placeholder={text.search} placeholderTextColor="#9CA3AF" style={[styles.search, rtl && styles.textRtl]}/>
+    <View style={[styles.nav, rtl ? styles.rtl : undefined]}><Pressable onPress={() => router.back()}><Text style={styles.back}>{rtl ? '→' : '←'} {text.back}</Text></Pressable><Text style={styles.count}>{items.length}</Text></View>
+    <Text style={[styles.title, rtl ? styles.textRtl : undefined]}>{text.title}</Text><Text style={[styles.subtitle, rtl ? styles.textRtl : undefined]}>{text.subtitle}</Text>
+    <TextInput value={query} onChangeText={setQuery} placeholder={text.search} placeholderTextColor="#9CA3AF" style={[styles.search, rtl ? styles.textRtl : undefined]}/>
     {error ? <View style={styles.error}><Text style={styles.errorTitle}>{text.error}</Text><Text style={styles.errorBody}>{error}</Text><Pressable onPress={() => void load(true)} style={styles.retry}><Text style={styles.retryText}>{text.retry}</Text></Pressable></View> : null}
-    {items.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} locale={locale} text={text} rtl={rtl}/>) }
+    {items.map((recipe) => <RecipeCard key={recipe.id} recipe={recipe} text={text} rtl={rtl}/>) }
     {hasNext ? <Pressable disabled={moreLoading} onPress={() => void load(false)} style={styles.loadMore}><Text style={styles.loadMoreText}>{moreLoading ? '…' : text.loadMore}</Text></Pressable> : <Text style={styles.done}>{text.done}</Text>}
   </ScrollView></SafeAreaView>;
 }
 
-function RecipeCard({ recipe, locale, text, rtl }: { recipe: RecipeLibraryItem; locale: 'fa'|'en'; text: typeof copy['en']; rtl: boolean }) {
+function RecipeCard({ recipe, text, rtl }: { recipe: RecipeLibraryItem; text: RecipeCopy; rtl: boolean }) {
   return <Pressable onPress={() => router.push(`/recipe/${recipe.id}`)} style={({pressed}) => [styles.card, pressed && styles.pressed]}>
     {recipe.imageUrl ? <Image source={{ uri: recipe.imageUrl }} style={styles.image} resizeMode="cover"/> : <View style={styles.imagePlaceholder}><Text style={styles.placeholderEmoji}>🍲</Text></View>}
-    <View style={styles.cardBody}><View style={[styles.cardTop, rtl && styles.rtl]}><Text style={[styles.recipeName, rtl && styles.textRtl]}>{recipe.name}</Text>{recipe.verified ? <View style={styles.badge}><Text style={styles.badgeText}>{text.verified}</Text></View> : null}</View>
-      {recipe.description ? <Text numberOfLines={2} style={[styles.description, rtl && styles.textRtl]}>{recipe.description}</Text> : null}
-      <View style={[styles.metrics, rtl && styles.rtl]}><Metric label={text.kcal} value={`${Math.round(recipe.calories)}`}/><Metric label={text.protein} value={`${Math.round(recipe.protein)}g`}/><Metric label={text.servings} value={`${recipe.servings}`}/></View>
+    <View style={styles.cardBody}><View style={[styles.cardTop, rtl ? styles.rtl : undefined]}><Text style={[styles.recipeName, rtl ? styles.textRtl : undefined]}>{recipe.name}</Text>{recipe.verified ? <View style={styles.badge}><Text style={styles.badgeText}>{text.verified}</Text></View> : null}</View>
+      {recipe.description ? <Text numberOfLines={2} style={[styles.description, rtl ? styles.textRtl : undefined]}>{recipe.description}</Text> : null}
+      <View style={[styles.metrics, rtl ? styles.rtl : undefined]}><Metric label={text.kcal} value={`${Math.round(recipe.calories)}`}/><Metric label={text.protein} value={`${Math.round(recipe.protein)}g`}/><Metric label={text.servings} value={`${recipe.servings}`}/></View>
     </View>
   </Pressable>;
 }
