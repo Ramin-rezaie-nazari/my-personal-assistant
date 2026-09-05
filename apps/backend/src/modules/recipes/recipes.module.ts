@@ -8,6 +8,7 @@ import { RecipesService } from './services/recipes.service';
 import { RecipeInventoryMatcherService } from './services/recipe-inventory-matcher.service';
 import { GlobalCountryFoodService } from './services/global-country-food.service';
 import { FoodOperatingLoopService } from './services/food-operating-loop.service';
+import { IngredientTaxonomyService } from './services/ingredient-taxonomy.service';
 
 @Module({
   imports: [PrismaModule, NutritionModule, ShoppingModule, BudgetIntelligenceModule],
@@ -17,12 +18,14 @@ import { FoodOperatingLoopService } from './services/food-operating-loop.service
     RecipeInventoryMatcherService,
     GlobalCountryFoodService,
     FoodOperatingLoopService,
+    IngredientTaxonomyService,
   ],
   exports: [
     RecipesService,
     RecipeInventoryMatcherService,
     GlobalCountryFoodService,
     FoodOperatingLoopService,
+    IngredientTaxonomyService,
   ],
 })
 export class RecipesModule {}
