@@ -18,46 +18,61 @@ Create one canonical vocabulary for food intelligence so recommendation, allergy
 
 ### Pass 2 — persistence and compatibility
 
-The future schema should support at minimum:
+The durable schema now supports the required relationship boundaries without changing existing user-facing text:
 
 ```text
 IngredientCanonical
   id
+  canonicalKey
   canonicalName
-  scientificName / optional reference name
-  aliases[] / alias table
-  foodGroup
-  allergenFlags
-  dietaryFlags
+  scientificName?
+  foodGroup?
   confidence
   provenance
   version
+  └─ IngredientCanonicalAlias[]
 
 RegionCanonical
   id
   countryCode
   regionCode
   canonicalName
-  aliases
   provenance
+  version
 
 CuisineCanonical
   id
+  canonicalKey
   canonicalName
   parentCuisineId?
-  regionIds[]
-  country associations
-  aliases
   provenance
+  version
 
 Recipe
-  ingredient links → IngredientCanonical
-  cuisine links → CuisineCanonical
-  region links → RegionCanonical
-  dietary/allergen assertions with provenance
+  ingredients → RecipeIngredient
+  cuisines → RecipeCuisine → CuisineCanonical
+  regions → RecipeRegion → RegionCanonical
+  safetyAssertions → RecipeSafetyAssertion
+
+FoodItem
+  canonicalIngredientId? → IngredientCanonical
+
+RecipeIngredient
+  canonicalIngredientId? → IngredientCanonical
+
+RecipeSafetyAssertion
+  assertionType
+  value
+  effect
+  confidence
+  provenance
+  verified
+  version
 ```
 
-The exact Prisma relations and indexes must be finalized against the current schema before any migration is created.
+Indexes and uniqueness rules were deliberately chosen around lookup paths and duplicate prevention: canonical keys are unique, ingredient aliases are unique per canonical entity and indexed for lookup, country/region pairs are unique, cuisine hierarchy parents are indexed, recipe join pairs are composite primary keys, and safety assertions are unique per recipe/type/value with a verified lookup index.
+
+The migration is additive: both ingredient canonical foreign keys are nullable, existing rows require no synthetic identity, and deleting a canonical entity clears nullable references rather than deleting food or recipe data. No historical free-text field is rewritten.
 
 ## Compatibility strategy
 
@@ -79,7 +94,7 @@ Low-confidence matches remain unresolved instead of becoming unsafe hard filters
 
 ## First implementation slice
 
-The first code slice should be a pure deterministic normalization service plus fixtures/tests for:
+The first code slice is a pure deterministic normalization service plus fixtures/tests for:
 
 - common Persian/English ingredient aliases;
 - spelling/spacing/punctuation normalization;
@@ -115,17 +130,28 @@ No production dietary/allergen hard filtering should depend on this first slice 
 - `RecipesModule` owns both normalization services without creating a second food-calculation engine.
 - Focused tests cover trusted aliases, Persian normalization, unknown/empty behavior, provenance, batch normalization, cuisine aliases and country-code validation.
 
+### Durable schema checkpoint
+
+- Two-pass Prisma review completed for additive canonical metadata persistence.
+- `IngredientCanonical` and `IngredientCanonicalAlias` added with provenance/version fields.
+- `FoodItem.canonicalIngredientId` and `RecipeIngredient.canonicalIngredientId` are nullable and indexed.
+- `CuisineCanonical` supports an explicit parent hierarchy.
+- `RegionCanonical` preserves country/region separation.
+- `RecipeCuisine` and `RecipeRegion` model many-to-many associations without collapsing a recipe to one cuisine or one region.
+- `RecipeSafetyAssertion` stores explicit, provenance-backed safety assertions but does not enable hard filtering by itself.
+- Migration `20260905160000_add_food_taxonomy_relations` is additive and has no backfill or destructive rewrite.
+
 ### Explicit non-goals
 
-- No Prisma migration has been created.
-- No hard allergy/dietary filter is enabled from these services.
 - No fuzzy matching or machine-learned guessing is used for canonical safety decisions.
 - No attempt is made to claim full global ingredient coverage.
+- No hard allergy/dietary filter is enabled until verified metadata exists.
+- No automatic backfill assigns canonical IDs to historical rows.
 
 ### Next checkpoint
 
-Expand the canonical seed registry from verified data, then perform the required two-pass Prisma relation/index review before introducing durable canonical IDs into `FoodItem`, `RecipeIngredient`, `Recipe`, inventory or recipe metadata. The existing Recommendation Intelligence slice remains the canonical recommendation execution path and must not be duplicated here.
+Validate Prisma schema generation and migration deployment/idempotence on the user runtime and CI. Then add a small verified canonical seed set with explicit provenance, followed by integration of canonical linkage into recipe/inventory/recommendation matching.
 
 ## Current status
 
-**Foundation implemented; schema migration intentionally deferred until the canonical data contract and persistence relations pass two explicit reviews.**
+**Durable schema foundation implemented after two-pass review; runtime/CI migration validation and verified seed data remain before this workstream can be marked fully green.**
