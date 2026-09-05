@@ -57,6 +57,11 @@ for (const entry of REGISTRY) {
   for (const alias of entry.aliases) LOOKUP.set(normalizeName(alias), entry);
 }
 
+function resultFromEntry(entry: RegistryEntry, matchedBy: 'canonical' | 'alias'): CanonicalIngredient {
+  const { canonicalKey, displayName, foodGroup, confidence, provenance } = entry;
+  return { canonicalKey, displayName, foodGroup, matchedBy, confidence, provenance };
+}
+
 @Injectable()
 export class IngredientTaxonomyService {
   canonicalize(name: string): CanonicalIngredient {
@@ -74,14 +79,12 @@ export class IngredientTaxonomyService {
 
     const entry = LOOKUP.get(normalized);
     if (entry) {
-      const canonicalMatch =
+      const matchedBy =
         normalized === normalizeName(entry.canonicalKey) ||
-        normalized === normalizeName(entry.displayName);
-      return {
-        ...entry,
-        aliases: undefined as never,
-        matchedBy: canonicalMatch ? 'canonical' : 'alias',
-      };
+        normalized === normalizeName(entry.displayName)
+          ? 'canonical'
+          : 'alias';
+      return resultFromEntry(entry, matchedBy);
     }
 
     return {
