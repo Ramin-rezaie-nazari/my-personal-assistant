@@ -1,0 +1,53 @@
+name: One-time mobile dependency sync
+
+on:
+  push:
+    branches:
+      - agent/mypa-autonomous-control-plane
+    paths:
+      - '.github/workflows/mobile-dependency-sync.yml'
+
+concurrency:
+  group: mobile-dependency-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve Expo SDK 53 dependencies
+        working-directory: apps/mobile
+        run: pnpm exec expo install expo-location expo-speech
+
+      - name: Commit synchronized package manifest and lockfile
+        run: |
+          if git diff --quiet -- apps/mobile/package.json pnpm-lock.yaml; then
+            echo 'Expo dependencies already synchronized.'
+            exit 0
+          fi
+          git config user.name 'MYPA Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add apps/mobile/package.json pnpm-lock.yaml
+          git commit -m '[skip ci] chore(mobile): sync Expo dependency lockfile'
+          git push origin HEAD:agent/mypa-autonomous-control-plane
