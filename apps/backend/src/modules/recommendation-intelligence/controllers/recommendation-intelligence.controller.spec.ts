@@ -23,22 +23,23 @@ describe('RecommendationIntelligenceController', () => {
     });
   });
 
-  it('rejects invalid serving counts before touching the engine', async () => {
-    await expect(
+  it('rejects invalid serving counts before touching the engine', () => {
+    expect(() =>
       controller.generateFoodRecommendations(
         { user: { id: 'u1' } },
         { targetServings: 0 },
       ),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).toThrow(BadRequestException);
     expect(engine.generateRecommendations).not.toHaveBeenCalled();
   });
 
-  it('rejects non-integer strict missing-ingredient thresholds', async () => {
-    await expect(
+  it('rejects non-integer strict missing-ingredient thresholds', () => {
+    expect(() =>
       controller.generateFoodRecommendations(
         { user: { id: 'u1' } },
         { targetServings: 2, maxMissingIngredients: 1.5 },
       ),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).toThrow(BadRequestException);
+    expect(engine.generateRecommendations).not.toHaveBeenCalled();
   });
 });
