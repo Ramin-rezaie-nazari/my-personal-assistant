@@ -17,11 +17,9 @@ pnpm install --frozen-lockfile    PASS
 pnpm run typecheck                PASS
 pnpm run build                    PASS
 focused Recommendation tests     PASS (2 suites, 5 tests)
-full backend Jest                 PASS
+full backend Jest                 PASS (160 suites, 429 tests)
 Recommendation Intelligence E2E   PASS
 ```
-
-The focused tests include the controller validation regressions and recipe image compression regression that were fixed immediately before this checkpoint.
 
 ### Result
 
@@ -110,9 +108,11 @@ The local Android candidate WIP must still be inspected and tested for shared-en
 - Invalid shopping quantities are now rejected with `BadRequestException` and require a finite positive number.
 - Added regression tests covering cross-user food and recipe access boundaries.
 
-### Result
+### Validation
 
-The shopping write path now follows the same ownership boundary already used by Inventory and Recipes services.
+**User-runtime regression validated: PASS (1 suite / 2 tests).**
+
+The existing Inventory and Recipes services already apply equivalent ownership boundaries.
 
 ## 2026-09-05 — Mobile visual theme foundation
 
@@ -138,6 +138,7 @@ Introduced a single reactive locale store for the mobile application with persis
 - Common Farsi/English navigation labels, loading states, errors, empty states and action labels were localized across the migrated routes.
 - Calendar, notification, meal and reminder date/time formatting now follow the selected locale where displayed by the UI.
 - Reminders was replaced with a locale-aware implementation behind the same route so its original route contract remains stable.
+- Quick Command result messages and the generated assistant reminder title now use the shared locale contract rather than hardcoded English strings.
 
 ### Design boundary
 
@@ -145,28 +146,69 @@ This is a localization architecture hardening pass across the current top-level 
 
 ### Runtime status
 
-Mobile typecheck and Expo export/device validation are still required on the user's runtime after this batch because the GitHub connector cannot execute the local Expo toolchain. CI status for the latest branch head is also not currently surfaced by the available status endpoint.
+Mobile typecheck and Expo export/device validation are still required on the user's runtime after this batch because the GitHub connector cannot execute the local Expo toolchain. CI status for the latest branch head is running and must be rechecked before claiming green.
+
+## 2026-09-05 — Durable food taxonomy persistence design + migration
+
+### Scope
+
+Completed two explicit reviews of the canonical food metadata persistence boundary and added an additive Prisma schema/migration for durable ingredient, cuisine, region and safety metadata.
+
+### Pass 1 — architecture boundaries
+
+- Existing free-text fields remain authoritative for display/history.
+- Canonical IDs are separate from display names.
+- Country, region and cuisine remain separate concepts.
+- Safety data is explicit and provenance-backed.
+- Hard allergy/dietary filtering remains disabled until verified metadata exists.
+- No fuzzy or learned matching is introduced into the safety boundary.
+
+### Pass 2 — persistence/compatibility
+
+- `IngredientCanonical` and `IngredientCanonicalAlias` provide canonical identity plus alias provenance/versioning.
+- `FoodItem.canonicalIngredientId` and `RecipeIngredient.canonicalIngredientId` are nullable and indexed.
+- `CuisineCanonical` supports parent/child hierarchy.
+- `RegionCanonical` preserves country/region separation.
+- `RecipeCuisine` and `RecipeRegion` are many-to-many joins.
+- `RecipeSafetyAssertion` is explicit, deduplicated, provenance-backed and verification-aware.
+- Deleting canonical entities does not delete food/recipe rows; nullable links use `SET NULL`.
+- The migration contains no backfill or destructive rewrite.
+
+### Migration
+
+`20260905160000_add_food_taxonomy_relations/migration.sql` was added to the branch.
+
+### Runtime status
+
+Schema/migration generation, deploy, idempotence and full backend gates still require runtime/CI validation. Until those pass, this workstream remains implemented but not fully green.
+
+## 2026-09-05 — CI correction + new validation run
+
+The backend CI unit-test invocation was corrected from an invalid Jest argument pattern to an explicit Jest command. Mobile RefreshControl syntax regressions were patched in the affected localized routes. New GitHub Actions runs are currently executing against the updated branch.
 
 ## Checkpoint status
 
 **Backend Recommendation Intelligence: validated green locally.**
 
-**Food taxonomy/context: foundation implemented; durable schema work intentionally deferred pending two-pass Prisma review.**
+**Food taxonomy/context normalization: foundation implemented and tested.**
 
-**Shopping authorization: ownership boundary hardened; regression coverage added; user-runtime validation still required.**
+**Food taxonomy durable schema: implemented after two-pass review; runtime/CI migration validation pending.**
+
+**Shopping authorization: ownership boundary hardened; focused regression validated on user runtime (1 suite / 2 tests).**
 
 **Mobile visual theme: foundation implemented; full UI wiring/device validation pending.**
 
-**Mobile localization: global reactive locale architecture plus the current top-level route rollout implemented; mobile runtime validation pending.**
+**Mobile localization: global reactive locale architecture plus current top-level route rollout implemented; runtime validation pending.**
 
 **Voice P0: lifecycle race narrowed in tracked JS/native boundary; unresolved pending lockfile validation and direct Android WIP/device evidence.**
 
 ## Next engineering priorities
 
-1. Validate the updated mobile dependency graph and backend security regression tests on the user's runtime.
-2. Audit any remaining nested mobile routes/components for hardcoded user-facing English and migrate them to the shared locale contract.
-3. Resolve the P0 Android voice lifecycle issue using the local candidate WIP and real-device evidence.
-4. Complete the feminine/default theme rollout and mobile food journey.
-5. Complete the two-pass Prisma review for durable canonical recipe metadata.
-6. Continue production hardening, observability and E2E teardown cleanup.
-7. Keep the current validation rule: success output should remain quiet; only failures/errors need to be surfaced during user-runtime test commands.
+1. Validate the new Prisma migration with schema generation, deploy/status/idempotence and the existing backend gates.
+2. Add a small verified ingredient/cuisine seed set with explicit provenance and no unsafe backfill.
+3. Finish the nested mobile localization audit and Recommendation API → mobile food journey integration.
+4. Complete the feminine/default theme rollout and focused mobile validation.
+5. Resolve the P0 Android voice lifecycle issue using the user's local candidate WIP and real-device evidence.
+6. Continue authorization, rate-limit, observability and E2E teardown cleanup.
+7. Review and integrate Global Market / Price Intelligence only after dependency/conflict/regression checks.
+8. Keep successful test output quiet; surface only final results and failures.
