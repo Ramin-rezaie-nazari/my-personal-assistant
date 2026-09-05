@@ -55,11 +55,13 @@ export default function RootLayout() {
     const timeoutId = setTimeout(() => { if (mounted) { setTargetRoute('/language'); setBootReady(true); } }, 1800);
     const bootstrap = async () => {
       try {
-        const [nextLocale, authenticated, onboarding] = await Promise.all([initializeLocale(), hasAuthSession(), getOnboardingState()]);
+        const storedLocale = await getStoredLocale();
+        const nextLocale = await initializeLocale();
+        const [authenticated, onboarding] = await Promise.all([hasAuthSession(), getOnboardingState()]);
         if (!mounted) return;
         clearTimeout(timeoutId);
         I18nManager.allowRTL(isRTL(nextLocale));
-        if (!nextLocale) setTargetRoute('/language');
+        if (!storedLocale) setTargetRoute('/language');
         else if (!authenticated) setTargetRoute('/auth');
         else if (!onboarding.completed) setTargetRoute('/onboarding');
         else setTargetRoute('/');
