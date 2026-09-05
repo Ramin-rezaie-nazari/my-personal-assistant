@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InventoryService } from '../inventory/inventory.service';
 import { PrismaService } from '../../common/database/prisma.service';
 export type SmartShoppingItem = {
@@ -69,8 +69,8 @@ export class ShoppingService {
       priority?: string;
     },
   ) {
-    if (item.quantity <= 0)
-      throw new NotFoundException('Quantity must be positive');
+    if (!Number.isFinite(item.quantity) || item.quantity <= 0)
+      throw new BadRequestException('Quantity must be a positive finite number');
     const food = await this.prisma.foodItem.findFirst({
       where: {
         id: item.foodId,
