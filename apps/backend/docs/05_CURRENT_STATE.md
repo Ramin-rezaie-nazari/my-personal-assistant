@@ -301,3 +301,26 @@ Remaining:
 ## Working rule
 
 A slice is 100% only when architecture, implementation, database changes, focused tests, integration/E2E tests, documentation, and required environment validation are all green. Do not weaken assertions to obtain green tests.
+
+## 2026-09-05 — Autonomous completion ledger
+
+### Completed in this batch
+
+- Persistent fitness catalog schema/migration created.
+- Fitness catalog API changed to persistent-first with a strict four-WebP media contract and ten levels.
+- Per-user progression/session persistence added and wired to the mobile session flow.
+- Gym, Calisthenics and Yoga mobile catalog flows expanded with levels, search, paging, progress and attribution.
+- Fitness importer/audit/media-verification tooling and licensing policy added.
+- Recipe/fitness unit-test regressions corrected without weakening assertions.
+- Mobile Expo/TTS/location/camera/reminder compatibility fixes staged through an automated lockfile synchronization workflow.
+
+### Validation truth
+
+The branch has live CI runs after the latest mobile/TTS changes; green CI is only declared from completed GitHub Actions results. The currently connected Supabase project has not been accepted as the application's production database because its schema does not match the repository's `User`-based Prisma model. Therefore the required 1,500-movement / 6,000-WebP production corpus is **not** claimed populated yet.
+
+### Remaining release blockers
+
+- Resolve/verify the correct production PostgreSQL/Supabase target, then apply the fitness catalog migration.
+- Execute the real fitness corpus import and pass `fitness:content:audit` and `fitness:content:verify-media`.
+- Complete mobile CI/device validation, especially native voice/TTS behavior.
+- Continue broader production hardening and real-device QA.
