@@ -2,9 +2,9 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { PlanExecutionState } from '../lib/api';
 import { useAppLocale } from '../lib/i18n';
 
-export function PlanStatusCard({ plan }: { plan: PlanExecutionState | null }) {
+export function PlanStatusCard({ plan, rtl }: { plan: PlanExecutionState | null; rtl?: boolean }) {
   const locale = useAppLocale();
-  const isFa = locale === 'fa';
+  const isFa = rtl ?? locale === 'fa';
   if (!plan) return null;
   const total = plan.stepIds.length;
   const done = plan.completed.length;
