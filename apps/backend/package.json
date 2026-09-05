@@ -31,7 +31,9 @@
     "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence-final.mjs",
     "recipe-intelligence:ingredients": "node ./scripts/recipe-ingredient-intelligence.mjs",
     "recipe-intelligence:nutrition": "node ./scripts/recipe-nutrition-estimate.mjs",
-    "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs"
+    "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs",
+    "fitness:content:import": "node ./scripts/fitness-content-import.mjs",
+    "fitness:content:audit": "node ./scripts/fitness-content-audit.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -39,7 +41,6 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
-    "@nestjs/platform-express": "^11.0.1",
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "argon2": "^0.45.1",
@@ -57,8 +58,8 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
-    "@nestjs/cli": "^11.0.0",
-    "@nestjs/schematics": "^11.0.0",
+    "@nestjs/cli": "^11.0.1",
+    "@nestjs/schematics": "^11.0.1",
     "@nestjs/testing": "^11.0.1",
     "@types/express": "^5.0.0",
     "@types/jest": "^30.0.0",
@@ -72,7 +73,6 @@
     "jest": "30.4.1",
     "jest-environment-node": "30.4.1",
     "prettier": "^3.9.6",
-    "prisma": "^7.9.1",
     "source-map-support": "^0.5.21",
     "supertest": "^7.2.2",
     "ts-jest": "29.4.12",
