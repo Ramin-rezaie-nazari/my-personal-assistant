@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../../../common/database/prisma.service';
 import { CalisthenicsLibraryService } from '../../calisthenics/services/calisthenics-library.service';
 import { GymLibraryService } from '../../gym/services/gym-library.service';
 import { YogaLibraryService } from '../../yoga/services/yoga-library.service';
@@ -14,7 +16,7 @@ export type FitnessCatalogItem = {
   equipment: string[];
   instructions: string[];
   cues: string[];
-  media: Array<{ position: number; sourceUrl: string; webpUrl: string; format: 'webp' | 'jpg' }>;
+  media: Array<{ position: number; sourceUrl: string; webpUrl: string; format: 'webp' }>;
   mediaRequired: number;
   mediaActual: number;
   mediaComplete: boolean;
@@ -33,6 +35,29 @@ type ExternalExercise = {
   images?: string[];
 };
 
+type PersistedRow = {
+  id: string;
+  discipline: string;
+  name: string;
+  difficultyLevel: number;
+  sourceLevel: string | null;
+  focus: string[];
+  equipment: string[];
+  instructions: string[];
+  cues: string[];
+  sourceProvider: string;
+  sourceUrl: string | null;
+  license: string;
+  attribution: string | null;
+  media: Array<{
+    position: number;
+    sourceUrl: string;
+    webpUrl: string;
+    format: string;
+  }> | null;
+  totalCount: number;
+};
+
 const PUBLIC_DATASET_URL =
   'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
 const PUBLIC_IMAGE_ROOT =
@@ -45,6 +70,7 @@ export class FitnessCatalogService {
   private externalCache: { fetchedAt: number; items: ExternalExercise[] } | null = null;
 
   constructor(
+    private readonly prisma: PrismaService,
     private readonly gym: GymLibraryService,
     private readonly calisthenics: CalisthenicsLibraryService,
     private readonly yoga: YogaLibraryService,
@@ -64,40 +90,254 @@ export class FitnessCatalogService {
     const query = normalize(input.query ?? '');
     const equipment = new Set((input.equipment ?? []).map(normalize).filter(Boolean));
 
-    const local = this.localItems(input.discipline);
-    const external = input.discipline === 'yoga'
-      ? []
-      : (await this.externalItems())
-          .filter((item) => this.matchesDiscipline(item, input.discipline))
-          .map((item) => this.normalizeExternal(item, input.discipline));
-    const merged = dedupeByName([...local, ...external])
-      .filter((item) => item.difficultyLevel <= level)
-      .filter((item) => !query || normalize(`${item.name} ${item.focus.join(' ')}`).includes(query))
-      .filter((item) => !equipment.size || item.equipment.some((value) => equipment.has(normalize(value))))
-      .sort((a, b) => a.difficultyLevel - b.difficultyLevel || a.name.localeCompare(b.name));
+    const persisted = await this.listPersisted({ ...input, page, pageSize, level, query, equipment }).catch(() => null);
+    if (persisted) return persisted;
 
-    const start = (page - 1) * pageSize;
-    return {
-      items: merged.slice(start, start + pageSize),
-      total: merged.length,
-      page,
-      pageSize,
-      hasNextPage: start + pageSize < merged.length,
-      tenLevelScale: Array.from({ length: 10 }, (_, index) => ({ level: index + 1, label: levelLabel(index + 1) })),
-      mediaPolicy: { requiredPerExercise: 4, format: 'webp', partialAssetsAreExplicit: true },
-      sources: [
-        { provider: 'MYPA curated library', license: 'internal' },
-        { provider: 'Free Exercise DB', datasetUrl: PUBLIC_DATASET_URL, license: 'Unlicense', attribution: 'Yuhonas / Free Exercise DB' },
-      ],
-    };
+    return this.listFallback({ discipline: input.discipline, level, query, page, pageSize, equipment });
   }
 
   async getOne(discipline: FitnessDiscipline, id: string) {
+    const persisted = await this.getPersistedOne(discipline, id).catch(() => null);
+    if (persisted) return persisted;
+
     const local = this.localItems(discipline).find((item) => item.id === id);
     if (local) return local;
     if (discipline === 'yoga') return null;
     const external = (await this.externalItems()).find((item) => `public-${item.id}` === id);
     return external ? this.normalizeExternal(external, discipline) : null;
+  }
+
+  private async listPersisted(input: {
+    discipline: FitnessDiscipline;
+    level: number;
+    query: string;
+    page: number;
+    pageSize: number;
+    equipment: Set<string>;
+  }) {
+    const start = (input.page - 1) * input.pageSize;
+    const q = input.query ? `%${input.query.replace(/[%_]/g, (value) => `\\${value}`)}%` : null;
+    const rows = q
+      ? await this.prisma.$queryRaw<PersistedRow[]>(Prisma.sql`
+          SELECT
+            c."id", c."discipline", c."name", c."difficultyLevel", c."sourceLevel",
+            c."focus", c."equipment", c."instructions", c."cues",
+            c."sourceProvider", c."sourceUrl", c."license", c."attribution",
+            COALESCE(
+              json_agg(
+                json_build_object(
+                  'position', m."position",
+                  'sourceUrl', m."sourceUrl",
+                  'webpUrl', m."webpUrl",
+                  'format', m."format"
+                ) ORDER BY m."position"
+              ) FILTER (WHERE m."id" IS NOT NULL),
+              '[]'::json
+            ) AS "media",
+            COUNT(*) OVER()::int AS "totalCount"
+          FROM "FitnessExerciseCatalog" c
+          LEFT JOIN "FitnessExerciseMedia" m
+            ON m."exerciseId" = c."id"
+           AND m."status" = 'approved'
+           AND m."format" = 'webp'
+          WHERE c."discipline" = ${input.discipline}
+            AND c."difficultyLevel" <= ${input.level}
+            AND c."status" = 'published'
+            AND (
+              c."name" ILIKE ${q}
+              OR array_to_string(c."focus", ' ') ILIKE ${q}
+              OR array_to_string(c."equipment", ' ') ILIKE ${q}
+            )
+          GROUP BY c."id"
+          ORDER BY c."difficultyLevel" ASC, c."name" ASC
+          LIMIT ${input.pageSize} OFFSET ${start}
+        `)
+      : await this.prisma.$queryRaw<PersistedRow[]>(Prisma.sql`
+          SELECT
+            c."id", c."discipline", c."name", c."difficultyLevel", c."sourceLevel",
+            c."focus", c."equipment", c."instructions", c."cues",
+            c."sourceProvider", c."sourceUrl", c."license", c."attribution",
+            COALESCE(
+              json_agg(
+                json_build_object(
+                  'position', m."position",
+                  'sourceUrl', m."sourceUrl",
+                  'webpUrl', m."webpUrl",
+                  'format', m."format"
+                ) ORDER BY m."position"
+              ) FILTER (WHERE m."id" IS NOT NULL),
+              '[]'::json
+            ) AS "media",
+            COUNT(*) OVER()::int AS "totalCount"
+          FROM "FitnessExerciseCatalog" c
+          LEFT JOIN "FitnessExerciseMedia" m
+            ON m."exerciseId" = c."id"
+           AND m."status" = 'approved'
+           AND m."format" = 'webp'
+          WHERE c."discipline" = ${input.discipline}
+            AND c."difficultyLevel" <= ${input.level}
+            AND c."status" = 'published'
+          GROUP BY c."id"
+          ORDER BY c."difficultyLevel" ASC, c."name" ASC
+          LIMIT ${input.pageSize} OFFSET ${start}
+        `);
+
+    if (!rows.length && start > 0) {
+      const total = await this.persistedCount(input);
+      if (total === 0) return null;
+    }
+    if (!rows.length) {
+      const exists = await this.persistedCount(input);
+      if (exists === 0) return null;
+    }
+
+    if (input.equipment.size) {
+      const filtered = rows.filter((row) => row.equipment.some((item) => input.equipment.has(normalize(item))));
+      return this.response(filtered, filtered.length ? Number(rows[0]?.totalCount ?? filtered.length) : 0, input.page, input.pageSize);
+    }
+
+    return this.response(rows, Number(rows[0]?.totalCount ?? 0), input.page, input.pageSize);
+  }
+
+  private async persistedCount(input: {
+    discipline: FitnessDiscipline;
+    level: number;
+    query: string;
+    equipment: Set<string>;
+  }) {
+    const q = input.query ? `%${input.query.replace(/[%_]/g, (value) => `\\${value}`)}%` : null;
+    const rows = q
+      ? await this.prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
+          SELECT COUNT(*)::int AS count
+          FROM "FitnessExerciseCatalog" c
+          WHERE c."discipline" = ${input.discipline}
+            AND c."difficultyLevel" <= ${input.level}
+            AND c."status" = 'published'
+            AND (c."name" ILIKE ${q} OR array_to_string(c."focus", ' ') ILIKE ${q})
+        `)
+      : await this.prisma.$queryRaw<Array<{ count: number }>>(Prisma.sql`
+          SELECT COUNT(*)::int AS count
+          FROM "FitnessExerciseCatalog" c
+          WHERE c."discipline" = ${input.discipline}
+            AND c."difficultyLevel" <= ${input.level}
+            AND c."status" = 'published'
+        `);
+    return Number(rows[0]?.count ?? 0);
+  }
+
+  private async getPersistedOne(discipline: FitnessDiscipline, id: string) {
+    const rows = await this.prisma.$queryRaw<PersistedRow[]>(Prisma.sql`
+      SELECT
+        c."id", c."discipline", c."name", c."difficultyLevel", c."sourceLevel",
+        c."focus", c."equipment", c."instructions", c."cues",
+        c."sourceProvider", c."sourceUrl", c."license", c."attribution",
+        COALESCE(
+          json_agg(
+            json_build_object(
+              'position', m."position",
+              'sourceUrl', m."sourceUrl",
+              'webpUrl', m."webpUrl",
+              'format', m."format"
+            ) ORDER BY m."position"
+          ) FILTER (WHERE m."id" IS NOT NULL),
+          '[]'::json
+        ) AS "media",
+        1 AS "totalCount"
+      FROM "FitnessExerciseCatalog" c
+      LEFT JOIN "FitnessExerciseMedia" m
+        ON m."exerciseId" = c."id"
+       AND m."status" = 'approved'
+       AND m."format" = 'webp'
+      WHERE c."discipline" = ${discipline}
+        AND c."status" = 'published'
+        AND (c."id" = ${id} OR c."slug" = ${id})
+      GROUP BY c."id"
+      LIMIT 1
+    `);
+    const row = rows[0];
+    return row ? this.toItem(row) : null;
+  }
+
+  private response(rows: PersistedRow[], total: number, page: number, pageSize: number) {
+    return {
+      items: rows.map((row) => this.toItem(row)),
+      total,
+      page,
+      pageSize,
+      hasNextPage: page * pageSize < total,
+      tenLevelScale: Array.from({ length: 10 }, (_, index) => ({ level: index + 1, label: levelLabel(index + 1) })),
+      mediaPolicy: { requiredPerExercise: 4, format: 'webp' as const, partialAssetsAreExplicit: true },
+      persistence: { mode: 'database', releaseGate: '500 published movements + 4 approved WebP assets per movement' },
+    };
+  }
+
+  private toItem(row: PersistedRow): FitnessCatalogItem {
+    const media = Array.isArray(row.media)
+      ? row.media
+          .filter((entry) => entry && entry.format === 'webp')
+          .map((entry) => ({
+            position: Number(entry.position),
+            sourceUrl: String(entry.sourceUrl),
+            webpUrl: String(entry.webpUrl),
+            format: 'webp' as const,
+          }))
+      : [];
+    return {
+      id: row.id,
+      discipline: row.discipline as FitnessDiscipline,
+      name: row.name,
+      difficultyLevel: row.difficultyLevel,
+      sourceLevel: row.sourceLevel ?? 'intermediate',
+      focus: row.focus ?? [],
+      equipment: row.equipment ?? [],
+      instructions: row.instructions ?? [],
+      cues: row.cues ?? [],
+      media,
+      mediaRequired: 4,
+      mediaActual: media.length,
+      mediaComplete: media.length >= 4,
+      source: {
+        provider: row.sourceProvider,
+        datasetUrl: row.sourceUrl ?? '',
+        license: row.license,
+        attribution: row.attribution ?? undefined,
+      },
+    };
+  }
+
+  private listFallback(input: {
+    discipline: FitnessDiscipline;
+    level: number;
+    query: string;
+    page: number;
+    pageSize: number;
+    equipment: Set<string>;
+  }) {
+    const local = this.localItems(input.discipline);
+    return this.externalItems().then((external) => {
+      const normalizedExternal = input.discipline === 'yoga'
+        ? []
+        : external
+            .filter((item) => this.matchesDiscipline(item, input.discipline))
+            .map((item) => this.normalizeExternal(item, input.discipline));
+      const merged = dedupeByName([...local, ...normalizedExternal])
+        .filter((item) => item.difficultyLevel <= input.level)
+        .filter((item) => !input.query || normalize(`${item.name} ${item.focus.join(' ')}`).includes(input.query))
+        .filter((item) => !input.equipment.size || item.equipment.some((value) => input.equipment.has(normalize(value))))
+        .sort((a, b) => a.difficultyLevel - b.difficultyLevel || a.name.localeCompare(b.name));
+      const start = (input.page - 1) * input.pageSize;
+      const items = merged.slice(start, start + input.pageSize);
+      return {
+        items,
+        total: merged.length,
+        page: input.page,
+        pageSize: input.pageSize,
+        hasNextPage: start + input.pageSize < merged.length,
+        tenLevelScale: Array.from({ length: 10 }, (_, index) => ({ level: index + 1, label: levelLabel(index + 1) })),
+        mediaPolicy: { requiredPerExercise: 4, format: 'webp' as const, partialAssetsAreExplicit: true },
+        persistence: { mode: 'fallback', releaseGate: '500 published movements + 4 approved WebP assets per movement' },
+      };
+    });
   }
 
   private localItems(discipline: FitnessDiscipline): FitnessCatalogItem[] {
@@ -110,7 +350,7 @@ export class FitnessCatalogService {
         sourceLevel: item.level,
         focus: item.focus,
         equipment: item.equipment,
-        instructions: [],
+        instructions: item.cues,
         cues: item.cues,
         media: [],
         mediaRequired: 4,
@@ -128,7 +368,7 @@ export class FitnessCatalogService {
         sourceLevel: item.levels[item.levels.length - 1] ?? 'beginner',
         focus: item.focuses,
         equipment: item.equipment,
-        instructions: [],
+        instructions: item.cues,
         cues: item.cues,
         media: [],
         mediaRequired: 4,
