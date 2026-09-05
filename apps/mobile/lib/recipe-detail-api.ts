@@ -9,7 +9,13 @@ export type RecipeDetail = {
   servings:number; calories:number; protein:number; carbs:number; fat:number; verified:boolean;
   ingredients:Array<{id:string;foodId:string;quantity:number;unit:string;calories:number;protein:number;carbs:number;fat:number;food:{id:string;name:string;category:string;calories:number;protein:number;carbs:number;fat:number;imageUrl?:string|null;verified:boolean}}>;
 };
-export type ScaledRecipe = { recipe:{id:string;name:string;baseServings:number}; servings:number; ingredients:Array<{ingredientId:string;quantity:number;unit:string;displayQuantity?:number}>; nutritionPerServing?:{calories:number;proteinGrams:number;carbohydratesGrams:number;fatGrams:number} };
+export type ScaledRecipe = {
+  recipeId:string; baseServings:number; targetServings:number; scaleFactor:number; estimatedBatches:number;
+  ingredients:Array<{ingredientId:string;baseQuantity:number;scaledQuantity:number;unit:string;scalingPolicy:string;manualReviewRequired:boolean;note?:string}>;
+  nutritionForFullBatch:{calories:number;proteinGrams:number;carbohydratesGrams:number;fatGrams:number};
+  nutritionPerServing:{calories:number;proteinGrams:number;carbohydratesGrams:number;fatGrams:number};
+  requiresManualReview:boolean;
+};
 
 async function request<T>(path:string, init:RequestInit={}):Promise<T>{
  let token=await AsyncStorage.getItem(ACCESS_TOKEN_KEY); let response=await fetch(`${API_URL}${path}`,withAuth(init,token));
@@ -19,4 +25,4 @@ async function request<T>(path:string, init:RequestInit={}):Promise<T>{
 function withAuth(init:RequestInit,token:string|null):RequestInit{const headers=new Headers(init.headers);headers.set('Content-Type','application/json');if(token)headers.set('Authorization',`Bearer ${token}`);return {...init,headers};}
 export function getRecipeDetail(id:string){return request<RecipeDetail>(`/recipes/${encodeURIComponent(id)}`);}
 export function getScaledRecipe(id:string,servings:number){return request<ScaledRecipe>(`/recipes/${encodeURIComponent(id)}/scaled?servings=${encodeURIComponent(String(servings))}`);}
-export function addRecipeToShopping(id:string,servings:number){return request<{added:number}>(`/recipes/${encodeURIComponent(id)}/food-plan/shopping?servings=${encodeURIComponent(String(servings))}`,{method:'POST'});}
+export function addRecipeToShopping(id:string,servings:number){return request<unknown>(`/recipes/${encodeURIComponent(id)}/food-plan/shopping?servings=${encodeURIComponent(String(servings))}`,{method:'POST'});}
