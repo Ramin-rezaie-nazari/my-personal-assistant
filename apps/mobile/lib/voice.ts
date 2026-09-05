@@ -75,7 +75,7 @@ export async function setStoredVoiceProfile(id: string): Promise<void> {
 
 async function getAvailableVoices(): Promise<Speech.Voice[]> {
   if (!voicesPromise) {
-    voicesPromise = Speech.getAvailableVoicesAsync().catch((error) => {
+    voicesPromise = Speech.getAvailableVoicesAsync().then((voices) => voices ?? []).catch((error) => {
       voicesPromise = null;
       throw error;
     });
