@@ -9,12 +9,10 @@ describe('FitnessCatalogService', () => {
     $queryRaw: jest.fn().mockRejectedValue(new Error('persistent fitness catalog unavailable')),
     $executeRaw: jest.fn(),
   } as unknown as PrismaService;
-  const service = new FitnessCatalogService(
-    prisma,
-    new GymLibraryService(),
-    new CalisthenicsLibraryService(),
-    new YogaLibraryService(),
-  );
+  const emptyGym = { list: jest.fn().mockReturnValue([]) } as unknown as GymLibraryService;
+  const emptyCalisthenics = { list: jest.fn().mockReturnValue([]) } as unknown as CalisthenicsLibraryService;
+  const emptyYoga = { list: jest.fn().mockReturnValue([]) } as unknown as YogaLibraryService;
+  const service = new FitnessCatalogService(prisma, emptyGym, emptyCalisthenics, emptyYoga);
 
   afterEach(() => {
     jest.restoreAllMocks();
