@@ -186,7 +186,7 @@ export class FitnessCatalogService {
       position: index + 1,
       sourceUrl,
       webpUrl: `${IMAGE_PROXY_ROOT}?url=${encodeURIComponent(sourceUrl)}&output=webp&w=768&q=82`,
-      format: 'jpg' as const,
+      format: 'webp' as const,
     }));
     return {
       id: `public-${item.id}`,
@@ -223,16 +223,34 @@ function dedupeByName(items: FitnessCatalogItem[]) {
 }
 
 function mapDifficulty(level: string, richness: number) {
-  const base = normalize(level) === 'beginner' ? 2 : normalize(level) === 'intermediate' ? 5 : normalize(level) === 'advanced' ? 8 : 6;
-  return Math.max(1, Math.min(10, base + (richness >= 5 ? 1 : 0)));
+  const normalized = normalize(level);
+  const base = normalized === 'beginner'
+    ? 1
+    : normalized === 'foundation'
+      ? 3
+      : normalized === 'intermediate'
+        ? 5
+        : normalized === 'advanced'
+          ? 7
+          : normalized === 'expert'
+            ? 9
+            : normalized === 'elite'
+              ? 10
+              : 5;
+  return Math.max(1, Math.min(10, base + (richness >= 5 && base < 10 ? 1 : 0)));
 }
 
 function levelLabel(level: number) {
-  if (level <= 2) return 'Beginner';
-  if (level <= 4) return 'Foundation';
-  if (level <= 6) return 'Intermediate';
-  if (level <= 8) return 'Advanced';
-  return level === 9 ? 'Expert' : 'Elite';
+  if (level === 1) return 'Beginner';
+  if (level === 2) return 'Beginner+';
+  if (level === 3) return 'Foundation';
+  if (level === 4) return 'Foundation+';
+  if (level === 5) return 'Intermediate';
+  if (level === 6) return 'Intermediate+';
+  if (level === 7) return 'Advanced';
+  if (level === 8) return 'Advanced+';
+  if (level === 9) return 'Expert';
+  return 'Elite';
 }
 
 function clampInt(value: number, min: number, max: number) {
