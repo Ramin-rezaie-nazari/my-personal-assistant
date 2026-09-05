@@ -30,6 +30,8 @@ export type FitnessCatalogResponse = {
   tenLevelScale: Array<{ level: number; label: string }>;
   mediaPolicy: { requiredPerExercise: number; format: 'webp'; partialAssetsAreExplicit: boolean };
 };
+export type FitnessSessionStep = { id: string; exerciseId?: string; poseId?: string; order: number; sets?: number; reps?: number | null; holdSec?: number | null; restSec: number; coachCues?: string[] };
+export type FitnessSession = { id: string; level: string; focus: string[]; durationMin: number; steps: FitnessSessionStep[]; estimatedDifficulty: number; equipment?: string[] };
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   let token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
@@ -67,4 +69,15 @@ export function getFitnessLibrary(discipline: FitnessDiscipline, level = 5, page
 
 export function getFitnessExercise(discipline: FitnessDiscipline, id: string) {
   return request<FitnessItem>(`/fitness/catalog/${encodeURIComponent(discipline)}/${encodeURIComponent(id)}`);
+}
+
+export function startFitnessSession(discipline: Exclude<FitnessDiscipline, 'yoga'>, level: number, durationMin = 25) {
+  const backendLevels: Record<Exclude<FitnessDiscipline, 'yoga'>, string[]> = {
+    gym:['beginner','beginner','foundation','foundation','intermediate','intermediate','advanced','advanced','expert','expert'],
+    calisthenics:['beginner','beginner','foundation','foundation','intermediate','intermediate','advanced','advanced','expert','elite'],
+  };
+  return request<FitnessSession>(`/${discipline}/session`, {
+    method: 'POST',
+    body: JSON.stringify({ durationMin, level: backendLevels[discipline][Math.max(0, Math.min(9, level - 1))] }),
+  });
 }
