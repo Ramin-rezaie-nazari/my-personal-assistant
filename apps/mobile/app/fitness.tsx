@@ -4,7 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useAppLocale } from '../lib/i18n';
 import { hasAuthSession } from '../lib/api';
-import { FitnessDiscipline, FitnessItem, getFitnessLibrary } from '../lib/fitness-api';
+import type { FitnessDiscipline } from '../lib/fitness-api';
+import { FitnessItem, getFitnessLibrary } from '../lib/fitness-api';
 import { getFitnessProgress } from '../lib/fitness-progress-api';
 
 const copy = {
@@ -12,6 +13,7 @@ const copy = {
   fa: { back:'برگشت', title:'تمرین و ورزش', subtitle:'رشته، سطح و تمرین مناسب خودت را انتخاب کن.', gym:'جیم', calisthenics:'کالیستنیکس', yoga:'یوگا', level:'سطح مهارت', current:'سطح پیشنهادی تو', search:'حرکت را جست‌وجو کن…', start:'شروع جلسه', details:'مشاهده حرکت', more:'نمایش بیشتر', empty:'حرکتی پیدا نشد.', media:'تصویر', complete:'کامل', sources:'داده‌های تمرین از RepDB (repdb.co) · Free Exercise DB' },
 } as const;
 
+type FitnessCopy = { back:string;title:string;subtitle:string;gym:string;calisthenics:string;yoga:string;level:string;current:string;search:string;start:string;details:string;more:string;empty:string;media:string;complete:string;sources:string };
 const levelNames = ['Beginner','Beginner+','Foundation','Foundation+','Intermediate','Intermediate+','Advanced','Advanced+','Expert','Elite'];
 
 export default function FitnessScreen() {
@@ -30,7 +32,7 @@ export default function FitnessScreen() {
     <View style={styles.branchRow}>{(['gym','calisthenics','yoga'] as FitnessDiscipline[]).map(key=><Pressable key={key} onPress={()=>setDiscipline(key)} style={[styles.branch,discipline===key&&styles.branchActive]}><Text style={[styles.branchText,discipline===key&&styles.branchTextActive]}>{text[key]}</Text></Pressable>)}</View>
     <View style={[styles.recommended,rtl&&styles.rtl]}><View style={styles.recommendedCopy}><Text style={[styles.recommendedEyebrow,rtl&&styles.textRtl]}>{text.current}</Text><Text style={[styles.recommendedTitle,rtl&&styles.textRtl]}>{levelNames[recommendedLevel-1]} · {recommendedLevel}/10</Text></View><Pressable onPress={()=>setLevel(recommendedLevel)} style={styles.useRecommended}><Text style={styles.useRecommendedText}>{locale==='fa'?'انتخاب':'Use'}</Text></Pressable></View>
     <Text style={[styles.sectionLabel,rtl&&styles.textRtl]}>{text.level}: {level} · {levelNames[level-1]}</Text>
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.levelRow}>{levelNames.map((name,index)=><Pressable key={name} onPress={()=>setLevel(index+1)} style={[styles.levelChip,level===index+1&&styles.levelChipActive]}><Text style={[styles.levelText,level===index+1&&styles.levelTextActive]}>{index+1}</Text></Pressable>)}</ScrollView>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.levelRow}>{levelNames.map((name,index)=><Pressable key={`${name}-${index}`} onPress={()=>setLevel(index+1)} style={[styles.levelChip,level===index+1&&styles.levelChipActive]}><Text style={[styles.levelText,level===index+1&&styles.levelTextActive]}>{index+1}</Text></Pressable>)}</ScrollView>
     <TextInput value={query} onChangeText={setQuery} placeholder={text.search} placeholderTextColor="#9CA3AF" style={[styles.search,rtl&&styles.textRtl]}/>
     <Pressable onPress={()=>discipline==='yoga'?router.push('/yoga'):router.push({pathname:'/fitness-session',params:{discipline,level:String(level)}})} style={styles.startButton}><Text style={styles.startText}>{text.start} · {levelNames[level-1]}</Text></Pressable>
     {error?<Text style={styles.error}>{error}</Text>:null}
@@ -40,7 +42,7 @@ export default function FitnessScreen() {
   </ScrollView></SafeAreaView>;
 }
 
-function ExerciseCard({item,text,rtl}:{item:FitnessItem;text:typeof copy['en'];rtl:boolean}){
+function ExerciseCard({item,text,rtl}:{item:FitnessItem;text:FitnessCopy;rtl:boolean}){
   const media=item.media[0];
   return <Pressable onPress={()=>router.push({pathname:'/exercise',params:{discipline:item.discipline,id:item.id}})} style={styles.card}>
     {media?<Image source={{uri:media.webpUrl}} style={styles.image} resizeMode="cover"/>:<View style={styles.placeholder}><Text style={styles.placeholderText}>M</Text></View>}
