@@ -124,6 +124,28 @@ Added a provider-independent visual theme contract with `default` and `feminine`
 
 **Foundation implemented; full UI rollout and physical-device validation remain pending.**
 
+## 2026-09-05 — Mobile localization hardening
+
+### Scope
+
+Introduced a single reactive locale store for the mobile application with persistence in AsyncStorage. Locale changes now notify mounted screens rather than requiring each route to re-read the stored locale once during mount.
+
+### Implemented
+
+- Root layout initializes the locale once at app startup and synchronizes RTL configuration.
+- Language selection persists and immediately publishes the selected locale.
+- Auth, Assistant, Command Center, Daily, Calendar, Notifications, Habits, Inventory and Shopping now consume the global reactive locale.
+- Common Farsi/English navigation labels, loading states, errors, empty states and action labels were localized in these high-frequency screens.
+- Calendar and notification date formatting now follow the selected locale.
+
+### Design boundary
+
+This is a localization architecture hardening pass, not a claim that every remaining mobile screen is fully translated. Remaining routes/components with embedded English strings still need migration to the shared locale contract.
+
+### Runtime status
+
+Mobile typecheck and Expo export/device validation are still required on the user's runtime after this batch because the GitHub connector cannot execute the local Expo toolchain.
+
 ## Checkpoint status
 
 **Backend Recommendation Intelligence: validated green locally.**
@@ -134,13 +156,16 @@ Added a provider-independent visual theme contract with `default` and `feminine`
 
 **Mobile visual theme: foundation implemented; full UI wiring/device validation pending.**
 
+**Mobile localization: reactive global locale foundation plus core-screen rollout implemented; remaining route migration and runtime validation pending.**
+
 **Voice P0: lifecycle race narrowed in tracked JS/native boundary; unresolved pending lockfile validation and direct Android WIP/device evidence.**
 
 ## Next engineering priorities
 
 1. Validate the updated mobile dependency graph and backend security regression tests on the user's runtime.
-2. Resolve the P0 Android voice lifecycle issue using the local candidate WIP and real-device evidence.
-3. Complete the feminine/default theme rollout and mobile food journey.
-4. Complete the two-pass Prisma review for durable canonical recipe metadata.
-5. Continue production hardening, observability and E2E teardown cleanup.
-6. Keep the current validation rule: success output should remain quiet; only failures/errors need to be surfaced during user-runtime test commands.
+2. Continue migrating remaining mobile routes/components to the shared locale contract and run mobile typecheck/export validation.
+3. Resolve the P0 Android voice lifecycle issue using the local candidate WIP and real-device evidence.
+4. Complete the feminine/default theme rollout and mobile food journey.
+5. Complete the two-pass Prisma review for durable canonical recipe metadata.
+6. Continue production hardening, observability and E2E teardown cleanup.
+7. Keep the current validation rule: success output should remain quiet; only failures/errors need to be surfaced during user-runtime test commands.
