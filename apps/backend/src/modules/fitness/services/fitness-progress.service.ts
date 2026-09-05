@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
-import { FitnessDiscipline } from '../models/fitness.model';
+import type { FitnessDiscipline } from '../models/fitness.model';
 
 export type FitnessProgress = {
   discipline: FitnessDiscipline;
@@ -55,7 +55,7 @@ export class FitnessProgressService {
         "formScoreAvg", "recentDifficulty", "createdAt", "updatedAt"
       )
       VALUES (
-        ${id}, ${input.userId}, ${input.discipline}, ${difficulty},
+        ${id}, ${input.userId}, ${input.discipline}, 1,
         ${input.completed ? 1 : 0}, ${input.completed ? 1 : 0}, ${formScore}, ${difficulty}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
       )
       ON CONFLICT ("userId", "discipline") DO UPDATE SET
@@ -73,8 +73,11 @@ export class FitnessProgressService {
         END,
         "recentDifficulty" = ${difficulty},
         "currentLevel" = CASE
-          WHEN ${input.completed} AND ${difficulty} >= "FitnessDisciplineProgress"."currentLevel" AND COALESCE(${formScore}, 100) >= 80
-            THEN LEAST(10, GREATEST("FitnessDisciplineProgress"."currentLevel", ${difficulty} + CASE WHEN "FitnessDisciplineProgress"."sessionsCompleted" >= 2 THEN 1 ELSE 0 END))
+          WHEN ${input.completed}
+            AND ${difficulty} >= "FitnessDisciplineProgress"."currentLevel"
+            AND COALESCE(${formScore}, 100) >= 80
+            AND "FitnessDisciplineProgress"."sessionsCompleted" >= 2
+            THEN LEAST(10, "FitnessDisciplineProgress"."currentLevel" + 1)
           ELSE "FitnessDisciplineProgress"."currentLevel"
         END,
         "updatedAt" = CURRENT_TIMESTAMP
