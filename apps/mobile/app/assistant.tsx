@@ -1,11 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAppLocale, isRTL } from '../lib/i18n';
 import { AssistantHistoryTurn, getAssistantHistory, sendAssistantMessage } from '../lib/assistant-api';
 
- type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; meta?: string };
+type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; meta?: string };
 const copy = {
   en: { title: 'Your Assistant', subtitle: 'Tell me what you need. I will use your context, plans and preferences.', placeholder: 'What should we do?', send: 'Send', back: 'Back', welcome: 'I’m here. Ask me to plan your day, adjust a workout, track something, or help with a decision.', error: 'I could not reach the assistant right now. Check your connection and try again.', done: 'Done', understood: 'Understood', historyError: 'I could not restore the previous conversation. You can still start a new message.', restoring: 'Restoring conversation…', thinking: 'Thinking…' },
   fa: { title: 'دستیار تو', subtitle: 'هر چیزی لازم داری بگو؛ از برنامه و عادت‌ها تا تصمیم‌های روزمره.', placeholder: 'چی کار کنیم؟', send: 'ارسال', back: 'برگشت', welcome: 'من اینجام. برای برنامه‌ریزی روز، ورزش، یادآوری یا هر تصمیمی که داری ازم کمک بگیر.', error: 'الان نتونستم به دستیار وصل بشم. اتصال اینترنت رو بررسی کن و دوباره امتحان کن.', done: 'انجام شد', understood: 'متوجه شدم', historyError: 'نتونستم گفت‌وگوی قبلی رو بازیابی کنم؛ ولی می‌تونی همین الان ادامه بدی.', restoring: 'در حال بازیابی گفت‌وگو…', thinking: 'دارم فکر می‌کنم…' },
@@ -16,11 +16,19 @@ export default function AssistantScreen() {
   const locale = useAppLocale(); const ui = copy[locale]; const rtl = useMemo(() => isRTL(locale), [locale]);
   const [messages, setMessages] = useState<ChatMessage[]>([]); const [draft, setDraft] = useState(''); const [sending, setSending] = useState(false); const [loadingHistory, setLoadingHistory] = useState(true); const [error, setError] = useState<string | null>(null); const [historyNotice, setHistoryNotice] = useState(false);
 
-  useMemo(() => {
+  useEffect(() => {
     let active = true;
-    void getAssistantHistory(40).then((history) => { if (!active) return; setMessages(history.length ? mapHistory(history) : [{ id: 'welcome', role: 'assistant', text: ui.welcome }]); }).catch(() => { if (!active) return; setHistoryNotice(true); setMessages([{ id: 'welcome', role: 'assistant', text: ui.welcome }]); }).finally(() => { if (active) setLoadingHistory(false); });
+    setLoadingHistory(true);
+    void getAssistantHistory(40).then((history) => {
+      if (!active) return;
+      setMessages(history.length ? mapHistory(history) : [{ id: 'welcome', role: 'assistant', text: ui.welcome }]);
+    }).catch(() => {
+      if (!active) return;
+      setHistoryNotice(true);
+      setMessages([{ id: 'welcome', role: 'assistant', text: ui.welcome }]);
+    }).finally(() => { if (active) setLoadingHistory(false); });
     return () => { active = false; };
-  }, []);
+  }, [ui.welcome]);
 
   const send = async () => {
     const text = draft.trim(); if (!text || sending) return; setDraft(''); setError(null); setHistoryNotice(false); setSending(true); setMessages((current) => [...current, { id: `u-${Date.now()}`, role: 'user', text }]);
