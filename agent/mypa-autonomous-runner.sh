@@ -140,9 +140,9 @@ for ((cycle=1; cycle<=MAX_CYCLES; cycle++)); do
 
   echo "[Worker] starting..."
   if [[ -n "$MODEL" ]]; then
-    codex exec --sandbox workspace-write --ask-for-approval on-request -m "$MODEL" -o "$worker_file" "$(worker_prompt)" 2>&1 | tee "$CYCLE_DIR/worker-console.log"
+    codex exec --sandbox workspace-write --ask-for-approval on-request -c approvals_reviewer=auto_review -m "$MODEL" -o "$worker_file" "$(worker_prompt)" 2>&1 | tee "$CYCLE_DIR/worker-console.log"
   else
-    codex exec --sandbox workspace-write --ask-for-approval on-request -o "$worker_file" "$(worker_prompt)" 2>&1 | tee "$CYCLE_DIR/worker-console.log"
+    codex exec --sandbox workspace-write --ask-for-approval on-request -c approvals_reviewer=auto_review -o "$worker_file" "$(worker_prompt)" 2>&1 | tee "$CYCLE_DIR/worker-console.log"
   fi
 
   echo "[Supervisor] validating..."
