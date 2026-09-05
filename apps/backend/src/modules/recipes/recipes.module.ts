@@ -9,6 +9,7 @@ import { RecipeInventoryMatcherService } from './services/recipe-inventory-match
 import { GlobalCountryFoodService } from './services/global-country-food.service';
 import { FoodOperatingLoopService } from './services/food-operating-loop.service';
 import { IngredientTaxonomyService } from './services/ingredient-taxonomy.service';
+import { FoodContextNormalizationService } from './services/food-context-normalization.service';
 
 @Module({
   imports: [PrismaModule, NutritionModule, ShoppingModule, BudgetIntelligenceModule],
@@ -19,6 +20,7 @@ import { IngredientTaxonomyService } from './services/ingredient-taxonomy.servic
     GlobalCountryFoodService,
     FoodOperatingLoopService,
     IngredientTaxonomyService,
+    FoodContextNormalizationService,
   ],
   exports: [
     RecipesService,
@@ -26,6 +28,7 @@ import { IngredientTaxonomyService } from './services/ingredient-taxonomy.servic
     GlobalCountryFoodService,
     FoodOperatingLoopService,
     IngredientTaxonomyService,
+    FoodContextNormalizationService,
   ],
 })
 export class RecipesModule {}
