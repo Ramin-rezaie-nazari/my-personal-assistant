@@ -1,0 +1,78 @@
+name: MYPA docs ledger sync
+
+on:
+  push:
+    branches:
+      - agent/mypa-autonomous-control-plane
+    paths:
+      - '.github/workflows/mypa-docs-ledger-sync.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Append completion ledger to A/B/C
+        shell: python
+        run: |
+          from pathlib import Path
+
+          stamp = '2026-09-05 — Autonomous completion ledger'
+          local_stamp = '2026-09-05 — Local-first development policy'
+          architecture = Path('apps/backend/docs/04_ARCHITECTURE_ATLAS.md')
+          current = Path('apps/backend/docs/05_CURRENT_STATE.md')
+          roadmap = Path('docs/roadmap/C-visual-ux-roadmap.md')
+
+          a = architecture.read_text(encoding='utf-8')
+          a_marker = f'## {stamp}'
+          a_append = '''\n\n## 2026-09-05 — Autonomous completion ledger\n\nThis batch extended the atlas with the concrete fitness/content architecture now present in the repository.\n\n### Completed engineering work\n\n- Added persistent `FitnessExerciseCatalog`, `FitnessExerciseMedia`, and `FitnessDisciplineProgress` migration tables with explicit provenance, licensing, publishing state, parent/variant relationships, and media positions.\n- Changed `FitnessCatalogService` to read the persistent published catalog first, enforce difficulty ceilings, expose ten progression levels, pagination/search, and the four-approved-WebP release contract, while retaining a safe fallback catalog path.\n- Added authenticated fitness progression persistence and session recording with bounded level promotion rules.\n- Added mobile Gym / Calisthenics / Yoga catalog UX, ten-level selection, current-level recommendation, search/pagination, session completion, media completeness and attribution.\n- Added the fitness importer, audit gate, WebP media verifier and content policy. The importer deliberately does not check raw third-party datasets into the public repository.\n- Added regression coverage for fitness catalog behavior and recipe-library ownership-aware pagination behavior.\n- Repaired the mobile voice/TTS type contract, language routing, Expo speech/location dependency synchronization path, and legacy camera/reminder compatibility issues through a one-time dependency-sync workflow.\n\n### Architectural safety boundaries\n\n- Fitness content is persistent-first; fallback content is not treated as production-complete corpus evidence.\n- A movement is publishable only when its content record and four distinct approved WebP assets satisfy the release gate.\n- User fitness progression is isolated per authenticated user and discipline.\n- Third-party content licensing is represented as data and release policy rather than assumed.\n- Production database changes are never forced against an unverified schema.\n'''
+          if a_marker not in a:
+              architecture.write_text(a.rstrip() + a_append, encoding='utf-8')
+
+          b = current.read_text(encoding='utf-8')
+          b_marker = f'## {stamp}'
+          b_append = '''\n\n## 2026-09-05 — Autonomous completion ledger\n\n### Completed in this batch\n\n- Persistent fitness catalog schema/migration created.\n- Fitness catalog API changed to persistent-first with a strict four-WebP media contract and ten levels.\n- Per-user progression/session persistence added and wired to the mobile session flow.\n- Gym, Calisthenics and Yoga mobile catalog flows expanded with levels, search, paging, progress and attribution.\n- Fitness importer/audit/media-verification tooling and licensing policy added.\n- Recipe/fitness unit-test regressions corrected without weakening assertions.\n- Mobile Expo/TTS/location/camera/reminder compatibility fixes staged through an automated lockfile synchronization workflow.\n\n### Validation truth\n\nThe branch has live CI runs after the latest mobile/TTS changes; green CI is only declared from completed GitHub Actions results. The required 1,500-movement / 6,000-WebP production corpus is **not** claimed populated yet. Development and corpus validation are explicitly local-first on the Mac/PostgreSQL stack; the eventual production database will be selected later as part of VPS deployment. Supabase is not a development or release prerequisite.\n\n### Remaining release blockers\n\n- Run the local PostgreSQL stack and apply the repository Prisma migration.\n- Execute the real fitness corpus import and pass `fitness:content:audit` and `fitness:content:verify-media` against the local database.\n- Complete mobile CI/device validation, especially native voice/TTS behavior.\n- Continue broader production hardening and real-device QA.\n'''
+          if b_marker not in b:
+              current.write_text(b.rstrip() + b_append, encoding='utf-8')
+
+          c = roadmap.read_text(encoding='utf-8')
+          c_marker = f'## {stamp}'
+          c_append = '''\n\n## 2026-09-05 — Temporary roadmap closure note\n\nThe previously planned visual/onboarding checkpoint has been implemented in code. This C document remains a temporary roadmap only; detailed implementation history now lives in A/B.\n\nCompleted alongside this checkpoint: persistent fitness catalog architecture, ten-level fitness UX, user progression/session persistence, recipe/fitness regression fixes, and mobile Expo/TTS compatibility repair.\n\nTemporary remaining verification: physical-device onboarding/voice review and the local fitness corpus population gate.\n'''
+          if c_marker not in c:
+              roadmap.write_text(c.rstrip() + c_append, encoding='utf-8')
+
+          local_append_a = '''\n\n## 2026-09-05 — Local-first development policy\n\nThe active development source of truth is the repository plus the developer's local Mac PostgreSQL database. Supabase is intentionally not part of the development completion path. The future production database/infrastructure will be provisioned separately on the release VPS.\n'''
+          if local_stamp not in a:
+              architecture.write_text(architecture.read_text(encoding='utf-8').rstrip() + local_append_a, encoding='utf-8')
+
+          local_append_b = '''\n\n## 2026-09-05 — Local-first development policy\n\nSupabase is explicitly out of the development path for this project phase. All Prisma migrations, catalog imports, corpus audits, media verification, backend runtime checks, and database-backed feature validation should target the local PostgreSQL stack on the developer Mac. Production database setup is a later VPS deployment concern.\n'''
+          if local_stamp not in b:
+              current.write_text(current.read_text(encoding='utf-8').rstrip() + local_append_b, encoding='utf-8')
+
+      - name: Repair importer license normalization
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('apps/backend/scripts/fitness-content-import.mjs')
+          text = path.read_text(encoding='utf-8')
+          old = "  'cc by-sa',"
+          new = "  'cc by sa',"
+          if old in text:
+              path.write_text(text.replace(old, new), encoding='utf-8')
+
+      - name: Commit documentation and local maintenance fixes
+        run: |
+          files="apps/backend/docs/04_ARCHITECTURE_ATLAS.md apps/backend/docs/05_CURRENT_STATE.md docs/roadmap/C-visual-ux-roadmap.md apps/backend/scripts/fitness-content-import.mjs"
+          if git diff --quiet -- $files; then
+            echo 'No ledger or maintenance changes required.'
+            exit 0
+          fi
+          git config user.name 'MYPA Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add $files
+          git commit -m '[skip ci] docs: codify local-first development policy'
+          git push origin HEAD:agent/mypa-autonomous-control-plane

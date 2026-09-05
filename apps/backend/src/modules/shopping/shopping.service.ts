@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InventoryService } from '../inventory/inventory.service';
 import { PrismaService } from '../../common/database/prisma.service';
 export type SmartShoppingItem = {
@@ -69,10 +69,13 @@ export class ShoppingService {
       priority?: string;
     },
   ) {
-    if (item.quantity <= 0)
-      throw new NotFoundException('Quantity must be positive');
-    const food = await this.prisma.foodItem.findUnique({
-      where: { id: item.foodId },
+    if (!Number.isFinite(item.quantity) || item.quantity <= 0)
+      throw new BadRequestException('Quantity must be a positive finite number');
+    const food = await this.prisma.foodItem.findFirst({
+      where: {
+        id: item.foodId,
+        OR: [{ userId: null }, { userId }],
+      },
     });
     if (!food) throw new NotFoundException('Food item not found');
     const existing = await this.prisma.shoppingItem.findFirst({
@@ -104,8 +107,11 @@ export class ShoppingService {
     recipeId: string,
     items: Array<{ foodId: string; quantity: number; unit: string }>,
   ) {
-    const recipe = await this.prisma.recipe.findUnique({
-      where: { id: recipeId },
+    const recipe = await this.prisma.recipe.findFirst({
+      where: {
+        id: recipeId,
+        OR: [{ userId: null }, { userId }],
+      },
       include: { ingredients: true },
     });
     if (!recipe) throw new NotFoundException('Recipe not found');

@@ -184,6 +184,81 @@ model NutritionLog {
   @@index([userId, dateKey])
 }
 
+model IngredientCanonical {
+  id String @id @default(uuid())
+  canonicalKey String @unique
+  canonicalName String
+  scientificName String?
+  foodGroup String?
+  confidence Float @default(1)
+  provenance String
+  version String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  aliases IngredientCanonicalAlias[]
+  foodItems FoodItem[]
+  recipeIngredients RecipeIngredient[]
+}
+
+model IngredientCanonicalAlias {
+  id String @id @default(uuid())
+  canonicalIngredientId String
+  normalizedAlias String
+  displayAlias String
+  provenance String
+  version String
+  createdAt DateTime @default(now())
+  canonicalIngredient IngredientCanonical @relation(fields: [canonicalIngredientId], references: [id], onDelete: Cascade)
+  @@unique([canonicalIngredientId, normalizedAlias])
+  @@index([normalizedAlias])
+}
+
+model RegionCanonical {
+  id String @id @default(uuid())
+  countryCode String
+  regionCode String
+  canonicalName String
+  provenance String
+  version String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  recipes RecipeRegion[]
+  @@unique([countryCode, regionCode])
+  @@index([countryCode])
+}
+
+model CuisineCanonical {
+  id String @id @default(uuid())
+  canonicalKey String @unique
+  canonicalName String
+  parentCuisineId String?
+  provenance String
+  version String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  parentCuisine CuisineCanonical? @relation("CuisineHierarchy", fields: [parentCuisineId], references: [id], onDelete: SetNull)
+  children CuisineCanonical[] @relation("CuisineHierarchy")
+  recipes RecipeCuisine[]
+  @@index([parentCuisineId])
+}
+
+model RecipeSafetyAssertion {
+  id String @id @default(uuid())
+  recipeId String
+  assertionType String
+  value String
+  effect String
+  confidence Float @default(0)
+  provenance String
+  verified Boolean @default(false)
+  version String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@unique([recipeId, assertionType, value])
+  @@index([assertionType, value, verified])
+}
+
 model FoodItem {
   id String @id @default(uuid())
   userId String?
@@ -196,13 +271,16 @@ model FoodItem {
   imageUrl String?
   imageSource String?
   verified Boolean @default(false)
+  canonicalIngredientId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  canonicalIngredient IngredientCanonical? @relation(fields: [canonicalIngredientId], references: [id], onDelete: SetNull)
   mealItems MealItem[]
   recipeIngredients RecipeIngredient[]
   inventoryItems InventoryItem[]
   shoppingItems ShoppingItem[]
+  @@index([canonicalIngredientId])
 }
 
 model Meal {
@@ -239,6 +317,7 @@ model RecipeIngredient {
   id String @id @default(uuid())
   recipeId String
   foodId String
+  canonicalIngredientId String?
   quantity Float @default(1)
   unit String @default("g")
   measurementKind String @default("unitless")
@@ -253,6 +332,8 @@ model RecipeIngredient {
   createdAt DateTime @default(now())
   recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   food FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  canonicalIngredient IngredientCanonical? @relation(fields: [canonicalIngredientId], references: [id], onDelete: SetNull)
+  @@index([canonicalIngredientId])
 }
 
 model Recipe {
@@ -272,6 +353,27 @@ model Recipe {
   updatedAt DateTime @updatedAt
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
   ingredients RecipeIngredient[]
+  cuisines RecipeCuisine[]
+  regions RecipeRegion[]
+  safetyAssertions RecipeSafetyAssertion[]
+}
+
+model RecipeCuisine {
+  recipeId String
+  cuisineId String
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  cuisine CuisineCanonical @relation(fields: [cuisineId], references: [id], onDelete: Cascade)
+  @@id([recipeId, cuisineId])
+  @@index([cuisineId])
+}
+
+model RecipeRegion {
+  recipeId String
+  regionId String
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  region RegionCanonical @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  @@id([recipeId, regionId])
+  @@index([regionId])
 }
 
 model InventoryItem {

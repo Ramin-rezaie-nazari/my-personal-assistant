@@ -33,3 +33,11 @@ Make the first-run experience feel polished, alive, personal, and visually consi
 ## Next pass after this checkpoint
 
 Review the five onboarding screens on the physical Android device and tune spacing, typography, option-card density, and animation based on the real screen rather than assumptions.
+
+## 2026-09-05 — Temporary roadmap closure note
+
+The previously planned visual/onboarding checkpoint has been implemented in code. This C document remains a temporary roadmap only; detailed implementation history now lives in A/B.
+
+Completed alongside this checkpoint: persistent fitness catalog architecture, ten-level fitness UX, user progression/session persistence, recipe/fitness regression fixes, and mobile Expo/TTS compatibility repair.
+
+Temporary remaining verification: physical-device onboarding/voice review and the production fitness corpus population gate.

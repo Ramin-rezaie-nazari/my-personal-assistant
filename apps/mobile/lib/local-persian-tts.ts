@@ -1,6 +1,6 @@
 import { Audio } from 'expo-av';
-import * as FileSystem from 'expo-file-system/legacy';
-import { createTTS, saveAudioToFile, type TtsEngine } from 'react-native-sherpa-onnx';
+import * as FileSystem from 'expo-file-system';
+import { createTTS, saveAudioToFile, type TtsEngine } from 'react-native-sherpa-onnx/tts';
 import {
   extractArchive,
   listBundledArchives,
@@ -23,6 +23,8 @@ const ARCHIVE_PATH = `${DOWNLOAD_DIR}${MODEL_ARCHIVE_NAME}`;
 let enginePromise: Promise<TtsEngine> | null = null;
 let activeSound: Audio.Sound | null = null;
 let activePlaybackToken = 0;
+let nativeOperationQueue: Promise<void> = Promise.resolve();
+let releaseRequested = false;
 
 function nativeFilePath(uri: string): string {
   return uri.startsWith('file://') ? uri.slice('file://'.length) : uri;
@@ -49,11 +51,11 @@ async function downloadArchive(): Promise<void> {
   const temporaryPath = `${ARCHIVE_PATH}.partial`;
   await FileSystem.deleteAsync(temporaryPath, { idempotent: true });
   try {
-    await FileSystem.downloadAsync(MODEL_URL, temporaryPath);
-    if (!(await isRealFile(temporaryPath))) {
+    const result = await FileSystem.downloadAsync(MODEL_URL, temporaryPath);
+    if (!(await isRealFile(result.uri || temporaryPath))) {
       throw new Error('Persian TTS model archive download was empty.');
     }
-    await FileSystem.moveAsync({ from: temporaryPath, to: ARCHIVE_PATH });
+    await FileSystem.moveAsync({ from: result.uri || temporaryPath, to: ARCHIVE_PATH });
   } catch (error) {
     await FileSystem.deleteAsync(temporaryPath, { idempotent: true });
     throw error;
@@ -64,7 +66,7 @@ async function extractPersianModel(): Promise<string> {
   await ensureDirectory(MODEL_ROOT);
   await downloadArchive();
 
-  if (await isRealFile(MODEL_PATH) && await isRealFile(TOKENS_PATH)) {
+  if ((await isRealFile(MODEL_PATH)) && (await isRealFile(TOKENS_PATH))) {
     return nativeFilePath(MODEL_DIR);
   }
 
@@ -87,12 +89,16 @@ async function extractPersianModel(): Promise<string> {
 }
 
 async function getEngine(): Promise<TtsEngine> {
+  if (releaseRequested) {
+    throw new Error('Persian TTS engine is releasing.');
+  }
+
   if (!enginePromise) {
     enginePromise = (async () => {
       const modelDir = await extractPersianModel();
       if (!FileSystem.documentDirectory) throw new Error('Document directory is unavailable.');
-      if (!await isRealFile(MODEL_PATH)) throw new Error('Persian TTS ONNX model is missing.');
-      if (!await isRealFile(TOKENS_PATH)) throw new Error('Persian TTS tokens.txt is missing.');
+      if (!(await isRealFile(MODEL_PATH))) throw new Error('Persian TTS ONNX model is missing.');
+      if (!(await isRealFile(TOKENS_PATH))) throw new Error('Persian TTS tokens.txt is missing.');
       try {
         const espeak = await FileSystem.getInfoAsync(ESPEAK_DIR);
         if (!espeak.exists) throw new Error('Persian TTS espeak-ng-data is missing.');
@@ -118,6 +124,15 @@ async function getEngine(): Promise<TtsEngine> {
     });
   }
   return enginePromise;
+}
+
+function runSerializedNativeOperation<T>(operation: () => Promise<T>): Promise<T> {
+  const nextOperation = nativeOperationQueue.then(operation, operation);
+  nativeOperationQueue = nextOperation.then(
+    () => undefined,
+    () => undefined,
+  );
+  return nextOperation;
 }
 
 async function stopCurrentPlayback(): Promise<void> {
@@ -152,13 +167,17 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
   if (!normalizedText) return false;
 
   await stopCurrentPlayback();
+  if (releaseRequested) return false;
   const token = activePlaybackToken;
 
   try {
-    const engine = await getEngine();
-    const audio = await engine.generateSpeech(normalizedText, {
-      sid: 0,
-      speed: Math.min(1.35, Math.max(0.75, rate)),
+    const audio = await runSerializedNativeOperation(async () => {
+      if (releaseRequested) throw new Error('Persian TTS release is in progress.');
+      const engine = await getEngine();
+      return engine.generateSpeech(normalizedText, {
+        sid: 0,
+        speed: Math.min(1.35, Math.max(0.75, rate)),
+      });
     });
 
     await ensureDirectory(PLAYBACK_DIR);
@@ -166,7 +185,10 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
     const outputNativePath = nativeFilePath(outputUri);
     await saveAudioToFile(audio, outputNativePath);
 
-    if (token !== activePlaybackToken) return false;
+    if (token !== activePlaybackToken || releaseRequested) {
+      await FileSystem.deleteAsync(outputUri, { idempotent: true });
+      return false;
+    }
 
     await Audio.setAudioModeAsync({
       playsInSilentModeIOS: true,
@@ -181,7 +203,7 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
     activeSound = sound;
 
     await new Promise<void>((resolve, reject) => {
-      const handleStatus = (status: Audio.AVPlaybackStatus) => {
+      const handleStatus = (status) => {
         if (!status.isLoaded) {
           if (status.error) reject(new Error(status.error));
           return;
@@ -209,16 +231,26 @@ export async function stopLocalPersianTts(): Promise<void> {
 }
 
 export async function releaseLocalPersianTts(): Promise<void> {
+  if (releaseRequested) return;
+  releaseRequested = true;
   await stopCurrentPlayback();
-  if (!enginePromise) return;
-  try {
-    const engine = await enginePromise;
-    await engine.destroy();
-  } catch {
-    // Best-effort native resource cleanup.
-  } finally {
-    enginePromise = null;
-  }
+
+  await runSerializedNativeOperation(async () => {
+    const promise = enginePromise;
+    if (!promise) return;
+    try {
+      const engine = await promise;
+      await engine.destroy();
+    } catch {
+      // Best-effort native resource cleanup.
+    } finally {
+      if (enginePromise === promise) {
+        enginePromise = null;
+      }
+    }
+  });
+
+  releaseRequested = false;
 }
 
 export const LOCAL_PERSIAN_TTS_MODEL = {

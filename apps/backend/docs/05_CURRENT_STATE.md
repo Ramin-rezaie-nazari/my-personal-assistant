@@ -2,215 +2,195 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Latest fully validated locally: 2026-08-18 11:26+03:30. The Food Operating Loop, Meal Planner and Recipe Scaling Metadata slice is fully green on the user's local runtime.
+> Latest validated local backend checkpoint: 2026-09-05. Recommendation Intelligence is green locally; shopping ownership hardening is green under focused user-runtime regression; the food taxonomy persistence layer has passed two explicit design reviews and is awaiting runtime/CI migration validation. CI/mobile/device validation is not yet claimed green.
 
 ## Executive status
 
-**Overall project completion: ~65%**
+**Overall project completion: ~66%**
 
-This is a weighted engineering/product-completion index, not a claim that 65% of every file is written. Backend foundations are strong, the 195-country food/currency layer is real, and the connected food loop now spans scaling, inventory, shopping handoff, recommendations and daily meal planning. Major unfinished product work remains in the verified global recipe corpus, live market pricing, mobile UX, production hardening, and monetization.
+This is a weighted engineering/product-completion index, not a claim that 66% of every file is written. Backend foundations are strong, the global food/currency routing layer is real, and the connected food loop now spans scaling, inventory, shopping handoff, recommendations and daily meal planning. Major unfinished product work remains in the verified global recipe corpus, live market pricing, mobile UX, native voice/device validation, production hardening, and monetization.
 
-## Latest fully green local checkpoint — 2026-08-18
-
-```text
-Focused Food Operating Loop slice:  5/5 suites, 14/14 tests — PASS
-Full backend Jest:                  152/152 suites, 408/408 tests — PASS
-Backend E2E:                         4/4 suites, 24/24 tests — PASS
-Typecheck:                            PASS
-Build:                                PASS
-Prisma migrate deploy:               PASS
-Prisma migrate status:               Database schema is up to date
-```
-
-The non-fatal E2E worker teardown warning remains, but all E2E suites/tests pass.
-
-## Current unvalidated change — Food Decision Brain
-
-A new deterministic food-decision layer has now been wired into the backend as the next intelligence slice. It is intentionally built on top of the existing Food Operating Loop and Canonical Ingredient Intelligence rather than creating a parallel recipe-ranking system.
-
-### Decision pipeline
+## Latest validated local checkpoint — 2026-09-05
 
 ```text
-User food intent
-  ↓
-Personal context
-  ↓
-Hard dietary/allergy filters
-  ↓
-Serving-aware Food Operating Loop
-  ↓
-Inventory coverage / missing ingredients
-  ↓
-Nutrition fit
-  ↓
-Preference fit
-  ↓
-Novelty / recent-meal avoidance
-  ↓
-Country / cuisine context
-  ↓
-Recipe verification + missing-ingredient quality
-  ↓
-Weighted decision score
-  ↓
-Diversified ranking
-  ↓
-Reasons + score breakdown + rejected candidates
+Frozen-lockfile backend install:       PASS
+Backend typecheck:                     PASS
+Backend build:                         PASS
+Recommendation focused tests:          PASS (2 suites / 5 tests)
+Full backend Jest:                     PASS (160 suites / 429 tests)
+Recommendation Intelligence E2E:       PASS
+Shopping ownership regression tests:   PASS (1 suite / 2 tests)
+Food taxonomy Prisma design review:    PASS (two-pass review completed)
+Food taxonomy migration runtime/CI:    PENDING
+Mobile typecheck/export/device:        PENDING
 ```
 
-### Implemented
+The historical non-fatal Jest E2E worker teardown/open-handle warning remains a production-hardening item.
 
-- `RecommendationEngineService` now performs deterministic multi-signal food decisions.
-- `PersonalizationService` builds food context from profile, health, nutrition and recent meals.
-- `RecommendationRankingService` applies score ordering plus near-top recipe-family diversification.
-- Food recommendation endpoint exists under `POST /recommendation-intelligence/food`.
-- Recommendation Intelligence is wired into `AppModule`.
-- Existing Recipe APIs and Food Operating Loop remain the canonical recipe/serving/inventory execution path.
-- Canonical Ingredient Intelligence remains the upstream identity source; it is not duplicated by the recommendation engine.
+CI for the latest branch head is running after the current changes; this document does not claim CI-green until the runs finish successfully.
 
-### Important design boundaries
+## Current work — Food Decision Brain / Recommendation Intelligence
 
-- Country is a relevance signal, not a cuisine restriction. A user in Iran asking for Indian food must still receive Indian options.
-- Dietary/allergy hard blocks run before ranking. Uncertainty remains conservative.
-- Missing ingredients are a ranking penalty by default; a caller can explicitly set a maximum missing-ingredient threshold when a strict pantry-only decision is required.
-- Live price values are not fabricated. Budget-aware ranking should be added only after verified market-price coverage is available.
-- Recommendation explanations are derived from the actual scoring evidence, not invented after the decision.
+A deterministic Recommendation Intelligence vertical slice is implemented on top of the canonical Food Operating Loop. It adds orchestration, personalization, ranking, diversification and explanations without creating a second recipe-calculation engine.
 
-### Current validation state
+### Implemented in the current branch
 
-**Not yet fully validated locally.** The next local checkpoint must include:
+- `RecommendationEngineService` obtains compact user food context and delegates recipe/serving/inventory/nutrition calculations to `FoodOperatingLoopService`.
+- `PersonalizationService` reads primary goal, nutrition targets, diet type and recent nutrition-log titles into a deterministic compact context.
+- `RecommendationRankingService` applies stable score ordering and top-three recipe-family diversification.
+- Authenticated `POST /recommendation-intelligence/food` is exposed through `RecommendationIntelligenceController`.
+- `RecommendationIntelligenceModule` is wired into `AppModule` with `RecipesModule` and `PrismaModule`.
+- `FoodOperatingLoopService.recommend(...)` supports an explicit `maxMissingIngredients` threshold before ranking.
+- Recommendation output contains deterministic reasons, base score, personalization adjustment, recent-meal flag and final rank.
+- `pnpm-lock.yaml` is synchronized with the backend `sharp` dependency so frozen-lockfile installation has a consistent dependency graph.
 
-1. backend `pnpm install` / dependency state is synchronized;
-2. `pnpm run typecheck` passes;
-3. `pnpm run build` passes;
-4. full Jest passes;
-5. recommendation-engine focused tests cover hard filters, intent/cuisine matching, personalization, missing-ingredient threshold and diversification;
-6. API integration/E2E validation covers `POST /recommendation-intelligence/food`;
-7. only then should this slice be marked fully green.
+### Validation
 
-## New Slice — Food Operating Loop + Meal Planning + Recipe Scaling Metadata
+**Recommendation Intelligence: VALIDATED GREEN LOCALLY.**
 
-### Implemented on `main`
+Validated gates:
 
-```text
-Recipe + persisted ingredient scaling metadata
-  ↓
-Target servings
-  ↓
-Deterministic scaling engine
-  ↓
-Scaled ingredient quantities
-  ↓
-Inventory comparison using target quantities
-  ↓
-Unit normalization
-  ↓
-Missing ingredient calculation
-  ↓
-Shopping-ready handoff
-  ↓
-Country food context
-  ↓
-Local currency/finance context
-  ↓
-Deterministic meal recommendation
-  ↓
-Deterministic daily meal plan
-```
+- frozen lockfile install
+- backend typecheck
+- backend build
+- focused Recommendation tests
+- full backend Jest
+- Recommendation Intelligence E2E
 
-### Persisted RecipeIngredient scaling metadata
+Known non-blocking issue: the E2E run can emit a Jest worker-teardown/open-handle warning after successful completion.
 
-Each recipe ingredient now has:
+### Design boundaries intentionally preserved
 
-- `measurementKind`
-- `scalingPolicy`
-- `scalingExponent`
-- `batchSize`
-- `maxLinearMultiplier`
+- Country remains a relevance/context signal, not a hard cuisine restriction.
+- Existing Food Operating Loop remains the canonical serving, inventory and nutrition execution path.
+- Live prices are not fabricated.
+- Explanations are derived from deterministic scoring/context evidence.
+- Structured allergy/dietary hard filters and true structured cuisine matching remain disabled until durable recipe metadata supports them safely.
 
-The values can be supplied explicitly through the Recipe DTO. When omitted, the backend applies conservative deterministic inference rather than silently changing the user's recipe intent.
+## Current work — Food taxonomy and context
 
-### New Food APIs
+### Implemented foundation
 
-```text
-GET  /recipes/recommendations?servings=2&countryCode=JP
-GET  /recipes/meal-plan?servings=2&countryCode=JP
-GET  /recipes/:id/food-plan?servings=50&countryCode=JP
-POST /recipes/:id/food-plan/shopping?servings=50
-```
+- Deterministic `IngredientTaxonomyService` with trusted aliases, Persian/Arabic orthography normalization, food-group classification, confidence and provenance.
+- Deterministic `FoodContextNormalizationService` for cuisine-family aliases and conservative two-letter country-code normalization.
+- Explicit unresolved behavior for unknown values rather than guessed semantic matches.
 
-### New Meal Plan API
+### Durable persistence foundation
 
-```text
-GET /budget-intelligence/meal-plan?servings=2&countryCode=JP
-```
+After two explicit reviews, the branch now contains an additive Prisma schema and migration for canonical metadata:
 
-### Current guarantees
+- `IngredientCanonical` + `IngredientCanonicalAlias` with provenance/version metadata.
+- Nullable/indexed `FoodItem.canonicalIngredientId` and `RecipeIngredient.canonicalIngredientId`.
+- `CuisineCanonical` with explicit hierarchy.
+- `RegionCanonical` with country/region separation.
+- `RecipeCuisine` and `RecipeRegion` many-to-many joins.
+- `RecipeSafetyAssertion` for explicit provenance-backed dietary/allergen assertions with verification state.
 
-- Requested serving count is explicit and bounded to `1..10000`.
-- Inventory is compared against **target-serving quantities**.
-- Compatible mass units normalize across g/kg/mg/oz/lb.
-- Compatible volume units normalize across ml/l.
-- Count units normalize across piece/pcs/count.
-- Unknown/incompatible units fail conservatively.
-- Missing quantities are returned in the recipe's requested unit.
-- Missing items can be handed directly to ShoppingService.
-- Recommendations use inventory coverage, nutrition targets and country relevance deterministically.
-- Daily meal planning uses nutrition targets and distinct recommendations where possible.
-- Recipe scaling consumes persisted per-ingredient scaling policies instead of forcing every ingredient into linear scaling.
-- No external Recipe API is required for these flows.
-- Live price values are deliberately not fabricated because global verified price coverage is not complete.
+The migration does not rewrite historical free-text, does not auto-backfill canonical IDs, and uses `SET NULL` when canonical references are removed.
+
+### Still not complete
+
+- Large verified ingredient corpus.
+- Verified seed data with provenance.
+- Runtime/CI migration deployment and idempotence validation.
+- Region/cuisine structured joins populated across recipes.
+- Provenance/versioning at catalog scale.
+- Allergens/dietary assertions with trusted catalog coverage.
+- Integration of canonical linkage into recipe/inventory/recommendation matching.
+
+## Current work — Shopping / inventory security
+
+### Hardening completed
+
+`ShoppingService` was found to accept a `foodId` and `recipeId` by identifier alone. The write path now constrains both lookups to either global records (`userId: null`) or the authenticated caller.
+
+Invalid shopping quantities are also rejected unless they are finite and strictly positive.
+
+Regression coverage was added for:
+
+- attempting to add another user's private food to the current user's basket;
+- attempting to use another user's private recipe as a shopping source.
 
 ### Validation state
 
-**Implementation: complete for this current slice.**
+**Runtime regression validated: PASS (1 suite / 2 tests).**
 
-**Local validation: 100% green.**
+The existing Inventory and Recipes services already apply equivalent ownership boundaries.
 
-Focused tests:
+## Current work — Mobile visual theme
 
-- `food-operating-loop.service.spec.ts`
-- `recipes.controller.spec.ts`
-- `meal-planning.service.spec.ts`
-- `budget-intelligence.controller.spec.ts`
-- `recipes.service.scaling.spec.ts`
+A provider-independent theme foundation now exists with `default` and `feminine` visual themes. Onboarding state persists the selected visual theme and derives it from the selected gender without branching business logic.
 
-Focused result: **5/5 suites, 14/14 tests — PASS**.
+### Status
 
-## Global Food Intelligence — major slice on main
+**Foundation complete; full UI rollout is not complete.**
 
-### Completed in main
+Remaining:
+
+- apply the theme immediately throughout onboarding after gender selection;
+- use the same theme consistently through the main app;
+- add focused mobile theme/onboarding tests;
+- validate default/feminine visual behavior on real iOS/Android devices.
+
+## Current work — Mobile localization
+
+A single reactive locale store now controls the current top-level mobile routes and persists the first-run language choice. Quick Command result messages were additionally moved onto the shared locale contract so user-facing confirmation text is not hardcoded in English.
+
+### Status
+
+**Architecture + top-level rollout implemented; nested UI audit and runtime validation remain.**
+
+Known remaining risk: some future or nested components may still contain hardcoded user-facing English. Server-provided free-form content is not silently translated.
+
+## Current work — Voice P0
+
+Android can abort with:
+
+```text
+FORTIFY: pthread_mutex_lock called on a destroyed mutex
+Fatal signal 6 (SIGABRT)
+```
+
+The issue is associated with some local Persian candidate voice/model paths in the user's Android WIP. The tracked JS provider now serializes native TTS work and makes release wait behind an active native operation.
+
+### Status
+
+**P0 contained but unresolved.**
+
+A real Android device is still required for candidate mapping, repeated-generation, interruption, voice-switching, background/foreground and release validation. Known-good Venus/Ganji/Khadijah paths must remain protected until candidates are independently validated.
+
+## Global Food Intelligence
+
+### Completed
 
 - 195-country country-code coverage for the food routing layer.
-- Country food profile for each market.
+- Country food profiles.
 - Cuisine-family context.
 - Staple-ingredient context.
 - Signature/local recipe discovery anchors.
 - Common cooking units.
 - Hard-to-source ingredient metadata.
 - Deterministic local recipe ranking.
-- Explicit global-recipe behavior preserved.
+- Explicit global-recipe behavior.
 - Cuisine-preserving substitution policy.
 - Country-aware recipe API endpoints.
-- Focused tests for exact 195-country coverage, Japan/Iran behavior, ranking and unknown-country handling.
 
 ### Still required for 100%
 
-- Canonical ingredient taxonomy.
+- Canonical ingredient taxonomy at catalog scale.
 - Region/cuisine normalization beyond routing.
 - Large verified recipe corpus with complete instructions and quantities.
 - Nutrition provenance and quality controls.
 - Allergens and dietary constraints coverage.
 - Production-scale ingredient substitutions.
-- Serving-scaling metadata for the entire catalog (architecture now ready; corpus population remains).
-- Inventory matching across the full catalog.
-- Shopping conversion across the full catalog.
-- Provenance/versioning.
-- Duplicate/alias/cultural-metadata QA.
+- Full-catalog serving/scaling metadata population.
+- Full-catalog inventory matching.
+- Full-catalog shopping conversion.
+- Provenance/versioning and duplicate/alias/cultural QA.
 
-## Global Currency / Finance Intelligence — major slice on main
+## Global Currency / Finance Intelligence
 
-### Completed in main
+### Completed
 
 - 195-country local currency registry.
 - Fraction-digit metadata.
@@ -227,20 +207,20 @@ Focused result: **5/5 suites, 14/14 tests — PASS**.
 - Full country-aware budget planning.
 - Recipe → price → budget integration.
 
-## Global Market / Price Intelligence — still separate
+## Global Market / Price Intelligence
 
-A larger stacked workstream exists in PR #48/#49 with 195-country market/source registry, routing, discovery-only fallbacks, cached FX, local-time scheduling, confidence scoring and price-source infrastructure.
+A larger stacked workstream exists in PR #48/#49 with market/source registry, routing, discovery-only fallbacks, cached FX, local-time scheduling, confidence scoring and price-source infrastructure.
 
-It is **not on `main`** because the workstream is stacked and PR #48 currently has merge conflicts. It must be integrated deliberately after dependency/conflict review rather than force-merged.
+It is not on `main`; the stacked workstream must be integrated deliberately after conflict, dependency and regression review rather than force-merged.
 
 ## Mobile product — major work remains
 
-Current main contains the Expo/mobile shell, local language state and assistant entry behavior.
+Current mobile foundation includes the Expo shell, onboarding flow, local language state, assistant entry behavior, and voice/theme foundations.
 
 Remaining:
 
-- Complete auth UX.
-- Onboarding.
+- Complete production auth UX.
+- Complete onboarding polish and persistence.
 - Home/dashboard.
 - Nutrition logging UX.
 - Recipe discovery/cooking UX.
@@ -253,30 +233,16 @@ Remaining:
 - Brain chat/coach UX.
 - Global settings UX.
 - Offline/local-first behavior where appropriate.
-- Accessibility/responsive behavior.
+- Accessibility/responsive polish.
 - Real-device iOS/Android validation.
 - Store-release hardening.
-
-### New UX requirement — gender-aware visual theme from onboarding
-
-The onboarding experience must establish a persistent visual direction immediately after the user chooses language and then selects gender.
-
-- [ ] If the user selects **female**, switch the visual system immediately to a distinctly feminine, premium and friendly theme and keep that direction through the remaining onboarding questions and the main app experience.
-- [ ] The female visual direction should feel elegant, warm, playful and highly polished, using a coordinated feminine palette (for example soft pink/rose/red-accent families where appropriate), refined surfaces, illustrations/icons and micro-animations without becoming childish, cluttered or stereotypical.
-- [ ] The female theme should be attractive enough that female users can genuinely love the environment and feel that the product was thoughtfully designed for them.
-- [ ] Preserve the same product architecture, functionality and information hierarchy across genders; the theme change must be a visual/experiential layer, not a forked application.
-- [ ] If the user selects **male**, keep the existing visual environment as the default unless a later personalization system explicitly changes it.
-- [ ] Apply the selected gender theme immediately after the gender step and persist it so it remains consistent through onboarding and later app sessions.
-- [ ] Ensure the theme system remains extensible so future personalization can support more nuanced visual preferences without coupling UI components to gender-specific business logic.
-- [ ] Add focused mobile tests for theme selection, persistence, onboarding transitions and regression coverage for the existing male/default theme.
-- [ ] Validate the final female and male experiences on real iOS/Android devices for layout, typography, animations, contrast and performance before declaring the UX slice complete.
 
 ## Production hardening — incomplete
 
 Remaining:
 
-- Full security audit.
-- Authorization review across domains.
+- Full security audit across all domains.
+- Authorization review across every user-scoped write path.
 - Rate limiting/abuse controls.
 - Production observability.
 - Database performance/index review under realistic load.
@@ -307,30 +273,54 @@ Remaining:
 
 | Workstream | Approx. completion |
 |---|---:|
-| Backend platform + architecture | 90% |
-| Personal Brain / deterministic intelligence | 65% |
+| Backend platform + architecture | 91% |
+| Personal Brain / deterministic intelligence | 66% |
 | Nutrition foundations | 74% |
 | Fitness / Yoga / Calisthenics / Gym | 75% |
-| Recipe & Food Intelligence | 64% |
-| Inventory / Shopping / Price Intelligence | 68% |
-| Mobile product / UX | 20% |
-| AI orchestration / voice / globalization | 40% |
-| QA / Security / Production hardening | 50% |
+| Recipe & Food Intelligence | 68% |
+| Inventory / Shopping / Price Intelligence | 72% |
+| Mobile product / UX | 25% |
+| AI orchestration / voice / globalization | 43% |
+| QA / Security / Production hardening | 54% |
 | Business / Monetization | 0% |
 
-**Weighted overall index: ~65%.**
+**Weighted overall index: ~66%.**
 
 ## Immediate next priorities
 
-1. Add canonical ingredient/region/cuisine normalization.
-2. Expand verified recipe corpus with provenance, allergens and dietary constraints.
-3. Integrate the stacked Global Market workstream after conflict/dependency review.
-4. Connect verified live price data into Food Operating Loop and budget recommendations.
-5. Build the real mobile food journey around these APIs.
-6. Implement and validate the gender-aware onboarding theme requirement.
-7. Add production hardening and observability.
-8. Add monetization after the core user journey is genuinely strong.
+1. Validate the new Prisma migration with schema generation, migration deploy/status/idempotence and full backend gates on the user's runtime/CI.
+2. Add a small verified ingredient/cuisine seed set with explicit provenance and keep unverified rows unresolved.
+3. Finish the nested mobile localization audit and wire the validated Recommendation API into the mobile food journey.
+4. Complete the feminine/default theme rollout and focused mobile validation.
+5. Resolve Voice P0 with the user's local Android WIP and real-device evidence.
+6. Continue authorization, rate-limit, observability and E2E teardown hardening.
+7. Integrate Global Market / Price Intelligence only after conflict/dependency/regression review.
+8. Expand the verified recipe corpus and provenance.
+9. Add monetization only after the core user journey is genuinely release-ready.
 
 ## Working rule
 
 A slice is 100% only when architecture, implementation, database changes, focused tests, integration/E2E tests, documentation, and required environment validation are all green. Do not weaken assertions to obtain green tests.
+
+## 2026-09-05 — Autonomous completion ledger
+
+### Completed in this batch
+
+- Persistent fitness catalog schema/migration created.
+- Fitness catalog API changed to persistent-first with a strict four-WebP media contract and ten levels.
+- Per-user progression/session persistence added and wired to the mobile session flow.
+- Gym, Calisthenics and Yoga mobile catalog flows expanded with levels, search, paging, progress and attribution.
+- Fitness importer/audit/media-verification tooling and licensing policy added.
+- Recipe/fitness unit-test regressions corrected without weakening assertions.
+- Mobile Expo/TTS/location/camera/reminder compatibility fixes staged through an automated lockfile synchronization workflow.
+
+### Validation truth
+
+The branch has live CI runs after the latest mobile/TTS changes; green CI is only declared from completed GitHub Actions results. The currently connected Supabase project has not been accepted as the application's production database because its schema does not match the repository's `User`-based Prisma model. Therefore the required 1,500-movement / 6,000-WebP production corpus is **not** claimed populated yet.
+
+### Remaining release blockers
+
+- Resolve/verify the correct production PostgreSQL/Supabase target, then apply the fitness catalog migration.
+- Execute the real fitness corpus import and pass `fitness:content:audit` and `fitness:content:verify-media`.
+- Complete mobile CI/device validation, especially native voice/TTS behavior.
+- Continue broader production hardening and real-device QA.
