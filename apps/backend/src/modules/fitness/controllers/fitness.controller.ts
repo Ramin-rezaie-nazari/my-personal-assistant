@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { FitnessGoal, FitnessProfile } from '../models/fitness.model';
 import { FitnessProfileService } from '../services/fitness-profile.service';
 import { FitnessCatalogService, FitnessDiscipline } from '../services/fitness-catalog.service';
+import { FitnessProgressService } from '../services/fitness-progress.service';
 
 type AuthenticatedRequest = { user: { sub: string } };
 
@@ -23,6 +24,7 @@ export class FitnessController {
   constructor(
     private readonly profile: FitnessProfileService,
     private readonly catalog: FitnessCatalogService,
+    private readonly progress: FitnessProgressService,
   ) {}
 
   @Get('profile')
@@ -33,6 +35,36 @@ export class FitnessController {
   @Get('context')
   context(@Req() req: AuthenticatedRequest) {
     return this.profile.buildRecommendationContext(req.user.sub);
+  }
+
+  @Get('progress')
+  getProgress(@Req() req: AuthenticatedRequest) {
+    return this.progress.list(req.user.sub);
+  }
+
+  @Get('progress/:discipline')
+  getDisciplineProgress(
+    @Req() req: AuthenticatedRequest,
+    @Param('discipline') discipline: string,
+  ) {
+    if (!['gym', 'calisthenics', 'yoga'].includes(discipline)) {
+      throw new BadRequestException('discipline must be gym, calisthenics or yoga');
+    }
+    return this.progress.get(req.user.sub, discipline as FitnessDiscipline);
+  }
+
+  @Post('progress/session')
+  recordProgress(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: { discipline: FitnessDiscipline; difficulty: number; completed: boolean; formScore?: number | null },
+  ) {
+    if (!['gym', 'calisthenics', 'yoga'].includes(body.discipline)) {
+      throw new BadRequestException('discipline must be gym, calisthenics or yoga');
+    }
+    if (!Number.isInteger(body.difficulty) || body.difficulty < 1 || body.difficulty > 10) {
+      throw new BadRequestException('difficulty must be an integer between 1 and 10');
+    }
+    return this.progress.recordSession({ userId: req.user.sub, ...body });
   }
 
   @Get('catalog')
