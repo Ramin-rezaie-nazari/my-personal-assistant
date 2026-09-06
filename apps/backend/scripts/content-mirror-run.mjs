@@ -12,7 +12,7 @@ const RETRIES = clamp(Number(process.env.CONTENT_MIRROR_RETRIES ?? 4), 1, 8);
 const MAX_RECIPES = positiveLimit(process.env.CONTENT_MIRROR_MAX_RECIPES);
 const MAX_FITNESS = positiveLimit(process.env.CONTENT_MIRROR_MAX_FITNESS);
 const PROGRESS_EVERY = clamp(Number(process.env.CONTENT_MIRROR_PROGRESS_EVERY ?? 1), 1, 1000);
-const USER_AGENT = 'MYPA-content-mirror/1.2';
+const USER_AGENT = 'MYPA-content-mirror/1.3';
 const RECIPE_DATASET = process.env.RECIPE_DATASET_URL ?? 'https://huggingface.co/datasets/gossminn/wikibooks-cookbook/resolve/main/recipes_parsed.json?download=true';
 const WIKIBOOKS_API = 'https://en.wikibooks.org/w/api.php';
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
@@ -45,7 +45,12 @@ async function fetchBytes(url) {
   throw last;
 }
 async function json(url) { return JSON.parse((await fetchBytes(url)).toString('utf8')); }
-async function saveJson(file, value) { await mkdir(path.dirname(file), { recursive: true }); const tmp = `${file}.tmp-${process.pid}`; await writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8'); await rename(tmp, file); }
+async function saveJson(file, value) {
+  await mkdir(path.dirname(file), { recursive: true });
+  const tmp = `${file}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  await writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+  await rename(tmp, file);
+}
 
 function wikimediaLicense(meta = {}) {
   const short = clean(meta.LicenseShortName?.value ?? meta.LicenseShortName ?? '');
@@ -212,14 +217,13 @@ function summary(manifest) {
 async function main() {
   await mkdir(MEDIA_ROOT, { recursive: true });
   let manifest = { schemaVersion: 2, generatedAt: null, root: ROOT, requiredMediaPerItem: REQUIRED, items: {} };
-  if (await exists(MANIFEST_PATH)) { try { manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8')); } catch (error) { console.warn(`[mirror] ignoring unreadable manifest: ${error instanceof Error ? error.message : String(error)}`); } }
+  if (await exists(MANIFEST_PATH)) { try { manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8')); } catch {} }
   manifest.schemaVersion = 2; manifest.root = ROOT; manifest.requiredMediaPerItem = REQUIRED; manifest.generatedAt = new Date().toISOString();
   console.log(`[mirror] root=${ROOT} domain=${DOMAIN} requiredMedia=${REQUIRED} concurrency=${CONCURRENCY}`);
-  await checkpoint(manifest);
   if (DOMAIN === 'all' || DOMAIN === 'recipes') await runRecipes(manifest);
   if (DOMAIN === 'all' || DOMAIN === 'fitness') await runFitness(manifest);
+  await checkpoint(manifest, summary(manifest));
   const report = summary(manifest);
-  await checkpoint(manifest, report);
   console.log(JSON.stringify(report, null, 2));
   if (!report.physicalCorpusComplete) process.exitCode = 2;
 }
