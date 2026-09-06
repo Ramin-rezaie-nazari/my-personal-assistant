@@ -18,8 +18,7 @@ const copy = {
   },
 } as const;
 
-type Route = '/assistant' | '/daily' | '/meals' | '/meal-builder' | '/smart-meals' | '/recipe-library' | '/recipe-match' | '/inventory' | '/shopping' | '/habits' | '/supplements' | '/reminders' | '/calendar' | '/notifications' | '/insights' | '/brain-overview' | '/language' | '/yoga' | '/gym' | '/calisthenics';
-
+type Route = '/assistant' | '/daily' | '/meals' | '/meal-builder' | '/smart-meals' | '/recipe-library' | '/recipe-match' | '/inventory' | '/shopping' | '/habits' | '/supplements' | '/reminders' | '/calendar' | '/notifications' | '/insights' | '/brain-overview' | '/language' | '/fitness' | '/yoga' | '/gym' | '/calisthenics';
 type Item = { label:string; route:Route; icon:string };
 
 export default function HomeShell() {
@@ -27,12 +26,7 @@ export default function HomeShell() {
   const text = copy[locale];
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
-
-  const go = (route: Route) => {
-    setOpen(false);
-    router.push(route);
-  };
-
+  const go = (route: Route) => { setOpen(false); router.push(route); };
   const food: Item[] = [
     { label:text.meals, route:'/meals', icon:'🍽️' },
     { label:text.mealBuilder, route:'/meal-builder', icon:'➕' },
@@ -43,7 +37,7 @@ export default function HomeShell() {
     { label:text.shopping, route:'/shopping', icon:'🛒' },
   ];
   const training: Item[] = [
-    { label:text.fitness, route:'/daily' as Route, icon:'🏋️' },
+    { label:text.fitness, route:'/fitness', icon:'🏋️' },
     { label:text.gym, route:'/gym', icon:'💪' },
     { label:text.calisthenics, route:'/calisthenics', icon:'🤸' },
     { label:text.yoga, route:'/yoga', icon:'🧘' },
@@ -62,7 +56,6 @@ export default function HomeShell() {
     { label:text.brain, route:'/brain-overview', icon:'🗺️' },
     { label:text.language, route:'/language', icon:'🌐' },
   ];
-
   return (
     <View style={styles.root}>
       <CommandCenterScreen />
@@ -70,7 +63,7 @@ export default function HomeShell() {
         <View style={styles.dock}>
           <DockButton icon="⌂" label={text.home} onPress={() => undefined} active />
           <DockButton icon="🍽️" label={text.food} onPress={() => go('/meals')} />
-          <DockButton icon="🏋️" label={text.fitness} onPress={() => go('/gym')} />
+          <DockButton icon="🏋️" label={text.fitness} onPress={() => go('/fitness')} />
           <DockButton icon="📅" label={text.planning} onPress={() => go('/daily')} />
           <DockButton icon="☰" label={text.more} onPress={() => setOpen(true)} />
         </View>
@@ -100,11 +93,9 @@ export default function HomeShell() {
 function DockButton({ icon, label, onPress, active }: { icon:string; label:string; onPress:()=>void; active?:boolean }) {
   return <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={({ pressed }) => [styles.dockButton, active && styles.dockButtonActive, pressed && styles.pressed]}><Text style={styles.dockIcon}>{icon}</Text><Text style={[styles.dockLabel, active && styles.dockLabelActive]} numberOfLines={1}>{label}</Text></Pressable>;
 }
-
 function FeatureSection({ title, items, onSelect }: { title:string; items:Item[]; onSelect:(route:Route)=>void }) {
   return <View style={styles.section}><Text style={styles.sectionTitle}>{title}</Text><View style={styles.itemGrid}>{items.map(item=><Pressable key={item.route + item.label} accessibilityRole="button" accessibilityLabel={item.label} onPress={() => onSelect(item.route)} style={({pressed})=>[styles.item, pressed && styles.pressed]}><Text style={styles.itemIcon}>{item.icon}</Text><Text style={styles.itemLabel}>{item.label}</Text><Text style={styles.itemArrow}>→</Text></Pressable>)}</View></View>;
 }
-
 const styles = StyleSheet.create({
   root:{flex:1,backgroundColor:'#F7F8FA'},
   dockLayer:{position:'absolute',left:0,right:0,bottom:0,alignItems:'center'},
