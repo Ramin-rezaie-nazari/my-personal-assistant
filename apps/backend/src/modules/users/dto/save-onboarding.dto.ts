@@ -3,6 +3,7 @@ import {
   IsDateString,
   IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Max,
@@ -30,10 +31,12 @@ export class SaveOnboardingDto {
   @IsDateString()
   birthDate!: string;
 
+  @IsNumber({ allowInfinity: false, allowNaN: false })
   @Min(90)
   @Max(250)
   heightCm!: number;
 
+  @IsNumber({ allowInfinity: false, allowNaN: false })
   @Min(25)
   @Max(350)
   weightKg!: number;
