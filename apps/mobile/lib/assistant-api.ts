@@ -1,6 +1,5 @@
 import { getStoredAccessToken } from './api';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+import { MOBILE_API_URL } from './api-base';
 
 export type AssistantHistoryTurn = {
   id: string;
@@ -35,7 +34,7 @@ export type AssistantResponse = {
 async function authorizedFetch(path: string, init: RequestInit = {}) {
   const token = await getStoredAccessToken();
   if (!token) throw new Error('AUTH_REQUIRED');
-  return fetch(`${API_URL}${path}`, {
+  return fetch(`${MOBILE_API_URL}${path}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
