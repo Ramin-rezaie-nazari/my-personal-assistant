@@ -1,19 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
+import { MOBILE_API_URL } from './api-base';
 
-function resolveApiUrl(): string {
-  const configured = process.env.EXPO_PUBLIC_API_URL?.trim();
-  if (configured) return configured.replace(/\/$/, '');
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('EXPO_PUBLIC_API_URL is required for production mobile builds.');
-  }
-  const hostUri = Constants.expoConfig?.hostUri;
-  const host = hostUri?.split(':')[0];
-  if (host && host !== 'localhost' && host !== '127.0.0.1') return `http://${host}:3000`;
-  return 'http://localhost:3000';
-}
-
-const API_URL = resolveApiUrl();
+const API_URL = MOBILE_API_URL;
 const ACCESS_TOKEN_KEY = 'mpa.accessToken'; const REFRESH_TOKEN_KEY = 'mpa.refreshToken';
 export type AuthUser = { id:string; email:string; firstName:string|null; lastName:string|null; avatarUrl:string|null };
 export type AuthResponse = { accessToken:string; refreshToken:string; user:AuthUser };
