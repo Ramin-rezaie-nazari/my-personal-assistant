@@ -23,16 +23,43 @@ describe('GlobalCountryFoodService', () => {
     expect(guidance?.cuisineFamily).toBe('Persian');
   });
 
-  it('does not silently replace a recipe outside the local culture', () => {
-    const ranked = service.rankRecipesForCountry('JP', [
+  it('does not recommend another country’s signature recipe by default', () => {
+    const filtered = service.filterRecipesForCountry('JP', [
       { name: 'Ghormeh Sabzi' },
       { name: 'Sushi' },
-      { name: 'Miso Ramen' },
+      { name: 'Pizza' },
+      { name: 'Pasta' },
+    ]);
+    expect(filtered.map((recipe) => recipe.name)).toEqual([
+      'Sushi',
+      'Pizza',
+      'Pasta',
+    ]);
+  });
+
+  it('keeps globally popular recipes available across countries', () => {
+    const filtered = service.filterRecipesForCountry('JP', [
+      { name: 'Pizza' },
+      { name: 'Pasta' },
+      { name: 'Hamburger' },
+      { name: 'Ghormeh Sabzi' },
+    ]);
+    expect(filtered.map((recipe) => recipe.name)).toEqual([
+      'Pizza',
+      'Pasta',
+      'Hamburger',
+    ]);
+  });
+
+  it('ranks local recipes first, then global recipes', () => {
+    const ranked = service.rankRecipesForCountry('JP', [
+      { name: 'Ghormeh Sabzi' },
+      { name: 'Pizza' },
+      { name: 'Sushi' },
     ]);
     expect(ranked.map((recipe) => recipe.name)).toEqual([
-      'Miso Ramen',
       'Sushi',
-      'Ghormeh Sabzi',
+      'Pizza',
     ]);
   });
 });
