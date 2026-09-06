@@ -16,18 +16,19 @@ Updated from the autonomous control-plane audit on 2026-09-06.
 - Repository switched to `node-linker=hoisted` and the Android workflow was aligned to the same Expo prebuild contract.
 - Required: completed Gradle assemble + APK artifact verification on the corrected configuration.
 
-## P1 — Source-of-truth / architecture drift
+## P1 — Recommendation Intelligence
 
-### Recommendation Intelligence
-- The autonomous branch now contains a real Recommendation Intelligence implementation built on the canonical `FoodOperatingLoopService`.
-- Mobile Smart Meals now consumes the authenticated backend recommendation contract instead of maintaining an independent displayed ranking.
-- Remaining: completed CI/runtime/mobile validation and retirement/explicit scoping of any unrelated local meal-intelligence helpers.
+- Backend Recommendation Intelligence is implemented on the canonical `FoodOperatingLoopService`.
+- Mobile Smart Meals consumes the authenticated backend recommendation contract instead of maintaining an independent displayed ranking.
+- Focused backend and E2E validation was already green locally before the latest mobile integration work.
+- Remaining: complete mobile runtime/device validation and retire/explicitly scope any unused local meal-intelligence helper.
 
 ## P1 — Global market integration
 
 - Global Market / Price Intelligence work exists on stacked PRs and is not on `main`.
-- PR #48 has documented merge conflicts.
-- Integrate only after dependency and regression review.
+- PR #48 has documented merge conflicts; PR #49 is mergeable only against its historical feature base.
+- Current autonomous branch diverges substantially from that feature line, so do not force-merge it.
+- Required: selective integration of still-relevant market-source, scheduling, FX and confidence components after dependency and regression review.
 
 ## P1 — Data / food intelligence
 
@@ -37,6 +38,7 @@ Updated from the autonomous control-plane audit on 2026-09-06.
 - provenance/versioning
 - allergens/dietary coverage
 - runtime migration/seed validation
+- canonical linkage into recipe/inventory/recommendation matching
 
 ## P2 — Mobile product
 
@@ -58,8 +60,8 @@ Updated from the autonomous control-plane audit on 2026-09-06.
 ## P1/P2 — Gender-aware theme
 
 - Reactive provider and default/feminine theme policy are implemented.
-- Home shell now consumes theme context.
-- Focused theme-policy tests exist.
+- Home shell consumes theme context.
+- Theme refresh is now also tied to route changes so onboarding/settings transitions re-read the persisted preference.
 - Remaining: broaden token adoption across the rest of the mobile UI and validate default/female flows on physical devices.
 
 ## P1 — Production hardening
@@ -77,6 +79,7 @@ Updated from the autonomous control-plane audit on 2026-09-06.
 - deployment runbook
 - cost/fallback policy
 - resolve Jest E2E worker teardown warning
+- review refresh-token/session storage and rotation safety
 
 ## P3 — Business / monetization
 
