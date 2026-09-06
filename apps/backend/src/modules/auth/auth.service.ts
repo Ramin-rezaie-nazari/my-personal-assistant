@@ -72,12 +72,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const session = await this.sessionService.findByRefreshToken(
+    const consumedSessionCount = await this.sessionService.consumeRefreshToken(
       data.refreshToken,
     );
-
-    if (!session) {
-      throw new UnauthorizedException('Session not found');
+    if (consumedSessionCount !== 1) {
+      throw new UnauthorizedException('Session not found or expired');
     }
 
     const user = await this.usersService.findById(payload.sub);
