@@ -2,6 +2,14 @@
 
 This repository is operated with an autonomous engineering workflow.
 
+## Fastest way to resume work
+
+**Always start at the repository root navigator:**
+
+`MYPA_START_HERE.md`
+
+It points to every authoritative document and defines the exact reading order before continuing work.
+
 ## Source of truth
 
 Use the real repository state as technical truth.
@@ -15,9 +23,14 @@ Supporting engineering memory and architecture:
 - `apps/backend/docs/04_ARCHITECTURE_ATLAS.md`
 - `apps/backend/docs/02_ROADMAP.md`
 
+Validation evidence:
+
+- `apps/backend/docs/06_VALIDATION_LEDGER.md`
+- `apps/backend/docs/08_AUTONOMOUS_PROGRESS_LOG.md`
+
 ## Execution rules
 
-1. Read the current-state and architecture documents before starting work.
+1. Read `MYPA_START_HERE.md` first, then current-state and architecture documents before starting work.
 2. Verify documentation against code before trusting it.
 3. Prefer the smallest correct change.
 4. Do not rewrite green functionality without evidence.
@@ -32,3 +45,4 @@ Supporting engineering memory and architecture:
 13. Distinguish architectural scalability from empirically load-tested scalability.
 14. Treat native Android/iOS crashes as P0/P1 issues and investigate root causes.
 15. Protect Git history and isolate autonomous work from `main` until reviewed.
+16. Record every meaningful milestone in Current State + Brain Book + Architecture Atlas; record actual validation evidence in the Validation Ledger.
