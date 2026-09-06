@@ -64,6 +64,12 @@ describe('LocalLanguageUnderstandingService', () => {
     expect(result.entities.discipline).toBe('calisthenics');
   });
 
+  it('does not let a workout word hijack a shopping request', () => {
+    const result = service.understand('برای تمرین شیر بخر');
+    expect(result.intent).toBe('ADD_TO_BASKET');
+    expect(result.entities.food).toBe('milk');
+  });
+
   it('keeps ambiguous requests unknown instead of guessing', () => {
     const result = service.understand('یه کاری برام انجام بده');
     expect(result.intent).toBe('UNKNOWN');
