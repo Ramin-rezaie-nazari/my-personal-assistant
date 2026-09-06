@@ -1,5 +1,11 @@
 {
   "name": "my-personal-assistant",
   "version": "0.1.0",
-  "private": true
+  "private": true,
+  "scripts": {
+    "validate:backend": "pnpm --filter backend typecheck && pnpm --filter backend build && pnpm --filter backend test",
+    "validate:backend:full": "pnpm validate:backend && pnpm --filter backend test:e2e",
+    "validate:mobile": "pnpm --filter @my-personal-assistant/mobile typecheck && pnpm --filter @my-personal-assistant/mobile route:audit && pnpm --filter @my-personal-assistant/mobile surface:audit",
+    "validate": "pnpm validate:backend && pnpm validate:mobile"
+  }
 }
