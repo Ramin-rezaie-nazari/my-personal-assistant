@@ -2,6 +2,50 @@
 
 > Append-only engineering checkpoint record for validated repository/runtime gates. This file complements `05_CURRENT_STATE.md` and must never be used to overstate CI or device validation.
 
+## 2026-09-06 — Corpus pipeline hardening (not yet runtime-green)
+
+### Scope
+
+Restored the real recipe-content importer, added a recipe corpus audit, hardened fitness media verification, split GitHub Actions corpus gates, and recorded the execution blocker found in the first corpus run.
+
+### Changes
+
+- Restored `apps/backend/scripts/recipe-content-import.mjs` using the Wikibooks Cookbook dataset source and explicit CC BY-SA provenance.
+- Recipe import requires non-empty title, ingredients and procedural steps before a recipe can be imported; malformed rows are skipped and failed rows make the job fail.
+- Recipe writes for each recipe are transactional so ingredients and steps cannot partially persist.
+- Added `apps/backend/scripts/recipe-content-audit.mjs` and exposed it through `recipe:content:audit`.
+- Recipe audit rejects empty corpora and checks required fields, ingredient quantity/unit integrity, contiguous step numbering, verification state, media/provenance coverage, and duplicate normalized names.
+- Split `.github/workflows/content-corpus-bootstrap.yml` into independent Fitness, Recipe, and Recipe-image jobs so unrelated infrastructure blockers do not mask other pipeline health.
+- Fitness push runs remain strict by default; manual dispatch can explicitly relax the movement media gate for exploratory runs.
+- Fitness media verification now checks actual HTTP/content-type behavior and rejects an empty approved-media set.
+- Added progress-log entries documenting all of the above to prevent duplicate future work.
+
+### Actual validation
+
+GitHub Actions run `34034400326` / job `101489715731` failed at the runtime-secret check because `MYPA_FITNESS_DATABASE_URL`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` were not available to the runner. The job therefore did **not** perform import, audit, or media download. This is a real environment blocker, not an application test failure.
+
+A new run (`34035170619`) was triggered by the split workflow changes and was observed in progress; it is not claimed green from the in-progress state.
+
+### Required next validation
+
+Once the correct runtime database/storage secrets are supplied:
+
+```text
+pnpm install --frozen-lockfile       REQUIRED
+pnpm prisma generate                 REQUIRED
+fitness import                       REQUIRED
+fitness balance                      REQUIRED
+fitness audit                        REQUIRED
+fitness media verify                 REQUIRED
+recipe import                        REQUIRED
+recipe content audit                 REQUIRED
+recipe image corpus import           REQUIRED
+```
+
+The release corpus target remains 500 published movements per discipline, ten levels, >=50 movements per level and >=4 approved WebP assets per movement, plus a non-empty validated recipe corpus and complete image/provenance coverage.
+
+No 100% corpus claim is allowed until these commands/jobs actually pass.
+
 ## 2026-09-05 — Recommendation Intelligence vertical slice
 
 ### Scope
@@ -31,23 +75,11 @@ No database migration was required for this slice. Existing Food Operating Loop 
 
 The E2E run has historically emitted a Jest open-handle / worker-teardown warning after tests complete. The warning does not change the observed E2E result, but it remains a production-hardening item and must not be silently forgotten.
 
-### Repository state note
-
-The user's local workspace contains unrelated voice/native experimentation and runner WIP. Those files are intentionally not included in the Recommendation Intelligence change set.
-
 ## 2026-09-05 — Canonical ingredient taxonomy foundation
 
 ### Scope
 
-Added a conservative, provider-independent `IngredientTaxonomyService` with explicit trusted aliases for a small starter registry. The service normalizes Persian/Arabic orthography, preserves unknown ingredients without guessing, exposes food-group classification, and is registered by `RecipesModule`.
-
-### Hardening completed
-
-- Canonical results now expose `confidence` and `provenance`.
-- Unknown/empty inputs resolve explicitly as `unresolved-input` with zero confidence.
-- A precomputed lookup map avoids repeated registry scans.
-- `canonicalizeMany(...)` provides deterministic batch normalization.
-- Result objects expose only the public contract; registry alias internals are not leaked.
+Added a conservative, provider-independent `IngredientTaxonomyService` with explicit trusted aliases for a small starter registry. The service normalizes Persian/Arabic orthography, preserves unknown ingredients without guessing, exposes food-group classification, confidence and provenance, and is registered by `RecipesModule`.
 
 ### Tests
 
@@ -82,14 +114,6 @@ The tracked Persian local TTS provider caches a shared native `TtsEngine`. Playb
 `apps/mobile/lib/local-persian-tts.ts` now serializes native TTS operations through a single promise queue. Release marks the provider as releasing before entering that queue, so new generations are blocked while an already-running native generation is allowed to finish. Engine destruction is then queued after the active native operation.
 
 Generated audio cleanup and stale playback-token protection remain in place.
-
-### Runtime dependency correction
-
-The mobile manifest now explicitly declares the packages used by the tracked local voice path: `expo-av`, `expo-file-system`, and `react-native-sherpa-onnx`.
-
-The manifest currently targets Expo SDK 53 / React Native 0.79, with `expo-av ~15.1.7` and `react-native-sherpa-onnx ^0.4.3`.
-
-This change still requires a fresh lockfile update plus mobile typecheck/Expo export validation on the user's runtime before it can be marked green.
 
 ### Required device validation
 
@@ -129,160 +153,3 @@ Added a provider-independent visual theme contract with `default` and `feminine`
 ### Scope
 
 Introduced a single reactive locale store for the mobile application with persistence in AsyncStorage. Locale changes now notify mounted screens rather than requiring each route to re-read the stored locale once during mount.
-
-### Implemented
-
-- Root layout initializes the locale once at app startup and synchronizes RTL configuration.
-- Language selection persists and immediately publishes the selected locale.
-- Auth, Assistant, Command Center, Daily, Calendar, Notifications, Habits, Inventory, Shopping, Meals, Smart Meals, Reminders, Recipe Match, Insights, Brain Overview, Supplements and Yoga now consume the global locale on this branch.
-- Common Farsi/English navigation labels, loading states, errors, empty states and action labels were localized across the migrated routes.
-- Calendar, notification, meal and reminder date/time formatting now follow the selected locale where displayed by the UI.
-- Reminders was replaced with a locale-aware implementation behind the same route so its original route contract remains stable.
-- Quick Command result messages and the generated assistant reminder title now use the shared locale contract rather than hardcoded English strings.
-
-### Design boundary
-
-This is a localization architecture hardening pass across the current top-level mobile route set, not a claim that every future nested screen/component or server-provided free-form content is linguistically translated. Dynamic domain content may still originate from backend data and must not be silently mistranslated.
-
-### Runtime status
-
-Mobile typecheck and Expo export/device validation are still required on the user's runtime after this batch because the GitHub connector cannot execute the local Expo toolchain. CI status for the latest branch head is running and must be rechecked before claiming green.
-
-## 2026-09-05 — Durable food taxonomy persistence design + migration
-
-### Scope
-
-Completed two explicit reviews of the canonical food metadata persistence boundary and added an additive Prisma schema/migration for durable ingredient, cuisine, region and safety metadata.
-
-### Pass 1 — architecture boundaries
-
-- Existing free-text fields remain authoritative for display/history.
-- Canonical IDs are separate from display names.
-- Country, region and cuisine remain separate concepts.
-- Safety data is explicit and provenance-backed.
-- Hard allergy/dietary filtering remains disabled until verified metadata exists.
-- No fuzzy or learned matching is introduced into the safety boundary.
-
-### Pass 2 — persistence/compatibility
-
-- `IngredientCanonical` and `IngredientCanonicalAlias` provide canonical identity plus alias provenance/versioning.
-- `FoodItem.canonicalIngredientId` and `RecipeIngredient.canonicalIngredientId` are nullable and indexed.
-- `CuisineCanonical` supports parent/child hierarchy.
-- `RegionCanonical` preserves country/region separation.
-- `RecipeCuisine` and `RecipeRegion` are many-to-many joins.
-- `RecipeSafetyAssertion` is explicit, deduplicated, provenance-backed and verification-aware.
-- Deleting canonical entities does not delete food/recipe rows; nullable links use `SET NULL`.
-- The migration contains no backfill or destructive rewrite.
-
-### Migration
-
-`20260905160000_add_food_taxonomy_relations/migration.sql` was added to the branch.
-
-### Runtime status
-
-Schema/migration generation, deploy, idempotence and full backend gates still require runtime/CI validation. Until those pass, this workstream remains implemented but not fully green.
-
-## 2026-09-05 — CI correction + new validation run
-
-The backend CI unit-test invocation was corrected from an invalid Jest argument pattern to an explicit Jest command. Mobile RefreshControl syntax regressions were patched in the affected localized routes. New GitHub Actions runs are currently executing against the updated branch.
-
-## 2026-09-06 — Mobile endpoint hardening and onboarding persistence
-
-### Endpoint hardening
-
-- Mobile API callers were consolidated around the canonical `MOBILE_API_URL` resolver.
-- Calendar, price, recipe, shopping-basket and core API callers no longer maintain independent hardcoded backend-host assumptions on this branch.
-- Added `apps/mobile/scripts/surface-audit.mjs` to verify required routes, detect direct `localhost:3000` URLs outside the canonical resolver, and validate literal router targets against Expo route files.
-- Mobile CI now runs the surface audit in addition to the existing route audit, typecheck, Expo config and Android bundle/build gates.
-
-### Onboarding persistence
-
-- Added validated `SaveOnboardingDto` with explicit gender/goal/fitness/diet/workout/equipment/session constraints.
-- Added authenticated `POST /users/onboarding`.
-- Added atomic `UsersService.saveOnboarding(...)` using the existing `UserProfile`, `UserPreference`, `UserOnboarding` and `UserFact` models; no new migration was introduced for this feature.
-- Completed onboarding now maps the female visual theme to `UserPreference.theme = feminine` and other genders to `default` without branching business logic.
-- Extra onboarding choices are preserved as structured `UserFact` rows with `source = onboarding` and confidence `1`.
-- Mobile onboarding keeps its local-first behavior while attempting authenticated backend synchronization through the same canonical mobile API base.
-- Failed remote sync is retained as a pending state and retried on the next onboarding-state read rather than discarding the user's local progress.
-- Added backend regression coverage for the atomic persistence contract.
-
-### Validation status
-
-**NOT YET GREEN.** A new Android workflow was triggered from the implementation branch head. At the latest recorded check, the workflow was still running and the Gradle build gate had not completed. No green CI claim is made for this batch.
-
-## Checkpoint status
-
-**Backend Recommendation Intelligence: validated green locally.**
-
-**Food taxonomy/context normalization: foundation implemented and tested.**
-
-**Food taxonomy durable schema: implemented after two-pass review; runtime/CI migration validation pending.**
-
-**Shopping authorization: ownership boundary hardened; focused regression validated on user runtime (1 suite / 2 tests).**
-
-**Mobile visual theme: foundation implemented; full UI wiring/device validation pending.**
-
-**Mobile localization: global reactive locale architecture plus current top-level route rollout implemented; runtime validation pending.**
-
-**Onboarding persistence: implemented atomically in backend and wired from mobile with retry semantics; CI/runtime validation pending.**
-
-**Voice P0: lifecycle race narrowed in tracked JS/native boundary; unresolved pending lockfile validation and direct Android WIP/device evidence.**
-
-## Next engineering priorities
-
-1. Re-check the completed CI results for the current branch head and fix failures at root cause.
-2. Validate onboarding persistence with backend test/typecheck/build evidence.
-3. Finish the nested mobile localization audit and Recommendation API → mobile food journey integration.
-4. Complete the feminine/default theme rollout and focused mobile validation.
-5. Resolve the P0 Android voice lifecycle issue using the user's local candidate WIP and real-device evidence.
-6. Continue authorization, rate-limit, observability and E2E teardown cleanup.
-7. Review and integrate Global Market / Price Intelligence only after dependency/conflict/regression checks.
-8. Keep successful test output quiet; surface only final results and failures.
-
-## 2026-09-06 — Onboarding persistence and control-plane hardening
-
-### Implementation
-- Added `SaveOnboardingDto` with explicit allow-lists, numeric ranges and ISO date validation.
-- Added authenticated `POST /users/onboarding`.
-- Persisted the canonical profile, user preference/theme, onboarding completion state and remaining onboarding facts in one transaction.
-- Added mobile sync client and retryable pending marker.
-- Added `UsersService` onboarding regression test.
-
-### Verification state
-**PENDING CI/runtime validation.** The implementation is intentionally not marked green while the active workflow has not completed.
-## 2026-09-06 — Smart Meals source-of-truth integration
-
-### Implementation
-- Added `recommendation-api.ts` for authenticated Food Recommendation Intelligence.
-- Replaced mobile Smart Meals local ranking with backend Brain recommendations.
-- Preserved inventory attention UX and recipe detail navigation.
-
-### Verification state
-**PENDING CI/runtime validation.** The implementation is not marked green until the relevant mobile and backend gates complete.
-## 2026-09-06 — Android autolinking blocker and remediation
-
-### Observed failure
-**RED — Android APK Build run 34027837013**
-
-The completed Gradle stage failed during `:app:compileDebugJavaWithJavac` because generated `PackageList.java` imported `expo.core.ExpoModulesPackage`, which could not be resolved. Dependency installation, mobile typecheck, Android SDK setup and Expo prebuild had completed successfully.
-
-### Remediation applied
-- Replaced `node-linker=isolated` plus partial Expo hoist patterns with `node-linker=hoisted` in the branch `.npmrc`.
-- Started a fresh Android build on the corrected configuration.
-
-### Verification state
-**PENDING.** The new run must complete Gradle assemble and APK artifact upload before this remediation can be marked green.
-
-## 2026-09-06 — Onboarding sync correctness
-
-- Missing auth token now fails onboarding persistence rather than clearing the pending retry state.
-- Deferred retries are serialized to avoid concurrent duplicate sync requests.
-
-**Verification state: PENDING mobile/backend CI.**
-
-## 2026-09-06 — Fitness importer candidate selection
-
-- Candidate pool is oversampled before media enrichment.
-- Target selection occurs after enrichment and is deterministic, preferring four-media-ready records.
-
-**Verification state: PENDING backend CI and real corpus audit.**
