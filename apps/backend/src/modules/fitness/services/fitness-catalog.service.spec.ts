@@ -12,7 +12,12 @@ describe('FitnessCatalogService', () => {
   const emptyGym = { list: jest.fn().mockReturnValue([]) } as unknown as GymLibraryService;
   const emptyCalisthenics = { list: jest.fn().mockReturnValue([]) } as unknown as CalisthenicsLibraryService;
   const emptyYoga = { list: jest.fn().mockReturnValue([]) } as unknown as YogaLibraryService;
-  const service = new FitnessCatalogService(prisma, emptyGym, emptyCalisthenics, emptyYoga);
+
+  let service: FitnessCatalogService;
+
+  beforeEach(() => {
+    service = new FitnessCatalogService(prisma, emptyGym, emptyCalisthenics, emptyYoga);
+  });
 
   afterEach(() => {
     jest.restoreAllMocks();
