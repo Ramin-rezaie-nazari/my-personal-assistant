@@ -7,6 +7,7 @@ import { RecipesController } from './controllers/recipes.controller';
 import { RecipeLibraryController } from './controllers/recipe-library.controller';
 import { RecipesService } from './services/recipes.service';
 import { RecipeLibraryService } from './services/recipe-library.service';
+import { RecipePresentationService } from './services/recipe-presentation.service';
 import { RecipeInventoryMatcherService } from './services/recipe-inventory-matcher.service';
 import { GlobalCountryFoodService } from './services/global-country-food.service';
 import { FoodOperatingLoopService } from './services/food-operating-loop.service';
@@ -19,6 +20,7 @@ import { FoodContextNormalizationService } from './services/food-context-normali
   providers: [
     RecipesService,
     RecipeLibraryService,
+    RecipePresentationService,
     RecipeInventoryMatcherService,
     GlobalCountryFoodService,
     FoodOperatingLoopService,
@@ -28,6 +30,7 @@ import { FoodContextNormalizationService } from './services/food-context-normali
   exports: [
     RecipesService,
     RecipeLibraryService,
+    RecipePresentationService,
     RecipeInventoryMatcherService,
     GlobalCountryFoodService,
     FoodOperatingLoopService,
