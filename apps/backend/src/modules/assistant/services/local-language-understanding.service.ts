@@ -4,6 +4,7 @@ export type LocalIntent =
   | 'ADD_TO_BASKET'
   | 'REMOVE_FROM_BASKET'
   | 'RECOMMEND_MEAL'
+  | 'RECOMMEND_WORKOUT'
   | 'GET_NUTRITION_SUMMARY'
   | 'CREATE_REMINDER'
   | 'UPDATE_REQUEST'
@@ -26,173 +27,52 @@ export class LocalLanguageUnderstandingService {
     if (quantity !== undefined) entities.quantity = quantity;
     const time = this.extractTime(normalizedText);
     if (time) entities.time = time;
-    const duration = normalizedText.match(
-      /\b(\d{1,3})\s*(?:دقیقه|min|mins|minute|minutes)\b/i,
-    );
+    const duration = normalizedText.match(/\b(\d{1,3})\s*(?:دقیقه|min|mins|minute|minutes)\b/i);
     if (duration) entities.durationMinutes = Number(duration[1]);
-    const calories = normalizedText.match(
-      /\b(\d{2,5})\s*(?:کالری|cal|calories)\b/i,
-    );
+    const calories = normalizedText.match(/\b(\d{2,5})\s*(?:کالری|cal|calories)\b/i);
     if (calories) entities.calories = Number(calories[1]);
     const mealType = this.findMealType(normalizedText);
     if (mealType) entities.mealType = mealType;
     const food = this.findFood(normalizedText);
     if (food) entities.food = food;
+    const fitnessTarget = this.findFitnessTarget(normalizedText);
+    if (fitnessTarget) entities.targetArea = fitnessTarget;
+    const fitnessDiscipline = this.findFitnessDiscipline(normalizedText);
+    if (fitnessDiscipline) entities.discipline = fitnessDiscipline;
     const referencesPrevious = this.hasReference(normalizedText);
     if (referencesPrevious) entities.referencesPrevious = true;
     const negations = this.findNegatedFoods(normalizedText);
     if (negations.length) entities.excludedFoods = negations;
-    if (
-      this.matches(normalizedText, [
-        'خودت',
-        'اتوماتیک',
-        'هوشمند',
-        'خودکار',
-        'automatically',
-        'smartly',
-      ])
-    )
-      entities.wantsAutomation = true;
+    if (this.matches(normalizedText, ['خودت', 'اتوماتیک', 'هوشمند', 'خودکار', 'automatically', 'smartly'])) entities.wantsAutomation = true;
 
-    if (
-      this.matches(normalizedText, [
-        'لغو',
-        'کنسل',
-        'باطل',
-        'حذفش کن',
-        'بیخیال',
-        'cancel',
-      ])
-    )
-      return this.result(
-        'CANCEL_REQUEST',
-        entities,
-        referencesPrevious ? 0.98 : 0.91,
-        normalizedText,
-      );
-    if (
-      referencesPrevious &&
-      this.matches(normalizedText, [
-        'تغییر',
-        'عوض',
-        'کن',
-        'بکن',
-        'ویرایش',
-        'به جاش',
-        'بجاش',
-        'update',
-        'change',
-      ])
-    )
+    if (this.matches(normalizedText, ['لغو', 'کنسل', 'باطل', 'حذفش کن', 'بیخیال', 'cancel']))
+      return this.result('CANCEL_REQUEST', entities, referencesPrevious ? 0.98 : 0.91, normalizedText);
+    if (referencesPrevious && this.matches(normalizedText, ['تغییر', 'عوض', 'کن', 'بکن', 'ویرایش', 'به جاش', 'بجاش', 'update', 'change']))
       return this.result('UPDATE_REQUEST', entities, 0.96, normalizedText);
-    if (
-      food &&
-      this.matches(normalizedText, [
-        'اضافه',
-        'بذار',
-        'بگذار',
-        'بخر',
-        'خرید',
-        'سبد',
-        'اضافه کن',
-        'add',
-        'basket',
-      ])
-    )
+    if (fitnessTarget || this.matches(normalizedText, ['تمرین', 'ورزش', 'workout', 'exercise', 'training', 'باشگاه', 'عضله']))
+      return this.result('RECOMMEND_WORKOUT', entities, fitnessTarget ? 0.97 : 0.88, normalizedText);
+    if (food && this.matches(normalizedText, ['اضافه', 'بذار', 'بگذار', 'بخر', 'خرید', 'سبد', 'اضافه کن', 'add', 'basket']))
       return this.result('ADD_TO_BASKET', entities, 0.97, normalizedText);
-    if (
-      food &&
-      this.matches(normalizedText, ['حذف', 'بردار', 'پاک', 'remove', 'delete'])
-    )
+    if (food && this.matches(normalizedText, ['حذف', 'بردار', 'پاک', 'remove', 'delete']))
       return this.result('REMOVE_FROM_BASKET', entities, 0.97, normalizedText);
-    if (
-      this.matches(normalizedText, [
-        'یادم بنداز',
-        'یادآوری',
-        'یادآور',
-        'یادم نره',
-        'یادآوری کن',
-        'remind',
-        'reminder',
-      ])
-    )
-      return this.result(
-        'CREATE_REMINDER',
-        entities,
-        time ? 0.97 : 0.9,
-        normalizedText,
-      );
-    if (
-      this.matches(normalizedText, [
-        'چی بخور',
-        'چه بخور',
-        'شام',
-        'ناهار',
-        'صبحانه',
-        'غذا پیشنهاد',
-        'پیشنهاد غذا',
-        'غذا چی',
-        'meal',
-        'dinner',
-        'lunch',
-      ])
-    )
+    if (this.matches(normalizedText, ['یادم بنداز', 'یادآوری', 'یادآور', 'یادم نره', 'یادآوری کن', 'remind', 'reminder']))
+      return this.result('CREATE_REMINDER', entities, time ? 0.97 : 0.9, normalizedText);
+    if (this.matches(normalizedText, ['چی بخور', 'چه بخور', 'شام', 'ناهار', 'صبحانه', 'غذا پیشنهاد', 'پیشنهاد غذا', 'غذا چی', 'meal', 'dinner', 'lunch']))
       return this.result('RECOMMEND_MEAL', entities, 0.94, normalizedText);
-    if (
-      this.matches(normalizedText, [
-        'کالری',
-        'پروتئین',
-        'تغذیه امروز',
-        'درشت مغذی',
-        'مواد مغذی',
-        'nutrition',
-        'calories',
-        'protein',
-      ])
-    )
-      return this.result(
-        'GET_NUTRITION_SUMMARY',
-        entities,
-        0.95,
-        normalizedText,
-      );
+    if (this.matches(normalizedText, ['کالری', 'پروتئین', 'تغذیه امروز', 'درشت مغذی', 'مواد مغذی', 'nutrition', 'calories', 'protein']))
+      return this.result('GET_NUTRITION_SUMMARY', entities, 0.95, normalizedText);
     return this.result('UNKNOWN', entities, 0, normalizedText);
   }
 
   private normalize(input: string): string {
-    return input
-      .trim()
-      .toLowerCase()
-      .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
-      .replace(/ي/g, 'ی')
-      .replace(/ك/g, 'ک')
-      .replace(/[ۀة]/g, 'ه')
-      .replace(/‌/g, ' ')
-      .replace(/[؟?!،؛]/g, ' ')
-      .replace(/\s+/g, ' ');
+    return input.trim().toLowerCase().replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))).replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[ۀة]/g, 'ه').replace(/‌/g, ' ').replace(/[؟?!،؛]/g, ' ').replace(/\s+/g, ' ');
   }
 
   private extractQuantity(text: string): number | undefined {
     const numeric = text.match(/\b(\d+(?:\.\d+)?)\b/);
     if (numeric) return Number(numeric[1]);
-    const words: Record<string, number> = {
-      یک: 1,
-      یه: 1,
-      یکی: 1,
-      دو: 2,
-      دوتا: 2,
-      سه: 3,
-      'سه تا': 3,
-      چهار: 4,
-      پنج: 5,
-      شش: 6,
-      هفت: 7,
-      هشت: 8,
-      نه: 9,
-      ده: 10,
-    };
-    for (const [word, value] of Object.entries(words))
-      if (new RegExp(`(?:^|\\s)${word}(?:\\s|$)`).test(text)) return value;
+    const words: Record<string, number> = { یک: 1, یه: 1, یکی: 1, دو: 2, دوتا: 2, سه: 3, 'سه تا': 3, چهار: 4, پنج: 5, شش: 6, هفت: 7, هشت: 8, نه: 9, ده: 10 };
+    for (const [word, value] of Object.entries(words)) if (new RegExp(`(?:^|\\s)${word}(?:\\s|$)`).test(text)) return value;
     return undefined;
   }
 
@@ -211,101 +91,52 @@ export class LocalLanguageUnderstandingService {
     return undefined;
   }
 
+  private findFitnessTarget(text: string): string | undefined {
+    const aliases: Array<[string, string[]]> = [
+      ['shoulders', ['سرشانه', 'سرشونه', 'شانه', 'شونه', 'shoulder', 'shoulders']],
+      ['chest', ['سینه', 'سینه ها', 'سینه‌ها', 'chest']],
+      ['back', ['پشت', 'زیربغل', 'زیر بغل', 'back', 'lats', 'lat']],
+      ['arms', ['بازو', 'دست', 'دستها', 'دست‌ها', 'arms', 'arm', 'biceps', 'triceps']],
+      ['core', ['شکم', 'عضلات شکم', 'abs', 'abdominals', 'core']],
+      ['waist', ['کمر', 'waist']],
+      ['glutes', ['باسن', 'glute', 'glutes']],
+      ['thighs', ['ران', 'رانها', 'ران‌ها', 'thigh', 'thighs']],
+      ['legs', ['پا', 'پاها', 'پا‌ها', 'legs', 'leg']],
+      ['calves', ['ساق', 'ساق پا', 'calf', 'calves']],
+      ['full_body', ['کل بدن', 'تمام بدن', 'فول بادی', 'full body']],
+    ];
+    return aliases.find(([, words]) => this.matches(text, words))?.[0];
+  }
+
+  private findFitnessDiscipline(text: string): string | undefined {
+    if (this.matches(text, ['یوگا', 'yoga'])) return 'yoga';
+    if (this.matches(text, ['کالیستنیکس', 'calisthenics', 'bodyweight'])) return 'calisthenics';
+    if (this.matches(text, ['بدنسازی', 'باشگاه', 'gym', 'weight training'])) return 'gym';
+    return undefined;
+  }
+
   private findFood(text: string): string | undefined {
-    const foods: Record<string, string> = {
-      'سینه مرغ': 'chicken',
-      'ماست کم چرب': 'yogurt',
-      'تخم مرغ': 'eggs',
-      شیر: 'milk',
-      milk: 'milk',
-      تخم‌مرغ: 'eggs',
-      eggs: 'eggs',
-      مرغ: 'chicken',
-      chicken: 'chicken',
-      برنج: 'rice',
-      rice: 'rice',
-      ماست: 'yogurt',
-      yogurt: 'yogurt',
-      نان: 'bread',
-      bread: 'bread',
-      موز: 'banana',
-      banana: 'banana',
-      سیب: 'apple',
-      apple: 'apple',
-      پنیر: 'cheese',
-      cheese: 'cheese',
-    };
-    return Object.entries(foods)
-      .sort(([a], [b]) => b.length - a.length)
-      .find(([phrase]) => text.includes(phrase))?.[1];
+    const foods: Record<string, string> = { 'سینه مرغ': 'chicken', 'ماست کم چرب': 'yogurt', 'تخم مرغ': 'eggs', شیر: 'milk', milk: 'milk', 'تخم‌مرغ': 'eggs', eggs: 'eggs', مرغ: 'chicken', chicken: 'chicken', برنج: 'rice', rice: 'rice', ماست: 'yogurt', yogurt: 'yogurt', نان: 'bread', bread: 'bread', موز: 'banana', banana: 'banana', سیب: 'apple', apple: 'apple', پنیر: 'cheese', cheese: 'cheese' };
+    return Object.entries(foods).sort(([a], [b]) => b.length - a.length).find(([phrase]) => text.includes(phrase))?.[1];
   }
 
   private findNegatedFoods(text: string): string[] {
-    const foods = this.findAllFoods(text);
-    const excluded: string[] = [];
+    const foods = this.findAllFoods(text); const excluded: string[] = [];
     for (const [phrase, value] of Object.entries(foods)) {
       const index = text.indexOf(phrase);
-      if (
-        index >= 0 &&
-        this.matches(text.slice(Math.max(0, index - 18), index), [
-          'نه',
-          'بدون',
-          'نذار',
-          'نمیخوام',
-          'نمی‌خوام',
-          'no',
-          'without',
-        ])
-      )
-        excluded.push(value);
+      if (index >= 0 && this.matches(text.slice(Math.max(0, index - 18), index), ['نه', 'بدون', 'نذار', 'نمیخوام', 'نمی‌خوام', 'no', 'without'])) excluded.push(value);
     }
     return [...new Set(excluded)];
   }
 
-  private findAllFoods(text: string): Record<string, string> {
-    return {
-      'سینه مرغ': 'chicken',
-      'ماست کم چرب': 'yogurt',
-      'تخم مرغ': 'eggs',
-      شیر: 'milk',
-      مرغ: 'chicken',
-      برنج: 'rice',
-      ماست: 'yogurt',
-      نان: 'bread',
-      موز: 'banana',
-      سیب: 'apple',
-      پنیر: 'cheese',
-    };
+  private findAllFoods(_text: string): Record<string, string> {
+    return { 'سینه مرغ': 'chicken', 'ماست کم چرب': 'yogurt', 'تخم مرغ': 'eggs', شیر: 'milk', مرغ: 'chicken', برنج: 'rice', ماست: 'yogurt', نان: 'bread', موز: 'banana', سیب: 'apple', پنیر: 'cheese' };
   }
 
   private hasReference(text: string): boolean {
-    return this.matches(text, [
-      'همون',
-      'همین',
-      'اینو',
-      'اونو',
-      'این یکی',
-      'اون یکی',
-      'قبلی',
-      'دوباره',
-      'همونی که',
-      'همون که',
-      'به جاش',
-      'بجاش',
-      'the previous',
-      'that one',
-      'same',
-    ]);
+    return this.matches(text, ['همون', 'همین', 'اینو', 'اونو', 'این یکی', 'اون یکی', 'قبلی', 'دوباره', 'همونی که', 'همون که', 'به جاش', 'بجاش', 'the previous', 'that one', 'same']);
   }
-  private matches(text: string, phrases: string[]): boolean {
-    return phrases.some((phrase) => text.includes(phrase));
-  }
-  private result(
-    intent: LocalIntent,
-    entities: Record<string, string | number | boolean | string[]>,
-    confidence: number,
-    normalizedText: string,
-  ): LocalUnderstanding {
-    return { intent, entities, confidence, normalizedText };
-  }
+
+  private matches(text: string, phrases: string[]): boolean { return phrases.some((phrase) => text.includes(phrase)); }
+  private result(intent: LocalIntent, entities: Record<string, string | number | boolean | string[]>, confidence: number, normalizedText: string): LocalUnderstanding { return { intent, entities, confidence, normalizedText }; }
 }
