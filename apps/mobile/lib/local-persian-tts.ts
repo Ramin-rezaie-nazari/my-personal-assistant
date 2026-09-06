@@ -1,4 +1,5 @@
 import { Audio } from 'expo-av';
+import type { AVPlaybackStatus } from 'expo-av';
 import * as FileSystem from 'expo-file-system';
 import { createTTS, saveAudioToFile, type TtsEngine } from 'react-native-sherpa-onnx/tts';
 import {
@@ -203,7 +204,7 @@ export async function speakPersianLocally(text: string, rate = 1): Promise<boole
     activeSound = sound;
 
     await new Promise<void>((resolve, reject) => {
-      const handleStatus = (status) => {
+      const handleStatus = (status: AVPlaybackStatus) => {
         if (!status.isLoaded) {
           if (status.error) reject(new Error(status.error));
           return;
