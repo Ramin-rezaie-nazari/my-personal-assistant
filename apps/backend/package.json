@@ -38,9 +38,10 @@
     "fitness:content:audit": "node ./scripts/fitness-content-audit.mjs",
     "fitness:content:verify-media": "node ./scripts/fitness-media-verify.mjs",
     "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs",
-    "content:mirror": "node ./scripts/content-mirror.mjs",
-    "content:mirror:recipes": "CONTENT_MIRROR_DOMAIN=recipes node ./scripts/content-mirror.mjs",
-    "content:mirror:fitness": "CONTENT_MIRROR_DOMAIN=fitness node ./scripts/content-mirror.mjs"
+    "content:mirror": "node ./scripts/content-mirror-run.mjs",
+    "content:mirror:recipes": "CONTENT_MIRROR_DOMAIN=recipes node ./scripts/content-mirror-run.mjs",
+    "content:mirror:fitness": "CONTENT_MIRROR_DOMAIN=fitness node ./scripts/content-mirror-run.mjs",
+    "content:mirror:audit": "node ./scripts/content-mirror-audit.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -52,7 +53,7 @@
     "@prisma/adapter-pg": "^7.9.1",
     "@prisma/client": "^7.9.1",
     "argon2": "^0.45.1",
-    "class-transformer": "^0.5.1",
+    "class-transformer": "^0.5.0",
     "class-validator": "^0.15.0",
     "dotenv": "^17.4.2",
     "joi": "^18.2.3",
@@ -75,7 +76,7 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^7.2.1",
     "eslint": "^9.18.0",
-    "eslint-config-prettier": "^10.1.8",
+    "eslint-config-prettier": "^10.1.0",
     "eslint-plugin-prettier": "^5.5.6",
     "globals": "^17.8.0",
     "jest": "30.4.1",
@@ -91,22 +92,12 @@
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
+    "moduleFileExtensions": ["js", "json", "ts"],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "moduleNameMapper": {
-      "^(.+)\\.js$": "$1"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
+    "transform": {"^.+\\.(t|j)s$": "ts-jest"},
+    "moduleNameMapper": {"^(.+)\\.js$": "$1"},
+    "collectCoverageFrom": ["**/*.(t|j)s"],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
