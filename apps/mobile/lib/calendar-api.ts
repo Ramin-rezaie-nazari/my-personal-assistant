@@ -5,8 +5,7 @@ import {
   setAuthSession,
   type AuthResponse,
 } from './api';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+import { MOBILE_API_URL } from './api-base';
 
 export type CalendarEvent = {
   id: string;
@@ -23,7 +22,7 @@ async function rawRequest(path: string, init: RequestInit = {}, token?: string) 
   const headers = new Headers(init.headers);
   headers.set('Content-Type', 'application/json');
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  return fetch(`${API_URL}${path}`, { ...init, headers });
+  return fetch(`${MOBILE_API_URL}${path}`, { ...init, headers });
 }
 
 async function refresh() {
