@@ -1,17 +1,54 @@
 # MYPA Autonomous Progress Log
 
-> Living session-by-session engineering ledger. This file exists so a future agent can understand what was actually changed, what was validated, what is still blocked, and what must never be claimed without evidence.
+> Living session-by-session engineering ledger. This file exists so a future agent can understand what was actually changed, what was validated, what is still blocked, and what must never be claimed without evidence. Every completed engineering batch must add an entry here so work is not repeated blindly.
 >
 > Companion source-of-truth documents: `03_PROJECT_BRAIN_BOOK.md`, `04_ARCHITECTURE_ATLAS.md`, `05_CURRENT_STATE.md`, `06_VALIDATION_LEDGER.md`.
+
+## 2026-09-06 — Current autonomous corpus/release continuation
+
+### Work performed in this continuation
+
+- Inspected the real GitHub Actions result for the content-corpus bootstrap.
+- Found a concrete environment blocker: the Actions runner received empty `MYPA_FITNESS_DATABASE_URL`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY`, so the job stopped before install/import. No corpus completion claim is allowed from that run.
+- Separated corpus responsibilities in the bootstrap workflow so missing fitness infrastructure can no longer prevent recipe-image work from being reasoned about independently.
+- Fixed the workflow's strict-mode expression so it no longer contains a logically redundant `true-or-true` expression.
+- Added the missing `apps/backend/scripts/recipe-content-audit.mjs` because `package.json` already exposed `recipe:content:audit` but the implementation was absent on the active branch.
+- The recipe audit checks real recipe rows for required fields, ingredient integrity, step numbering/order, verification, media coverage, provenance/license metadata, broken media references, and duplicate normalized names; an empty recipe table is a hard failure, not a false green.
+- Hardened `apps/backend/scripts/fitness-media-verify.mjs` so approved media validation checks HTTP success and image/WebP content rather than only URL shape; empty approved-media sets are not treated as completion.
+- Added explicit progress/audit notes so subsequent autonomous sessions can start from evidence instead of repeating source inspection.
+
+### Important evidence from the runner
+
+- Workflow run `34034400326` / job `101489715731` reached the secret-check step and failed before any content import.
+- Therefore: no statement such as "all 1,500 movements", "all 6,000 WebPs", or "all recipe images downloaded" is valid yet.
+
+### What is deliberately NOT marked complete
+
+- Runtime fitness corpus: not green until the real target database is populated and the release audit plus media verification both pass.
+- Runtime recipe corpus: not green until real recipe data exists and the recipe-content audit passes.
+- Recipe image corpus: not green until the actual Storage import runs and coverage is audited against the real recipe set.
+- Yoga live pose analysis: not green while the mobile camera bridge remains `UnconfiguredYogaCameraBridge` and no compatible native frame/pose provider is installed.
+- HealthKit/Health Connect: not green until native integrations exist, permissions/privacy behavior is validated, and device builds are tested.
+- Play Store readiness: not green until signed release artifacts, installation/upgrade checks, store privacy/data declarations, backend production configuration, and device validation are evidenced.
+
+### Tests / validation to run when environment becomes available
+
+- Backend: install with frozen lockfile, Prisma generate, typecheck, unit tests, build, migration validation, API/E2E regression.
+- Fitness: import -> balance levels -> audit -> WebP URL/content verification; release gate must prove 500 published movements per discipline, 10 levels, >=50 per level, and >=4 approved WebP assets per movement.
+- Recipes: recipe import/population -> recipe-content audit -> recipe-image corpus import -> image coverage/quality/provenance audit -> mobile presentation regression.
+- Mobile: route audit, surface audit, TypeScript typecheck, Expo prebuild, Android Gradle APK build, then physical-device behavior where required.
+- Native: real Android Health Connect and iOS HealthKit permission/sync checks; real Yoga camera/pose pipeline; Persian local TTS lifecycle/crash validation.
+
+### Repetition-prevention rule
+
+Before starting a new batch, read this file plus `05_CURRENT_STATE.md`, `03_PROJECT_BRAIN_BOOK.md`, and `04_ARCHITECTURE_ATLAS.md`. Do not redo a completed implementation merely because a prior run was not green. Re-run only the validation that was actually missing, then fix the root cause of any new failure.
 
 ## 2026-09-06 — Control-plane continuation
 
 ### Starting verified state
 
 - Active branch: `agent/mypa-autonomous-control-plane`.
-- Active PR: #66 → `main`.
-- Branch head before this batch: `3e1af7279ab47eee387d146a5add58411611a85d`.
-- Android workflow run for that head was still executing Gradle; no green Android claim was made.
+- Active PR: #66 -> `main`.
 - The existing state document explicitly kept fitness/recipe corpus population, physical-device validation, and Yoga native pose analysis unclaimed.
 
 ### Documentation policy reinforced
@@ -24,103 +61,11 @@
 
 ### New engineering work — onboarding persistence
 
-#### Problem found
-
-Mobile onboarding was persisted to AsyncStorage only. The backend already owns `UserProfile`, `UserPreference`, `UserOnboarding`, and `UserFact`, so a completed onboarding flow could leave the server-side Brain without the same user context.
-
-#### Architecture decision
-
-Use the existing user/profile models rather than adding another profile table or introducing a migration solely for onboarding metadata.
-
-- `UserProfile` stores: gender, birth date, height, weight, primary goal.
-- `UserPreference` stores: onboarding completion, notification preference, and presentation theme.
-- `UserOnboarding` stores: completion state, current step, completion timestamp.
-- `UserFact` stores the remaining structured onboarding facts with `source = onboarding` and confidence `1`.
-- OS permission flags are recorded as facts for traceability; the app still treats OS permission state as device-owned and optional.
-
-#### Backend changes
-
-- Added `apps/backend/src/modules/users/dto/save-onboarding.dto.ts` with strict enum/range/date validation.
-- Added authenticated `POST /users/onboarding`.
-- Added `UsersService.saveOnboarding(...)` using a single Prisma transaction so profile, preferences, completion state, and facts succeed or fail together.
-- Female onboarding deterministically maps to `UserPreference.theme = feminine`; all other genders map to `default`.
-- Repeated onboarding saves are idempotent through `upsert` operations.
-
-#### Mobile changes
-
-- Added `apps/mobile/lib/onboarding-api.ts` using the canonical `MOBILE_API_URL` resolver and the authenticated access token.
-- `apps/mobile/lib/onboarding.ts` now keeps the local-first contract while syncing completed onboarding to the backend.
-- Failed remote sync does not destroy local onboarding progress; a pending marker causes a best-effort retry on the next onboarding-state read.
-
-#### Regression coverage
-
-- Added `apps/backend/src/modules/users/users.service.spec.ts` covering atomic onboarding persistence, female theme mapping, onboarding completion and structured facts.
-
-### Validation state for this batch
-
-**NOT YET GREEN.**
-
-A fresh CI run was triggered after the implementation commits. At the time of this ledger entry, the Android run was in progress during environment/job setup and had not completed the Gradle gate. No test result from the new onboarding code is claimed until the actual run completes.
-
-## Known remaining blockers
-
-### P0 — Voice/native Android
-
-- The lifecycle race has been narrowed and guarded in the tracked JS provider.
-- Real Android candidate/device validation is still required.
-- No “voice stable” release claim is allowed yet.
-
-### P1 — Global market / pricing
-
-- Stacked global market work still requires conflict, dependency and regression review before integration.
-- No live market price data is fabricated.
-
-### P1 — Verified food/recipe corpus
-
-- Taxonomy persistence foundation exists.
-- Large verified ingredient/cuisine/safety corpus remains unfinished.
-- Full recipe corpus runtime import + audit remains unfinished.
-
-### P1 — Fitness corpus
-
-- Importer, balancing gate, audit and WebP media verifier exist.
-- Full runtime population of 1,500 movements / 6,000 approved WebP assets remains unverified in this environment.
-
-### P1 — Yoga live pose analysis
-
-- Camera/session UI and safety contract exist.
-- Current pose-analysis bridge is intentionally unconfigured.
-- A real compatible pose provider plus physical-device validation is still required.
-
-### P2 — Mobile release
-
-- Mobile route/surface audits now exist.
-- Backend URL resolution is centralized.
-- Full iOS/Android device matrix, visual polish, accessibility, offline behavior and store-readiness remain separate release gates.
-
-## Next safe order of work
-
-1. Re-check the completed CI results for the current branch head; fix failures at root cause.
-2. Validate onboarding persistence with backend test/typecheck/build evidence.
-3. Finish nested mobile localization and recommendation-intelligence mobile wiring.
-4. Complete the default/feminine theme rollout across the entire mobile shell.
-5. Continue authorization, rate limiting, observability, background jobs, notifications, backup/restore and performance hardening.
-6. Integrate Global Market / Price Intelligence only after conflict and regression review.
-7. Populate and audit real recipe + fitness corpora against the local PostgreSQL environment.
-8. Resolve native Yoga and Voice device gates.
-9. Only then move the project-level index toward a release-quality 100% claim.
-
-## Evidence rule
-
-A progress percentage is a planning indicator. A feature is “complete” only when implementation, relevant data/schema, targeted tests, integration/regression tests, documentation, and required environment/device validation all agree.
-
-## 2026-09-06 — Onboarding persistence and control-plane hardening
-
-- Found and closed the architecture gap where onboarding lived only in AsyncStorage.
-- Reused existing backend user-state models rather than introducing another profile schema.
-- Added authenticated atomic persistence and mobile retry semantics.
+- Reused existing `UserProfile`, `UserPreference`, `UserOnboarding`, and `UserFact` models instead of adding redundant profile storage.
+- Added authenticated atomic onboarding persistence and mobile deferred retry semantics.
 - Added regression coverage.
 - CI/device status remains pending and is never inferred from source code alone.
+
 ## 2026-09-06 — Smart Meals source-of-truth integration
 
 - Found a recommendation-drift risk: Smart Meals was locally constructing a simplified score while a canonical backend Recommendation Intelligence service already existed.
@@ -128,10 +73,10 @@ A progress percentage is a planning indicator. A feature is “complete” only 
 - Changed Smart Meals presentation to use backend scores/reasons/coverage as its authoritative result.
 - Kept the recipe detail surface as the final navigation target.
 - CI/device verification remains pending and is not inferred from source inspection.
+
 ## 2026-09-06 — Native build blocker resolved at configuration level, verification pending
 
 - Confirmed the earlier Android build was not a transient runner issue: Gradle consistently generated `PackageList.java` with the obsolete `expo.core.ExpoModulesPackage` import under pnpm isolated linking.
-- Checked current Expo guidance and the SDK 53 monorepo recommendation; SDK 53 should use a hoisted dependency installation strategy for this class of native resolution issue.
 - Changed the repository linker policy to `node-linker=hoisted` and triggered a fresh Android run.
 - Kept the blocker red until the new Gradle result is completed and the APK artifact is actually uploaded.
 
@@ -149,22 +94,20 @@ A progress percentage is a planning indicator. A feature is “complete” only 
 
 ## 2026-09-06 — GitHub Actions smoke validation
 
-- Added a minimal manual GitHub Actions workflow containing only an `echo` step and a deterministic shell equality check.
-- The first run on the autonomous branch completed successfully in about five seconds.
-- This proves the repository can schedule a runner and execute a basic job; it does not prove the full backend/mobile workflows are green.
+- Added a minimal manual GitHub Actions smoke workflow with an `echo` step and deterministic shell equality check.
+- The smoke run completed successfully; this proves runner scheduling and a basic shell job, not the application release pipeline.
 - Converted the smoke workflow to `workflow_dispatch` only so normal development commits do not spend Actions minutes on a redundant sanity check.
 
 ## 2026-09-06 — Refresh-token storage hardening
 
-- Kept the existing refresh-token rotation/replay rejection behavior.
+- Kept refresh-token rotation/replay rejection behavior.
 - Changed new session persistence to store a SHA-256 fingerprint rather than the raw bearer token.
-- Added compatibility lookup/delete logic for legacy sessions that still contain the raw token, avoiding a destructive migration requirement.
+- Added compatibility lookup/delete logic for legacy sessions that still contain the raw token.
 - Added focused session-service tests for fingerprint storage and legacy compatibility.
-- Runtime/typecheck/test validation for this exact latest commit is not claimed from source inspection alone.
+- Runtime/typecheck/test validation for the exact latest commit is not claimed from source inspection alone.
 
 ## 2026-09-06 — Theme refresh hardening
 
 - Confirmed `HomeShell` already consumes the reactive visual theme context.
 - Closed the transition gap where the provider could retain its initial theme after onboarding/settings changed by refreshing the persisted theme whenever the app route changes.
-- This avoids duplicating gender/theme business logic in individual screens.
 - Physical-device visual validation is still required.
