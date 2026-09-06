@@ -1,9 +1,6 @@
 name: MYPA Actions Smoke Test
 
 on:
-  push:
-    branches:
-      - agent/mypa-autonomous-control-plane
   workflow_dispatch:
 
 jobs:
