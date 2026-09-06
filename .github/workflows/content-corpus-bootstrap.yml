@@ -41,7 +41,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.MYPA_FITNESS_DATABASE_URL }}
       FITNESS_TARGET_PER_DISCIPLINE: '500'
-      FITNESS_IMPORT_STRICT: ${{ inputs.fitness_strict == false && '0' || '1' }}
+      FITNESS_IMPORT_STRICT: ${{ github.event_name == 'workflow_dispatch' && inputs.fitness_strict == false && '0' || '1' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -106,7 +106,7 @@ jobs:
         run: pnpm prisma generate
       - name: Import recipe content corpus
         working-directory: apps/backend
-        run: pnpm node ./scripts/recipe-content-import.mjs
+        run: node ./scripts/recipe-content-import.mjs
       - name: Audit recipe corpus
         working-directory: apps/backend
         run: pnpm recipe:content:audit
@@ -118,7 +118,7 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      RECIPE_IMAGE_RESET: ${{ inputs.recipe_reset == true && '1' || '0' }}
+      RECIPE_IMAGE_RESET: ${{ github.event_name == 'workflow_dispatch' && inputs.recipe_reset == true && '1' || '0' }}
       RECIPE_IMAGE_CONCURRENCY: '4'
     steps:
       - name: Checkout
