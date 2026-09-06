@@ -1,3 +1,4 @@
+import { APP_GUARD } from '@nestjs/core';
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -89,6 +90,10 @@ import { RequestRateLimitGuard } from './common/security/request-rate-limit.guar
     RecommendationIntelligenceModule,
   ],
   controllers: [AppController],
-  providers: [AppService, RequestRateLimitGuard],
+  providers: [
+    AppService,
+    RequestRateLimitGuard,
+    { provide: APP_GUARD, useExisting: RequestRateLimitGuard },
+  ],
 })
 export class AppModule {}
