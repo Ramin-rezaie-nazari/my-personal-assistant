@@ -1,0 +1,94 @@
+name: MYPA content corpus bootstrap
+
+on:
+  push:
+    branches:
+      - agent/mypa-autonomous-control-plane
+    paths:
+      - 'apps/backend/scripts/fitness-content-import.mjs'
+      - 'apps/backend/scripts/fitness-content-audit.mjs'
+      - 'apps/backend/scripts/fitness-media-verify.mjs'
+      - 'apps/backend/scripts/recipe-image-dataset-import-v2.mjs'
+      - '.github/workflows/content-corpus-bootstrap.yml'
+  workflow_dispatch:
+    inputs:
+      fitness_strict:
+        description: 'Require four approved WebP assets for every selected movement'
+        required: false
+        default: true
+        type: boolean
+      recipe_reset:
+        description: 'Reset only the recipe image import state before rebuilding images'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mypa-content-corpus-bootstrap
+  cancel-in-progress: false
+
+jobs:
+  corpus:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      DATABASE_URL: ${{ secrets.MYPA_FITNESS_DATABASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      FITNESS_TARGET_PER_DISCIPLINE: '500'
+      FITNESS_IMPORT_STRICT: ${{ inputs.fitness_strict && '1' || '1' }}
+      RECIPE_IMAGE_RESET: ${{ inputs.recipe_reset && '1' || '0' }}
+      RECIPE_IMAGE_CONCURRENCY: '4'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Require runtime secrets
+        run: |
+          test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is required for the fitness corpus.'; exit 2; }
+          test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for recipe image storage.'; exit 2; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for recipe image storage.'; exit 2; }
+
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: apps/backend
+        run: pnpm prisma generate
+
+      - name: Import fitness corpus with media enrichment
+        working-directory: apps/backend
+        run: pnpm fitness:content:import
+
+      - name: Balance the ten difficulty levels
+        working-directory: apps/backend
+        run: pnpm fitness:content:balance-levels
+
+      - name: Audit fitness release corpus
+        working-directory: apps/backend
+        run: pnpm fitness:content:audit
+
+      - name: Verify fitness WebP URLs
+        working-directory: apps/backend
+        run: pnpm fitness:content:verify-media
+
+      - name: Import recipe image corpus
+        working-directory: apps/backend
+        run: pnpm recipe-images:dataset
