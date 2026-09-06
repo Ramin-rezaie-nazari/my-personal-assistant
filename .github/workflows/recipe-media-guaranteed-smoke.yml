@@ -3,7 +3,7 @@ name: Recipe Media Guaranteed Smoke
 on:
   push:
     paths:
-      - 'apps/backend/scripts/recipe-media-guaranteed-mirror-v5.mjs'
+      - 'apps/backend/scripts/recipe-media-guaranteed-mirror-v6.mjs'
       - 'apps/backend/package.json'
       - '.github/workflows/recipe-media-guaranteed-smoke.yml'
 
@@ -23,10 +23,11 @@ jobs:
       - name: Run guaranteed media smoke test
         working-directory: apps/backend
         env:
-          RECIPE_DATASET_URL: data:application/json,%5B%7B%22title%22%3A%221-2-3-4%20Cake%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3A1-2-3-4_Cake%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22flour%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Mix ingredients.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Bake the cake.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Cool and decorate.%22%7D%5D%7D%2C%7B%22title%22%3A%2220-Ingredient%20Brownies%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3A20-Ingredient_Brownies%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22chocolate%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Melt the chocolate.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Bake the mixture.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Cool and cut the brownies.%22%7D%5D%7D%5D
-          MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/.tmp-content-mirror
           RECIPE_STAGE_CONCURRENCY: 1
-        run: node ./scripts/recipe-media-guaranteed-mirror-v5.mjs
-      - name: Verify four-stage contract
+          MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/.tmp-content-mirror
+          RECIPE_DATASET_URL: data:application/json,%5B%7B%22title%22%3A%221-2-3-4%20Cake%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3A1-2-3-4_Cake%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22flour%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Mix ingredients.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Bake the cake.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Cool and decorate.%22%7D%5D%7D%2C%7B%22title%22%3A%2220-Ingredient%20Brownies%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3A20-Ingredient_Brownies%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22chocolate%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Melt the chocolate.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Bake the mixture.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Cool and cut the brownies.%22%7D%5D%7D%5D
+        run: node ./scripts/recipe-media-guaranteed-mirror-v6.mjs
+      - name: Verify four-stage contract and image files
         working-directory: apps/backend
-        run: node -e "const fs=require('fs'); const p='.tmp-content-mirror/recipe-stage-summary.json'; const s=JSON.parse(fs.readFileSync(p,'utf8')); if(s.recipes!==2||s.complete!==2) throw new Error(JSON.stringify(s)); const m=JSON.parse(fs.readFileSync('.tmp-content-mirror/manifest.json','utf8')); for(const r of Object.values(m.items)){ if(r.mediaCount!==4) throw new Error('mediaCount '+r.name); if(!r.media.every(x=>x.status==='ready')) throw new Error('media status '+r.name); } console.log(JSON.stringify(s,null,2));"
+        run: |
+          node -e "const fs=require('fs');const path=require('path');const root='.tmp-content-mirror';const summary=JSON.parse(fs.readFileSync(path.join(root,'recipe-stage-summary.json'),'utf8'));if(summary.recipes!==2||summary.complete!==2)throw new Error(JSON.stringify(summary));const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));for(const recipe of Object.values(manifest.items)){if(recipe.mediaCount!==4||recipe.media.length!==4)throw new Error('media count '+recipe.name);const stages=recipe.media.map(x=>x.stage).sort();if(stages.join(',')!=='final,process-1,process-2,process-3')throw new Error('stages '+recipe.name);for(const item of recipe.media){if(item.status!=='ready'||item.format!=='webp')throw new Error('media invalid '+recipe.name+'/'+item.stage);const full=path.join(root,item.localPath);if(!fs.existsSync(full))throw new Error('missing '+full);const size=fs.statSync(full).size;if(size===0||size>64*1024)throw new Error('bad size '+full)}}console.log(JSON.stringify(summary,null,2));"
