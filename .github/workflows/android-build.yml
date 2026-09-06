@@ -6,6 +6,7 @@ on:
     paths:
       - 'apps/mobile/**'
       - 'pnpm-lock.yaml'
+      - '.npmrc'
       - '.github/workflows/android-build.yml'
 
 permissions:
@@ -52,7 +53,9 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Expo prebuild
-        run: npx expo prebuild --platform android --non-interactive
+        env:
+          CI: '1'
+        run: npx expo prebuild --platform android
 
       - name: Gradle assemble debug APK
         working-directory: apps/mobile/android
@@ -64,5 +67,3 @@ jobs:
           name: my-personal-assistant-debug-apk
           path: apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
-
-# Force a fresh standalone APK validation after the EAS upload issue.
