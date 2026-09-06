@@ -34,6 +34,7 @@ type PublicRecipe = {
   ingredients: Array<{ id: string; foodId: string; name: string; quantity: number; unit: string; measurementKind: string; imageUrl: string | null }>;
   steps: Array<{ id: string; stepNumber: number; instruction: string; durationSeconds: number | null; temperatureC: number | null; imageUrl: string | null; imageSource: string | null; sourceLicense: string; sourceAttribution: string }>;
   media: Array<{ id: string; position: number; url: string; sourceUrl: string; sourceProvider: string; license: string; attribution: string; mimeType: string; width: number | null; height: number | null }>;
+  contentCompleteness: { hasHeroImage: boolean; galleryImageCount: number; hasInstructions: boolean; instructionStepCount: number };
 };
 
 @Injectable()
@@ -76,12 +77,20 @@ export class PublicRecipeCatalogService {
     const rows = await this.dataset();
     const recipe = rows.map((row) => this.parse(row)).find((item) => item.id === id);
     if (!recipe) return null;
-    const media = await this.fetchMedia(recipe.sourceUrl);
+    const media = await this.fetchMedia(recipe.sourceUrl, recipe.name);
+    const imageUrl = media[0]?.url ?? recipe.imageUrl;
+    const imageSource = media[0] ? `${media[0].sourceProvider}; ${media[0].license}` : recipe.imageSource;
     return {
       ...recipe,
-      imageUrl: media[0]?.url ?? recipe.imageUrl,
-      imageSource: media[0] ? `${media[0].sourceProvider}; ${media[0].license}` : recipe.imageSource,
+      imageUrl,
+      imageSource,
       media,
+      contentCompleteness: {
+        hasHeroImage: Boolean(imageUrl),
+        galleryImageCount: media.length,
+        hasInstructions: recipe.steps.length > 0,
+        instructionStepCount: recipe.steps.length,
+      },
     };
   }
 
@@ -134,35 +143,71 @@ export class PublicRecipeCatalogService {
       ingredients,
       steps,
       media: [],
+      contentCompleteness: { hasHeroImage: false, galleryImageCount: 0, hasInstructions: steps.length > 0, instructionStepCount: steps.length },
     };
   }
 
-  private async fetchMedia(sourceUrl: string) {
+  private async fetchMedia(sourceUrl: string, recipeName: string) {
     const cached = this.mediaCache.get(sourceUrl);
     if (cached) return cached;
-    const title = decodeURIComponent(sourceUrl.split('/wiki/')[1] || '').replace(/_/g, ' ');
-    if (!title) return [];
+    const directTitle = decodeURIComponent(sourceUrl.split('/wiki/')[1] || '').replace(/_/g, ' ');
+    let media = directTitle ? await this.fetchPageImages(directTitle) : [];
+    if (media.length < MAX_MEDIA) media = await this.searchWikimediaImages(recipeName, media);
+    this.mediaCache.set(sourceUrl, media.slice(0, MAX_MEDIA));
+    return this.mediaCache.get(sourceUrl) ?? [];
+  }
+
+  private async fetchPageImages(title: string) {
     const params = new URLSearchParams({ action: 'query', titles: title, prop: 'images', imlimit: '12', format: 'json', formatversion: '2' });
-    const response = await fetch(`${WIKIBOOKS_API}?${params.toString()}`, { headers: { 'User-Agent': 'MYPA-PublicRecipeCatalog/1.0' } });
-    if (!response.ok) return [];
+    const response = await fetch(`${WIKIBOOKS_API}?${params.toString()}`, { headers: { 'User-Agent': 'MYPA-PublicRecipeCatalog/1.0' } }).catch(() => null);
+    if (!response?.ok) return [];
     const data = (await response.json()) as any;
     const images = data?.query?.pages?.[0]?.images ?? [];
-    const media: PublicRecipe['media'] = [];
+    return this.resolveWikimediaImages(images);
+  }
+
+  private async searchWikimediaImages(recipeName: string, existing: PublicRecipe['media']) {
+    const params = new URLSearchParams({
+      action: 'query',
+      generator: 'search',
+      gsrsearch: `${recipeName} food recipe`,
+      gsrnamespace: '6',
+      gsrlimit: '8',
+      prop: 'imageinfo',
+      iiprop: 'url|extmetadata',
+      iiurlwidth: '1200',
+      format: 'json',
+      formatversion: '2',
+    });
+    const response = await fetch(`${WIKIBOOKS_API}?${params.toString()}`, { headers: { 'User-Agent': 'MYPA-PublicRecipeCatalog/1.0' } }).catch(() => null);
+    if (!response?.ok) return existing;
+    const payload = (await response.json()) as any;
+    const pages = Array.isArray(payload?.query?.pages) ? payload.query.pages : [];
+    const resolved = await this.resolveWikimediaImages(pages.map((page: any) => ({ title: page?.title, imageinfo: page?.imageinfo })), true);
+    const seen = new Set(existing.map((item) => item.sourceUrl));
+    return [...existing, ...resolved.filter((item) => !seen.has(item.sourceUrl))].slice(0, MAX_MEDIA);
+  }
+
+  private async resolveWikimediaImages(images: any[], alreadyExpanded = false) {
+    const result: PublicRecipe['media'] = [];
     for (const image of images) {
-      const fileTitle = image?.title ?? '';
+      const fileTitle = image?.title || '';
       if (!/^File:/i.test(fileTitle) || /\.svg$|\.gif$|\.ico$/i.test(fileTitle)) continue;
-      const detailParams = new URLSearchParams({ action: 'query', titles: fileTitle, prop: 'imageinfo', iiprop: 'url|extmetadata', iiurlwidth: '1200', format: 'json', formatversion: '2' });
-      const detail = await fetch(`${WIKIBOOKS_API}?${detailParams.toString()}`, { headers: { 'User-Agent': 'MYPA-PublicRecipeCatalog/1.0' } }).catch(() => null);
-      if (!detail?.ok) continue;
-      const payload = (await detail.json()) as any;
-      const info = payload?.query?.pages?.[0]?.imageinfo?.[0];
+      let info = image?.imageinfo?.[0];
+      if (!info && !alreadyExpanded) {
+        const details = new URLSearchParams({ action: 'query', titles: fileTitle, prop: 'imageinfo', iiprop: 'url|extmetadata', iiurlwidth: '1200', format: 'json', formatversion: '2' });
+        const detail = await fetch(`${WIKIBOOKS_API}?${details.toString()}`, { headers: { 'User-Agent': 'MYPA-PublicRecipeCatalog/1.0' } }).catch(() => null);
+        if (!detail?.ok) continue;
+        const payload = (await detail.json()) as any;
+        info = payload?.query?.pages?.[0]?.imageinfo?.[0];
+      }
       if (!info?.url && !info?.thumburl) continue;
       const license = allowedImageLicense(info.extmetadata ?? {});
       if (!license) continue;
       const url = info.thumburl || info.url;
-      media.push({
-        id: `${slug(title)}-${media.length + 1}`,
-        position: media.length,
+      result.push({
+        id: `${slug(fileTitle)}-${result.length + 1}`,
+        position: result.length,
         url,
         sourceUrl: info.descriptionurl || info.url,
         sourceProvider: 'Wikimedia Commons/Wikibooks',
@@ -172,10 +217,9 @@ export class PublicRecipeCatalogService {
         width: null,
         height: null,
       });
-      if (media.length >= MAX_MEDIA) break;
+      if (result.length >= MAX_MEDIA) break;
     }
-    this.mediaCache.set(sourceUrl, media);
-    return media;
+    return result;
   }
 }
 
