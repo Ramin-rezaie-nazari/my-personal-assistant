@@ -11,3 +11,7 @@ apps/backend/recipe-image-dataset/
 .kaggle-venv/
 My-Personal-Assistant-Data/
 processed-images/
+
+# Mac/VPS content mirror: never bundle or commit the media corpus
+content-mirror/
+apps/backend/content-mirror/
