@@ -20,7 +20,7 @@ Therefore the **UI/data contract is implemented**. The full 1,500-movement / 6,0
 
 ## Wearables / smart watches — actual status
 
-The existing `DeviceIntelligenceModule` is currently not a real wearable bridge. `DeviceIntelligenceService.getHealthData()` returns placeholder zero values, and `HealthSyncService.syncHealthData()` returns a placeholder success message.
+The existing `DeviceIntelligenceModule` is now an explicit integration-status boundary, not a fake data provider. The authenticated `GET /device-intelligence` endpoint reports that native providers are not configured and deliberately returns no synthetic steps, calories or sleep values. `HealthSyncService` also refuses to report a successful sync while the native layer is unavailable.
 
 The correct scalable strategy is not to build a bespoke integration for every watch brand. Use platform health hubs:
 
@@ -33,7 +33,7 @@ These platforms can aggregate data supplied by device/companion ecosystems, subj
 
 - steps
 - active calories burned
-- total energy where exposed
+- total energy where exposed or derivable
 - distance
 - sleep duration
 - heart-rate summaries where exposed
@@ -41,6 +41,14 @@ These platforms can aggregate data supplied by device/companion ecosystems, subj
 - selected body metrics where permitted
 - source/device provenance
 - external record IDs and timestamps for deduplication
+
+## Provider-neutral implementation boundary
+
+The mobile layer now defines:
+
+`native provider → HealthProviderAdapter → normalized HealthSample → backend sync`
+
+This keeps the business logic independent from HealthKit, Health Connect, or a particular watch vendor. The normalized contract also defines incremental-sync and deduplication requirements.
 
 ## Personal Brain path
 
@@ -60,7 +68,7 @@ User-entered meal calories remain intake evidence. Device energy expenditure rem
 
 HealthKit requires explicit permissions and the HealthKit capability; Apple also requires appropriate privacy usage descriptions. HealthKit supports background/long-running queries, but the app must handle permission changes and limited access.
 
-Health Connect requires declared record-type permissions plus runtime authorization. Its current React Native package supports Expo custom builds but not Expo Go, and current Play Store access also requires a Health Connect data-access declaration.
+Health Connect requires declared record-type permissions plus runtime authorization. Its current React Native package supports Expo custom builds but not Expo Go, so native dependency/configuration and a custom development/release build are required.
 
 A production-grade native integration therefore requires dependency/native build changes and physical-device validation. It is deliberately not marked green from source-only inspection.
 
@@ -70,7 +78,11 @@ A production-grade native integration therefore requires dependency/native build
 
 **Exercise images:** UI path GREEN, full corpus population YELLOW.
 
-**Wearable integration:** RED/PENDING until native HealthKit + Health Connect bridges and real-device sync validation exist.
+**Wearable architecture:** GREEN at the contract/boundary level; native providers and durable sync remain RED/PENDING until implementation and real-device validation exist.
+
+## Evidence note
+
+The latest Android workflow after the mobile health changes failed during dependency installation before typecheck/prebuild/Gradle, so no Android build claim is inferred from this architecture work. See `docs/RELEASE_READINESS.md`.
 
 ## Source references
 
