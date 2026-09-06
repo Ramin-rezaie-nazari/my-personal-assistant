@@ -47,6 +47,7 @@ describe('LocalLanguageUnderstandingService', () => {
     const result = service.understand('برای سرشونه تمرین می‌خوام');
     expect(result.intent).toBe('RECOMMEND_WORKOUT');
     expect(result.entities.targetArea).toBe('shoulders');
+    expect(result.entities.targetAreas).toEqual(['shoulders']);
     expect(result.confidence).toBeGreaterThan(0.9);
   });
 
@@ -77,6 +78,13 @@ describe('LocalLanguageUnderstandingService', () => {
     expect(result.intent).toBe('RECOMMEND_WORKOUT');
     expect(result.entities.targetArea).toBe('core');
     expect(result.entities.equipment).toEqual(['none']);
+  });
+
+  it('understands multiple target areas in one request', () => {
+    const result = service.understand('برای سرشانه و پشت و بازو تمرین میخوام');
+    expect(result.intent).toBe('RECOMMEND_WORKOUT');
+    expect(result.entities.targetAreas).toEqual(['shoulders', 'back', 'arms']);
+    expect(result.entities.targetArea).toBe('shoulders');
   });
 
   it('does not let a workout word hijack a shopping request', () => {
