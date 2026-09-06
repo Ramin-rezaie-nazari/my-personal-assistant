@@ -30,9 +30,11 @@ This document is an evidence-based release gate. It deliberately distinguishes r
 | Mobile localization | YELLOW | Reactive locale architecture + top-level rollout implemented; nested UI audit and runtime validation remain. |
 | Theme system | YELLOW | Default/feminine theme foundation is implemented; full UI token rollout and device validation remain. |
 | Mobile API production endpoint | GREEN | Production mobile builds fail closed when `EXPO_PUBLIC_API_URL` is absent. |
+| Device/wearable integration contract | GREEN | Provider-neutral normalized health contract and protected integration-status endpoint are implemented; no synthetic health values are emitted while native providers are unavailable. |
+| Native health providers | RED / PENDING | iOS HealthKit and Android Health Connect bridges, permissions, incremental sync, dedupe, and physical-device validation are not yet configured. |
 | Android native voice/TTS | RED | Known Persian local-voice native SIGABRT remains; physical-device root-cause and regression validation required. |
 | Yoga camera / pose provider | RED | Camera bridge is still unconfigured; no production pose provider is connected and validated. |
-| Mobile release build | RED / PENDING | Historical Android Gradle failure reproduced `expo.core.ExpoModulesPackage`; corrected hoisted-linking configuration is staged but a completed green release build + artifact verification is still required. |
+| Mobile release build | RED / PENDING | Historical Android Gradle failure reproduced `expo.core.ExpoModulesPackage`; corrected hoisted-linking configuration is staged but a completed green release build + artifact verification is still required. Recent Android workflow attempts also failed during dependency installation, so the build gate remains red until a successful run is evidenced. |
 | Physical Android smoke test | PENDING | Required: install release artifact, cold/warm launch, permissions, auth, onboarding, main food flow, voice lifecycle, background/foreground. |
 | Physical iOS smoke test | PENDING | Required before claiming cross-platform release readiness. |
 | Observability | YELLOW | Health checks exist; structured production metrics/crash reporting and operational dashboards are not yet fully validated. |
