@@ -53,10 +53,9 @@ export class RequestRateLimitGuard implements CanActivate {
   }
 
   private getTracker(request: Request): string {
-    const forwarded = request.headers['x-forwarded-for'];
-    if (typeof forwarded === 'string' && forwarded.trim()) {
-      return forwarded.split(',')[0].trim();
-    }
+    // Do not trust a client-supplied X-Forwarded-For header here. If the
+    // production deployment uses a trusted reverse proxy, configure Express
+    // trust-proxy and let req.ip represent the verified client address.
     return request.ip || request.socket.remoteAddress || 'unknown';
   }
 
