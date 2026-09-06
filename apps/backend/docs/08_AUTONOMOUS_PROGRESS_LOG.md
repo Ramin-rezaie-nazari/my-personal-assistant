@@ -146,3 +146,25 @@ A progress percentage is a planning indicator. A feature is “complete” only 
 - Found that Gym/Calisthenics candidates were truncated to the target before media enrichment.
 - Changed ingestion to collect an oversampled candidate pool, enrich media, and only then choose the deterministic target set, preferring records with four available media assets.
 - Full corpus population and audit remain intentionally unclaimed until runtime evidence exists.
+
+## 2026-09-06 — GitHub Actions smoke validation
+
+- Added a minimal manual GitHub Actions workflow containing only an `echo` step and a deterministic shell equality check.
+- The first run on the autonomous branch completed successfully in about five seconds.
+- This proves the repository can schedule a runner and execute a basic job; it does not prove the full backend/mobile workflows are green.
+- Converted the smoke workflow to `workflow_dispatch` only so normal development commits do not spend Actions minutes on a redundant sanity check.
+
+## 2026-09-06 — Refresh-token storage hardening
+
+- Kept the existing refresh-token rotation/replay rejection behavior.
+- Changed new session persistence to store a SHA-256 fingerprint rather than the raw bearer token.
+- Added compatibility lookup/delete logic for legacy sessions that still contain the raw token, avoiding a destructive migration requirement.
+- Added focused session-service tests for fingerprint storage and legacy compatibility.
+- Runtime/typecheck/test validation for this exact latest commit is not claimed from source inspection alone.
+
+## 2026-09-06 — Theme refresh hardening
+
+- Confirmed `HomeShell` already consumes the reactive visual theme context.
+- Closed the transition gap where the provider could retain its initial theme after onboarding/settings changed by refreshing the persisted theme whenever the app route changes.
+- This avoids duplicating gender/theme business logic in individual screens.
+- Physical-device visual validation is still required.
