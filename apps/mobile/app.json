@@ -14,10 +14,16 @@
     "primaryColor": "#7C3AED",
     "android": {
       "package": "com.mypersonalassistant.app",
+      "versionCode": 1,
+      "edgeToEdgeEnabled": false,
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.RECORD_AUDIO"
       ]
+    },
+    "ios": {
+      "buildNumber": "1",
+      "supportsTablet": false
     },
     "plugins": [
       "expo-router",
