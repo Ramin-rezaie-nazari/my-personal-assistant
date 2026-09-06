@@ -328,3 +328,18 @@ The branch has live CI runs after the latest mobile/TTS changes; green CI is onl
 ## 2026-09-05 — Local-first development policy
 
 Supabase is explicitly out of the development path for this project phase. All Prisma migrations, catalog imports, corpus audits, media verification, backend runtime checks, and database-backed feature validation should target the local PostgreSQL stack on the developer Mac. Production database setup is a later VPS deployment concern.
+
+## 2026-09-06 — Content experience expansion
+
+### Implemented
+- Persisted `RecipeStep` and `RecipeMedia` models/migrations.
+- Authenticated complete recipe presentation endpoint.
+- Mobile recipe gallery + preparation-step UI + serving scaling.
+- Fitness session media and progression recording.
+- Deterministic fitness level balancer and strict 500-per-discipline / 10-level / 4-WebP audit gate.
+- Prisma-native recipe corpus importer with explicit provenance/licensing data.
+
+### Not yet claimed complete
+- The required full fitness corpus (1,500 movements / 6,000 approved WebP assets) has not been runtime-audited on the local database in this environment.
+- The full recipe corpus has not been runtime-imported/audited in this environment.
+- Physical iOS/Android visual and native runtime validation remains a separate release gate.

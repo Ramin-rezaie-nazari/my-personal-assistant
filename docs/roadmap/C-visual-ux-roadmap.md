@@ -49,3 +49,7 @@ The previously planned visual/onboarding checkpoint has been implemented in code
 Completed alongside this checkpoint: persistent fitness catalog architecture, ten-level fitness UX, user progression/session persistence, recipe/fitness regression fixes, and mobile Expo/TTS compatibility repair.
 
 Temporary remaining verification: physical-device onboarding/voice review and the local fitness corpus population gate.
+
+## 2026-09-06 — Content experience expansion
+
+Recipe cooking presentation and fitness movement/session presentation are now implemented in code. Remaining work is corpus population/audit, physical-device QA and production hardening.

@@ -1740,3 +1740,13 @@ This batch extended the atlas with the concrete fitness/content architecture now
 ## 2026-09-05 — Local-first development policy
 
 The active development source of truth is the repository plus the developer's local Mac PostgreSQL database. Supabase is intentionally not part of the development completion path. The future production database/infrastructure will be provisioned separately on the release VPS.
+
+## 2026-09-06 — Content experience expansion
+
+- Recipe presentation now has persisted step-by-step instructions and a persisted gallery-media model with explicit source/license/attribution fields.
+- Mobile recipe detail displays the recipe gallery, scaled ingredients, preparation steps and step media when available.
+- Fitness release gates now require 500 publishable movements per supported discipline, ten balanced difficulty levels, and four distinct approved WebP assets per movement.
+- Fitness session UX displays movement media while the user is actively following the session and records completion/progression.
+- A first-party Prisma-native recipe content importer was added for the open Wikibooks Cookbook dataset, with explicit CC BY-SA provenance and optional Wikimedia image enrichment.
+
+The corpus is still considered incomplete until the local database population and audit gates pass.
