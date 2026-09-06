@@ -65,16 +65,14 @@ export class RequestRateLimitGuard implements CanActivate {
   }
 
   private prune(now: number): void {
-    if (this.buckets.size <= MAX_TRACKED_KEYS) {
-      for (const [key, bucket] of this.buckets) {
-        if (bucket.resetAt <= now) this.buckets.delete(key);
-      }
-      return;
-    }
-
     for (const [key, bucket] of this.buckets) {
       if (bucket.resetAt <= now) this.buckets.delete(key);
-      if (this.buckets.size <= MAX_TRACKED_KEYS) break;
+    }
+
+    while (this.buckets.size > MAX_TRACKED_KEYS) {
+      const oldestKey = this.buckets.keys().next().value as string | undefined;
+      if (!oldestKey) break;
+      this.buckets.delete(oldestKey);
     }
   }
 }
