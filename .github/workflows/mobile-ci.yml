@@ -9,6 +9,7 @@ on:
       - 'apps/mobile/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/mobile-ci.yml'
+      - '.npmrc'
 
 permissions:
   contents: read
@@ -40,6 +41,9 @@ jobs:
 
       - name: Audit mobile routes
         run: pnpm --filter @my-personal-assistant/mobile route:audit
+
+      - name: Audit mobile surface
+        run: pnpm --filter @my-personal-assistant/mobile surface:audit
 
       - name: Typecheck mobile
         run: pnpm --filter @my-personal-assistant/mobile typecheck
