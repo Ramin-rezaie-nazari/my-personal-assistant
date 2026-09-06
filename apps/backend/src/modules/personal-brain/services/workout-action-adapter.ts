@@ -38,27 +38,35 @@ export class WorkoutActionAdapter implements DecisionActionAdapter {
       const targetArea = typeof entities.targetArea === 'string' ? entities.targetArea : 'full_body';
       const requestedDiscipline = typeof entities.discipline === 'string' ? entities.discipline : undefined;
       const durationMinutes = typeof entities.durationMinutes === 'number' ? Math.max(1, Math.min(180, Math.floor(entities.durationMinutes))) : undefined;
+      const requestedLevel = typeof entities.difficultyLevel === 'number' ? Math.max(1, Math.min(10, Math.floor(entities.difficultyLevel))) : 10;
+      const requestedEquipment = Array.isArray(entities.equipment)
+        ? entities.equipment.filter((x): x is string => typeof x === 'string')
+        : [];
       const profile = await this.fitnessProfile.get(userId);
       const profileDisciplines = profile.disciplines.filter((x): x is FitnessDiscipline => DISCIPLINES.includes(x as FitnessDiscipline));
       const selected = requestedDiscipline && DISCIPLINES.includes(requestedDiscipline as FitnessDiscipline)
         ? [requestedDiscipline as FitnessDiscipline]
         : profileDisciplines;
       const disciplines = selected.length ? selected : DISCIPLINES;
-      const equipment = profile.equipment.filter((item) => item.active).map((item) => item.type);
-      const results = await Promise.all(
-        disciplines.map((discipline) =>
-          this.fitnessCatalog.list({
+      const equipment = requestedEquipment.length ? requestedEquipment : profile.equipment.filter((item) => item.active).map((item) => item.type);
+      const perDiscipline = await Promise.all(disciplines.map(async (discipline) => {
+        const collected = [] as Awaited<ReturnType<FitnessCatalogService['list']>>['items'];
+        for (let page = 1; page <= 10 && collected.length < 10; page += 1) {
+          const result = await this.fitnessCatalog.list({
             discipline,
-            level: 10,
+            level: requestedLevel,
             query: targetArea === 'full_body' ? undefined : targetArea,
-            page: 1,
-            pageSize: 20,
-            equipment,
-          }),
-        ),
-      );
-      const items = results
-        .flatMap((result) => result.items)
+            page,
+            pageSize: 50,
+            equipment: [],
+          });
+          collected.push(...result.items.filter((item) => equipment.length === 0 || item.equipment.some((value) => equipment.includes(value))));
+          if (!result.hasNextPage) break;
+        }
+        return collected;
+      }));
+      const items = perDiscipline
+        .flat()
         .filter((item) => targetArea === 'full_body' || item.focus.some((focus) => this.normalize(focus).includes(this.normalize(targetArea))))
         .sort((a, b) => a.difficultyLevel - b.difficultyLevel || a.name.localeCompare(b.name))
         .slice(0, 10);
@@ -66,6 +74,8 @@ export class WorkoutActionAdapter implements DecisionActionAdapter {
         targetArea,
         disciplines,
         requestedDurationMinutes: durationMinutes ?? null,
+        requestedDifficultyLevel: requestedLevel,
+        requestedEquipment: equipment,
         count: items.length,
         items,
         sourceOfTruth: 'FitnessCatalogService',
@@ -89,9 +99,7 @@ export class WorkoutActionAdapter implements DecisionActionAdapter {
     });
   }
 
-  private normalize(value: string) {
-    return value.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
-  }
+  private normalize(value: string) { return value.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim(); }
   private normalizeDigits(input: string) { return input.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d))); }
   private extractNumber(input: string, pattern: RegExp): number | null { const match = input.match(pattern); return match ? Number(match[1]) : null; }
   private extractDateTime(input: string): string | null {
