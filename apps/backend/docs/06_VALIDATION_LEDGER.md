@@ -2,6 +2,47 @@
 
 > Append-only engineering checkpoint record for validated repository/runtime gates. This file complements `05_CURRENT_STATE.md` and must never be used to overstate CI or device validation.
 
+## 2026-09-06 — Semantic recipe/fitness recommendation audit (implementation pending CI)
+
+### Scope
+
+Revalidated previously implemented recipe-country intelligence and fitness natural-language capabilities against the actual user journey instead of assuming source code presence meant end-to-end completion.
+
+### Findings
+
+- Country food ranking was only a soft relevance boost. A Japan user could still receive a foreign signature recipe such as Ghormeh Sabzi in the default recommendation pool.
+- The repository already contains a global-food pattern set covering Pizza, Pasta, Burger/Hamburger, Sushi, Ramen, Taco, Curry, Sandwich and other globally common foods. These must remain available across countries.
+- Fitness natural-language parsing already recognized target areas including shoulders, but the assistant's local intent contract had no executable `RECOMMEND_WORKOUT` action.
+
+### Implemented
+
+- `GlobalCountryFoodService.filterRecipesForCountry(...)` now removes exact foreign-country signature recipes from the default recommendation pool while preserving current-country signatures, same-cuisine recipes when metadata is present, and explicitly recognized global foods.
+- `FoodOperatingLoopService.recommend(...)` now applies the hard country filter before scoring, so excluded recipes cannot re-enter through later scoring.
+- Added regression coverage for Japan: Ghormeh Sabzi excluded; Sushi retained; Pizza/Pasta/Hamburger retained.
+- Added `RECOMMEND_WORKOUT` to local deterministic intent understanding.
+- Added body-area extraction for shoulders/chest/back/arms/core/waist/glutes/thighs/legs/calves/full-body.
+- Added workout discipline extraction for gym/calisthenics/yoga.
+- Added natural-language workout equipment extraction (dumbbells, barbell, resistance band, pull-up bar, bench, cable, machine, no-equipment) and difficulty-level extraction.
+- Routed the intent through `AssistantService` to `recommend_workout`.
+- Extended the already-registered `WorkoutActionAdapter` to query the persisted fitness profile and the canonical `FitnessCatalogService`, applying requested target area, requested equipment, selected discipline and difficulty level, with pagination to avoid missing compatible exercises on later pages.
+- Added deterministic NLU tests for Persian/English shoulder requests, duration, discipline, equipment, difficulty, no-equipment requests, and shopping-vs-workout precedence.
+
+### Validation status
+
+**Implementation: YELLOW until CI.** The focused test cases are committed but a completed CI result for these exact changes has not yet been observed. No green claim is made from source inspection alone.
+
+### Required validation
+
+```text
+LocalLanguageUnderstandingService unit tests                 REQUIRED
+GlobalCountryFoodService unit tests                          REQUIRED
+FoodOperatingLoop / recommendation integration regression   REQUIRED
+Backend typecheck                                            REQUIRED
+Backend build                                                REQUIRED
+Full backend Jest                                            REQUIRED
+Recommendation / assistant E2E                               REQUIRED
+```
+
 ## 2026-09-06 — Corpus pipeline hardening (not yet runtime-green)
 
 ### Scope
@@ -24,7 +65,7 @@ Restored the real recipe-content importer, added a recipe corpus audit, hardened
 
 GitHub Actions run `34034400326` / job `101489715731` failed at the runtime-secret check because `MYPA_FITNESS_DATABASE_URL`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY` were not available to the runner. The job therefore did **not** perform import, audit, or media download. This is a real environment blocker, not an application test failure.
 
-A new run (`34035170619`) was triggered by the split workflow changes and was observed in progress; it is not claimed green from the in-progress state.
+The split run `34035229912` also failed at the same secret checks for all three independent jobs. No corpus completion is inferred from those runs.
 
 ### Required next validation
 
@@ -39,7 +80,8 @@ fitness audit                        REQUIRED
 fitness media verify                 REQUIRED
 recipe import                        REQUIRED
 recipe content audit                 REQUIRED
-recipe image corpus import           REQUIRED
+recipe media download/mirror         REQUIRED
+recipe media coverage audit          REQUIRED
 ```
 
 The release corpus target remains 500 published movements per discipline, ten levels, >=50 movements per level and >=4 approved WebP assets per movement, plus a non-empty validated recipe corpus and complete image/provenance coverage.
