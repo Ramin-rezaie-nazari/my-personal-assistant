@@ -35,6 +35,32 @@ type ExternalExercise = {
   images?: string[];
 };
 
+type WgerExercise = {
+  id: number;
+  uuid?: string;
+  name?: string;
+  description?: string;
+  category?: { name?: string } | null;
+  muscles?: Array<{ name_en?: string; name?: string }>;
+  muscles_secondary?: Array<{ name_en?: string; name?: string }>;
+  equipment?: Array<{ name?: string }>;
+  license?: string;
+  license_author?: string;
+  license_title?: string;
+  license_object_url?: string;
+  images?: Array<{
+    image?: string;
+    is_main?: boolean;
+    license?: string;
+    license_title?: string;
+    license_object_url?: string;
+    license_author?: string;
+    license_author_url?: string;
+    width?: number;
+    height?: number;
+  }>;
+};
+
 type PersistedRow = {
   id: string;
   discipline: string;
@@ -63,11 +89,13 @@ const PUBLIC_DATASET_URL =
 const PUBLIC_IMAGE_ROOT =
   'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises/';
 const IMAGE_PROXY_ROOT = 'https://wsrv.nl/';
+const WGER_API_URL = 'https://wger.de/api/v2/exerciseinfo/';
 const CACHE_MS = 30 * 60 * 1000;
 
 @Injectable()
 export class FitnessCatalogService {
   private externalCache: { fetchedAt: number; items: ExternalExercise[] } | null = null;
+  private wgerCache: { fetchedAt: number; items: WgerExercise[] } | null = null;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -104,7 +132,9 @@ export class FitnessCatalogService {
     if (local) return local;
     if (discipline === 'yoga') return null;
     const external = (await this.externalItems()).find((item) => `public-${item.id}` === id);
-    return external ? this.normalizeExternal(external, discipline) : null;
+    if (external) return this.normalizeExternal(external, discipline);
+    const wger = (await this.wgerItems()).find((item) => `wger-${item.id}` === id);
+    return wger ? this.normalizeWger(wger, discipline) : null;
   }
 
   private async listPersisted(input: {
@@ -314,13 +344,18 @@ export class FitnessCatalogService {
     equipment: Set<string>;
   }) {
     const local = this.localItems(input.discipline);
-    return this.externalItems().then((external) => {
+    return Promise.all([this.externalItems(), input.discipline === 'yoga' ? Promise.resolve([]) : this.wgerItems()]).then(([external, wger]) => {
       const normalizedExternal = input.discipline === 'yoga'
         ? []
         : external
             .filter((item) => this.matchesDiscipline(item, input.discipline))
             .map((item) => this.normalizeExternal(item, input.discipline));
-      const merged = dedupeByName([...local, ...normalizedExternal])
+      const normalizedWger = input.discipline === 'yoga'
+        ? []
+        : wger
+            .filter((item) => this.matchesWgerDiscipline(item, input.discipline))
+            .map((item) => this.normalizeWger(item, input.discipline));
+      const merged = dedupeByName([...local, ...normalizedExternal, ...normalizedWger])
         .filter((item) => item.difficultyLevel <= input.level)
         .filter((item) => !input.query || normalize(`${item.name} ${item.focus.join(' ')}`).includes(input.query))
         .filter((item) => !input.equipment.size || item.equipment.some((value) => input.equipment.has(normalize(value))))
@@ -412,12 +447,43 @@ export class FitnessCatalogService {
     return this.externalCache.items;
   }
 
+  private async wgerItems(): Promise<WgerExercise[]> {
+    if (this.wgerCache && Date.now() - this.wgerCache.fetchedAt < CACHE_MS) return this.wgerCache.items;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 7000);
+    try {
+      const url = new URL(WGER_API_URL);
+      url.searchParams.set('limit', '200');
+      url.searchParams.set('language', '2');
+      const response = await fetch(url, {
+        signal: controller.signal,
+        headers: { 'User-Agent': 'MYPA-FitnessCatalog/1.0' },
+      });
+      if (!response.ok) throw new Error(`wger exercise catalog fetch failed: ${response.status}`);
+      const payload = (await response.json()) as { results?: WgerExercise[] };
+      this.wgerCache = { fetchedAt: Date.now(), items: Array.isArray(payload.results) ? payload.results : [] };
+    } catch {
+      this.wgerCache = { fetchedAt: Date.now(), items: [] };
+    } finally {
+      clearTimeout(timeout);
+    }
+    return this.wgerCache.items;
+  }
+
   private matchesDiscipline(item: ExternalExercise, discipline: FitnessDiscipline) {
     const equipment = normalize(item.equipment ?? 'body only');
     const bodyweight = !equipment || equipment === 'body only' || equipment === 'none';
     const category = normalize(item.category ?? '');
     if (discipline === 'calisthenics') return bodyweight && category !== 'stretching';
     return !bodyweight || category === 'strength' || category === 'cardio';
+  }
+
+  private matchesWgerDiscipline(item: WgerExercise, discipline: FitnessDiscipline) {
+    const category = normalize(item.category?.name ?? '');
+    const equipment = (item.equipment ?? []).map((value) => normalize(value.name ?? '')).filter(Boolean);
+    const bodyweight = equipment.length === 0 || equipment.includes('body weight');
+    if (discipline === 'calisthenics') return bodyweight && !category.includes('stretch');
+    return !bodyweight || category.includes('strength') || category.includes('cardio');
   }
 
   private normalizeExternal(item: ExternalExercise, discipline: FitnessDiscipline): FitnessCatalogItem {
@@ -450,6 +516,52 @@ export class FitnessCatalogService {
       },
     };
   }
+
+  private normalizeWger(item: WgerExercise, discipline: FitnessDiscipline): FitnessCatalogItem {
+    const focus = [
+      ...(item.muscles ?? []).map((value) => value.name_en || value.name || '').filter(Boolean),
+      ...(item.muscles_secondary ?? []).map((value) => value.name_en || value.name || '').filter(Boolean),
+    ].slice(0, 10);
+    const equipment = (item.equipment ?? []).map((value) => value.name ?? '').filter(Boolean);
+    const media = (item.images ?? [])
+      .filter((image) => image.image && image.license)
+      .slice()
+      .sort((a, b) => Number(Boolean(b.is_main)) - Number(Boolean(a.is_main)))
+      .slice(0, 4)
+      .map((image, index) => ({
+        position: index + 1,
+        sourceUrl: String(image.image),
+        webpUrl: `${IMAGE_PROXY_ROOT}?url=${encodeURIComponent(String(image.image))}&output=webp&w=768&q=82`,
+        format: 'webp' as const,
+      }));
+    const description = cleanHtml(item.description ?? '');
+    const level = description.toLowerCase().includes('beginner') ? 'beginner' : description.toLowerCase().includes('advanced') ? 'advanced' : 'intermediate';
+    return {
+      id: `wger-${item.id}`,
+      discipline,
+      name: cleanHtml(item.name ?? `Exercise ${item.id}`),
+      difficultyLevel: mapDifficulty(level, focus.length),
+      sourceLevel: level,
+      focus,
+      equipment: equipment.length ? equipment : ['none'],
+      instructions: description ? [description] : [],
+      cues: description ? [description.slice(0, 280)] : [],
+      media,
+      mediaRequired: 4,
+      mediaActual: media.length,
+      mediaComplete: media.length >= 4,
+      source: {
+        provider: 'wger',
+        datasetUrl: WGER_API_URL,
+        license: item.license || 'CC BY-SA',
+        attribution: item.license_author ? `${item.license_author}${item.license_title ? `; ${item.license_title}` : ''}` : undefined,
+      },
+    };
+  }
+}
+
+function cleanHtml(value: string) {
+  return String(value).replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/\s+/g, ' ').trim();
 }
 
 function dedupeByName(items: FitnessCatalogItem[]) {
