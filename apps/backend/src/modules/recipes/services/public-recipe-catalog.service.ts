@@ -104,7 +104,7 @@ export class PublicRecipeCatalogService {
       .map((line, index) => parseIngredient(line.text ?? '', index, name));
     const steps = lines
       .filter((line) => line?.line_type === 'ol' && /procedure|direction|method|instruction|preparation/i.test(line.section ?? ''))
-      .map((line, index) => clean(line.text ?? ''))
+      .map((line) => clean(line.text ?? ''))
       .filter((step) => step.length >= MIN_STEP_CHARS)
       .map((instruction, index) => ({
         id: `${slug(name)}-step-${index + 1}`,
@@ -186,10 +186,11 @@ function parseIngredient(raw: string, index: number, recipeName: string) {
   const quantity = parseNumber(match[1]) ?? 1;
   const rest = match[2].trim();
   const unit = rest.match(/^(kg|g|mg|lb|lbs|oz|ml|l|liter|litre|liters|litres|cup|cups|tbsp|tablespoon|tablespoons|tsp|teaspoon|teaspoons|clove|cloves|piece|pieces|can|cans|package|packages|slice|slices|pinch|pinches)\b[.]?\s+(.*)$/i);
+  const ingredientName = unit?.[2]?.trim() || rest || text;
   return {
     id: `${slug(recipeName)}-ingredient-${index + 1}`,
-    foodId: `public-food-${slug(unit?.[2] ?? rest || text)}`,
-    name: unit?.[2]?.trim() || rest || text,
+    foodId: `public-food-${slug(ingredientName)}`,
+    name: ingredientName,
     quantity: quantity > 0 ? quantity : 1,
     unit: unit?.[1]?.toLowerCase() || 'item',
     measurementKind: unit ? 'quantity' : 'count',
