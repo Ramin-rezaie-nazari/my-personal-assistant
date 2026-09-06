@@ -11,7 +11,7 @@ on:
       - 'apps/backend/scripts/fitness-media-verify.mjs'
       - 'apps/backend/scripts/recipe-content-import.mjs'
       - 'apps/backend/scripts/recipe-content-audit.mjs'
-      - 'apps/backend/scripts/recipe-image-dataset-import-v2.mjs'
+      - 'apps/backend/scripts/recipe-media-download.mjs'
       - '.github/workflows/content-corpus-bootstrap.yml'
   workflow_dispatch:
     inputs:
@@ -19,11 +19,6 @@ on:
         description: 'Require four approved WebP assets for every selected movement'
         required: false
         default: true
-        type: boolean
-      recipe_reset:
-        description: 'Reset only the recipe image import state before rebuilding images'
-        required: false
-        default: false
         type: boolean
 
 permissions:
@@ -83,6 +78,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.MYPA_FITNESS_DATABASE_URL }}
       RECIPE_IMPORT_CONCURRENCY: '2'
+      RECIPE_MAX_MEDIA: '4'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -104,7 +100,7 @@ jobs:
       - name: Generate Prisma client
         working-directory: apps/backend
         run: pnpm prisma generate
-      - name: Import recipe content corpus
+      - name: Import recipe content corpus and source media
         working-directory: apps/backend
         run: node ./scripts/recipe-content-import.mjs
       - name: Audit recipe corpus
@@ -112,14 +108,16 @@ jobs:
         run: pnpm recipe:content:audit
 
   recipe-images:
-    name: Recipe image corpus
+    name: Recipe image download and storage mirror
+    needs: recipes
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     env:
+      DATABASE_URL: ${{ secrets.MYPA_FITNESS_DATABASE_URL }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      RECIPE_IMAGE_RESET: ${{ github.event_name == 'workflow_dispatch' && inputs.recipe_reset == true && '1' || '0' }}
-      RECIPE_IMAGE_CONCURRENCY: '4'
+      RECIPE_MEDIA_CONCURRENCY: '4'
+      RECIPE_MEDIA_MAX_BYTES: '65536'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -134,12 +132,16 @@ jobs:
           node-version: 22
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-      - name: Require recipe image storage
+      - name: Require recipe database and storage
         run: |
-          test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for recipe image storage.'; exit 2; }
-          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for recipe image storage.'; exit 2; }
+          test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is required for recipe media mirroring.'; exit 2; }
+          test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for recipe media mirroring.'; exit 2; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for recipe media mirroring.'; exit 2; }
       - name: Install workspace
         run: pnpm install --frozen-lockfile
-      - name: Import recipe image corpus
+      - name: Generate Prisma client
         working-directory: apps/backend
-        run: pnpm recipe-images:dataset
+        run: pnpm prisma generate
+      - name: Download, convert and mirror all approved recipe media
+        working-directory: apps/backend
+        run: node ./scripts/recipe-media-download.mjs
