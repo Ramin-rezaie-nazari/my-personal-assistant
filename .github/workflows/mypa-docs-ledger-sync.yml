@@ -45,37 +45,22 @@ jobs:
         run: |
           from pathlib import Path
 
-          stamp = '## 2026-09-06 — Onboarding persistence and control-plane hardening'
-          architecture = Path('apps/backend/docs/04_ARCHITECTURE_ATLAS.md')
-          brain = Path('apps/backend/docs/03_PROJECT_BRAIN_BOOK.md')
-          current = Path('apps/backend/docs/05_CURRENT_STATE.md')
-          validation = Path('apps/backend/docs/06_VALIDATION_LEDGER.md')
-          progress = Path('apps/backend/docs/08_AUTONOMOUS_PROGRESS_LOG.md')
-          roadmap = Path('docs/roadmap/C-visual-ux-roadmap.md')
+          entries = {
+              '03_PROJECT_BRAIN_BOOK.md': '''\n## 2026-09-06 — Smart Meals source-of-truth integration\n\nThe mobile Smart Meals journey now consumes the authenticated `POST /recommendation-intelligence/food` result instead of constructing a second local recommendation ranking. The Personal Brain remains responsible for nutrition constraints, inventory coverage, country context, recent-meal personalization, deterministic ranking and explanations; mobile is responsible for presentation and navigation to the selected recipe.\n\nThe mobile client keeps the backend result typed and navigates each recommendation to the existing recipe detail route. No local recommendation score is used for the displayed ranking.\n''',
+              '04_ARCHITECTURE_ATLAS.md': '''\n## 2026-09-06 — Smart Meals source-of-truth integration\n\n- Added `apps/mobile/lib/recommendation-api.ts` as the mobile contract for authenticated Food Recommendation Intelligence.\n- `apps/mobile/app/smart-meals.tsx` now requests nutrition summary, inventory and Brain recommendations in parallel.\n- Recommendation cards display backend score, pantry coverage, missing-ingredient count, calories, protein and deterministic reasons.\n- Tapping a recommendation routes to the existing `/recipe/:id` presentation surface.\n- The previous mobile-only `meal-intelligence` ranking is no longer the source of displayed Smart Meals ranking.\n\nThis preserves a single recommendation authority and prevents algorithm drift between backend and mobile.\n''',
+              '05_CURRENT_STATE.md': '''\n## 2026-09-06 — Smart Meals source-of-truth integration\n\n### Implemented\n- Added typed authenticated mobile Recommendation Intelligence API client.\n- Smart Meals now consumes backend Personal Brain recommendations instead of local score/ranking construction.\n- Recommendation UI shows authoritative backend rank/score, inventory coverage, missing ingredients, calories, protein and reasons.\n- Recommendation cards deep-link to the existing recipe detail route.\n\n### Validation truth\n- Implementation is committed but still subject to the active mobile/Android CI gates.\n- No green CI or physical-device claim is made from source review alone.\n''',
+              '06_VALIDATION_LEDGER.md': '''\n## 2026-09-06 — Smart Meals source-of-truth integration\n\n### Implementation\n- Added `recommendation-api.ts` for authenticated Food Recommendation Intelligence.\n- Replaced mobile Smart Meals local ranking with backend Brain recommendations.\n- Preserved inventory attention UX and recipe detail navigation.\n\n### Verification state\n**PENDING CI/runtime validation.** The implementation is not marked green until the relevant mobile and backend gates complete.\n''',
+              '08_AUTONOMOUS_PROGRESS_LOG.md': '''\n## 2026-09-06 — Smart Meals source-of-truth integration\n\n- Found a recommendation-drift risk: Smart Meals was locally constructing a simplified score while a canonical backend Recommendation Intelligence service already existed.\n- Added a typed mobile client to the authenticated Brain recommendation endpoint.\n- Changed Smart Meals presentation to use backend scores/reasons/coverage as its authoritative result.\n- Kept the recipe detail surface as the final navigation target.\n- CI/device verification remains pending and is not inferred from source inspection.\n''',
+          }
 
-          a = architecture.read_text(encoding='utf-8')
-          if stamp not in a:
-              architecture.write_text(a.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\n- `POST /users/onboarding` is now an authenticated, validated user-state boundary for completed onboarding.\n- Backend persistence reuses existing `UserProfile`, `UserPreference`, `UserOnboarding` and `UserFact` models and writes them in one Prisma transaction.\n- Female visual theme maps to `UserPreference.theme = feminine`; other genders map to `default`, without branching business logic.\n- Mobile onboarding remains local-first but now attempts authenticated backend synchronization through the canonical `MOBILE_API_URL` resolver and retains a pending marker for transient network failure.\n- Added backend regression coverage for atomic onboarding persistence.\n- Added a living autonomous progress log at `08_AUTONOMOUS_PROGRESS_LOG.md`.\n\nValidation note: this feature is implemented but is not marked green until the relevant backend/mobile CI gates complete.\n''', encoding='utf-8')
-
-          b = brain.read_text(encoding='utf-8')
-          if stamp not in b:
-              brain.write_text(b.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\nThe onboarding boundary now closes the gap between mobile-first local setup and the backend Personal Brain context. Completed onboarding is persisted through the authenticated Users domain instead of remaining only on-device. The implementation deliberately reuses existing profile/preference/onboarding/fact models and keeps presentation theme logic separate from business logic.\n\nThe mobile layer retains a local-first contract: completed state is stored locally first, remote synchronization is attempted when an authenticated session is available, and transient synchronization failure creates a retry marker rather than discarding the user's setup.\n\nNo feature is considered fully complete from documentation alone; CI/runtime/device gates remain authoritative.\n''', encoding='utf-8')
-
-          c = current.read_text(encoding='utf-8')
-          if stamp not in c:
-              current.write_text(c.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\n### Implemented\n- Strict onboarding DTO validation for profile, goal, fitness, diet, workout, equipment, schedule and permission fields.\n- Authenticated `/users/onboarding` endpoint.\n- Atomic persistence through `UserProfile`, `UserPreference`, `UserOnboarding` and `UserFact`.\n- Mobile-to-backend onboarding synchronization with pending retry semantics.\n- Backend regression test for transactionally persisted onboarding state.\n- Autonomous progress log for durable session-by-session evidence.\n\n### Validation truth\n- The feature is **implemented but not yet green**.\n- The active Android CI run was still in progress at the latest inspection; no completed green Gradle result was available.\n- Real-device validation remains a separate gate.\n''', encoding='utf-8')
-
-          v = validation.read_text(encoding='utf-8')
-          if stamp not in v:
-              validation.write_text(v.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\n### Implementation\n- Added `SaveOnboardingDto` with explicit allow-lists, numeric ranges and ISO date validation.\n- Added authenticated `POST /users/onboarding`.\n- Persisted the canonical profile, user preference/theme, onboarding completion state and remaining onboarding facts in one transaction.\n- Added mobile sync client and retryable pending marker.\n- Added `UsersService` onboarding regression test.\n\n### Verification state\n**PENDING CI/runtime validation.** The implementation is intentionally not marked green while the active workflow has not completed.\n''', encoding='utf-8')
-
-          p = progress.read_text(encoding='utf-8')
-          if stamp not in p:
-              progress.write_text(p.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\n- Found and closed the architecture gap where onboarding lived only in AsyncStorage.\n- Reused existing backend user-state models rather than introducing another profile schema.\n- Added authenticated atomic persistence and mobile retry semantics.\n- Added regression coverage.\n- CI/device status remains pending and is never inferred from source code alone.\n''', encoding='utf-8')
-
-          c = roadmap.read_text(encoding='utf-8')
-          if stamp not in c:
-              roadmap.write_text(c.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\nCompleted onboarding now has a backend persistence boundary with retryable mobile synchronization. Full release validation still requires CI and physical-device evidence.\n''', encoding='utf-8')
+          for filename, entry in entries.items():
+              path = Path('apps/backend/docs') / filename if filename.startswith(('03_', '04_', '05_', '06_','08_')) else Path(filename)
+              if filename == '08_AUTONOMOUS_PROGRESS_LOG.md':
+                  path = Path('apps/backend/docs/08_AUTONOMOUS_PROGRESS_LOG.md')
+              text = path.read_text(encoding='utf-8')
+              stamp = entry.splitlines()[1]
+              if stamp not in text:
+                  path.write_text(text.rstrip() + entry, encoding='utf-8')
 
       - name: Repair importer license normalization
         shell: python
@@ -96,5 +81,5 @@ jobs:
           git config user.name 'MYPA Automation'
           git config user.email 'actions@users.noreply.github.com'
           git add $files
-          git commit -m '[skip ci] docs: record onboarding persistence and current progress'
+          git commit -m '[skip ci] docs: record Smart Meals source-of-truth integration'
           git push origin HEAD:agent/mypa-autonomous-control-plane
