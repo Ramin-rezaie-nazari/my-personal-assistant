@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
-import { access, mkdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
+import { access, mkdir, readdir, readFile, rename, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
 
@@ -11,7 +11,8 @@ const CONCURRENCY = clamp(Number(process.env.CONTENT_MIRROR_CONCURRENCY ?? 4), 1
 const RETRIES = clamp(Number(process.env.CONTENT_MIRROR_RETRIES ?? 4), 1, 8);
 const MAX_RECIPES = positiveLimit(process.env.CONTENT_MIRROR_MAX_RECIPES);
 const MAX_FITNESS = positiveLimit(process.env.CONTENT_MIRROR_MAX_FITNESS);
-const USER_AGENT = 'MYPA-content-mirror/1.1';
+const PROGRESS_EVERY = clamp(Number(process.env.CONTENT_MIRROR_PROGRESS_EVERY ?? 1), 1, 1000);
+const USER_AGENT = 'MYPA-content-mirror/1.2';
 const RECIPE_DATASET = process.env.RECIPE_DATASET_URL ?? 'https://huggingface.co/datasets/gossminn/wikibooks-cookbook/resolve/main/recipes_parsed.json?download=true';
 const WIKIBOOKS_API = 'https://en.wikibooks.org/w/api.php';
 const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
@@ -28,6 +29,7 @@ function slug(value) { return clean(value).toLowerCase().normalize('NFKD').repla
 function hash(buffer) { return createHash('sha256').update(buffer).digest('hex'); }
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function exists(file) { try { await access(file); return true; } catch { return false; } }
+async function fileCount(directory) { try { return (await readdir(directory, { withFileTypes: true })).filter((entry) => entry.isFile() && /\.webp$/i.test(entry.name)).length; } catch { return 0; } }
 async function fetchBytes(url) {
   let last;
   for (let attempt = 0; attempt < RETRIES; attempt += 1) {
@@ -104,11 +106,10 @@ function parseFitness(record) {
   return { kind: 'fitness', name: clean(record.name), slug: slug(record.name), discipline, sourceId: clean(record.id), sourceProvider: 'Free Exercise DB', candidates: images.map((name, i) => ({ url: `${FITNESS_IMAGE_ROOT}${name}`, sourceUrl: `https://github.com/yuhonas/free-exercise-db/blob/main/exercises/${name}`, provider: 'Free Exercise DB', attribution: 'Yuhonas / Free Exercise DB', license: 'Unlicense (dataset)', approval: 'pending-image-license-review', position: i + 1 })) };
 }
 async function imageToWebp(input, destination) {
-  const primary = await sharp(input, { failOn: 'none' }).rotate().resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true }).webp({ quality: 84, effort: 5 }).toBuffer();
-  let selected = primary;
-  if (primary.length > 64 * 1024) {
+  let selected = await sharp(input, { failOn: 'none' }).rotate().resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true }).webp({ quality: 84, effort: 5 }).toBuffer();
+  if (selected.length > 64 * 1024) {
     const compact = await sharp(input, { failOn: 'none' }).rotate().resize({ width: 900, height: 900, fit: 'inside', withoutEnlargement: true }).webp({ quality: 72, effort: 5 }).toBuffer();
-    selected = compact.length < primary.length ? compact : primary;
+    if (compact.length < selected.length) selected = compact;
   }
   await writeFile(destination, selected);
   return selected.length;
@@ -120,6 +121,9 @@ async function locallyComplete(previous) {
   }
   return true;
 }
+async function diskComplete(directory) { return (await fileCount(directory)) >= REQUIRED; }
+function recoveredItem(item, directory) { return { ...item, requiredMedia: REQUIRED, media: [], mediaCount: REQUIRED, physicalStatus: 'complete', releaseStatus: 'license-review-required', recoveredFromDisk: true, recoveryDirectory: path.relative(ROOT, directory).split(path.sep).join('/') }; }
+async function checkpoint(manifest, report = null) { await saveJson(MANIFEST_PATH, manifest); if (report) await saveJson(SUMMARY_PATH, report); }
 async function mirrorItem(item, directory, candidates) {
   const dir = path.join(MEDIA_ROOT, directory, ...(item.kind === 'fitness' ? [item.discipline] : []), item.slug);
   await mkdir(dir, { recursive: true });
@@ -148,7 +152,28 @@ async function runRecipes(manifest) {
   if (!Array.isArray(dataset)) throw new Error('Recipe dataset is invalid');
   const rows = MAX_RECIPES ? dataset.slice(0, MAX_RECIPES) : dataset;
   let cursor = 0;
-  const worker = async () => { while (cursor < rows.length) { const row = rows[cursor++]; const item = parseRecipe(row); if (!item.title || !item.ingredientCount || !item.stepCount) continue; const key = `recipe:${slug(item.title)}`; if (await locallyComplete(manifest.items[key])) continue; try { manifest.items[key] = await mirrorItem({ kind: 'recipe', name: item.title, slug: slug(item.title), sourceUrl: item.sourceUrl, ingredientCount: item.ingredientCount, stepCount: item.stepCount }, 'recipes', await recipeCandidates(item.sourceUrl, item.title)); } catch (error) { manifest.items[key] = { kind: 'recipe', name: item.title, slug: slug(item.title), sourceUrl: item.sourceUrl, requiredMedia: REQUIRED, media: [], mediaCount: 0, physicalStatus: 'failed', releaseStatus: 'failed', error: error instanceof Error ? error.message : String(error) }; } } };
+  let processed = 0;
+  let recovered = 0;
+  const total = rows.length;
+  const worker = async () => {
+    while (cursor < rows.length) {
+      const row = rows[cursor++];
+      const item = parseRecipe(row);
+      if (!item.title || !item.ingredientCount || !item.stepCount) continue;
+      const key = `recipe:${slug(item.title)}`;
+      const dir = path.join(MEDIA_ROOT, 'recipes', slug(item.title));
+      if (await locallyComplete(manifest.items[key])) { processed += 1; continue; }
+      if (!manifest.items[key] && await diskComplete(dir)) { manifest.items[key] = recoveredItem({ kind: 'recipe', name: item.title, slug: slug(item.title), sourceUrl: item.sourceUrl, ingredientCount: item.ingredientCount, stepCount: item.stepCount }, dir); recovered += 1; processed += 1; await checkpoint(manifest); if (processed % PROGRESS_EVERY === 0) console.log(`[recipes] ${processed}/${total} (recovered ${recovered})`); continue; }
+      try {
+        manifest.items[key] = await mirrorItem({ kind: 'recipe', name: item.title, slug: slug(item.title), sourceUrl: item.sourceUrl, ingredientCount: item.ingredientCount, stepCount: item.stepCount }, 'recipes', await recipeCandidates(item.sourceUrl, item.title));
+      } catch (error) {
+        manifest.items[key] = { kind: 'recipe', name: item.title, slug: slug(item.title), sourceUrl: item.sourceUrl, requiredMedia: REQUIRED, media: [], mediaCount: 0, physicalStatus: 'failed', releaseStatus: 'failed', error: error instanceof Error ? error.message : String(error) };
+      }
+      processed += 1;
+      await checkpoint(manifest);
+      console.log(`[recipes] ${processed}/${total} complete=${manifest.items[key].physicalStatus === 'complete'} media=${manifest.items[key].mediaCount || 0}`);
+    }
+  };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
 }
 async function runFitness(manifest) {
@@ -156,7 +181,27 @@ async function runFitness(manifest) {
   if (!Array.isArray(dataset)) throw new Error('Fitness dataset is invalid');
   const rows = (MAX_FITNESS ? dataset.slice(0, MAX_FITNESS) : dataset).map(parseFitness).filter((x) => x.name);
   let cursor = 0;
-  const worker = async () => { while (cursor < rows.length) { const item = rows[cursor++]; const key = `fitness:${item.discipline}:${item.slug}`; if (await locallyComplete(manifest.items[key])) continue; try { const candidates = [...item.candidates, ...(item.candidates.length < REQUIRED ? await commons(`${item.name} exercise`, 30) : [])].slice(0, REQUIRED); manifest.items[key] = await mirrorItem(item, 'fitness', candidates); } catch (error) { manifest.items[key] = { ...item, requiredMedia: REQUIRED, media: [], mediaCount: 0, physicalStatus: 'failed', releaseStatus: 'failed', error: error instanceof Error ? error.message : String(error) }; } } };
+  let processed = 0;
+  let recovered = 0;
+  const total = rows.length;
+  const worker = async () => {
+    while (cursor < rows.length) {
+      const item = rows[cursor++];
+      const key = `fitness:${item.discipline}:${item.slug}`;
+      const dir = path.join(MEDIA_ROOT, 'fitness', item.discipline, item.slug);
+      if (await locallyComplete(manifest.items[key])) { processed += 1; continue; }
+      if (!manifest.items[key] && await diskComplete(dir)) { manifest.items[key] = recoveredItem(item, dir); recovered += 1; processed += 1; await checkpoint(manifest); if (processed % PROGRESS_EVERY === 0) console.log(`[fitness] ${processed}/${total} (recovered ${recovered})`); continue; }
+      try {
+        const candidates = [...item.candidates, ...(item.candidates.length < REQUIRED ? await commons(`${item.name} exercise`, 30) : [])].slice(0, REQUIRED);
+        manifest.items[key] = await mirrorItem(item, 'fitness', candidates);
+      } catch (error) {
+        manifest.items[key] = { ...item, requiredMedia: REQUIRED, media: [], mediaCount: 0, physicalStatus: 'failed', releaseStatus: 'failed', error: error instanceof Error ? error.message : String(error) };
+      }
+      processed += 1;
+      await checkpoint(manifest);
+      console.log(`[fitness] ${processed}/${total} complete=${manifest.items[key].physicalStatus === 'complete'} media=${manifest.items[key].mediaCount || 0}`);
+    }
+  };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
 }
 function summary(manifest) {
@@ -167,13 +212,14 @@ function summary(manifest) {
 async function main() {
   await mkdir(MEDIA_ROOT, { recursive: true });
   let manifest = { schemaVersion: 2, generatedAt: null, root: ROOT, requiredMediaPerItem: REQUIRED, items: {} };
-  if (await exists(MANIFEST_PATH)) { try { manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8')); } catch {} }
+  if (await exists(MANIFEST_PATH)) { try { manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8')); } catch (error) { console.warn(`[mirror] ignoring unreadable manifest: ${error instanceof Error ? error.message : String(error)}`); } }
   manifest.schemaVersion = 2; manifest.root = ROOT; manifest.requiredMediaPerItem = REQUIRED; manifest.generatedAt = new Date().toISOString();
+  console.log(`[mirror] root=${ROOT} domain=${DOMAIN} requiredMedia=${REQUIRED} concurrency=${CONCURRENCY}`);
+  await checkpoint(manifest);
   if (DOMAIN === 'all' || DOMAIN === 'recipes') await runRecipes(manifest);
   if (DOMAIN === 'all' || DOMAIN === 'fitness') await runFitness(manifest);
-  await saveJson(MANIFEST_PATH, manifest);
   const report = summary(manifest);
-  await saveJson(SUMMARY_PATH, report);
+  await checkpoint(manifest, report);
   console.log(JSON.stringify(report, null, 2));
   if (!report.physicalCorpusComplete) process.exitCode = 2;
 }
