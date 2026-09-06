@@ -1750,3 +1750,14 @@ The active development source of truth is the repository plus the developer's lo
 - A first-party Prisma-native recipe content importer was added for the open Wikibooks Cookbook dataset, with explicit CC BY-SA provenance and optional Wikimedia image enrichment.
 
 The corpus is still considered incomplete until the local database population and audit gates pass.
+
+## 2026-09-06 — Onboarding persistence and control-plane hardening
+
+- `POST /users/onboarding` is now an authenticated, validated user-state boundary for completed onboarding.
+- Backend persistence reuses existing `UserProfile`, `UserPreference`, `UserOnboarding` and `UserFact` models and writes them in one Prisma transaction.
+- Female visual theme maps to `UserPreference.theme = feminine`; other genders map to `default`, without branching business logic.
+- Mobile onboarding remains local-first but now attempts authenticated backend synchronization through the canonical `MOBILE_API_URL` resolver and retains a pending marker for transient network failure.
+- Added backend regression coverage for atomic onboarding persistence.
+- Added a living autonomous progress log at `08_AUTONOMOUS_PROGRESS_LOG.md`.
+
+Validation note: this feature is implemented but is not marked green until the relevant backend/mobile CI gates complete.

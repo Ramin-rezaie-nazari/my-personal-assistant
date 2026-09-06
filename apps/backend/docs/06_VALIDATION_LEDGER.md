@@ -238,3 +238,15 @@ The backend CI unit-test invocation was corrected from an invalid Jest argument 
 6. Continue authorization, rate-limit, observability and E2E teardown cleanup.
 7. Review and integrate Global Market / Price Intelligence only after dependency/conflict/regression checks.
 8. Keep successful test output quiet; surface only final results and failures.
+
+## 2026-09-06 — Onboarding persistence and control-plane hardening
+
+### Implementation
+- Added `SaveOnboardingDto` with explicit allow-lists, numeric ranges and ISO date validation.
+- Added authenticated `POST /users/onboarding`.
+- Persisted the canonical profile, user preference/theme, onboarding completion state and remaining onboarding facts in one transaction.
+- Added mobile sync client and retryable pending marker.
+- Added `UsersService` onboarding regression test.
+
+### Verification state
+**PENDING CI/runtime validation.** The implementation is intentionally not marked green while the active workflow has not completed.

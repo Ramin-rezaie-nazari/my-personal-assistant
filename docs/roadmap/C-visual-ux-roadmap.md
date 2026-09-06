@@ -53,3 +53,7 @@ Temporary remaining verification: physical-device onboarding/voice review and th
 ## 2026-09-06 — Content experience expansion
 
 Recipe cooking presentation and fitness movement/session presentation are now implemented in code. Remaining work is corpus population/audit, physical-device QA and production hardening.
+
+## 2026-09-06 — Onboarding persistence and control-plane hardening
+
+Completed onboarding now has a backend persistence boundary with retryable mobile synchronization. Full release validation still requires CI and physical-device evidence.

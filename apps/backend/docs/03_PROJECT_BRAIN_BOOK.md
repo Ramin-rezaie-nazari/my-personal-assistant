@@ -662,3 +662,11 @@ Muscle-up
 ## 13.4 Skill Unlock Engine
 
 A... (truncated)
+
+## 2026-09-06 — Onboarding persistence and control-plane hardening
+
+The onboarding boundary now closes the gap between mobile-first local setup and the backend Personal Brain context. Completed onboarding is persisted through the authenticated Users domain instead of remaining only on-device. The implementation deliberately reuses existing profile/preference/onboarding/fact models and keeps presentation theme logic separate from business logic.
+
+The mobile layer retains a local-first contract: completed state is stored locally first, remote synchronization is attempted when an authenticated session is available, and transient synchronization failure creates a retry marker rather than discarding the user's setup.
+
+No feature is considered fully complete from documentation alone; CI/runtime/device gates remain authoritative.

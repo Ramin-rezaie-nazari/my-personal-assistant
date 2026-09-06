@@ -343,3 +343,18 @@ Supabase is explicitly out of the development path for this project phase. All P
 - The required full fitness corpus (1,500 movements / 6,000 approved WebP assets) has not been runtime-audited on the local database in this environment.
 - The full recipe corpus has not been runtime-imported/audited in this environment.
 - Physical iOS/Android visual and native runtime validation remains a separate release gate.
+
+## 2026-09-06 — Onboarding persistence and control-plane hardening
+
+### Implemented
+- Strict onboarding DTO validation for profile, goal, fitness, diet, workout, equipment, schedule and permission fields.
+- Authenticated `/users/onboarding` endpoint.
+- Atomic persistence through `UserProfile`, `UserPreference`, `UserOnboarding` and `UserFact`.
+- Mobile-to-backend onboarding synchronization with pending retry semantics.
+- Backend regression test for transactionally persisted onboarding state.
+- Autonomous progress log for durable session-by-session evidence.
+
+### Validation truth
+- The feature is **implemented but not yet green**.
+- The active Android CI run was still in progress at the latest inspection; no completed green Gradle result was available.
+- Real-device validation remains a separate gate.

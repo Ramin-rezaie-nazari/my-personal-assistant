@@ -113,3 +113,11 @@ A fresh CI run was triggered after the implementation commits. At the time of th
 ## Evidence rule
 
 A progress percentage is a planning indicator. A feature is “complete” only when implementation, relevant data/schema, targeted tests, integration/regression tests, documentation, and required environment/device validation all agree.
+
+## 2026-09-06 — Onboarding persistence and control-plane hardening
+
+- Found and closed the architecture gap where onboarding lived only in AsyncStorage.
+- Reused existing backend user-state models rather than introducing another profile schema.
+- Added authenticated atomic persistence and mobile retry semantics.
+- Added regression coverage.
+- CI/device status remains pending and is never inferred from source code alone.
