@@ -17,7 +17,7 @@ MYPA's product-level health context should normalize provider records into these
 
 - steps
 - active calories burned
-- total calories burned where exposed
+- total calories burned where exposed or derivable
 - distance
 - sleep duration
 - resting/average heart rate where exposed
@@ -75,8 +75,10 @@ Android Health Connect requires manifest permissions and runtime authorization f
 
 ## Implementation status
 
-- **GREEN:** Product architecture recognizes device/health data as a normalized domain and the backend already has a `DeviceIntelligenceModule` boundary.
-- **YELLOW:** Current `DeviceIntelligenceService` and `HealthSyncService` are stubs and return placeholder values/messages.
+- **GREEN:** Product architecture recognizes device/health data as a normalized domain and the backend exposes a protected `DeviceIntelligenceModule` integration-status boundary.
+- **GREEN:** Mobile has a provider-neutral health sample contract and native-adapter boundary so HealthKit/Health Connect can be added without coupling business logic to a vendor.
+- **GREEN:** The backend no longer returns synthetic zero health metrics and no longer reports a false successful sync while native providers are unavailable.
+- **YELLOW:** Backend persistence for imported health samples/checkpoints and deterministic deduplication is not yet implemented.
 - **PENDING:** Native iOS HealthKit bridge + permissions + read/query/sync flow.
 - **PENDING:** Native Android Health Connect bridge + permissions + read/query/sync flow.
 - **PENDING:** Offline-first incremental sync/checkpointing and dedupe validation.
