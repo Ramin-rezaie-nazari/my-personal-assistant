@@ -1,0 +1,65 @@
+name: Recipe content release gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch_size:
+        description: 'Recipes to import in this run'
+        required: false
+        default: '250'
+      import_media:
+        description: 'Fetch and persist approved Wikimedia/Wikibooks recipe media'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  import-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    env:
+      DATABASE_URL: ${{ secrets.MYPA_RECIPE_DATABASE_URL }}
+      RECIPE_IMPORT_BATCH_SIZE: ${{ inputs.batch_size || '250' }}
+      RECIPE_IMPORT_MEDIA: ${{ inputs.import_media && '1' || '0' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Require database secret
+        run: |
+          test -n "$DATABASE_URL" || { echo 'MYPA_RECIPE_DATABASE_URL is not configured; refusing to import into an unknown database.'; exit 2; }
+
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        working-directory: apps/backend
+        run: pnpm prisma migrate deploy
+
+      - name: Generate Prisma client
+        working-directory: apps/backend
+        run: pnpm prisma generate
+
+      - name: Import recipe corpus
+        working-directory: apps/backend
+        run: pnpm recipe:content:import
+
+      - name: Audit recipe corpus
+        working-directory: apps/backend
+        run: pnpm recipe:content:audit
