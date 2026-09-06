@@ -64,6 +64,21 @@ describe('LocalLanguageUnderstandingService', () => {
     expect(result.entities.discipline).toBe('calisthenics');
   });
 
+  it('extracts requested equipment and difficulty level', () => {
+    const result = service.understand('برای سرشونه تمرین دمبل مبتدی می‌خوام');
+    expect(result.intent).toBe('RECOMMEND_WORKOUT');
+    expect(result.entities.targetArea).toBe('shoulders');
+    expect(result.entities.equipment).toEqual(['dumbbells']);
+    expect(result.entities.difficultyLevel).toBe(3);
+  });
+
+  it('supports explicit no-equipment workout requests', () => {
+    const result = service.understand('یه تمرین شکم بدون تجهیزات بده');
+    expect(result.intent).toBe('RECOMMEND_WORKOUT');
+    expect(result.entities.targetArea).toBe('core');
+    expect(result.entities.equipment).toEqual(['none']);
+  });
+
   it('does not let a workout word hijack a shopping request', () => {
     const result = service.understand('برای تمرین شیر بخر');
     expect(result.intent).toBe('ADD_TO_BASKET');
