@@ -1,13 +1,17 @@
-import { BadRequestException, Controller, Get, Query, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Controller, Get, Param, Query, Req, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { RecipeLibraryService } from '../services/recipe-library.service';
+import { RecipePresentationService } from '../services/recipe-presentation.service';
 
 type AuthenticatedRequest = { user: { id: string } };
 
 @Controller('recipes')
 @UseGuards(JwtAuthGuard)
 export class RecipeLibraryController {
-  constructor(private readonly library: RecipeLibraryService) {}
+  constructor(
+    private readonly library: RecipeLibraryService,
+    private readonly presentation: RecipePresentationService,
+  ) {}
 
   @Get('library')
   list(
@@ -21,6 +25,11 @@ export class RecipeLibraryController {
     const pageSize = parseIntQuery(pageSizeText, 'pageSize', 1, 50);
     const verified = verifiedText === undefined ? undefined : parseBoolean(verifiedText, 'verified');
     return this.library.list(req.user.id, { page, pageSize, q, verified });
+  }
+
+  @Get('library/:id/presentation')
+  presentationById(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
+    return this.presentation.get(req.user.id, id);
   }
 }
 
