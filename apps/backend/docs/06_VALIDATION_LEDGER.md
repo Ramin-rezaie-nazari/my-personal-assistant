@@ -186,6 +186,30 @@ Schema/migration generation, deploy, idempotence and full backend gates still re
 
 The backend CI unit-test invocation was corrected from an invalid Jest argument pattern to an explicit Jest command. Mobile RefreshControl syntax regressions were patched in the affected localized routes. New GitHub Actions runs are currently executing against the updated branch.
 
+## 2026-09-06 — Mobile endpoint hardening and onboarding persistence
+
+### Endpoint hardening
+
+- Mobile API callers were consolidated around the canonical `MOBILE_API_URL` resolver.
+- Calendar, price, recipe, shopping-basket and core API callers no longer maintain independent hardcoded backend-host assumptions on this branch.
+- Added `apps/mobile/scripts/surface-audit.mjs` to verify required routes, detect direct `localhost:3000` URLs outside the canonical resolver, and validate literal router targets against Expo route files.
+- Mobile CI now runs the surface audit in addition to the existing route audit, typecheck, Expo config and Android bundle/build gates.
+
+### Onboarding persistence
+
+- Added validated `SaveOnboardingDto` with explicit gender/goal/fitness/diet/workout/equipment/session constraints.
+- Added authenticated `POST /users/onboarding`.
+- Added atomic `UsersService.saveOnboarding(...)` using the existing `UserProfile`, `UserPreference`, `UserOnboarding` and `UserFact` models; no new migration was introduced for this feature.
+- Completed onboarding now maps the female visual theme to `UserPreference.theme = feminine` and other genders to `default` without branching business logic.
+- Extra onboarding choices are preserved as structured `UserFact` rows with `source = onboarding` and confidence `1`.
+- Mobile onboarding keeps its local-first behavior while attempting authenticated backend synchronization through the same canonical mobile API base.
+- Failed remote sync is retained as a pending state and retried on the next onboarding-state read rather than discarding the user's local progress.
+- Added backend regression coverage for the atomic persistence contract.
+
+### Validation status
+
+**NOT YET GREEN.** A new Android workflow was triggered from the implementation branch head. At the latest recorded check, the workflow was still running and the Gradle build gate had not completed. No green CI claim is made for this batch.
+
 ## Checkpoint status
 
 **Backend Recommendation Intelligence: validated green locally.**
@@ -200,12 +224,14 @@ The backend CI unit-test invocation was corrected from an invalid Jest argument 
 
 **Mobile localization: global reactive locale architecture plus current top-level route rollout implemented; runtime validation pending.**
 
+**Onboarding persistence: implemented atomically in backend and wired from mobile with retry semantics; CI/runtime validation pending.**
+
 **Voice P0: lifecycle race narrowed in tracked JS/native boundary; unresolved pending lockfile validation and direct Android WIP/device evidence.**
 
 ## Next engineering priorities
 
-1. Validate the new Prisma migration with schema generation, deploy/status/idempotence and the existing backend gates.
-2. Add a small verified ingredient/cuisine seed set with explicit provenance and no unsafe backfill.
+1. Re-check the completed CI results for the current branch head and fix failures at root cause.
+2. Validate onboarding persistence with backend test/typecheck/build evidence.
 3. Finish the nested mobile localization audit and Recommendation API → mobile food journey integration.
 4. Complete the feminine/default theme rollout and focused mobile validation.
 5. Resolve the P0 Android voice lifecycle issue using the user's local candidate WIP and real-device evidence.
