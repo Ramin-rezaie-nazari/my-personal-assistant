@@ -25,7 +25,7 @@
     "recipe-images:import": "node ./scripts/recipe-image-import.mjs",
     "recipe-images:dataset": "node ./scripts/recipe-image-dataset-import-v2.mjs",
     "recipe-images:reprocess-quality": "node ./scripts/recipe-image-reprocess-quality.mjs",
-    "recipe-images:retry-quality": "node ./scripts/recipe-media-reprocess-retry.mjs",
+    "recipe-images:retry-quality": "node ./scripts/recipe-image-reprocess-retry.mjs",
     "recipe-intelligence:classify": "node ./scripts/recipe-intelligence-classify.mjs",
     "recipe-intelligence:profile": "node ./scripts/recipe-intelligence-profile.mjs",
     "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence-final.mjs",
