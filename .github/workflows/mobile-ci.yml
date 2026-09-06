@@ -38,6 +38,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Audit mobile routes
+        run: pnpm --filter @my-personal-assistant/mobile route:audit
+
       - name: Typecheck mobile
         run: pnpm --filter @my-personal-assistant/mobile typecheck
 
