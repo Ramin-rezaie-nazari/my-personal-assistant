@@ -9,6 +9,7 @@ on:
       - 'apps/backend/scripts/fitness-content-audit.mjs'
       - 'apps/backend/scripts/fitness-media-verify.mjs'
       - 'apps/backend/scripts/recipe-image-dataset-import-v2.mjs'
+      - 'apps/backend/scripts/recipe-content-audit.mjs'
       - '.github/workflows/content-corpus-bootstrap.yml'
   workflow_dispatch:
     inputs:
@@ -31,64 +32,86 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  corpus:
+  fitness-corpus:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     env:
       DATABASE_URL: ${{ secrets.MYPA_FITNESS_DATABASE_URL }}
-      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       FITNESS_TARGET_PER_DISCIPLINE: '500'
-      FITNESS_IMPORT_STRICT: ${{ inputs.fitness_strict && '1' || '1' }}
-      RECIPE_IMAGE_RESET: ${{ inputs.recipe_reset && '1' || '0' }}
-      RECIPE_IMAGE_CONCURRENCY: '4'
-
+      FITNESS_IMPORT_STRICT: ${{ inputs.fitness_strict == false && '0' || '1' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 11.18.0
           run_install: false
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-
-      - name: Require runtime secrets
-        run: |
-          test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is required for the fitness corpus.'; exit 2; }
-          test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for recipe image storage.'; exit 2; }
-          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for recipe image storage.'; exit 2; }
-
+      - name: Require fitness database
+        run: test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is required for the fitness corpus.'; exit 2; }
       - name: Install workspace
         run: pnpm install --frozen-lockfile
-
       - name: Generate Prisma client
         working-directory: apps/backend
         run: pnpm prisma generate
-
       - name: Import fitness corpus with media enrichment
         working-directory: apps/backend
         run: pnpm fitness:content:import
-
       - name: Balance the ten difficulty levels
         working-directory: apps/backend
         run: pnpm fitness:content:balance-levels
-
       - name: Audit fitness release corpus
         working-directory: apps/backend
         run: pnpm fitness:content:audit
-
       - name: Verify fitness WebP URLs
         working-directory: apps/backend
         run: pnpm fitness:content:verify-media
 
+  recipe-corpus:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      RECIPE_IMAGE_RESET: ${{ inputs.recipe_reset == true && '1' || '0' }}
+      RECIPE_IMAGE_CONCURRENCY: '4'
+      RECIPE_REQUIRE_VERIFIED: '1'
+      RECIPE_REQUIRE_IMAGE: '1'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Require recipe runtime
+        run: |
+          test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for recipe image storage.'; exit 2; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for recipe image storage.'; exit 2; }
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+      - name: Generate Prisma client
+        working-directory: apps/backend
+        run: pnpm prisma generate
+      - name: Audit recipe corpus before media import
+        working-directory: apps/backend
+        run: pnpm recipe:content:audit
       - name: Import recipe image corpus
         working-directory: apps/backend
         run: pnpm recipe-images:dataset
+      - name: Audit recipe corpus after media import
+        working-directory: apps/backend
+        run: pnpm recipe:content:audit
