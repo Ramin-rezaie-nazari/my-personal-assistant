@@ -11,22 +11,28 @@
 - Inspected the real GitHub Actions result for the content-corpus bootstrap.
 - Found a concrete environment blocker: the Actions runner received empty `MYPA_FITNESS_DATABASE_URL`, `SUPABASE_URL`, and `SUPABASE_SERVICE_ROLE_KEY`, so the job stopped before install/import. No corpus completion claim is allowed from that run.
 - Separated corpus responsibilities in the bootstrap workflow so missing fitness infrastructure can no longer prevent recipe-image work from being reasoned about independently.
-- Fixed the workflow's strict-mode expression so it no longer contains a logically redundant `true-or-true` expression.
+- Fixed the workflow's strict-mode expression so it no longer contains a logically redundant expression and remains strict on normal pushes.
 - Added the missing `apps/backend/scripts/recipe-content-audit.mjs` because `package.json` already exposed `recipe:content:audit` but the implementation was absent on the active branch.
-- The recipe audit checks real recipe rows for required fields, ingredient integrity, step numbering/order, verification, media coverage, provenance/license metadata, broken media references, and duplicate normalized names; an empty recipe table is a hard failure, not a false green.
-- Hardened `apps/backend/scripts/fitness-media-verify.mjs` so approved media validation checks HTTP success and image/WebP content rather than only URL shape; empty approved-media sets are not treated as completion.
-- Added explicit progress/audit notes so subsequent autonomous sessions can start from evidence instead of repeating source inspection.
+- Restored a real `apps/backend/scripts/recipe-content-import.mjs` based on the previously established Wikibooks Cookbook source pipeline, with explicit CC BY-SA 4.0 provenance.
+- Made recipe import transactional per recipe, requiring usable title + ingredients + procedural steps and failing the run when nothing is actually imported.
+- Connected source recipe images directly to the runtime `RecipeMedia` Prisma model instead of leaving the importer attached only to the old Supabase `recipe_source_raw` schema.
+- Added `apps/backend/scripts/recipe-media-download.mjs`: it downloads approved source images, converts them to WebP <=64KB, stores them in the application Storage bucket, and rewrites `RecipeMedia.url` / recipe hero URLs to the internal mirrored assets.
+- Added `apps/backend/scripts/fitness-media-download.mjs`: it downloads approved fitness source images, converts them to WebP <=64KB, stores them in Storage, and rewrites `FitnessExerciseMedia.webpUrl` to the mirrored assets.
+- Updated the corpus workflow so fitness and recipes are independently imported, then their media are explicitly downloaded/mirrored and finally verified. The fitness image job runs only after the fitness corpus gate; the recipe image job runs only after the recipe corpus gate.
+- Updated validation and progress documentation to capture these exact changes and preserve the work history.
 
 ### Important evidence from the runner
 
 - Workflow run `34034400326` / job `101489715731` reached the secret-check step and failed before any content import.
-- Therefore: no statement such as "all 1,500 movements", "all 6,000 WebPs", or "all recipe images downloaded" is valid yet.
+- The next split run `34035229912` also failed at the secret checks for all three independent jobs because the required runtime secrets were still unavailable to GitHub Actions.
+- Therefore no statement such as "all 1,500 movements", "all 6,000 WebPs", or "all recipe images downloaded" is valid yet.
 
 ### What is deliberately NOT marked complete
 
-- Runtime fitness corpus: not green until the real target database is populated and the release audit plus media verification both pass.
+- Runtime fitness corpus: not green until the real target database is populated and the release audit plus final mirrored-media verification both pass.
 - Runtime recipe corpus: not green until real recipe data exists and the recipe-content audit passes.
-- Recipe image corpus: not green until the actual Storage import runs and coverage is audited against the real recipe set.
+- Fitness image corpus: not green until actual source downloads, WebP conversion, Storage writes, DB URL rewrites and final verification pass.
+- Recipe image corpus: not green until actual source downloads, WebP conversion, Storage writes, DB URL rewrites and coverage audit pass.
 - Yoga live pose analysis: not green while the mobile camera bridge remains `UnconfiguredYogaCameraBridge` and no compatible native frame/pose provider is installed.
 - HealthKit/Health Connect: not green until native integrations exist, permissions/privacy behavior is validated, and device builds are tested.
 - Play Store readiness: not green until signed release artifacts, installation/upgrade checks, store privacy/data declarations, backend production configuration, and device validation are evidenced.
@@ -34,8 +40,8 @@
 ### Tests / validation to run when environment becomes available
 
 - Backend: install with frozen lockfile, Prisma generate, typecheck, unit tests, build, migration validation, API/E2E regression.
-- Fitness: import -> balance levels -> audit -> WebP URL/content verification; release gate must prove 500 published movements per discipline, 10 levels, >=50 per level, and >=4 approved WebP assets per movement.
-- Recipes: recipe import/population -> recipe-content audit -> recipe-image corpus import -> image coverage/quality/provenance audit -> mobile presentation regression.
+- Fitness: import -> balance levels -> audit -> download/mirror approved source media -> final WebP URL/content verification; release gate must prove 500 published movements per discipline, 10 levels, >=50 per level, and >=4 approved WebP assets per movement.
+- Recipes: import -> content audit -> download/mirror every approved source media row -> final media/coverage audit -> mobile presentation regression.
 - Mobile: route audit, surface audit, TypeScript typecheck, Expo prebuild, Android Gradle APK build, then physical-device behavior where required.
 - Native: real Android Health Connect and iOS HealthKit permission/sync checks; real Yoga camera/pose pipeline; Persian local TTS lifecycle/crash validation.
 
