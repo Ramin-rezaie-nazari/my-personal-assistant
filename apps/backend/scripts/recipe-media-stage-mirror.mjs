@@ -11,7 +11,7 @@ const DATASET_URL = process.env.RECIPE_DATASET_URL ?? 'https://huggingface.co/da
 const WIKIBOOKS_API = 'https://en.wikibooks.org/w/api.php';
 const REQUIRED_PROCESS = 3;
 const REQUIRED_TOTAL = 4;
-const USER_AGENT = 'MYPA-recipe-stage-mirror/1.2';
+const USER_AGENT = 'MYPA-recipe-stage-mirror/1.3';
 const CONCURRENCY = Math.min(4, Math.max(1, Number(process.env.RECIPE_STAGE_CONCURRENCY ?? 2)));
 const MAX_RECIPES = Number.isFinite(Number(process.env.RECIPE_STAGE_MAX)) && Number(process.env.RECIPE_STAGE_MAX) > 0 ? Math.floor(Number(process.env.RECIPE_STAGE_MAX)) : null;
 
@@ -47,9 +47,14 @@ function chooseFinalFiles(blocks) { return unique(matchingSections(blocks, /^(fi
 function chooseProcess(candidates) { return candidates.filter((x) => x && x.width >= 300 && x.height >= 300).slice(0, REQUIRED_PROCESS); }
 function chooseFinal(candidates, process) { const processSet = new Set(process.map((x) => x.sourceUrl)); return candidates.find((x) => !processSet.has(x.sourceUrl)) ?? null; }
 async function convert(input, target) { let image = await sharp(input, { failOn: 'none' }).rotate().resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true }).webp({ quality: 84, effort: 5 }).toBuffer(); if (image.length > 64 * 1024) image = await sharp(input, { failOn: 'none' }).rotate().resize({ width: 900, height: 900, fit: 'inside', withoutEnlargement: true }).webp({ quality: 72, effort: 5 }).toBuffer(); await writeFile(target, image); return image.length; }
-async function cleanRecipeDir(title) { const dir = path.join(MEDIA_ROOT, slug(title)); if (await exists(dir)) await rm(dir, { recursive: true, force: true }); }
+async function cleanLegacyRecipeDir(title) {
+  const dir = path.join(MEDIA_ROOT, slug(title));
+  if (!(await exists(dir))) return;
+  const entries = await readdir(dir, { withFileTypes: true });
+  await Promise.all(entries.filter((entry) => entry.name !== 'stages').map((entry) => rm(path.join(dir, entry.name), { recursive: true, force: true })));
+}
 async function mirror(title) {
-  await cleanRecipeDir(title);
+  await cleanLegacyRecipeDir(title);
   const page = await pageData(title);
   const revision = page?.revisions?.[0]?.slots?.main?.content ?? '';
   const blocks = sectionBlocks(revision);
@@ -57,26 +62,14 @@ async function mirror(title) {
   const finalFiles = chooseFinalFiles(blocks);
   const infos = new Map();
   for (const file of unique([...processFiles, ...finalFiles])) { try { const info = await imageInfo(file); if (info) infos.set(file, { file, ...info }); } catch {} }
-  const processCandidates = processFiles.map((file) => infos.get(file)).filter(Boolean);
-  const process = chooseProcess(processCandidates);
-  const finalCandidates = finalFiles.map((file) => infos.get(file)).filter(Boolean);
-  const final = chooseFinal(finalCandidates, process);
-  const selected = [
-    ...process.map((x, i) => ({ ...x, stage: `process-${i + 1}`, position: i + 1 })),
-    ...(final ? [{ ...final, stage: 'final', position: REQUIRED_TOTAL }] : []),
-  ];
+  const process = chooseProcess(processFiles.map((file) => infos.get(file)).filter(Boolean));
+  const final = chooseFinal(finalFiles.map((file) => infos.get(file)).filter(Boolean), process);
+  const selected = [...process.map((x, i) => ({ ...x, stage: `process-${i + 1}`, position: i + 1 })), ...(final ? [{ ...final, stage: 'final', position: REQUIRED_TOTAL }] : [])];
   const dir = path.join(MEDIA_ROOT, slug(title), 'stages');
   await mkdir(dir, { recursive: true });
   const media = [];
   for (const item of selected) {
-    try {
-      const input = await fetchBytes(item.url);
-      const digest = hash(input);
-      const filename = `${String(item.position).padStart(2, '0')}-${item.stage}-${digest.slice(0, 12)}.webp`;
-      const target = path.join(dir, filename);
-      const sizeBytes = await convert(input, target);
-      media.push({ position: item.position, stage: item.stage, localPath: path.relative(ROOT, target).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), target).split(path.sep).join('/'), sourceUrl: item.sourceUrl, downloadUrl: item.url, sha256: digest, sizeBytes, format: 'webp', provider: 'Wikimedia Commons/Wikibooks', license: item.license, attribution: item.attribution, status: 'ready', evidence: item.stage === 'final' ? 'recipe-page-serving-or-final-image' : 'recipe-page-procedure-image' });
-    } catch (error) { media.push({ position: item.position, stage: item.stage, sourceUrl: item.sourceUrl, status: 'failed', error: error instanceof Error ? error.message : String(error) }); }
+    try { const input = await fetchBytes(item.url); const digest = hash(input); const filename = `${String(item.position).padStart(2, '0')}-${item.stage}-${digest.slice(0, 12)}.webp`; const target = path.join(dir, filename); const sizeBytes = await convert(input, target); media.push({ position: item.position, stage: item.stage, localPath: path.relative(ROOT, target).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), target).split(path.sep).join('/'), sourceUrl: item.sourceUrl, downloadUrl: item.url, sha256: digest, sizeBytes, format: 'webp', provider: 'Wikimedia Commons/Wikibooks', license: item.license, attribution: item.attribution, status: 'ready', evidence: item.stage === 'final' ? 'recipe-page-serving-or-final-image' : 'recipe-page-procedure-image' }); } catch (error) { media.push({ position: item.position, stage: item.stage, sourceUrl: item.sourceUrl, status: 'failed', error: error instanceof Error ? error.message : String(error) }); }
   }
   const processReady = media.filter((x) => x.status === 'ready' && x.stage.startsWith('process-')).length;
   const finalReady = media.some((x) => x.status === 'ready' && x.stage === 'final');
