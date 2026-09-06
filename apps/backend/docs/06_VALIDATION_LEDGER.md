@@ -250,3 +250,12 @@ The backend CI unit-test invocation was corrected from an invalid Jest argument 
 
 ### Verification state
 **PENDING CI/runtime validation.** The implementation is intentionally not marked green while the active workflow has not completed.
+## 2026-09-06 — Smart Meals source-of-truth integration
+
+### Implementation
+- Added `recommendation-api.ts` for authenticated Food Recommendation Intelligence.
+- Replaced mobile Smart Meals local ranking with backend Brain recommendations.
+- Preserved inventory attention UX and recipe detail navigation.
+
+### Verification state
+**PENDING CI/runtime validation.** The implementation is not marked green until the relevant mobile and backend gates complete.

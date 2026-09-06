@@ -670,3 +670,8 @@ The onboarding boundary now closes the gap between mobile-first local setup and 
 The mobile layer retains a local-first contract: completed state is stored locally first, remote synchronization is attempted when an authenticated session is available, and transient synchronization failure creates a retry marker rather than discarding the user's setup.
 
 No feature is considered fully complete from documentation alone; CI/runtime/device gates remain authoritative.
+## 2026-09-06 — Smart Meals source-of-truth integration
+
+The mobile Smart Meals journey now consumes the authenticated `POST /recommendation-intelligence/food` result instead of constructing a second local recommendation ranking. The Personal Brain remains responsible for nutrition constraints, inventory coverage, country context, recent-meal personalization, deterministic ranking and explanations; mobile is responsible for presentation and navigation to the selected recipe.
+
+The mobile client keeps the backend result typed and navigates each recommendation to the existing recipe detail route. No local recommendation score is used for the displayed ranking.

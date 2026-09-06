@@ -121,3 +121,10 @@ A progress percentage is a planning indicator. A feature is “complete” only 
 - Added authenticated atomic persistence and mobile retry semantics.
 - Added regression coverage.
 - CI/device status remains pending and is never inferred from source code alone.
+## 2026-09-06 — Smart Meals source-of-truth integration
+
+- Found a recommendation-drift risk: Smart Meals was locally constructing a simplified score while a canonical backend Recommendation Intelligence service already existed.
+- Added a typed mobile client to the authenticated Brain recommendation endpoint.
+- Changed Smart Meals presentation to use backend scores/reasons/coverage as its authoritative result.
+- Kept the recipe detail surface as the final navigation target.
+- CI/device verification remains pending and is not inferred from source inspection.

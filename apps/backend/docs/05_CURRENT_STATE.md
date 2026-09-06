@@ -358,3 +358,14 @@ Supabase is explicitly out of the development path for this project phase. All P
 - The feature is **implemented but not yet green**.
 - The active Android CI run was still in progress at the latest inspection; no completed green Gradle result was available.
 - Real-device validation remains a separate gate.
+## 2026-09-06 — Smart Meals source-of-truth integration
+
+### Implemented
+- Added typed authenticated mobile Recommendation Intelligence API client.
+- Smart Meals now consumes backend Personal Brain recommendations instead of local score/ranking construction.
+- Recommendation UI shows authoritative backend rank/score, inventory coverage, missing ingredients, calories, protein and reasons.
+- Recommendation cards deep-link to the existing recipe detail route.
+
+### Validation truth
+- Implementation is committed but still subject to the active mobile/Android CI gates.
+- No green CI or physical-device claim is made from source review alone.

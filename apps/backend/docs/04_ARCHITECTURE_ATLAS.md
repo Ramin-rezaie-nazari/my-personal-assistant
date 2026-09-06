@@ -1761,3 +1761,12 @@ The corpus is still considered incomplete until the local database population an
 - Added a living autonomous progress log at `08_AUTONOMOUS_PROGRESS_LOG.md`.
 
 Validation note: this feature is implemented but is not marked green until the relevant backend/mobile CI gates complete.
+## 2026-09-06 — Smart Meals source-of-truth integration
+
+- Added `apps/mobile/lib/recommendation-api.ts` as the mobile contract for authenticated Food Recommendation Intelligence.
+- `apps/mobile/app/smart-meals.tsx` now requests nutrition summary, inventory and Brain recommendations in parallel.
+- Recommendation cards display backend score, pantry coverage, missing-ingredient count, calories, protein and deterministic reasons.
+- Tapping a recommendation routes to the existing `/recipe/:id` presentation surface.
+- The previous mobile-only `meal-intelligence` ranking is no longer the source of displayed Smart Meals ranking.
+
+This preserves a single recommendation authority and prevents algorithm drift between backend and mobile.
