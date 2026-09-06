@@ -354,6 +354,7 @@ model Recipe {
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
   ingredients RecipeIngredient[]
   steps RecipeStep[]
+  media RecipeMedia[]
   cuisines RecipeCuisine[]
   regions RecipeRegion[]
   safetyAssertions RecipeSafetyAssertion[]
@@ -376,6 +377,28 @@ model RecipeStep {
   @@unique([recipeId, stepNumber])
   @@index([recipeId, stepNumber])
   @@index([imageSource])
+}
+
+model RecipeMedia {
+  id String @id @default(uuid())
+  recipeId String
+  position Int
+  url String
+  sourceUrl String
+  sourceProvider String
+  license String
+  attribution String?
+  mimeType String @default("image/webp")
+  width Int?
+  height Int?
+  checksum String?
+  status String @default("approved")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@unique([recipeId, position])
+  @@index([recipeId, status])
+  @@index([sourceProvider, license])
 }
 
 model RecipeCuisine {
