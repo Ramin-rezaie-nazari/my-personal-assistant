@@ -42,6 +42,7 @@ import { CalisthenicsModule } from './modules/calisthenics/calisthenics.module';
 import { FitnessModule } from './modules/fitness/fitness.module';
 import { ContentModule } from './modules/content/content.module';
 import { RecommendationIntelligenceModule } from './modules/recommendation-intelligence/recommendation-intelligence.module';
+import { RequestRateLimitGuard } from './common/security/request-rate-limit.guard';
 
 @Module({
   imports: [
@@ -88,6 +89,6 @@ import { RecommendationIntelligenceModule } from './modules/recommendation-intel
     RecommendationIntelligenceModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RequestRateLimitGuard],
 })
 export class AppModule {}
