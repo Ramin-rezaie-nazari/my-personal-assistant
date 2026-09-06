@@ -9,7 +9,8 @@ describe('RecipeLibraryService', () => {
       },
       $transaction: jest.fn((queries: Promise<unknown>[]) => Promise.all(queries)),
     } as any;
-    const service = new RecipeLibraryService(prisma);
+    const publicCatalog = { list: jest.fn() } as any;
+    const service = new RecipeLibraryService(prisma, publicCatalog);
 
     const result = await service.list('user-1', { page: 2, pageSize: 24, q: 'chicken', verified: true });
 
@@ -23,5 +24,33 @@ describe('RecipeLibraryService', () => {
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(prisma.recipe.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 24, take: 24 }));
     expect(prisma.recipe.count).toHaveBeenCalledTimes(1);
+    expect(publicCatalog.list).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the public Wikibooks corpus when no shared recipes exist', async () => {
+    const prisma = {
+      recipe: {
+        findMany: jest.fn().mockResolvedValue([]),
+        count: jest.fn().mockResolvedValue(0),
+      },
+      $transaction: jest.fn((queries: Promise<unknown>[]) => Promise.all(queries)),
+    } as any;
+    const publicCatalog = {
+      list: jest.fn().mockResolvedValue({
+        items: [{ id: 'public-recipe-pasta', name: 'Pasta', userId: null }],
+        total: 3895,
+        page: 1,
+        pageSize: 24,
+        hasNextPage: true,
+      }),
+    } as any;
+    const service = new RecipeLibraryService(prisma, publicCatalog);
+
+    await expect(service.list('user-1', { page: 1, pageSize: 24 })).resolves.toMatchObject({
+      items: [{ id: 'public-recipe-pasta', name: 'Pasta' }],
+      total: 3895,
+      hasNextPage: true,
+    });
+    expect(publicCatalog.list).toHaveBeenCalledWith({ page: 1, pageSize: 24, q: undefined });
   });
 });
