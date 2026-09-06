@@ -6,7 +6,10 @@ export class HealthSyncService {
     await Promise.resolve();
 
     return {
-      message: 'Health data synced',
+      synced: false,
+      status: 'native_provider_required' as const,
+      message:
+        'Health data was not synced because the native HealthKit / Health Connect provider is not configured.',
     };
   }
 }
