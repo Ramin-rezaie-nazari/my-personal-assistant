@@ -40,27 +40,42 @@ jobs:
               text = text.replace('textRight:{textAlign:\'right\'},', 'textRight:{textAlign:\'right\'},textLeft:{textAlign:\'left\'},')
           path.write_text(text, encoding='utf-8')
 
-      - name: Append completion ledger to A/B/C
+      - name: Append completion ledger to A/B/C plus Brain Book
         shell: python
         run: |
           from pathlib import Path
 
-          stamp = '## 2026-09-06 — Content experience expansion'
+          stamp = '## 2026-09-06 — Onboarding persistence and control-plane hardening'
           architecture = Path('apps/backend/docs/04_ARCHITECTURE_ATLAS.md')
+          brain = Path('apps/backend/docs/03_PROJECT_BRAIN_BOOK.md')
           current = Path('apps/backend/docs/05_CURRENT_STATE.md')
+          validation = Path('apps/backend/docs/06_VALIDATION_LEDGER.md')
+          progress = Path('apps/backend/docs/08_AUTONOMOUS_PROGRESS_LOG.md')
           roadmap = Path('docs/roadmap/C-visual-ux-roadmap.md')
 
           a = architecture.read_text(encoding='utf-8')
           if stamp not in a:
-              architecture.write_text(a.rstrip() + '''\n\n## 2026-09-06 — Content experience expansion\n\n- Recipe presentation now has persisted step-by-step instructions and a persisted gallery-media model with explicit source/license/attribution fields.\n- Mobile recipe detail displays the recipe gallery, scaled ingredients, preparation steps and step media when available.\n- Fitness release gates now require 500 publishable movements per supported discipline, ten balanced difficulty levels, and four distinct approved WebP assets per movement.\n- Fitness session UX displays movement media while the user is actively following the session and records completion/progression.\n- A first-party Prisma-native recipe content importer was added for the open Wikibooks Cookbook dataset, with explicit CC BY-SA provenance and optional Wikimedia image enrichment.\n\nThe corpus is still considered incomplete until the local database population and audit gates pass.\n''', encoding='utf-8')
+              architecture.write_text(a.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\n- `POST /users/onboarding` is now an authenticated, validated user-state boundary for completed onboarding.\n- Backend persistence reuses existing `UserProfile`, `UserPreference`, `UserOnboarding` and `UserFact` models and writes them in one Prisma transaction.\n- Female visual theme maps to `UserPreference.theme = feminine`; other genders map to `default`, without branching business logic.\n- Mobile onboarding remains local-first but now attempts authenticated backend synchronization through the canonical `MOBILE_API_URL` resolver and retains a pending marker for transient network failure.\n- Added backend regression coverage for atomic onboarding persistence.\n- Added a living autonomous progress log at `08_AUTONOMOUS_PROGRESS_LOG.md`.\n\nValidation note: this feature is implemented but is not marked green until the relevant backend/mobile CI gates complete.\n''', encoding='utf-8')
 
-          b = current.read_text(encoding='utf-8')
+          b = brain.read_text(encoding='utf-8')
           if stamp not in b:
-              current.write_text(b.rstrip() + '''\n\n## 2026-09-06 — Content experience expansion\n\n### Implemented\n- Persisted `RecipeStep` and `RecipeMedia` models/migrations.\n- Authenticated complete recipe presentation endpoint.\n- Mobile recipe gallery + preparation-step UI + serving scaling.\n- Fitness session media and progression recording.\n- Deterministic fitness level balancer and strict 500-per-discipline / 10-level / 4-WebP audit gate.\n- Prisma-native recipe corpus importer with explicit provenance/licensing data.\n\n### Not yet claimed complete\n- The required full fitness corpus (1,500 movements / 6,000 approved WebP assets) has not been runtime-audited on the local database in this environment.\n- The full recipe corpus has not been runtime-imported/audited in this environment.\n- Physical iOS/Android visual and native runtime validation remains a separate release gate.\n''', encoding='utf-8')
+              brain.write_text(b.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\nThe onboarding boundary now closes the gap between mobile-first local setup and the backend Personal Brain context. Completed onboarding is persisted through the authenticated Users domain instead of remaining only on-device. The implementation deliberately reuses existing profile/preference/onboarding/fact models and keeps presentation theme logic separate from business logic.\n\nThe mobile layer retains a local-first contract: completed state is stored locally first, remote synchronization is attempted when an authenticated session is available, and transient synchronization failure creates a retry marker rather than discarding the user's setup.\n\nNo feature is considered fully complete from documentation alone; CI/runtime/device gates remain authoritative.\n''', encoding='utf-8')
+
+          c = current.read_text(encoding='utf-8')
+          if stamp not in c:
+              current.write_text(c.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\n### Implemented\n- Strict onboarding DTO validation for profile, goal, fitness, diet, workout, equipment, schedule and permission fields.\n- Authenticated `/users/onboarding` endpoint.\n- Atomic persistence through `UserProfile`, `UserPreference`, `UserOnboarding` and `UserFact`.\n- Mobile-to-backend onboarding synchronization with pending retry semantics.\n- Backend regression test for transactionally persisted onboarding state.\n- Autonomous progress log for durable session-by-session evidence.\n\n### Validation truth\n- The feature is **implemented but not yet green**.\n- The active Android CI run was still in progress at the latest inspection; no completed green Gradle result was available.\n- Real-device validation remains a separate gate.\n''', encoding='utf-8')
+
+          v = validation.read_text(encoding='utf-8')
+          if stamp not in v:
+              validation.write_text(v.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\n### Implementation\n- Added `SaveOnboardingDto` with explicit allow-lists, numeric ranges and ISO date validation.\n- Added authenticated `POST /users/onboarding`.\n- Persisted the canonical profile, user preference/theme, onboarding completion state and remaining onboarding facts in one transaction.\n- Added mobile sync client and retryable pending marker.\n- Added `UsersService` onboarding regression test.\n\n### Verification state\n**PENDING CI/runtime validation.** The implementation is intentionally not marked green while the active workflow has not completed.\n''', encoding='utf-8')
+
+          p = progress.read_text(encoding='utf-8')
+          if stamp not in p:
+              progress.write_text(p.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\n- Found and closed the architecture gap where onboarding lived only in AsyncStorage.\n- Reused existing backend user-state models rather than introducing another profile schema.\n- Added authenticated atomic persistence and mobile retry semantics.\n- Added regression coverage.\n- CI/device status remains pending and is never inferred from source code alone.\n''', encoding='utf-8')
 
           c = roadmap.read_text(encoding='utf-8')
           if stamp not in c:
-              roadmap.write_text(c.rstrip() + '''\n\n## 2026-09-06 — Content experience expansion\n\nRecipe cooking presentation and fitness movement/session presentation are now implemented in code. Remaining work is corpus population/audit, physical-device QA and production hardening.\n''', encoding='utf-8')
+              roadmap.write_text(c.rstrip() + '''\n\n## 2026-09-06 — Onboarding persistence and control-plane hardening\n\nCompleted onboarding now has a backend persistence boundary with retryable mobile synchronization. Full release validation still requires CI and physical-device evidence.\n''', encoding='utf-8')
 
       - name: Repair importer license normalization
         shell: python
@@ -73,7 +88,7 @@ jobs:
 
       - name: Commit documentation and maintenance fixes
         run: |
-          files="apps/backend/docs/04_ARCHITECTURE_ATLAS.md apps/backend/docs/05_CURRENT_STATE.md docs/roadmap/C-visual-ux-roadmap.md apps/backend/scripts/fitness-content-import.mjs apps/mobile/app/reminders-localized.tsx"
+          files="apps/backend/docs/03_PROJECT_BRAIN_BOOK.md apps/backend/docs/04_ARCHITECTURE_ATLAS.md apps/backend/docs/05_CURRENT_STATE.md apps/backend/docs/06_VALIDATION_LEDGER.md apps/backend/docs/08_AUTONOMOUS_PROGRESS_LOG.md docs/roadmap/C-visual-ux-roadmap.md apps/backend/scripts/fitness-content-import.mjs apps/mobile/app/reminders-localized.tsx"
           if git diff --quiet -- $files; then
             echo 'No ledger or maintenance changes required.'
             exit 0
@@ -81,5 +96,5 @@ jobs:
           git config user.name 'MYPA Automation'
           git config user.email 'actions@users.noreply.github.com'
           git add $files
-          git commit -m '[skip ci] docs: record content experience expansion and mobile fixes'
+          git commit -m '[skip ci] docs: record onboarding persistence and current progress'
           git push origin HEAD:agent/mypa-autonomous-control-plane
