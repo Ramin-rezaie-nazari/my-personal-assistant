@@ -39,7 +39,7 @@ function AppStack() {
   const [bootReady, setBootReady] = useState(false);
   const [targetRoute, setTargetRoute] = useState<'/language' | '/auth' | '/onboarding' | '/'>('/language');
   const locale = useAppLocale();
-  const { theme } = useVisualTheme();
+  const { theme, refreshTheme } = useVisualTheme();
   const segments = useSegments();
   const currentSegment = segments[0];
 
@@ -73,6 +73,13 @@ function AppStack() {
   }, []);
 
   useEffect(() => { I18nManager.allowRTL(isRTL(locale)); }, [locale]);
+
+  useEffect(() => {
+    // Re-read onboarding-derived visual preferences whenever the route changes.
+    // This catches the onboarding -> home transition and future settings flows.
+    void refreshTheme();
+  }, [currentSegment, refreshTheme]);
+
   useEffect(() => {
     if (!bootReady) return;
     const onExpectedRoute =
