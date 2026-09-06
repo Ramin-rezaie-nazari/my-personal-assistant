@@ -39,6 +39,10 @@ export class LocalLanguageUnderstandingService {
     if (fitnessTarget) entities.targetArea = fitnessTarget;
     const fitnessDiscipline = this.findFitnessDiscipline(normalizedText);
     if (fitnessDiscipline) entities.discipline = fitnessDiscipline;
+    const fitnessEquipment = this.findFitnessEquipment(normalizedText);
+    if (fitnessEquipment.length) entities.equipment = fitnessEquipment;
+    const difficultyLevel = this.findDifficultyLevel(normalizedText);
+    if (difficultyLevel !== undefined) entities.difficultyLevel = difficultyLevel;
     const referencesPrevious = this.hasReference(normalizedText);
     if (referencesPrevious) entities.referencesPrevious = true;
     const negations = this.findNegatedFoods(normalizedText);
@@ -50,17 +54,13 @@ export class LocalLanguageUnderstandingService {
     if (referencesPrevious && this.matches(normalizedText, ['تغییر', 'عوض', 'کن', 'بکن', 'ویرایش', 'به جاش', 'بجاش', 'update', 'change']))
       return this.result('UPDATE_REQUEST', entities, 0.96, normalizedText);
     const shoppingRequest = Boolean(food) && this.matches(normalizedText, ['اضافه', 'بذار', 'بگذار', 'بخر', 'خرید', 'سبد', 'اضافه کن', 'add', 'basket']);
-    if (shoppingRequest)
-      return this.result('ADD_TO_BASKET', entities, 0.97, normalizedText);
+    if (shoppingRequest) return this.result('ADD_TO_BASKET', entities, 0.97, normalizedText);
     if (food && this.matches(normalizedText, ['حذف', 'بردار', 'پاک', 'remove', 'delete']))
       return this.result('REMOVE_FROM_BASKET', entities, 0.97, normalizedText);
     const workoutRequest =
-      !shoppingRequest &&
-      !food &&
-      Boolean(fitnessTarget) ||
+      (!shoppingRequest && !food && Boolean(fitnessTarget)) ||
       (!shoppingRequest && this.matches(normalizedText, ['تمرین', 'ورزش', 'workout', 'exercise', 'training', 'باشگاه', 'عضله']));
-    if (workoutRequest)
-      return this.result('RECOMMEND_WORKOUT', entities, fitnessTarget ? 0.97 : 0.88, normalizedText);
+    if (workoutRequest) return this.result('RECOMMEND_WORKOUT', entities, fitnessTarget ? 0.97 : 0.88, normalizedText);
     if (this.matches(normalizedText, ['یادم بنداز', 'یادآوری', 'یادآور', 'یادم نره', 'یادآوری کن', 'remind', 'reminder']))
       return this.result('CREATE_REMINDER', entities, time ? 0.97 : 0.9, normalizedText);
     if (this.matches(normalizedText, ['چی بخور', 'چه بخور', 'شام', 'ناهار', 'صبحانه', 'غذا پیشنهاد', 'پیشنهاد غذا', 'غذا چی', 'meal', 'dinner', 'lunch']))
@@ -113,6 +113,25 @@ export class LocalLanguageUnderstandingService {
     if (this.matches(text, ['یوگا', 'yoga'])) return 'yoga';
     if (this.matches(text, ['کالیستنیکس', 'calisthenics', 'bodyweight'])) return 'calisthenics';
     if (this.matches(text, ['بدنسازی', 'باشگاه', 'gym', 'weight training'])) return 'gym';
+    return undefined;
+  }
+  private findFitnessEquipment(text: string): string[] {
+    const aliases: Array<[string, string[]]> = [
+      ['dumbbells', ['دمبل', 'دمبل‌ها', 'دَمبل', 'dumbbell', 'dumbbells']],
+      ['barbell', ['هالتر', 'barbell']],
+      ['resistance_band', ['کش', 'کش مقاومتی', 'کش تمرینی', 'resistance band', 'band']],
+      ['pull_up_bar', ['بارفیکس', 'میله بارفیکس', 'pull up bar', 'pull-up bar']],
+      ['bench', ['نیمکت', 'bench']],
+      ['cable_machine', ['کابل', 'دستگاه کابل', 'cable', 'cable machine']],
+      ['machine', ['دستگاه', 'machine']],
+      ['none', ['بدون تجهیزات', 'بدون وسیله', 'بدون ابزار', 'no equipment', 'bodyweight only']],
+    ];
+    return aliases.filter(([, words]) => this.matches(text, words)).map(([value]) => value);
+  }
+  private findDifficultyLevel(text: string): number | undefined {
+    if (this.matches(text, ['مبتدی', 'beginner', 'beginners'])) return 3;
+    if (this.matches(text, ['متوسط', 'نیمه حرفه ای', 'نیمه حرفه‌ای', 'intermediate'])) return 6;
+    if (this.matches(text, ['پیشرفته', 'حرفه ای', 'حرفه‌ای', 'advanced'])) return 10;
     return undefined;
   }
   private findFood(text: string): string | undefined {
