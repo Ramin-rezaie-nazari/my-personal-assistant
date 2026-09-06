@@ -1,6 +1,6 @@
 # MYPA Autonomous Task Queue
 
-Generated from a source-of-truth audit against `main` on 2026-09-05.
+Updated from the autonomous control-plane audit on 2026-09-06.
 
 ## P0 — Release/Crash blocker
 
@@ -9,16 +9,19 @@ Generated from a source-of-truth audit against `main` on 2026-09-05.
 - Required: root-cause isolation, native lifecycle/thread/resource audit, fix, physical-device retest, regression matrix for all voices.
 - Do not mark voice stable until device evidence is green.
 
+## P0/P1 — Mobile native build gate
+
+### Android SDK 53 dependency resolution
+- Previous run reproduced `expo.core.ExpoModulesPackage` compilation failure under pnpm isolated linking.
+- Repository switched to `node-linker=hoisted` and the Android workflow was aligned to the same Expo prebuild contract.
+- Required: completed Gradle assemble + APK artifact verification on the corrected configuration.
+
 ## P1 — Source-of-truth / architecture drift
 
-### Recommendation Intelligence drift
-`apps/backend/docs/05_CURRENT_STATE.md` describes a wired Recommendation Intelligence / Food Decision Brain, but `main` currently contains a stub `RecommendationEngineService`, stub `PersonalizationService`, an empty Recommendation controller, and `AppModule` does not import `RecommendationIntelligenceModule`.
-
-Required decision:
-1. Either integrate a real implementation through the existing canonical `FoodOperatingLoopService`, or
-2. remove/retire the stale scaffold and update current-state documentation.
-
-Do not duplicate the existing deterministic recipe recommendation logic without a deliberate architecture decision.
+### Recommendation Intelligence
+- The autonomous branch now contains a real Recommendation Intelligence implementation built on the canonical `FoodOperatingLoopService`.
+- Mobile Smart Meals now consumes the authenticated backend recommendation contract instead of maintaining an independent displayed ranking.
+- Remaining: completed CI/runtime/mobile validation and retirement/explicit scoping of any unrelated local meal-intelligence helpers.
 
 ## P1 — Global market integration
 
@@ -33,11 +36,12 @@ Do not duplicate the existing deterministic recipe recommendation logic without 
 - verified recipe corpus
 - provenance/versioning
 - allergens/dietary coverage
+- runtime migration/seed validation
 
 ## P2 — Mobile product
 
 - production auth UX
-- onboarding
+- onboarding persistence + polish
 - home/dashboard
 - nutrition journey
 - recipe/cooking flow
@@ -51,9 +55,12 @@ Do not duplicate the existing deterministic recipe recommendation logic without 
 - accessibility/responsive polish
 - physical-device validation
 
-## P2 — Gender-aware theme
+## P1/P2 — Gender-aware theme
 
-Implement persistent female visual theme after gender selection without forking business logic. Validate both default/male and female flows on physical devices.
+- Reactive provider and default/feminine theme policy are implemented.
+- Home shell now consumes theme context.
+- Focused theme-policy tests exist.
+- Remaining: broaden token adoption across the rest of the mobile UI and validate default/female flows on physical devices.
 
 ## P1 — Production hardening
 
@@ -69,6 +76,7 @@ Implement persistent female visual theme after gender selection without forking 
 - migration discipline
 - deployment runbook
 - cost/fallback policy
+- resolve Jest E2E worker teardown warning
 
 ## P3 — Business / monetization
 
@@ -76,4 +84,4 @@ Implement only after core user journey is strong and release-ready.
 
 ## Agent rule
 
-At each session read `apps/backend/docs/05_CURRENT_STATE.md` first, reconcile it against code, then choose the highest-priority unblocked item. Evidence beats status text.
+At each session read `MYPA_START_HERE.md`, then `apps/backend/docs/05_CURRENT_STATE.md`, reconcile it against code and CI, and choose the highest-priority unblocked item. Evidence beats status text.
