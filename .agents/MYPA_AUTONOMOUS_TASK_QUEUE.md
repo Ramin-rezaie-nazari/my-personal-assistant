@@ -25,10 +25,9 @@ Updated from the autonomous control-plane audit on 2026-09-06.
 
 ## P1 — Global market integration
 
-- Global Market / Price Intelligence work exists on stacked PRs and is not on `main`.
-- PR #48 has documented merge conflicts; PR #49 is mergeable only against its historical feature base.
-- Current autonomous branch diverges substantially from that feature line, so do not force-merge it.
-- Required: selective integration of still-relevant market-source, scheduling, FX and confidence components after dependency and regression review.
+- Global Market / Price Intelligence work exists in the repository and also has a larger stacked historical PR line.
+- PR #48 has documented merge conflicts and the autonomous branch already contains Price Intelligence contracts/components, so do not force-merge the historical branch.
+- Required: compare the active implementation against still-missing market-source, scheduling, FX and confidence capabilities, then selectively port only non-duplicative improvements with regression review.
 
 ## P1 — Data / food intelligence
 
@@ -80,6 +79,16 @@ Updated from the autonomous control-plane audit on 2026-09-06.
 - cost/fallback policy
 - resolve Jest E2E worker teardown warning
 - review refresh-token/session storage and rotation safety
+
+### 2026-09-06 hardening progress
+
+- Added a bounded in-process request rate limiter and globally registered it as an application guard.
+- Added tighter per-IP limits for registration, login and refresh endpoints.
+- Added behavioral unit tests covering auth-route throttling, IP isolation and test-environment bypass.
+- Removed obsolete duplicate top-level health controller/service files.
+- Restored a dedicated public `GET /health` system-health controller/service while keeping authenticated user-health profile routes under the same controller namespace.
+- Added `docs/RELEASE_READINESS.md` with explicit GREEN/YELLOW/RED/PENDING release and Play Store gates.
+- These changes are implementation-level hardening; local typecheck/test and distributed-production validation are still required before marking them green.
 
 ## P3 — Business / monetization
 
