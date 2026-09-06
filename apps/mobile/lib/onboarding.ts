@@ -31,6 +31,7 @@ export type OnboardingState = {
 export const ONBOARDING_STORAGE_KEY = '@my-personal-assistant/onboarding';
 export const ONBOARDING_VERSION = 4;
 const ONBOARDING_REMOTE_SYNC_PENDING_KEY = '@my-personal-assistant/onboarding-sync-pending';
+let remoteSyncInFlight = false;
 
 export const DEFAULT_ONBOARDING: OnboardingState = {
   completed: false,
@@ -110,11 +111,15 @@ export async function setOnboardingState(state: OnboardingState): Promise<void> 
 }
 
 async function retryPendingRemoteSync(state: OnboardingState): Promise<void> {
+  if (remoteSyncInFlight) return;
+  remoteSyncInFlight = true;
   try {
     await persistOnboardingToBackend(state);
     await AsyncStorage.removeItem(ONBOARDING_REMOTE_SYNC_PENDING_KEY);
   } catch {
     // Keep the pending flag for a later retry; do not disrupt foreground UX for transient network errors.
+  } finally {
+    remoteSyncInFlight = false;
   }
 }
 
