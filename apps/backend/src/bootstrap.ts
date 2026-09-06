@@ -6,6 +6,8 @@ import { AppConfigService } from './common/config/app-config/app-config.service'
 export async function createApp() {
   const app = await NestFactory.create(AppModule);
 
+  app.enableShutdownHooks();
+
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
