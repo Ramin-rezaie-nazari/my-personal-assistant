@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { createWorkout } from '../lib/api';
-import { FitnessDiscipline, FitnessExercise, FitnessSession, getFitnessExercise, startFitnessSession } from '../lib/fitness-api';
+import { FitnessDiscipline, FitnessItem, FitnessSession, getFitnessExercise, startFitnessSession } from '../lib/fitness-api';
 import { recordFitnessSession } from '../lib/fitness-progress-api';
 import { useAppLocale } from '../lib/i18n';
 
@@ -13,7 +13,7 @@ const copy = {
 
 export default function FitnessSessionScreen(){
  const locale=useAppLocale(); const text=copy[locale]; const params=useLocalSearchParams<{discipline?:string;level?:string}>(); const discipline=(params.discipline==='calisthenics'?'calisthenics':'gym') as Exclude<FitnessDiscipline,'yoga'>; const level=Math.max(1,Math.min(10,Number(params.level)||5));
- const [session,setSession]=useState<FitnessSession|null>(null); const [index,setIndex]=useState(0); const [remaining,setRemaining]=useState(0); const [busy,setBusy]=useState(true); const [exerciseBusy,setExerciseBusy]=useState(false); const [exercise,setExercise]=useState<FitnessExercise|null>(null); const [error,setError]=useState<string|null>(null); const [finished,setFinished]=useState(false); const [recording,setRecording]=useState(false);
+ const [session,setSession]=useState<FitnessSession|null>(null); const [index,setIndex]=useState(0); const [remaining,setRemaining]=useState(0); const [busy,setBusy]=useState(true); const [exerciseBusy,setExerciseBusy]=useState(false); const [exercise,setExercise]=useState<FitnessItem|null>(null); const [error,setError]=useState<string|null>(null); const [finished,setFinished]=useState(false); const [recording,setRecording]=useState(false);
  useEffect(()=>{void startFitnessSession(discipline,level,25).then(value=>{setSession(value);const first=value.steps[0];setRemaining(first?.holdSec??first?.reps??30);}).catch(err=>setError(err instanceof Error?err.message:text.failed)).finally(()=>setBusy(false));},[discipline,level,text.failed]);
  useEffect(()=>{if(!session||finished)return;const step=session.steps[index];if(!step?.exerciseId){setExercise(null);return;}setExerciseBusy(true);setExercise(null);void getFitnessExercise(discipline,step.exerciseId).then(setExercise).catch(()=>setExercise(null)).finally(()=>setExerciseBusy(false));},[session,index,discipline,finished]);
  useEffect(()=>{if(!session||finished)return;const id=setInterval(()=>setRemaining(value=>Math.max(0,value-1)),1000);return()=>clearInterval(id)},[session,finished,index]);
