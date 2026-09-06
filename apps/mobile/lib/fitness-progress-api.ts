@@ -1,7 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FitnessDiscipline } from './fitness-api';
+import { MOBILE_API_URL } from './api-base';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+const API_URL = MOBILE_API_URL;
 const ACCESS_TOKEN_KEY = 'mpa.accessToken';
 const REFRESH_TOKEN_KEY = 'mpa.refreshToken';
 
