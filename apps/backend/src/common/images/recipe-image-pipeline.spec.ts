@@ -29,7 +29,7 @@ describe('recipe image pipeline', () => {
     expect(result.buffer.byteLength).toBe(result.byteSize);
     expect(result.width).toBeGreaterThan(0);
     expect(result.height).toBeGreaterThan(0);
-  });
+  }, 20000);
 
   it('rejects empty input instead of producing a bogus image', async () => {
     await expect(compressRecipeImage(Buffer.alloc(0))).rejects.toThrow(

@@ -41,6 +41,7 @@ import { YogaModule } from './modules/yoga/yoga.module';
 import { CalisthenicsModule } from './modules/calisthenics/calisthenics.module';
 import { FitnessModule } from './modules/fitness/fitness.module';
 import { ContentModule } from './modules/content/content.module';
+import { RecommendationIntelligenceModule } from './modules/recommendation-intelligence/recommendation-intelligence.module';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { ContentModule } from './modules/content/content.module';
     CalisthenicsModule,
     FitnessModule,
     ContentModule,
+    RecommendationIntelligenceModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -8,14 +8,16 @@ describe('NightlyMarketIntelligenceService', () => {
     );
     expect(
       service.shouldRun(
-        new Date('2026-08-12T03:30:00'),
-        new Date('2026-08-11T03:30:00'),
+        new Date('2026-08-12T03:30:00Z'),
+        new Date('2026-08-11T03:30:00Z'),
+        { timezone: 'UTC' },
       ),
     ).toEqual({ run: true, reason: 'scheduled_window' });
     expect(
       service.shouldRun(
-        new Date('2026-08-13T12:00:00'),
-        new Date('2026-08-11T00:00:00'),
+        new Date('2026-08-13T12:00:00Z'),
+        new Date('2026-08-11T00:00:00Z'),
+        { timezone: 'UTC' },
       ),
     ).toEqual({ run: true, reason: 'catch_up_after_missed_window' });
   });

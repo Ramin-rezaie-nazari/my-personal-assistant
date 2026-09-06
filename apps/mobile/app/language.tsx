@@ -2,32 +2,42 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { AppLocale, getStoredLocale, isRTL, setStoredLocale, t } from '../lib/i18n';
+import { AppLocale, getStoredLocale, isRTL, setStoredLocale, t, useAppLocale } from '../lib/i18n';
 
 function BrandMark() {
   return (
     <View style={styles.brandOuter}>
       <View style={styles.brandGlow} />
-      <View style={styles.brandInner}>
-        <Text style={styles.brandEmoji}>🧠</Text>
-      </View>
+      <View style={styles.brandInner}><Text style={styles.brandEmoji}>🧠</Text></View>
     </View>
   );
 }
 
 export default function LanguageScreen() {
-  const [locale, setLocale] = useState<AppLocale>('en');
+  const storedLocale = useAppLocale();
+  const [locale, setLocale] = useState<AppLocale>(storedLocale);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => { void getStoredLocale().then((stored) => { if (stored) setLocale(stored); setReady(true); }); }, []);
+  useEffect(() => {
+    void getStoredLocale().then((stored) => { if (stored) setLocale(stored); setReady(true); });
+  }, []);
 
-  const choose = async (next: AppLocale) => { setLocale(next); await setStoredLocale(next); };
+  const choose = async (next: AppLocale) => {
+    setLocale(next);
+    await setStoredLocale(next);
+    I18nManager.allowRTL(isRTL(next));
+  };
+
   const continueToApp = async () => {
     setBusy(true);
-    await setStoredLocale(locale);
-    I18nManager.allowRTL(isRTL(locale));
-    router.replace('/auth');
+    try {
+      await setStoredLocale(locale);
+      I18nManager.allowRTL(isRTL(locale));
+      router.replace('/auth');
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!ready) return <View style={styles.loading}><BrandMark /><ActivityIndicator color="#7C3AED" style={styles.loadingSpinner} /></View>;
@@ -40,20 +50,18 @@ export default function LanguageScreen() {
         <Text style={styles.eyebrow}>MY PERSONAL ASSISTANT</Text>
         <Text style={styles.title}>{t(locale, 'languageTitle')}</Text>
         <Text style={styles.subtitle}>{t(locale, 'languageSubtitle')}</Text>
-
         <View style={styles.options}>
           <Pressable onPress={() => void choose('fa')} style={[styles.option, locale === 'fa' && styles.selected]}>
-            <Text style={styles.flag}>🇮🇷</Text><View style={styles.copy}><Text style={styles.optionTitle}>فارسی</Text><Text style={styles.optionSub}>دستیار فارسی</Text></View><Text style={styles.check}>{locale === 'fa' ? '✓' : ''}</Text>
+            <Text style={styles.flag}>🇮🇷</Text><View style={styles.copy}><Text style={styles.optionTitle}>{t(locale, 'persian')}</Text><Text style={styles.optionSub}>دستیار فارسی</Text></View><Text style={styles.check}>{locale === 'fa' ? '✓' : ''}</Text>
           </Pressable>
           <Pressable onPress={() => void choose('en')} style={[styles.option, locale === 'en' && styles.selected]}>
-            <Text style={styles.flag}>🇬🇧</Text><View style={styles.copy}><Text style={styles.optionTitle}>English</Text><Text style={styles.optionSub}>English assistant</Text></View><Text style={styles.check}>{locale === 'en' ? '✓' : ''}</Text>
+            <Text style={styles.flag}>🇬🇧</Text><View style={styles.copy}><Text style={styles.optionTitle}>{t(locale, 'english')}</Text><Text style={styles.optionSub}>English assistant</Text></View><Text style={styles.check}>{locale === 'en' ? '✓' : ''}</Text>
           </Pressable>
         </View>
-
         <Pressable disabled={busy} onPress={() => void continueToApp()} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
-          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t(locale, 'continue')} →</Text>}
+          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t(locale, 'continue')} {rtl ? '←' : '→'}</Text>}
         </Pressable>
-        <Text style={styles.footer}>هوشمند، همراه، همیشه کنارت</Text>
+        <Text style={styles.footer}>{rtl ? 'هوشمند، همراه، همیشه کنارت' : 'Smart, personal, always with you'}</Text>
       </View>
     </SafeAreaView>
   );

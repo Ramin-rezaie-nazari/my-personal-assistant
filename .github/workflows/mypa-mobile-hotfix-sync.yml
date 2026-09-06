@@ -1,0 +1,59 @@
+name: MYPA mobile hotfix sync
+
+on:
+  push:
+    branches: [agent/mypa-autonomous-control-plane]
+    paths: ['.github/workflows/mypa-mobile-hotfix-sync.yml']
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Apply deterministic source fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          def replace(path, pairs):
+              p = Path(path)
+              s = p.read_text(encoding='utf-8')
+              original = s
+              for old, new in pairs:
+                  s = s.replace(old, new)
+              if s != original:
+                  p.write_text(s, encoding='utf-8')
+                  print('updated', path)
+
+          replace('apps/mobile/app/reminders-localized.tsx', [
+              ('<View style={[styles.modalCard,rtl ? styles.rtl : undefinedCard]}>', '<View style={[styles.modalCard, rtl ? styles.rtl : undefined]}>'),
+              ('rtl ? styles.rtl : undefinedCard', 'rtl ? styles.rtl : undefined'),
+          ])
+
+          replace('apps/mobile/lib/local-persian-tts.ts', [
+              ("import { Audio } from 'expo-av';", "import { Audio, type AVPlaybackStatus } from 'expo-av';"),
+              ('const handleStatus = (status) => {', 'const handleStatus = (status: AVPlaybackStatus) => {'),
+          ])
+
+          replace('apps/backend/scripts/fitness-content-import.mjs', [
+              ("  'cc by-sa',", "  'cc by sa',"),
+          ])
+
+          replace('apps/backend/services/fitness-content-import.mjs', [
+              ("  'cc by-sa',", "  'cc by sa',"),
+          ])
+
+      - name: Commit fixes
+        run: |
+          if git diff --quiet; then
+            echo 'No fixes required.'
+            exit 0
+          fi
+          git config user.name 'MYPA Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          git add apps/mobile/app/reminders-localized.tsx apps/mobile/lib/local-persian-tts.ts apps/backend/scripts/fitness-content-import.mjs apps/backend/services/fitness-content-import.mjs || true
+          git commit -m '[skip ci] fix: close remaining mobile and importer type issues'
+          git push origin HEAD:agent/mypa-autonomous-control-plane

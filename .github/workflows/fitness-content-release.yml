@@ -1,0 +1,60 @@
+name: Fitness content release gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      strict:
+        description: 'Fail import if any selected movement cannot reach four approved WebP assets'
+        required: false
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  import-audit-verify:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.MYPA_FITNESS_DATABASE_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Require production database secret
+        run: |
+          test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is not configured; refusing to import into an unknown database.'; exit 2; }
+
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma client
+        working-directory: apps/backend
+        run: pnpm prisma generate
+
+      - name: Import fitness corpus
+        working-directory: apps/backend
+        env:
+          FITNESS_IMPORT_STRICT: ${{ inputs.strict && '1' || '0' }}
+        run: pnpm fitness:content:import
+
+      - name: Audit release corpus
+        working-directory: apps/backend
+        run: pnpm fitness:content:audit
+
+      - name: Verify every approved WebP URL
+        working-directory: apps/backend
+        run: pnpm fitness:content:verify-media

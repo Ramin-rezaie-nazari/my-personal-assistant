@@ -3,46 +3,27 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import { Supplement, SupplementStatus, createSupplement, deleteSupplement, getSupplementStatus, hasAuthSession, takeSupplement } from '../lib/api';
+import { useAppLocale } from '../lib/i18n';
 
-export default function SupplementsScreen() {
-  const [status, setStatus] = useState<SupplementStatus | null>(null);
-  const [name, setName] = useState('');
-  const [dosage, setDosage] = useState('');
-  const [time, setTime] = useState('09:00');
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+const copy={
+  en:{home:'Home',eyebrow:'HEALTH ROUTINE',title:'Supplements',taken:(t:number,total:number,p:number)=>`${t} of ${total} taken today · ${p}% complete`,add:'Add a supplement',name:'Name (e.g. Vitamin D)',dosage:'Dosage (optional)',time:'09:00',addButton:'Add supplement',noDosage:'No dosage',takenLabel:'Taken ✓',take:'Take',delete:'Delete',empty:'Your routine is empty',emptyHint:'Add the supplements you want your assistant to track.',loading:'Loading'},
+  fa:{home:'خانه',eyebrow:'روتین سلامتی',title:'مکمل‌ها',taken:(t:number,total:number,p:number)=>`${t} از ${total} مورد امروز مصرف شده · ${p}% تکمیل`,add:'افزودن مکمل',name:'نام (مثلاً ویتامین D)',dosage:'دوز (اختیاری)',time:'09:00',addButton:'افزودن مکمل',noDosage:'بدون دوز',takenLabel:'مصرف شد ✓',take:'مصرف',delete:'حذف',empty:'روتینت خالی است',emptyHint:'مکمل‌هایی را که می‌خواهی دستیار پیگیری کند اضافه کن.',loading:'در حال بارگذاری'}
+} as const;
 
-  const load = useCallback(async () => {
-    try { setStatus(await getSupplementStatus()); } finally { setLoading(false); setRefreshing(false); }
-  }, []);
-  useEffect(() => { void hasAuthSession().then((ok) => { if (ok) void load(); else setLoading(false); }); }, [load]);
-
-  async function addSupplement() {
-    if (!name.trim()) return;
-    await createSupplement({ name: name.trim(), dosage: dosage.trim() || undefined, scheduledTime: time });
-    setName(''); setDosage(''); setTime('09:00'); await load();
-  }
-  async function take(item: Supplement) { await takeSupplement(item.id); await load(); }
-  async function remove(item: Supplement) { await deleteSupplement(item.id); await load(); }
-
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
-  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}>
-    <Link href="/" asChild><Pressable><Text style={styles.back}>← Home</Text></Pressable></Link>
-    <Text style={styles.eyebrow}>HEALTH ROUTINE</Text><Text style={styles.title}>Supplements</Text>
-    <Text style={styles.subtitle}>{status?.taken ?? 0} of {status?.total ?? 0} taken today · {status?.completionPercent ?? 0}% complete</Text>
-    <View style={styles.card}><Text style={styles.cardTitle}>Add a supplement</Text>
-      <TextInput value={name} onChangeText={setName} placeholder="Name (e.g. Vitamin D)" style={styles.input}/>
-      <TextInput value={dosage} onChangeText={setDosage} placeholder="Dosage (optional)" style={styles.input}/>
-      <TextInput value={time} onChangeText={setTime} placeholder="09:00" style={styles.input}/>
-      <Pressable style={styles.primary} onPress={() => void addSupplement()}><Text style={styles.primaryText}>Add supplement</Text></Pressable>
-    </View>
-    {status?.supplements.map((item) => { const taken = Boolean(item.logs?.length); return <View key={item.id} style={styles.card}>
-      <View style={styles.row}><View style={styles.copy}><Text style={styles.cardTitle}>{item.name}</Text><Text style={styles.muted}>{item.dosage ?? 'No dosage'} · {item.scheduledTime} · {item.frequency}</Text></View>
-        <Pressable style={taken ? styles.done : styles.take} onPress={() => void take(item)} disabled={taken}><Text style={taken ? styles.doneText : styles.takeText}>{taken ? 'Taken ✓' : 'Take'}</Text></Pressable></View>
-      <Pressable onPress={() => void remove(item)}><Text style={styles.delete}>Delete</Text></Pressable>
-    </View>; })}
-    {status?.supplements.length === 0 ? <View style={styles.card}><Text style={styles.cardTitle}>Your routine is empty</Text><Text style={styles.muted}>Add the supplements you want your assistant to track.</Text></View> : null}
-  </ScrollView></SafeAreaView>;
+export default function SupplementsScreen(){
+ const locale=useAppLocale(); const text=copy[locale]; const rtl=locale==='fa';
+ const[status,setStatus]=useState<SupplementStatus|null>(null); const[name,setName]=useState(''); const[dosage,setDosage]=useState(''); const[time,setTime]=useState('09:00'); const[loading,setLoading]=useState(true); const[refreshing,setRefreshing]=useState(false);
+ const load=useCallback(async()=>{try{setStatus(await getSupplementStatus())}finally{setLoading(false);setRefreshing(false)}},[]);
+ useEffect(()=>{void hasAuthSession().then(ok=>{if(ok)void load()})},[load]);
+ async function addSupplement(){if(!name.trim())return;await createSupplement({name:name.trim(),dosage:dosage.trim()||undefined,scheduledTime:time});setName('');setDosage('');setTime('09:00');await load()}
+ async function take(item:Supplement){await takeSupplement(item.id);await load()} async function remove(item:Supplement){await deleteSupplement(item.id);await load()}
+ if(loading)return <View style={styles.center}><ActivityIndicator size="large"/><Text style={styles.loading}>{text.loading}</Text></View>;
+ return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={[styles.content,rtl&&styles.rtl]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{setRefreshing(true);void load()}}/>}>
+  <Link href="/" asChild><Pressable><Text style={styles.back}>{rtl?'→ ':''}{text.home}</Text></Pressable></Link>
+  <Text style={[styles.eyebrow,rtl&&styles.textRtl]}>{text.eyebrow}</Text><Text style={[styles.title,rtl&&styles.textRtl]}>{text.title}</Text><Text style={[styles.subtitle,rtl&&styles.textRtl]}>{text.taken(status?.taken??0,status?.total??0,status?.completionPercent??0)}</Text>
+  <View style={styles.card}><Text style={[styles.cardTitle,rtl&&styles.textRtl]}>{text.add}</Text><TextInput value={name} onChangeText={setName} placeholder={text.name} style={[styles.input,rtl&&styles.textRtl]}/><TextInput value={dosage} onChangeText={setDosage} placeholder={text.dosage} style={[styles.input,rtl&&styles.textRtl]}/><TextInput value={time} onChangeText={setTime} placeholder={text.time} style={[styles.input,rtl&&styles.textRtl]}/><Pressable style={styles.primary} onPress={()=>void addSupplement()}><Text style={styles.primaryText}>{text.addButton}</Text></Pressable></View>
+  {status?.supplements.map(item=>{const taken=Boolean(item.logs?.length);return <View key={item.id} style={styles.card}><View style={[styles.row,rtl&&styles.rtl]}><View style={styles.copy}><Text style={[styles.cardTitle,rtl&&styles.textRtl]}>{item.name}</Text><Text style={[styles.muted,rtl&&styles.textRtl]}>{item.dosage??text.noDosage} · {item.scheduledTime} · {item.frequency}</Text></View><Pressable style={taken?styles.done:styles.take} onPress={()=>void take(item)} disabled={taken}><Text style={taken?styles.doneText:styles.takeText}>{taken?text.takenLabel:text.take}</Text></Pressable></View><Pressable onPress={()=>void remove(item)}><Text style={[styles.delete,rtl&&styles.textRtl]}>{text.delete}</Text></Pressable></View>})}
+  {status?.supplements.length===0?<View style={styles.card}><Text style={[styles.cardTitle,rtl&&styles.textRtl]}>{text.empty}</Text><Text style={[styles.muted,rtl&&styles.textRtl]}>{text.emptyHint}</Text></View>:null}
+ </ScrollView></SafeAreaView>;
 }
-
-const styles = StyleSheet.create({ safe:{flex:1,backgroundColor:'#F7F8FA'}, content:{padding:20,gap:14,paddingBottom:36}, center:{flex:1,justifyContent:'center',alignItems:'center'}, back:{fontWeight:'800',color:'#374151',paddingVertical:8}, eyebrow:{fontSize:11,fontWeight:'800',letterSpacing:1.5,color:'#6B7280',marginTop:6}, title:{fontSize:32,fontWeight:'900',color:'#111827'}, subtitle:{fontSize:14,color:'#6B7280',marginBottom:4}, card:{backgroundColor:'#FFF',borderRadius:20,padding:18,gap:10}, cardTitle:{fontSize:17,fontWeight:'800',color:'#111827'}, muted:{fontSize:12,color:'#6B7280',lineHeight:18}, input:{borderWidth:1,borderColor:'#E5E7EB',borderRadius:12,padding:12,color:'#111827'}, primary:{backgroundColor:'#111827',borderRadius:12,padding:13,alignItems:'center'}, primaryText:{color:'#FFF',fontWeight:'800'}, row:{flexDirection:'row',alignItems:'center',gap:12}, copy:{flex:1}, take:{backgroundColor:'#111827',paddingHorizontal:13,paddingVertical:10,borderRadius:11}, takeText:{color:'#FFF',fontWeight:'800'}, done:{backgroundColor:'#E5E7EB',paddingHorizontal:13,paddingVertical:10,borderRadius:11}, doneText:{color:'#374151',fontWeight:'800'}, delete:{fontSize:11,color:'#9CA3AF',fontWeight:'700'} });
+const styles=StyleSheet.create({safe:{flex:1,backgroundColor:'#F7F8FA'},content:{padding:20,gap:14,paddingBottom:36},center:{flex:1,justifyContent:'center',alignItems:'center'},loading:{marginTop:10,color:'#6B7280'},rtl:{direction:'rtl'},textRtl:{textAlign:'right'},back:{fontWeight:'800',color:'#374151',paddingVertical:8},eyebrow:{fontSize:11,fontWeight:'800',letterSpacing:1.5,color:'#6B7280',marginTop:6},title:{fontSize:32,fontWeight:'900',color:'#111827'},subtitle:{fontSize:14,color:'#6B7280',marginBottom:4},card:{backgroundColor:'#FFF',borderRadius:20,padding:18,gap:10},cardTitle:{fontSize:17,fontWeight:'800',color:'#111827'},muted:{fontSize:12,color:'#6B7280',lineHeight:18},input:{borderWidth:1,borderColor:'#E5E7EB',borderRadius:12,padding:12,color:'#111827'},primary:{backgroundColor:'#111827',borderRadius:12,padding:13,alignItems:'center'},primaryText:{color:'#FFF',fontWeight:'800'},row:{flexDirection:'row',alignItems:'center',gap:12},copy:{flex:1},take:{backgroundColor:'#111827',paddingHorizontal:13,paddingVertical:10,borderRadius:11},takeText:{color:'#FFF',fontWeight:'800'},done:{backgroundColor:'#E5E7EB',paddingHorizontal:13,paddingVertical:10,borderRadius:11},doneText:{color:'#374151',fontWeight:'800'},delete:{fontSize:11,color:'#9CA3AF',fontWeight:'700'}});

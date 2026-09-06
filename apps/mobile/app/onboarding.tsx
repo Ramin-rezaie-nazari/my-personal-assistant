@@ -29,6 +29,8 @@ export default function OnboardingScreen() {
   const fade = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(18)).current;
   const rtl = locale === 'fa';
+  const [, requestCameraPermission] = Camera.useCameraPermissions();
+  const [, requestMicrophonePermission] = Camera.useMicrophonePermissions();
 
   useEffect(() => { void getStoredLocale().then((value) => value && setLocale(value)); }, []);
   useEffect(() => {
@@ -66,11 +68,11 @@ export default function OnboardingScreen() {
         const result = await Notifications.requestPermissionsAsync();
         updatePermission(key, Boolean(result.granted));
       } else if (key === 'camera') {
-        const result = await Camera.requestCameraPermissionsAsync();
-        updatePermission(key, result.status === 'granted');
+        const result = await requestCameraPermission();
+        updatePermission(key, result.granted);
       } else {
-        const result = await Camera.requestMicrophonePermissionsAsync();
-        updatePermission(key, result.status === 'granted');
+        const result = await requestMicrophonePermission();
+        updatePermission(key, result.granted);
       }
     } catch { updatePermission(key, false); }
     finally { setPermissionBusy(null); }
@@ -160,7 +162,7 @@ function getCopy(rtl: boolean, screen: number) {
 }
 
 function WelcomeCard({ rtl }: { rtl: boolean }) {
-  return <View style={styles.welcomeCard}><View style={styles.welcomeHalo} /><View style={styles.welcomeHaloSmall} /><View style={styles.sparkleBox}><MaterialCommunityIcons name="sparkles" size={36} color={BRAND.colors.white} /></View><View style={styles.welcomeCopy}><View style={styles.badge}><Text style={styles.badgeText}>{rtl ? 'کمتر از ۲ دقیقه' : 'UNDER 2 MINUTES'}</Text></View><Text style={[styles.welcomeTitle, rtl && styles.rtl]}>{rtl ? 'هر چیزی که لازم داری، یک‌جا.' : 'Everything useful. In one place.'}</Text><Text style={[styles.welcomeBody, rtl && styles.rtl]}>{rtl ? 'بدون فرم‌های خسته‌کننده. فقط چند انتخاب هوشمند تا دستیارت بفهمد چه چیزی برایت مهم است.' : 'No boring forms. Just a few thoughtful choices so your assistant understands what matters to you.'}</Text></View><View style={styles.featureRow}><FeaturePill icon="food-apple" text={rtl ? 'غذا' : 'Food'} /><FeaturePill icon="dumbbell" text={rtl ? 'تمرین' : 'Training'} /><FeaturePill icon="calendar-check" text={rtl ? 'روزت' : 'Your day'} /></View></View>;
+  return <View style={styles.welcomeCard}><View style={styles.welcomeHalo} /><View style={styles.welcomeHaloSmall} /><View style={styles.sparkleBox}><MaterialCommunityIcons name="assistant" size={36} color={BRAND.colors.white} /></View><View style={styles.welcomeCopy}><View style={styles.badge}><Text style={styles.badgeText}>{rtl ? 'کمتر از ۲ دقیقه' : 'UNDER 2 MINUTES'}</Text></View><Text style={[styles.welcomeTitle, rtl && styles.rtl]}>{rtl ? 'هر چیزی که لازم داری، یک‌جا.' : 'Everything useful. In one place.'}</Text><Text style={[styles.welcomeBody, rtl && styles.rtl]}>{rtl ? 'بدون فرم‌های خسته‌کننده. فقط چند انتخاب هوشمند تا دستیارت بفهمد چه چیزی برایت مهم است.' : 'No boring forms. Just a few thoughtful choices so your assistant understands what matters to you.'}</Text></View><View style={styles.featureRow}><FeaturePill icon="food-apple" text={rtl ? 'غذا' : 'Food'} /><FeaturePill icon="dumbbell" text={rtl ? 'تمرین' : 'Training'} /><FeaturePill icon="calendar-check" text={rtl ? 'روزت' : 'Your day'} /></View></View>;
 }
 function FeaturePill({ icon, text }: { icon: IconName; text: string }) { return <View style={styles.featurePill}><MaterialCommunityIcons name={icon} size={15} color={BRAND.colors.violet} /><Text style={styles.featureText}>{text}</Text></View>; }
 

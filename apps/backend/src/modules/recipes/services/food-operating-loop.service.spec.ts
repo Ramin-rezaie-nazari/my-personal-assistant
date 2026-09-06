@@ -147,4 +147,52 @@ describe('FoodOperatingLoopService', () => {
     expect(result[0].coveragePercent).toBe(100);
     expect(result[0].proteinPerServing).toBe(40);
   });
+
+  it('enforces an explicit missing-ingredient threshold', async () => {
+    prisma.recipe.findMany.mockResolvedValue([
+      {
+        id: 'complete',
+        name: 'Complete Meal',
+        servings: 2,
+        userId: null,
+        verified: true,
+        calories: 600,
+        protein: 50,
+        carbs: 40,
+        fat: 15,
+        ingredients: [{ foodId: 'food-1', quantity: 200, unit: 'g' }],
+      },
+      {
+        id: 'missing',
+        name: 'Missing Meal',
+        servings: 2,
+        userId: null,
+        verified: true,
+        calories: 600,
+        protein: 50,
+        carbs: 40,
+        fat: 15,
+        ingredients: [{ foodId: 'food-2', quantity: 200, unit: 'g' }],
+      },
+    ]);
+    prisma.inventoryItem.findMany.mockResolvedValue([
+      { foodId: 'food-1', quantity: 200, unit: 'g' },
+    ]);
+    prisma.nutritionProfile.findUnique.mockResolvedValue(null);
+    scaling.scale
+      .mockReturnValueOnce({
+        ingredients: [{ ingredientId: 'food-1', scaledQuantity: 200, unit: 'g' }],
+        nutritionForFullBatch: { calories: 600 },
+        nutritionPerServing: { calories: 300, proteinGrams: 25 },
+      })
+      .mockReturnValueOnce({
+        ingredients: [{ ingredientId: 'food-2', scaledQuantity: 200, unit: 'g' }],
+        nutritionForFullBatch: { calories: 600 },
+        nutritionPerServing: { calories: 300, proteinGrams: 25 },
+      });
+
+    const result = await service.recommend('user-1', 2, 'US', undefined, undefined, 0);
+
+    expect(result.map((recipe) => recipe.recipeId)).toEqual(['complete']);
+  });
 });

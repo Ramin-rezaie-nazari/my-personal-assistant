@@ -7,6 +7,7 @@ export type OnboardingState = {
   completed: boolean;
   fullName: string;
   gender: Gender | '';
+  visualTheme: 'default' | 'feminine';
   birthDate: string;
   heightCm: string;
   weightKg: string;
@@ -27,12 +28,13 @@ export type OnboardingState = {
 };
 
 export const ONBOARDING_STORAGE_KEY = '@my-personal-assistant/onboarding';
-export const ONBOARDING_VERSION = 3;
+export const ONBOARDING_VERSION = 4;
 
 export const DEFAULT_ONBOARDING: OnboardingState = {
   completed: false,
   fullName: '',
   gender: '',
+  visualTheme: 'default',
   birthDate: '',
   heightCm: '',
   weightKg: '',
@@ -58,9 +60,12 @@ export async function getOnboardingState(): Promise<OnboardingState> {
   try {
     const parsed = JSON.parse(raw) as Partial<OnboardingState> & { version?: number };
     if (parsed.version !== ONBOARDING_VERSION) return DEFAULT_ONBOARDING;
+    const gender = parsed.gender ?? DEFAULT_ONBOARDING.gender;
     return {
       ...DEFAULT_ONBOARDING,
       ...parsed,
+      gender,
+      visualTheme: gender === 'female' ? 'feminine' : 'default',
       permissions: {
         ...DEFAULT_ONBOARDING.permissions,
         ...(parsed.permissions ?? {}),
@@ -72,9 +77,13 @@ export async function getOnboardingState(): Promise<OnboardingState> {
 }
 
 export async function setOnboardingState(state: OnboardingState): Promise<void> {
+  const normalizedState: OnboardingState = {
+    ...state,
+    visualTheme: state.gender === 'female' ? 'feminine' : 'default',
+  };
   await AsyncStorage.setItem(
     ONBOARDING_STORAGE_KEY,
-    JSON.stringify({ ...state, version: ONBOARDING_VERSION }),
+    JSON.stringify({ ...normalizedState, version: ONBOARDING_VERSION }),
   );
 }
 

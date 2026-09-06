@@ -3,44 +3,30 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import { Habit, HabitSummary, createHabit, deleteHabit, getHabitSummary, getHabits, completeHabit, hasAuthSession } from '../lib/api';
+import { useAppLocale } from '../lib/i18n';
+
+const copy = {
+  en: { home:'Home', eyebrow:'HABITS', title:'Build your rhythm', subtitle:'Small actions become easier when your assistant remembers the streak.', completion:'7-DAY COMPLETION', completions:'completions across', active:'active habits', placeholder:'Add a daily habit', add:'Add habit', done:'Done', deleting:'Deleting…', remove:'Remove habit', empty:'No habits yet', emptyHint:'Start with one small thing you can repeat every day.', load:'Unable to load habits', create:'Unable to create habit', complete:'Unable to complete habit', del:'Unable to delete habit' },
+  fa: { home:'خانه', eyebrow:'عادت‌ها', title:'ریتم خودت را بساز', subtitle:'وقتی دستیار روندت را به خاطر بسپارد، کارهای کوچک راحت‌تر تکرار می‌شوند.', completion:'عملکرد ۷ روزه', completions:'انجام در', active:'عادت فعال', placeholder:'یک عادت روزانه اضافه کن', add:'افزودن عادت', done:'انجام شد', deleting:'در حال حذف…', remove:'حذف عادت', empty:'هنوز عادتی نداری', emptyHint:'با یک کار کوچک شروع کن که بتوانی هر روز تکرارش کنی.', load:'بارگذاری عادت‌ها ناموفق بود', create:'ساخت عادت ناموفق بود', complete:'ثبت عادت ناموفق بود', del:'حذف عادت ناموفق بود' },
+};
 
 export default function HabitsScreen() {
-  const [habits, setHabits] = useState<Habit[]>([]);
-  const [summary, setSummary] = useState<HabitSummary | null>(null);
-  const [name, setName] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    try { setError(null); const [items, week] = await Promise.all([getHabits(), getHabitSummary()]); setHabits(items); setSummary(week); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Unable to load habits'); }
-    finally { setLoading(false); setRefreshing(false); }
-  }, []);
-
-  useEffect(() => { void hasAuthSession().then((ok) => ok ? load() : setLoading(false)); }, [load]);
-
-  const add = async () => {
-    if (!name.trim()) return;
-    try { setBusy('add'); await createHabit({ name: name.trim(), frequency: 'daily', targetPerWeek: 7 }); setName(''); await load(); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Unable to create habit'); }
-    finally { setBusy(null); }
-  };
-
-  const complete = async (id: string) => { try { setBusy(id); await completeHabit(id); await load(); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to complete habit'); } finally { setBusy(null); } };
-  const remove = async (id: string) => { try { setBusy(`delete-${id}`); await deleteHabit(id); await load(); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to delete habit'); } finally { setBusy(null); } };
-
-  if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
-  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}>
-    <Link href="/" asChild><Pressable style={styles.back}><Text style={styles.backText}>← Home</Text></Pressable></Link>
-    <Text style={styles.eyebrow}>HABITS</Text><Text style={styles.title}>Build your rhythm</Text><Text style={styles.subtitle}>Small actions become easier when your assistant remembers the streak.</Text>
-    {summary ? <View style={styles.hero}><Text style={styles.heroLabel}>7-DAY COMPLETION</Text><Text style={styles.heroValue}>{summary.completionPercent}%</Text><Text style={styles.heroHint}>{summary.completedCount} completions across {summary.activeHabits} active habits</Text></View> : null}
-    <View style={styles.addCard}><TextInput value={name} onChangeText={setName} placeholder="Add a daily habit" placeholderTextColor="#9CA3AF" style={styles.input}/><Pressable disabled={busy === 'add'} onPress={() => void add()} style={styles.addButton}><Text style={styles.addText}>{busy === 'add' ? '…' : 'Add habit'}</Text></Pressable></View>
-    {error ? <View style={styles.error}><Text style={styles.errorText}>{error}</Text></View> : null}
-    {habits.map((habit) => <View key={habit.id} style={styles.card}><View style={styles.row}><View style={styles.copy}><Text style={styles.name}>{habit.name}</Text><Text style={styles.meta}>{habit.stats.streak} day streak · {habit.stats.recentCompletions} recent completions</Text></View><Pressable disabled={busy === habit.id} onPress={() => void complete(habit.id)} style={styles.done}><Text style={styles.doneText}>{busy === habit.id ? '…' : 'Done'}</Text></Pressable></View><Pressable disabled={busy === `delete-${habit.id}`} onPress={() => void remove(habit.id)}><Text style={styles.delete}>{busy === `delete-${habit.id}` ? 'Deleting…' : 'Remove habit'}</Text></Pressable></View>)}
-    {!habits.length ? <View style={styles.card}><Text style={styles.name}>No habits yet</Text><Text style={styles.meta}>Start with one small thing you can repeat every day.</Text></View> : null}
+  const locale = useAppLocale(); const text = copy[locale]; const rtl = locale === 'fa';
+  const [habits,setHabits]=useState<Habit[]>([]); const [summary,setSummary]=useState<HabitSummary|null>(null); const [name,setName]=useState(''); const [loading,setLoading]=useState(true); const [refreshing,setRefreshing]=useState(false); const [busy,setBusy]=useState<string|null>(null); const [error,setError]=useState<string|null>(null);
+  const load=useCallback(async()=>{try{setError(null);const[items,week]=await Promise.all([getHabits(),getHabitSummary()]);setHabits(items);setSummary(week);}catch(err){setError(err instanceof Error?err.message:text.load)}finally{setLoading(false);setRefreshing(false);}},[text.load]);
+  useEffect(()=>{void hasAuthSession().then(ok=>ok?void load():setLoading(false));},[load]);
+  const add=async()=>{if(!name.trim())return;try{setBusy('add');await createHabit({name:name.trim(),frequency:'daily',targetPerWeek:7});setName('');await load();}catch(err){setError(err instanceof Error?err.message:text.create)}finally{setBusy(null);}};
+  const complete=async(id:string)=>{try{setBusy(id);await completeHabit(id);await load();}catch(err){setError(err instanceof Error?err.message:text.complete)}finally{setBusy(null);}};
+  const remove=async(id:string)=>{try{setBusy(`delete-${id}`);await deleteHabit(id);await load();}catch(err){setError(err instanceof Error?err.message:text.del)}finally{setBusy(null);}};
+  if(loading)return <View style={styles.center}><ActivityIndicator size="large" accessibilityLabel={locale==='fa'?'در حال بارگذاری':'Loading'} /></View>;
+  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={[styles.content,rtl&&styles.rtl]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{setRefreshing(true);void load();}} />}>
+    <Link href="/" asChild><Pressable style={styles.back}><Text style={styles.backText}>{rtl?'→':'←'} {text.home}</Text></Pressable></Link>
+    <Text style={[styles.eyebrow,rtl&&styles.textRtl]}>{text.eyebrow}</Text><Text style={[styles.title,rtl&&styles.textRtl]}>{text.title}</Text><Text style={[styles.subtitle,rtl&&styles.textRtl]}>{text.subtitle}</Text>
+    {summary?<View style={styles.hero}><Text style={[styles.heroLabel,rtl&&styles.textRtl]}>{text.completion}</Text><Text style={[styles.heroValue,rtl&&styles.textRtl]}>{summary.completionPercent}%</Text><Text style={[styles.heroHint,rtl&&styles.textRtl]}>{summary.completedCount} {text.completions} {summary.activeHabits} {text.active}</Text></View>:null}
+    <View style={[styles.addCard,rtl&&styles.rtl]}><TextInput value={name} onChangeText={setName} placeholder={text.placeholder} placeholderTextColor="#9CA3AF" style={[styles.input,rtl&&styles.textRtl]}/><Pressable disabled={busy==='add'} onPress={()=>void add()} style={styles.addButton}><Text style={styles.addText}>{busy==='add'?'…':text.add}</Text></Pressable></View>
+    {error?<View style={styles.error}><Text style={[styles.errorText,rtl&&styles.textRtl]}>{error}</Text></View>:null}
+    {habits.map(habit=><View key={habit.id} style={styles.card}><View style={[styles.row,rtl&&styles.rtl]}><View style={styles.copyBlock}><Text style={[styles.name,rtl&&styles.textRtl]}>{habit.name}</Text><Text style={[styles.meta,rtl&&styles.textRtl]}>{locale==='fa'?`${habit.stats.streak} روز پشت‌سرهم · ${habit.stats.recentCompletions} ثبت اخیر`:`${habit.stats.streak} day streak · ${habit.stats.recentCompletions} recent completions`}</Text></View><Pressable disabled={busy===habit.id} onPress={()=>void complete(habit.id)} style={styles.done}><Text style={styles.doneText}>{busy===habit.id?'…':text.done}</Text></Pressable></View><Pressable disabled={busy===`delete-${habit.id}`} onPress={()=>void remove(habit.id)}><Text style={[styles.delete,rtl&&styles.textRtl]}>{busy===`delete-${habit.id}`?text.deleting:text.remove}</Text></Pressable></View>)}
+    {!habits.length?<View style={styles.card}><Text style={[styles.name,rtl&&styles.textRtl]}>{text.empty}</Text><Text style={[styles.meta,rtl&&styles.textRtl]}>{text.emptyHint}</Text></View>:null}
   </ScrollView></SafeAreaView>;
 }
-
-const styles = StyleSheet.create({ safe:{flex:1,backgroundColor:'#F7F8FA'}, content:{padding:20,gap:14,paddingBottom:34}, center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#F7F8FA'}, back:{alignSelf:'flex-start',paddingVertical:8}, backText:{fontWeight:'800',color:'#374151'}, eyebrow:{fontSize:11,fontWeight:'800',letterSpacing:1.5,color:'#6B7280'}, title:{fontSize:31,fontWeight:'900',color:'#111827'}, subtitle:{fontSize:14,color:'#6B7280',lineHeight:20}, hero:{backgroundColor:'#111827',borderRadius:24,padding:20}, heroLabel:{color:'#9CA3AF',fontSize:11,fontWeight:'800',letterSpacing:1.3}, heroValue:{fontSize:40,fontWeight:'900',color:'#FFFFFF',marginTop:5}, heroHint:{color:'#D1D5DB',fontSize:12,marginTop:4}, addCard:{backgroundColor:'#FFFFFF',borderRadius:20,padding:14,flexDirection:'row',gap:10}, input:{flex:1,minHeight:48,borderWidth:1,borderColor:'#E5E7EB',borderRadius:12,paddingHorizontal:14,color:'#111827'}, addButton:{backgroundColor:'#111827',borderRadius:12,paddingHorizontal:16,justifyContent:'center'}, addText:{color:'#FFFFFF',fontWeight:'800'}, card:{backgroundColor:'#FFFFFF',borderRadius:20,padding:18}, row:{flexDirection:'row',alignItems:'center',gap:12}, copy:{flex:1}, name:{fontSize:17,fontWeight:'800',color:'#111827'}, meta:{fontSize:12,color:'#6B7280',marginTop:5}, done:{backgroundColor:'#E5E7EB',borderRadius:12,paddingHorizontal:14,paddingVertical:10}, doneText:{fontWeight:'800',color:'#111827'}, delete:{fontSize:11,color:'#B91C1C',fontWeight:'700',marginTop:14}, error:{backgroundColor:'#FEF2F2',borderRadius:14,padding:12}, errorText:{color:'#991B1B',fontSize:12,fontWeight:'700'} });
+const styles=StyleSheet.create({safe:{flex:1,backgroundColor:'#F7F8FA'},content:{padding:20,gap:14,paddingBottom:34},center:{flex:1,alignItems:'center',justifyContent:'center',backgroundColor:'#F7F8FA'},rtl:{direction:'rtl'},textRtl:{textAlign:'right'},back:{alignSelf:'flex-start',paddingVertical:8},backText:{fontWeight:'800',color:'#374151'},eyebrow:{fontSize:11,fontWeight:'800',letterSpacing:1.5,color:'#6B7280'},title:{fontSize:31,fontWeight:'900',color:'#111827'},subtitle:{fontSize:14,color:'#6B7280',lineHeight:20},hero:{backgroundColor:'#111827',borderRadius:24,padding:20},heroLabel:{color:'#9CA3AF',fontSize:11,fontWeight:'800',letterSpacing:1.3},heroValue:{fontSize:40,fontWeight:'900',color:'#FFFFFF',marginTop:5},heroHint:{color:'#D1D5DB',fontSize:12,marginTop:4},addCard:{backgroundColor:'#FFFFFF',borderRadius:20,padding:14,flexDirection:'row',gap:10},input:{flex:1,minHeight:48,borderWidth:1,borderColor:'#E5E7EB',borderRadius:12,paddingHorizontal:14,color:'#111827'},addButton:{backgroundColor:'#111827',borderRadius:12,paddingHorizontal:16,justifyContent:'center'},addText:{color:'#FFFFFF',fontWeight:'800'},card:{backgroundColor:'#FFFFFF',borderRadius:20,padding:18},row:{flexDirection:'row',alignItems:'center',gap:12},copyBlock:{flex:1},name:{fontSize:17,fontWeight:'800',color:'#111827'},meta:{fontSize:12,color:'#6B7280',marginTop:5},done:{backgroundColor:'#E5E7EB',borderRadius:12,paddingHorizontal:14,paddingVertical:10},doneText:{fontWeight:'800',color:'#111827'},delete:{fontSize:11,color:'#B91C1C',fontWeight:'700',marginTop:14},error:{backgroundColor:'#FEF2F2',borderRadius:14,padding:12},errorText:{color:'#991B1B',fontSize:12,fontWeight:'700'}});

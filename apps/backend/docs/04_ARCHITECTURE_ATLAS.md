@@ -1714,3 +1714,25 @@ It is:
 ## Living status note — 2026-08-13
 
 This atlas reflects the repository state and the architecture work completed so far. It intentionally distinguishes current implementations from future device/provider hardening. Percentages and roadmap estimates belong in the chat progress reports, not in this file, because they are implementation estimates rather than architectural facts.
+
+## 2026-09-05 — Autonomous completion ledger
+
+This batch extended the atlas with the concrete fitness/content architecture now present in the repository.
+
+### Completed engineering work
+
+- Added persistent `FitnessExerciseCatalog`, `FitnessExerciseMedia`, and `FitnessDisciplineProgress` migration tables with explicit provenance, licensing, publishing state, parent/variant relationships, and media positions.
+- Changed `FitnessCatalogService` to read the persistent published catalog first, enforce difficulty ceilings, expose ten progression levels, pagination/search, and the four-approved-WebP release contract, while retaining a safe fallback catalog path.
+- Added authenticated fitness progression persistence and session recording with bounded level promotion rules.
+- Added mobile Gym / Calisthenics / Yoga catalog UX, ten-level selection, current-level recommendation, search/pagination, session completion, media completeness and attribution.
+- Added the fitness importer, audit gate, WebP media verifier and content policy. The importer deliberately does not check raw third-party datasets into the public repository.
+- Added regression coverage for fitness catalog behavior and recipe-library ownership-aware pagination behavior.
+- Repaired the mobile voice/TTS type contract, language routing, Expo speech/location dependency synchronization path, and legacy camera/reminder compatibility issues through a one-time dependency-sync workflow.
+
+### Architectural safety boundaries
+
+- Fitness content is persistent-first; fallback content is not treated as production-complete corpus evidence.
+- A movement is publishable only when its content record and four distinct approved WebP assets satisfy the release gate.
+- User fitness progression is isolated per authenticated user and discipline.
+- Third-party content licensing is represented as data and release policy rather than assumed.
+- Production database changes are never forced against an unverified schema.
