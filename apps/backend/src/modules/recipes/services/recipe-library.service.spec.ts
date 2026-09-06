@@ -18,7 +18,7 @@ describe('RecipeLibraryService', () => {
       total: 42,
       page: 2,
       pageSize: 24,
-      hasNextPage: true,
+      hasNextPage: false,
     });
     expect(prisma.$transaction).toHaveBeenCalledTimes(1);
     expect(prisma.recipe.findMany).toHaveBeenCalledWith(expect.objectContaining({ skip: 24, take: 24 }));
