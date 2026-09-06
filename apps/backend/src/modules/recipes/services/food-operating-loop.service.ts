@@ -85,9 +85,18 @@ export class FoodOperatingLoopService {
     const inventoryByFood = new Map(inventory.map((item) => [item.foodId, item as InventoryRecord]));
     const calorieLimit = maxCalories ?? (nutritionProfile?.dailyCaloriesGoal ? Math.round(nutritionProfile.dailyCaloriesGoal * 0.45) : undefined);
     const proteinFloor = minProteinGrams ?? (nutritionProfile?.proteinGoalGrams ? nutritionProfile.proteinGoalGrams * 0.30 : undefined);
-    const ranked = this.countryFood.rankRecipesForCountry(countryCode, recipes as Array<{ name: string; cuisineFamily?: string | null }>);
+    const countryCandidates = this.countryFood.filterRecipesForCountry(
+      countryCode,
+      recipes as Array<{ name: string; cuisineFamily?: string | null }>,
+    );
+    const countryCandidateIds = new Set(countryCandidates.map((recipe) => recipe.name));
+    const relevantRecipes = recipes.filter((recipe) => countryCandidateIds.has(recipe.name));
+    const ranked = this.countryFood.rankRecipesForCountry(
+      countryCode,
+      relevantRecipes as Array<{ name: string; cuisineFamily?: string | null }>,
+    );
     const rankIndex = new Map(ranked.map((recipe, index) => [recipe.name, index]));
-    return recipes
+    return relevantRecipes
       .map((recipe) => {
         const scaled = this.buildScaledRecipe(recipe, targetServings);
         const { missing } = this.matchScaledIngredients(recipe.ingredients, scaled.ingredients, inventoryByFood);
@@ -95,7 +104,7 @@ export class FoodOperatingLoopService {
         const calories = scaled.nutritionForFullBatch.calories / targetServings;
         const protein = scaled.nutritionPerServing.proteinGrams;
         const nutritionScore = (calorieLimit && calories <= calorieLimit ? 15 : 0) + (proteinFloor && protein >= proteinFloor ? 15 : 0);
-        const score = Math.min(100, coveragePercent + nutritionScore + Math.max(0, 20 - (rankIndex.get(recipe.name) ?? recipes.length)));
+        const score = Math.min(100, coveragePercent + nutritionScore + Math.max(0, 20 - (rankIndex.get(recipe.name) ?? relevantRecipes.length)));
         return { recipeId: recipe.id, name: recipe.name, score, coveragePercent, missingCount: missing.length, caloriesPerServing: Number(calories.toFixed(1)), proteinPerServing: Number(protein.toFixed(1)), targetServings, missingIngredients: missing };
       })
       .filter((recipe) =>
