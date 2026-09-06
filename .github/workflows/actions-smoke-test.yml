@@ -1,0 +1,18 @@
+name: MYPA Actions Smoke Test
+
+on:
+  push:
+    branches:
+      - agent/mypa-autonomous-control-plane
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Actions is alive
+        run: |
+          echo "GitHub Actions runner started successfully."
+          echo "MYPA_ACTIONS_SMOKE=GREEN"
+      - name: Basic shell check
+        run: test "$(printf 'mypa')" = "mypa"
