@@ -19,8 +19,19 @@ export class SessionService {
     return this.prisma.session.findFirst({
       where: {
         refreshToken,
+        expiresAt: { gt: new Date() },
       },
     });
+  }
+
+  async consumeRefreshToken(refreshToken: string): Promise<number> {
+    const result = await this.prisma.session.deleteMany({
+      where: {
+        refreshToken,
+        expiresAt: { gt: new Date() },
+      },
+    });
+    return result.count;
   }
 
   async deleteByRefreshToken(refreshToken: string) {
