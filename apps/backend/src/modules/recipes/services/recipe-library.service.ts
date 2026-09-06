@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
+import { PublicRecipeCatalogService } from './public-recipe-catalog.service';
 
 @Injectable()
 export class RecipeLibraryService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly publicCatalog: PublicRecipeCatalogService,
+  ) {}
 
   async list(userId: string, input: {
     page?: number;
@@ -44,7 +48,16 @@ export class RecipeLibraryService {
       }),
       this.prisma.recipe.count({ where }),
     ]);
-    return { items, total, page, pageSize, hasNextPage: page * pageSize < total };
+
+    if (total > 0 || input.verified === false) {
+      return { items, total, page, pageSize, hasNextPage: page * pageSize < total };
+    }
+
+    try {
+      return await this.publicCatalog.list({ page, pageSize, q });
+    } catch {
+      return { items, total, page, pageSize, hasNextPage: page * pageSize < total };
+    }
   }
 }
 
