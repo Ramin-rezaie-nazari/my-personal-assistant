@@ -13,7 +13,7 @@ const REQUIRED_PROCESS = 3;
 const REQUIRED_TOTAL = 4;
 const MAX_RECIPES = Number.isFinite(Number(process.env.RECIPE_STAGE_MAX)) && Number(process.env.RECIPE_STAGE_MAX) > 0 ? Math.floor(Number(process.env.RECIPE_STAGE_MAX)) : null;
 const CONCURRENCY = Math.min(4, Math.max(1, Number(process.env.RECIPE_STAGE_CONCURRENCY ?? 2)));
-const USER_AGENT = 'MYPA-recipe-stage-mirror/3.0';
+const USER_AGENT = 'MYPA-recipe-stage-mirror/3.1';
 const clean = (value = '') => String(value).replace(/<[^>]*>/g, ' ').replace(/&nbsp;/gi, ' ').replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/\s+/g, ' ').trim();
 const slug = (value) => clean(value).toLowerCase().normalize('NFKD').replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || createHash('sha1').update(clean(value)).digest('hex').slice(0, 12);
 const hash = (buffer) => createHash('sha256').update(buffer).digest('hex');
@@ -51,7 +51,8 @@ async function parsePage(title) {
 }
 function methodHtml(html = '') {
   const normalized = String(html);
-  const heading = normalized.match(/<h[2-6][^>]*>\s*(?:<span[^>]*>[^<]*<\/span>\s*)?Method\s*<\/h[2-6]>/i);
+  const heading = normalized.match(/<h[2-6][^>]*>[\s\S]*?<span[^>]*>\s*Method\s*<\/span>[\s\S]*?<\/h[2-6]>/i)
+    ?? normalized.match(/<h[2-6][^>]*>\s*Method\s*<\/h[2-6]>/i);
   if (!heading || heading.index == null) return '';
   const start = heading.index;
   const tail = normalized.slice(start + heading[0].length);
@@ -61,7 +62,7 @@ function methodHtml(html = '') {
 function methodImageRefs(html = '') {
   const refs = [];
   const seen = new Set();
-  const anchorPattern = /<a\s+[^>]*href=["']\/wiki\/(?:File|Image):([^"'#]+)[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
+  const anchorPattern = /<a\s+[^>]*href=["']\/wiki\/(?:File|Image)(?::|%3A)([^"'#]+)[^"']*["'][^>]*>([\s\S]*?)<\/a>/gi;
   for (const match of String(html).matchAll(anchorPattern)) {
     const file = decodeURIComponent(clean(match[1]).replace(/_/g, ' '));
     if (!file || seen.has(file)) continue;
