@@ -1736,3 +1736,7 @@ This batch extended the atlas with the concrete fitness/content architecture now
 - User fitness progression is isolated per authenticated user and discipline.
 - Third-party content licensing is represented as data and release policy rather than assumed.
 - Production database changes are never forced against an unverified schema.
+
+## 2026-09-05 — Local-first development policy
+
+The active development source of truth is the repository plus the developer's local Mac PostgreSQL database. Supabase is intentionally not part of the development completion path. The future production database/infrastructure will be provisioned separately on the release VPS.

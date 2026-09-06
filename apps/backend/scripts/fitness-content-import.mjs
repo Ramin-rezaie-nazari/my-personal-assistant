@@ -15,7 +15,7 @@ const COMMONS_API = 'https://commons.wikimedia.org/w/api.php';
 const ALLOWED_LICENSES = [
   'cc0',
   'cc by',
-  'cc by-sa',
+  'cc by sa',
   'public domain',
   'pd',
   'pdm',

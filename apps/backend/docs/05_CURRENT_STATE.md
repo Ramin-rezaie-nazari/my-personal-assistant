@@ -324,3 +324,7 @@ The branch has live CI runs after the latest mobile/TTS changes; green CI is onl
 - Execute the real fitness corpus import and pass `fitness:content:audit` and `fitness:content:verify-media`.
 - Complete mobile CI/device validation, especially native voice/TTS behavior.
 - Continue broader production hardening and real-device QA.
+
+## 2026-09-05 — Local-first development policy
+
+Supabase is explicitly out of the development path for this project phase. All Prisma migrations, catalog imports, corpus audits, media verification, backend runtime checks, and database-backed feature validation should target the local PostgreSQL stack on the developer Mac. Production database setup is a later VPS deployment concern.
