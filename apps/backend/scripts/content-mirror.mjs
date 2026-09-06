@@ -52,11 +52,15 @@ async function fetchBuffer(url, attempts = RETRIES) {
   }
   throw last;
 }
-async function fetchJson(url) {
-  const buffer = await fetchBuffer(url);
-  return JSON.parse(buffer.toString('utf8'));
-}
+async function fetchJson(url) { return JSON.parse((await fetchBuffer(url)).toString('utf8')); }
 async function exists(file) { try { await access(file); return true; } catch { return false; } }
+async function isLocallyComplete(previous) {
+  if (!previous || previous.completeness !== 'complete' || !Array.isArray(previous.media) || previous.media.length < REQUIRED) return false;
+  const ready = previous.media.slice(0, REQUIRED).filter((m) => m.status === 'ready' && m.localPath);
+  if (ready.length < REQUIRED) return false;
+  for (const media of ready) if (!(await exists(path.join(ROOT, media.localPath)))) return false;
+  return true;
+}
 async function atomicWrite(file, value) {
   await mkdir(path.dirname(file), { recursive: true });
   const tmp = `${file}.tmp-${process.pid}`;
@@ -118,7 +122,8 @@ function parseFitness(record) {
   const equipment = clean(record.equipment || '').toLowerCase();
   const images = Array.isArray(record.images) ? record.images : [];
   const bodyweight = !equipment || /none|body only|bodyweight/.test(equipment);
-  const textValue = `${record.name || ''} ${record.category || ''} ${record.primaryMuscles || ''}`.toLowerCase();
+  const primary = Array.isArray(record.primaryMuscles) ? record.primaryMuscles.join(' ') : clean(record.primaryMuscles || '');
+  const textValue = `${record.name || ''} ${record.category || ''} ${primary}`.toLowerCase();
   const discipline = /yoga|asana|pose|warrior|triangle|tree|cobra|pigeon|downward|upward/.test(textValue) ? 'yoga' : bodyweight ? 'calisthenics' : 'gym';
   return { name: clean(record.name), slug: slug(record.name), discipline, sourceId: clean(record.id), sourceProvider: 'Free Exercise DB', license: 'Public Domain / Unlicense', images: images.map((item, index) => ({ url: `${FITNESS_IMAGE_ROOT}${item}`, sourceUrl: `https://github.com/yuhonas/free-exercise-db/blob/main/dist/exercises/${item}`, license: 'Public Domain / Unlicense', provider: 'Free Exercise DB', attribution: 'Yuhonas / Free Exercise DB', position: index + 1 })) };
 }
@@ -126,14 +131,15 @@ async function convertToWebp(input, destination) {
   const output = await sharp(input, { failOn: 'none' }).rotate().resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true }).webp({ quality: 84, effort: 5 }).toBuffer();
   if (output.length > 64 * 1024) {
     const smaller = await sharp(input, { failOn: 'none' }).rotate().resize({ width: 900, height: 900, fit: 'inside', withoutEnlargement: true }).webp({ quality: 72, effort: 5 }).toBuffer();
-    await writeFile(destination, smaller.length < output.length ? smaller : output);
-    return Math.min(smaller.length, output.length);
+    const selected = smaller.length < output.length ? smaller : output;
+    await writeFile(destination, selected);
+    return selected.length;
   }
   await writeFile(destination, output);
   return output.length;
 }
-async function mirrorItem(item, kind, mediaCandidates) {
-  const itemRoot = path.join(MEDIA_ROOT, kind, ...(kind === 'fitness' ? [item.discipline] : []), item.slug);
+async function mirrorItem(item, directoryKind, mediaCandidates) {
+  const itemRoot = path.join(MEDIA_ROOT, directoryKind, ...(directoryKind === 'fitness' ? [item.discipline] : []), item.slug);
   await mkdir(itemRoot, { recursive: true });
   const media = [];
   const seen = new Set();
@@ -145,7 +151,7 @@ async function mirrorItem(item, kind, mediaCandidates) {
       const hash = sha256(bytes);
       const file = path.join(itemRoot, `${String(media.length + 1).padStart(2, '0')}-${hash.slice(0, 12)}.webp`);
       const bytesWritten = await convertToWebp(bytes, file);
-      media.push({ position: media.length + 1, localPath: path.relative(ROOT, file).split(path.sep).join('/'), sourceUrl: candidate.sourceUrl, downloadUrl: candidate.url, sha256: hash, sizeBytes: bytesWritten, format: 'webp', license: candidate.license, provider: candidate.provider, attribution: candidate.attribution, status: 'ready' });
+      media.push({ position: media.length + 1, localPath: path.relative(ROOT, file).split(path.sep).join('/'), objectKey: path.relative(MEDIA_ROOT, file).split(path.sep).join('/'), sourceUrl: candidate.sourceUrl, downloadUrl: candidate.url, sha256: hash, sizeBytes: bytesWritten, format: 'webp', license: candidate.license, provider: candidate.provider, attribution: candidate.attribution, status: 'ready' });
     } catch (error) {
       media.push({ position: media.length + 1, sourceUrl: candidate.sourceUrl, downloadUrl: candidate.url, license: candidate.license, provider: candidate.provider, attribution: candidate.attribution, status: 'failed', error: error instanceof Error ? error.message : String(error) });
     }
@@ -163,8 +169,7 @@ async function runRecipes(manifest) {
       const parsed = parseRecipe(row);
       if (!parsed.title || parsed.title === 'Untitled Recipe' || parsed.ingredients === 0 || parsed.steps === 0) continue;
       const key = `recipe:${slug(parsed.title)}`;
-      const previous = manifest.items[key];
-      if (previous?.completeness === 'complete' && previous.media?.every((m) => m.status === 'ready' && m.localPath && await exists(path.join(ROOT, m.localPath)))) continue;
+      if (await isLocallyComplete(manifest.items[key])) continue;
       try {
         const candidates = await recipeMedia(parsed.sourceUrl, parsed.title);
         manifest.items[key] = await mirrorItem({ kind: 'recipe', name: parsed.title, slug: slug(parsed.title), sourceUrl: parsed.sourceUrl, ingredientCount: parsed.ingredients, stepCount: parsed.steps }, 'recipes', candidates);
@@ -185,8 +190,7 @@ async function runFitness(manifest) {
     while (cursor < rows.length) {
       const item = rows[cursor++];
       const key = `fitness:${item.discipline}:${item.slug}`;
-      const previous = manifest.items[key];
-      if (previous?.completeness === 'complete' && previous.media?.every((m) => m.status === 'ready' && m.localPath && await exists(path.join(ROOT, m.localPath)))) continue;
+      if (await isLocallyComplete(manifest.items[key])) continue;
       try {
         let candidates = [...item.images];
         if (candidates.length < REQUIRED) {
@@ -214,9 +218,7 @@ function summarize(manifest) {
 async function main() {
   await mkdir(MEDIA_ROOT, { recursive: true });
   let manifest = { schemaVersion: 1, generatedAt: null, root: ROOT, requiredMediaPerItem: REQUIRED, items: {} };
-  if (await exists(MANIFEST_PATH)) {
-    try { manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8')); } catch { await rm(MANIFEST_PATH, { force: true }); }
-  }
+  if (await exists(MANIFEST_PATH)) { try { manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8')); } catch { await rm(MANIFEST_PATH, { force: true }); } }
   manifest.root = ROOT; manifest.requiredMediaPerItem = REQUIRED; manifest.generatedAt = new Date().toISOString();
   if (DOMAIN === 'all' || DOMAIN === 'recipes') await runRecipes(manifest);
   if (DOMAIN === 'all' || DOMAIN === 'fitness') await runFitness(manifest);
