@@ -8,10 +8,12 @@ import { BrandWordmark } from '../components/BrandWordmark';
 import { getStoredLocale, initializeLocale, isRTL, t, useAppLocale } from '../lib/i18n';
 import { hasAuthSession } from '../lib/api';
 import { getOnboardingState } from '../lib/onboarding';
+import { useVisualTheme, VisualThemeProvider } from '../lib/visual-theme-context';
 import { BRAND } from '../lib/branding';
 
 function StartupScreen() {
   const locale = useAppLocale();
+  const { theme } = useVisualTheme();
   const glow = useRef(new Animated.Value(0.35)).current;
   const scale = useRef(new Animated.Value(0.94)).current;
   useEffect(() => {
@@ -23,30 +25,21 @@ function StartupScreen() {
     return () => loop.stop();
   }, [glow, scale]);
   return (
-    <View style={styles.startup} accessible accessibilityLabel={t(locale, 'loading')}>
-      <Animated.View style={[styles.startupGlow, { opacity: glow, transform: [{ scale }] }]} />
+    <View style={[styles.startup, { backgroundColor: BRAND.colors.startup }]} accessible accessibilityLabel={t(locale, 'loading')}>
+      <Animated.View style={[styles.startupGlow, { opacity: glow, transform: [{ scale }], backgroundColor: theme.colors.primaryStrong }]} />
       <View style={styles.startupMark}><BrandMark size={104} /></View>
       <BrandWordmark dark />
       <Text style={styles.startupSubtitle}>{locale === 'fa' ? 'روزت، هدف‌هات، دستیار تو.' : 'Your day, your goals, your assistant.'}</Text>
-      <ActivityIndicator accessibilityLabel={t(locale, 'loading')} color={BRAND.colors.violet} style={styles.startupSpinner} />
+      <ActivityIndicator accessibilityLabel={t(locale, 'loading')} color={theme.colors.primaryStrong} style={styles.startupSpinner} />
     </View>
   );
 }
 
-export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
-  const locale = useAppLocale();
-  return <AppErrorState title={locale === 'fa' ? 'یک مشکلی پیش آمد' : 'Something went wrong'} message={error.message} retryLabel={t(locale, 'retry')} onRetry={retry} />;
-}
-
-const stackScreens = {
-  '/': { animation: 'fade' as const }, '/assistant': { animation: 'slide_from_right' as const }, '/language': { animation: 'fade' as const },
-  '/auth': { animation: 'slide_from_right' as const }, '/onboarding': { animation: 'slide_from_right' as const }, default: { animation: 'fade' as const },
-} as const;
-
-export default function RootLayout() {
+function AppStack() {
   const [bootReady, setBootReady] = useState(false);
   const [targetRoute, setTargetRoute] = useState<'/language' | '/auth' | '/onboarding' | '/'>('/language');
   const locale = useAppLocale();
+  const { theme } = useVisualTheme();
   const segments = useSegments();
   const currentSegment = segments[0];
 
@@ -92,25 +85,34 @@ export default function RootLayout() {
 
   if (!bootReady) return <StartupScreen />;
   const showAssistantBubble = currentSegment != null && !['assistant', 'language', 'auth', 'onboarding'].includes(currentSegment);
-  const screenOptions = { headerShown: false, contentStyle: { backgroundColor: BRAND.colors.canvas }, animation: stackScreens.default.animation };
+  const screenOptions = { headerShown: false, contentStyle: { backgroundColor: theme.colors.canvas }, animation: 'fade' as const };
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: theme.colors.canvas }]}>
       <Stack screenOptions={screenOptions}>
-        <Stack.Screen name="index" options={stackScreens['/']} />
-        <Stack.Screen name="assistant" options={stackScreens['/assistant']} />
-        <Stack.Screen name="language" options={stackScreens['/language']} />
-        <Stack.Screen name="auth" options={stackScreens['/auth']} />
-        <Stack.Screen name="onboarding" options={stackScreens['/onboarding']} />
+        <Stack.Screen name="index" options={{ animation: 'fade' }} />
+        <Stack.Screen name="assistant" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="language" options={{ animation: 'fade' }} />
+        <Stack.Screen name="auth" options={{ animation: 'slide_from_right' }} />
+        <Stack.Screen name="onboarding" options={{ animation: 'slide_from_right' }} />
       </Stack>
-      {showAssistantBubble ? <Pressable onPress={() => router.push('/assistant')} style={({ pressed }) => [styles.assistantBubble, pressed && styles.pressed]} accessibilityRole="button" accessibilityLabel={t(locale, 'assistant')}><BrandMark size={58} /></Pressable> : null}
+      {showAssistantBubble ? <Pressable onPress={() => router.push('/assistant')} style={({ pressed }) => [styles.assistantBubble, { backgroundColor: theme.colors.surface }, pressed && styles.pressed]} accessibilityRole="button" accessibilityLabel={t(locale, 'assistant')}><BrandMark size={58} /></Pressable> : null}
     </View>
   );
 }
 
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  const locale = useAppLocale();
+  return <AppErrorState title={locale === 'fa' ? 'یک مشکلی پیش آمد' : 'Something went wrong'} message={error.message} retryLabel={t(locale, 'retry')} onRetry={retry} />;
+}
+
+export default function RootLayout() {
+  return <VisualThemeProvider><AppStack /></VisualThemeProvider>;
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  startup: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.startup, paddingHorizontal: 28 },
-  startupGlow: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: BRAND.colors.primaryStrong },
+  startup: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
+  startupGlow: { position: 'absolute', width: 170, height: 170, borderRadius: 85 },
   startupMark: { marginBottom: 18 },
   startupSubtitle: { marginTop: 6, color: BRAND.colors.startupMuted, fontSize: 13, textAlign: 'center' },
   startupSpinner: { marginTop: 28 },
