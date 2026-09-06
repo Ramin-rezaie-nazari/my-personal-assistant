@@ -1,0 +1,99 @@
+name: MYPA branch validation
+
+on:
+  push:
+    branches:
+      - agent/mypa-autonomous-control-plane
+    paths:
+      - 'apps/backend/**'
+      - 'apps/mobile/**'
+      - 'pnpm-lock.yaml'
+      - 'package.json'
+      - 'pnpm-workspace.yaml'
+      - '.github/workflows/mypa-branch-validation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: personal_assistant
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d personal_assistant"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+    defaults:
+      run:
+        working-directory: apps/backend
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/personal_assistant?schema=public
+      APP_NAME: My Personal Assistant API
+      NODE_ENV: test
+      JWT_ACCESS_SECRET: branch-validation-access-secret
+      JWT_REFRESH_SECRET: branch-validation-refresh-secret
+      JWT_ACCESS_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 30d
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+      - name: Validate Prisma
+        run: pnpm exec prisma validate
+      - name: Generate Prisma
+        run: pnpm exec prisma generate
+      - name: Apply migrations twice
+        run: |
+          pnpm exec prisma migrate deploy
+          pnpm exec prisma migrate status
+          pnpm exec prisma migrate deploy
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Build
+        run: pnpm build
+      - name: Unit tests (quiet summary)
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm exec jest --runInBand --noStackTrace 2>&1 | awk '/^ FAIL / || /^  ● / || /^    Expected:/ || /^    Received:/ || /^Test Suites:/ || /^Tests:/ || /^Snapshots:/ || /^Time:/ || /^Ran all test suites/'
+      - name: API E2E tests
+        run: pnpm test:e2e
+
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: .
+      - name: Mobile typecheck
+        run: pnpm typecheck
