@@ -675,3 +675,16 @@ No feature is considered fully complete from documentation alone; CI/runtime/dev
 The mobile Smart Meals journey now consumes the authenticated `POST /recommendation-intelligence/food` result instead of constructing a second local recommendation ranking. The Personal Brain remains responsible for nutrition constraints, inventory coverage, country context, recent-meal personalization, deterministic ranking and explanations; mobile is responsible for presentation and navigation to the selected recipe.
 
 The mobile client keeps the backend result typed and navigates each recommendation to the existing recipe detail route. No local recommendation score is used for the displayed ranking.
+## 2026-09-06 — Android SDK 53 pnpm linker hardening
+
+The Android build exposed a native autolinking mismatch where generated `PackageList.java` referenced the obsolete `expo.core.ExpoModulesPackage` symbol while the project resolved Expo SDK 53 modules. The attempted Expo-specific hoist patterns were insufficient. The stable repository decision is now to use pnpm's hoisted node linker for this SDK 53 mobile app, matching Expo's documented SDK 53 monorepo guidance, rather than relying on partial public-hoist exceptions.
+
+This is a build-system compatibility decision only; it does not alter application business logic. A completed Gradle build on the post-fix branch is still required before calling the mobile build gate green.
+
+## 2026-09-06 — Onboarding remote-sync correctness hardening
+
+Completed onboarding state is authoritative locally first, but the remote persistence contract now treats a missing authentication token as a failed synchronization rather than a successful no-op. Deferred synchronization is serialized so repeated bootstrap reads cannot create concurrent retry storms.
+
+## 2026-09-06 — Fitness importer candidate selection hardening
+
+Fitness ingestion now oversamples candidates before media enrichment and selects the target set after deterministic media enrichment, prioritizing four-asset-ready candidates. This avoids throwing away viable source records before the image/provenance gate is known.

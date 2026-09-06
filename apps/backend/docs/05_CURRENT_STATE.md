@@ -369,3 +369,15 @@ Supabase is explicitly out of the development path for this project phase. All P
 ### Validation truth
 - Implementation is committed but still subject to the active mobile/Android CI gates.
 - No green CI or physical-device claim is made from source review alone.
+## 2026-09-06 — Autonomous hardening batch
+
+### Implemented
+- Switched the Expo SDK 53 mobile branch from pnpm isolated linking to `node-linker=hoisted` after the completed Android run reproduced the obsolete `expo.core.ExpoModulesPackage` compilation failure despite partial Expo hoisting patterns.
+- Updated the legacy main-branch Android APK workflow so its prebuild environment follows the same CI contract and no longer depends on the deprecated non-interactive prebuild flag.
+- Hardened onboarding remote sync: missing auth is now a real sync failure, and deferred retries are serialized.
+- Hardened fitness ingestion with 3x candidate oversampling by default and post-enrichment deterministic selection of the target set.
+
+### Validation truth
+- The previous Android run is a confirmed **RED** native build failure at `:app:compileDebugJavaWithJavac`; it is not being reclassified as green from the configuration change alone.
+- A fresh Android run is active on the updated linker configuration and must complete Gradle assemble + APK upload before the native build gate is green.
+- The onboarding and fitness changes are implementation-level hardening and remain subject to their normal backend/mobile CI gates.

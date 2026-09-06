@@ -259,3 +259,30 @@ The backend CI unit-test invocation was corrected from an invalid Jest argument 
 
 ### Verification state
 **PENDING CI/runtime validation.** The implementation is not marked green until the relevant mobile and backend gates complete.
+## 2026-09-06 — Android autolinking blocker and remediation
+
+### Observed failure
+**RED — Android APK Build run 34027837013**
+
+The completed Gradle stage failed during `:app:compileDebugJavaWithJavac` because generated `PackageList.java` imported `expo.core.ExpoModulesPackage`, which could not be resolved. Dependency installation, mobile typecheck, Android SDK setup and Expo prebuild had completed successfully.
+
+### Remediation applied
+- Replaced `node-linker=isolated` plus partial Expo hoist patterns with `node-linker=hoisted` in the branch `.npmrc`.
+- Started a fresh Android build on the corrected configuration.
+
+### Verification state
+**PENDING.** The new run must complete Gradle assemble and APK artifact upload before this remediation can be marked green.
+
+## 2026-09-06 — Onboarding sync correctness
+
+- Missing auth token now fails onboarding persistence rather than clearing the pending retry state.
+- Deferred retries are serialized to avoid concurrent duplicate sync requests.
+
+**Verification state: PENDING mobile/backend CI.**
+
+## 2026-09-06 — Fitness importer candidate selection
+
+- Candidate pool is oversampled before media enrichment.
+- Target selection occurs after enrichment and is deterministic, preferring four-media-ready records.
+
+**Verification state: PENDING backend CI and real corpus audit.**

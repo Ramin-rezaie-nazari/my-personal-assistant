@@ -1770,3 +1770,11 @@ Validation note: this feature is implemented but is not marked green until the r
 - The previous mobile-only `meal-intelligence` ranking is no longer the source of displayed Smart Meals ranking.
 
 This preserves a single recommendation authority and prevents algorithm drift between backend and mobile.
+## 2026-09-06 — Native build, onboarding sync and fitness ingestion hardening
+
+- `.npmrc` now selects `node-linker=hoisted` for the Expo SDK 53 mobile build path because isolated installs reproduced a native autolinking failure for `expo.core.ExpoModulesPackage`.
+- `apps/mobile/lib/onboarding-api.ts` now fails closed when no auth token is available, allowing the local onboarding state to retain its pending-sync marker.
+- `apps/mobile/lib/onboarding.ts` serializes deferred remote synchronization attempts to prevent duplicate concurrent retries.
+- `apps/backend/scripts/fitness-content-import.mjs` now gathers an oversampled deterministic candidate pool, enriches media first, then selects the target count based on media readiness.
+
+These changes preserve separation between persistence correctness, native build tooling, and content-release gates.

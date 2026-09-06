@@ -128,3 +128,21 @@ A progress percentage is a planning indicator. A feature is “complete” only 
 - Changed Smart Meals presentation to use backend scores/reasons/coverage as its authoritative result.
 - Kept the recipe detail surface as the final navigation target.
 - CI/device verification remains pending and is not inferred from source inspection.
+## 2026-09-06 — Native build blocker resolved at configuration level, verification pending
+
+- Confirmed the earlier Android build was not a transient runner issue: Gradle consistently generated `PackageList.java` with the obsolete `expo.core.ExpoModulesPackage` import under pnpm isolated linking.
+- Checked current Expo guidance and the SDK 53 monorepo recommendation; SDK 53 should use a hoisted dependency installation strategy for this class of native resolution issue.
+- Changed the repository linker policy to `node-linker=hoisted` and triggered a fresh Android run.
+- Kept the blocker red until the new Gradle result is completed and the APK artifact is actually uploaded.
+
+## 2026-09-06 — Onboarding remote-sync hardening
+
+- Found that `persistOnboardingToBackend` treated a missing token as success, which could erase the deferred-sync obligation.
+- Changed the function to fail when authentication is unavailable.
+- Added a module-level in-flight guard around background retry to prevent repeated concurrent requests during bootstrap reads.
+
+## 2026-09-06 — Fitness importer hardening
+
+- Found that Gym/Calisthenics candidates were truncated to the target before media enrichment.
+- Changed ingestion to collect an oversampled candidate pool, enrich media, and only then choose the deterministic target set, preferring records with four available media assets.
+- Full corpus population and audit remain intentionally unclaimed until runtime evidence exists.
