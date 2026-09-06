@@ -15,6 +15,7 @@ permissions:
 jobs:
   import-audit-verify:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
     env:
       DATABASE_URL: ${{ secrets.MYPA_FITNESS_DATABASE_URL }}
     steps:
@@ -34,7 +35,7 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
-      - name: Require production database secret
+      - name: Require database secret
         run: |
           test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is not configured; refusing to import into an unknown database.'; exit 2; }
 
@@ -50,6 +51,10 @@ jobs:
         env:
           FITNESS_IMPORT_STRICT: ${{ inputs.strict && '1' || '0' }}
         run: pnpm fitness:content:import
+
+      - name: Balance publishable corpus across ten levels
+        working-directory: apps/backend
+        run: pnpm fitness:content:balance-levels
 
       - name: Audit release corpus
         working-directory: apps/backend
