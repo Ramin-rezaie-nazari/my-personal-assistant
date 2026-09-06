@@ -35,8 +35,11 @@ export class LocalLanguageUnderstandingService {
     if (mealType) entities.mealType = mealType;
     const food = this.findFood(normalizedText);
     if (food) entities.food = food;
-    const fitnessTarget = this.findFitnessTarget(normalizedText);
-    if (fitnessTarget) entities.targetArea = fitnessTarget;
+    const fitnessTargets = this.findFitnessTargets(normalizedText);
+    if (fitnessTargets.length) {
+      entities.targetAreas = fitnessTargets;
+      entities.targetArea = fitnessTargets[0];
+    }
     const fitnessDiscipline = this.findFitnessDiscipline(normalizedText);
     if (fitnessDiscipline) entities.discipline = fitnessDiscipline;
     const fitnessEquipment = this.findFitnessEquipment(normalizedText);
@@ -58,9 +61,9 @@ export class LocalLanguageUnderstandingService {
     if (food && this.matches(normalizedText, ['حذف', 'بردار', 'پاک', 'remove', 'delete']))
       return this.result('REMOVE_FROM_BASKET', entities, 0.97, normalizedText);
     const workoutRequest =
-      (!shoppingRequest && !food && Boolean(fitnessTarget)) ||
+      (!shoppingRequest && !food && Boolean(fitnessTargets.length)) ||
       (!shoppingRequest && this.matches(normalizedText, ['تمرین', 'ورزش', 'workout', 'exercise', 'training', 'باشگاه', 'عضله']));
-    if (workoutRequest) return this.result('RECOMMEND_WORKOUT', entities, fitnessTarget ? 0.97 : 0.88, normalizedText);
+    if (workoutRequest) return this.result('RECOMMEND_WORKOUT', entities, fitnessTargets.length ? 0.97 : 0.88, normalizedText);
     if (this.matches(normalizedText, ['یادم بنداز', 'یادآوری', 'یادآور', 'یادم نره', 'یادآوری کن', 'remind', 'reminder']))
       return this.result('CREATE_REMINDER', entities, time ? 0.97 : 0.9, normalizedText);
     if (this.matches(normalizedText, ['چی بخور', 'چه بخور', 'شام', 'ناهار', 'صبحانه', 'غذا پیشنهاد', 'پیشنهاد غذا', 'غذا چی', 'meal', 'dinner', 'lunch']))
@@ -93,7 +96,7 @@ export class LocalLanguageUnderstandingService {
     if (this.matches(text, ['شام', 'شب', 'dinner'])) return 'dinner';
     return undefined;
   }
-  private findFitnessTarget(text: string): string | undefined {
+  private findFitnessTargets(text: string): string[] {
     const aliases: Array<[string, string[]]> = [
       ['shoulders', ['سرشانه', 'سرشونه', 'شانه', 'شونه', 'shoulder', 'shoulders']],
       ['chest', ['سینه', 'سینه ها', 'سینه‌ها', 'chest']],
@@ -107,7 +110,7 @@ export class LocalLanguageUnderstandingService {
       ['calves', ['ساق', 'ساق پا', 'calf', 'calves']],
       ['full_body', ['کل بدن', 'تمام بدن', 'فول بادی', 'full body']],
     ];
-    return aliases.find(([, words]) => this.matches(text, words))?.[0];
+    return aliases.filter(([, words]) => this.matches(text, words)).map(([value]) => value);
   }
   private findFitnessDiscipline(text: string): string | undefined {
     if (this.matches(text, ['یوگا', 'yoga'])) return 'yoga';
