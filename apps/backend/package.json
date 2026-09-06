@@ -38,6 +38,7 @@
     "fitness:content:audit": "node ./scripts/fitness-content-audit.mjs",
     "fitness:content:verify-media": "node ./scripts/fitness-media-verify.mjs",
     "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs",
+    "recipe:media:stage": "node ./scripts/recipe-media-stage-mirror.mjs",
     "content:mirror": "node ./scripts/content-mirror-run.mjs",
     "content:mirror:recipes": "CONTENT_MIRROR_DOMAIN=recipes node ./scripts/content-mirror-run.mjs",
     "content:mirror:fitness": "CONTENT_MIRROR_DOMAIN=fitness node ./scripts/content-mirror-run.mjs",
@@ -46,7 +47,7 @@
   "dependencies": {
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.4",
-    "@nestjs/core": "^11.0.1",
+    "@nestjs/core": "^11.0.0",
     "@nestjs/jwt": "^11.0.2",
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
