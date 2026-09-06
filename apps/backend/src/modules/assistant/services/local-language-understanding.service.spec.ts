@@ -39,12 +39,29 @@ describe('LocalLanguageUnderstandingService', () => {
   });
 
   it('understands meal and nutrition requests', () => {
-    expect(service.understand('برای شام چی بخورم؟').intent).toBe(
-      'RECOMMEND_MEAL',
-    );
-    expect(service.understand('پروتئین و کالری امروزمو بگو').intent).toBe(
-      'GET_NUTRITION_SUMMARY',
-    );
+    expect(service.understand('برای شام چی بخورم؟').intent).toBe('RECOMMEND_MEAL');
+    expect(service.understand('پروتئین و کالری امروزمو بگو').intent).toBe('GET_NUTRITION_SUMMARY');
+  });
+
+  it('understands shoulder workout requests and extracts the body target', () => {
+    const result = service.understand('برای سرشونه تمرین می‌خوام');
+    expect(result.intent).toBe('RECOMMEND_WORKOUT');
+    expect(result.entities.targetArea).toBe('shoulders');
+    expect(result.confidence).toBeGreaterThan(0.9);
+  });
+
+  it('understands English workout requests too', () => {
+    const result = service.understand('give me a shoulder workout for 30 minutes');
+    expect(result.intent).toBe('RECOMMEND_WORKOUT');
+    expect(result.entities.targetArea).toBe('shoulders');
+    expect(result.entities.durationMinutes).toBe(30);
+  });
+
+  it('detects discipline-specific workout requests', () => {
+    const result = service.understand('برای سرشونه تمرین کالیستنیکس بده');
+    expect(result.intent).toBe('RECOMMEND_WORKOUT');
+    expect(result.entities.targetArea).toBe('shoulders');
+    expect(result.entities.discipline).toBe('calisthenics');
   });
 
   it('keeps ambiguous requests unknown instead of guessing', () => {
