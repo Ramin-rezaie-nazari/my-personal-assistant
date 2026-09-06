@@ -1,0 +1,45 @@
+name: MYPA one-time mobile typecheck repair
+
+on:
+  push:
+    branches:
+      - agent/mypa-autonomous-control-plane
+    paths:
+      - '.github/workflows/mypa-mobile-typecheck-repair-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Repair reminder RTL style typing
+        shell: python
+        run: |
+          from pathlib import Path
+          path = Path('apps/mobile/app/reminders-localized.tsx')
+          text = path.read_text(encoding='utf-8')
+          replacements = {
+              'rtl&&styles.rtl': "rtl ? styles.rtl : styles.rtlCard",
+              'rtl&&styles.textRight': "rtl ? styles.textRight : styles.textLeft",
+              'undefinedCard': 'styles.rtlCard',
+          }
+          for old, new in replacements.items():
+              text = text.replace(old, new)
+          path.write_text(text, encoding='utf-8')
+
+      - name: Validate mobile typecheck
+        run: pnpm --filter @my-personal-assistant/mobile typecheck
+
+      - name: Commit repair and remove one-time workflow
+        shell: bash
+        run: |
+          git config user.name 'MYPA Automation'
+          git config user.email 'actions@users.noreply.github.com'
+          rm -f .github/workflows/mypa-mobile-typecheck-repair-once.yml
+          git add apps/mobile/app/reminders-localized.tsx .github/workflows/mypa-mobile-typecheck-repair-once.yml
+          git commit -m 'fix(mobile): repair reminder RTL style typing'
+          git push origin HEAD:agent/mypa-autonomous-control-plane
