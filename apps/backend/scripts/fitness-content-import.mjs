@@ -4,6 +4,7 @@ import { PrismaClient, Prisma } from '@prisma/client';
 const prisma = new PrismaClient();
 
 const TARGET = Number(process.env.FITNESS_TARGET_PER_DISCIPLINE ?? 500);
+const CANDIDATE_MULTIPLIER = Number(process.env.FITNESS_CANDIDATE_MULTIPLIER ?? 3);
 const STRICT = process.env.FITNESS_IMPORT_STRICT === '1';
 const COMMONS_CONCURRENCY = Number(process.env.FITNESS_COMMONS_CONCURRENCY ?? 4);
 const WEBP_ROOT = 'https://wsrv.nl/';
@@ -188,7 +189,7 @@ function makeYogaVariants(baseCandidates) {
   const seen = new Set(baseCandidates.map((item) => normalize(item.name)));
   for (const base of baseCandidates) {
     for (const variation of YOGA_VARIATIONS) {
-      if (variants.length + baseCandidates.length >= TARGET) return variants;
+      if (variants.length + baseCandidates.length >= TARGET * CANDIDATE_MULTIPLIER) return variants;
       const name = `${variation} ${base.name}`;
       const key = normalize(name);
       if (seen.has(key)) continue;
@@ -256,6 +257,19 @@ async function enrichMedia(candidates) {
   await Promise.all(workers);
 }
 
+function selectAfterMediaEnrichment(candidates) {
+  return candidates
+    .slice()
+    .sort((a, b) => {
+      const mediaDifference = b.media.length - a.media.length;
+      if (mediaDifference !== 0) return mediaDifference;
+      const variantDifference = Number(Boolean(a.variantKind)) - Number(Boolean(b.variantKind));
+      if (variantDifference !== 0) return variantDifference;
+      return normalize(a.name).localeCompare(normalize(b.name));
+    })
+    .slice(0, TARGET);
+}
+
 async function upsertExercise(item, discipline, parentExerciseId = null) {
   const slug = slugify(item.name);
   const id = idFor(discipline, slug);
@@ -311,7 +325,7 @@ async function upsertExercise(item, discipline, parentExerciseId = null) {
 }
 
 async function main() {
-  console.log(`MYPA fitness content import: target=${TARGET}/discipline strict=${STRICT}`);
+  console.log(`MYPA fitness content import: target=${TARGET}/discipline strict=${STRICT} candidateMultiplier=${CANDIDATE_MULTIPLIER}`);
   const [repDb, freeDb] = await Promise.all([fetchJson(REPDB_DATASET), fetchJson(FREEDB_DATASET)]);
 
   const candidates = { gym: [], calisthenics: [], yoga: [] };
@@ -326,19 +340,26 @@ async function main() {
     candidates[discipline].push(normalized);
   }
 
-  candidates.gym = dedupeCandidates(candidates.gym).slice(0, TARGET);
-  candidates.calisthenics = dedupeCandidates(candidates.calisthenics).slice(0, TARGET);
+  const candidateTarget = Math.max(TARGET, TARGET * CANDIDATE_MULTIPLIER);
+  candidates.gym = dedupeCandidates(candidates.gym).slice(0, candidateTarget);
+  candidates.calisthenics = dedupeCandidates(candidates.calisthenics).slice(0, candidateTarget);
   candidates.yoga = dedupeCandidates(candidates.yoga);
-  if (candidates.yoga.length < TARGET) {
+  if (candidates.yoga.length < candidateTarget) {
     candidates.yoga.push(...makeYogaVariants(candidates.yoga));
   }
-  candidates.yoga = dedupeCandidates(candidates.yoga).slice(0, TARGET);
+  candidates.yoga = dedupeCandidates(candidates.yoga).slice(0, candidateTarget);
 
   await enrichMedia([...candidates.gym, ...candidates.calisthenics, ...candidates.yoga]);
 
+  const selected = {
+    gym: selectAfterMediaEnrichment(candidates.gym),
+    calisthenics: selectAfterMediaEnrichment(candidates.calisthenics),
+    yoga: selectAfterMediaEnrichment(candidates.yoga),
+  };
+
   const idByName = new Map();
   for (const discipline of ['gym', 'calisthenics', 'yoga']) {
-    for (const item of candidates[discipline]) {
+    for (const item of selected[discipline]) {
       const slug = slugify(item.name);
       const parentId = item.parentName ? idByName.get(`${discipline}:${normalize(item.parentName)}`) ?? null : null;
       const id = await upsertExercise(item, discipline, parentId);
