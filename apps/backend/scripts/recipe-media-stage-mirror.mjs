@@ -11,7 +11,7 @@ const DATASET_URL = process.env.RECIPE_DATASET_URL ?? 'https://huggingface.co/da
 const WIKIBOOKS_API = 'https://en.wikibooks.org/w/api.php';
 const REQUIRED_PROCESS = 3;
 const REQUIRED_TOTAL = 4;
-const USER_AGENT = 'MYPA-recipe-stage-mirror/1.1';
+const USER_AGENT = 'MYPA-recipe-stage-mirror/1.2';
 const CONCURRENCY = Math.min(4, Math.max(1, Number(process.env.RECIPE_STAGE_CONCURRENCY ?? 2)));
 const MAX_RECIPES = Number.isFinite(Number(process.env.RECIPE_STAGE_MAX)) && Number(process.env.RECIPE_STAGE_MAX) > 0 ? Math.floor(Number(process.env.RECIPE_STAGE_MAX)) : null;
 
@@ -41,27 +41,13 @@ async function imageInfo(fileTitle) { const query = new URLSearchParams({ action
 function sectionBlocks(wikitext) { return wikitext.split(/^==+\s*/m).map((part) => { const match = part.match(/^([^=\n]+?)\s*=+\s*\n/); const name = clean(match?.[1] ?? ''); return { name, text: match ? part.slice(match[0].length) : '' }; }).filter((x) => x.name); }
 function filesFromText(text) { return [...text.matchAll(/\[\[(?:File|Image):([^|\]#]+)(?:[^\]]*)\]\]/gi)].map((m) => `File:${clean(m[1])}`); }
 function unique(values) { return [...new Set(values)]; }
-function firstMatchingSection(blocks, pattern) { return blocks.find((block) => pattern.test(block.name)); }
 function matchingSections(blocks, pattern) { return blocks.filter((block) => pattern.test(block.name)); }
-function chooseProcessFiles(blocks) {
-  const procedure = matchingSections(blocks, /^(procedure|directions?|instructions?|method|preparation|steps?)$/i).flatMap((x) => filesFromText(x.text));
-  return unique(procedure);
-}
-function chooseFinalFiles(blocks) {
-  const serving = firstMatchingSection(blocks, /^(finished|finish|final|serving|serve|plating|presentation)$/i);
-  if (serving) return unique(filesFromText(serving.text));
-  const all = unique(blocks.flatMap((x) => filesFromText(x.text)));
-  return all.slice(-2);
-}
+function chooseProcessFiles(blocks) { return unique(matchingSections(blocks, /^(procedure|directions?|instructions?|method|preparation|steps?)$/i).flatMap((x) => filesFromText(x.text))); }
+function chooseFinalFiles(blocks) { return unique(matchingSections(blocks, /^(finished|finish|final|serving|serve|plating|presentation)$/i).flatMap((x) => filesFromText(x.text))); }
 function chooseProcess(candidates) { return candidates.filter((x) => x && x.width >= 300 && x.height >= 300).slice(0, REQUIRED_PROCESS); }
 function chooseFinal(candidates, process) { const processSet = new Set(process.map((x) => x.sourceUrl)); return candidates.find((x) => !processSet.has(x.sourceUrl)) ?? null; }
 async function convert(input, target) { let image = await sharp(input, { failOn: 'none' }).rotate().resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true }).webp({ quality: 84, effort: 5 }).toBuffer(); if (image.length > 64 * 1024) image = await sharp(input, { failOn: 'none' }).rotate().resize({ width: 900, height: 900, fit: 'inside', withoutEnlargement: true }).webp({ quality: 72, effort: 5 }).toBuffer(); await writeFile(target, image); return image.length; }
-async function cleanRecipeDir(title) {
-  const dir = path.join(MEDIA_ROOT, slug(title));
-  if (!(await exists(dir))) return;
-  const entries = await readdir(dir, { withFileTypes: true });
-  for (const entry of entries) await rm(path.join(dir, entry.name), { recursive: true, force: true });
-}
+async function cleanRecipeDir(title) { const dir = path.join(MEDIA_ROOT, slug(title)); if (await exists(dir)) await rm(dir, { recursive: true, force: true }); }
 async function mirror(title) {
   await cleanRecipeDir(title);
   const page = await pageData(title);
@@ -90,9 +76,7 @@ async function mirror(title) {
       const target = path.join(dir, filename);
       const sizeBytes = await convert(input, target);
       media.push({ position: item.position, stage: item.stage, localPath: path.relative(ROOT, target).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), target).split(path.sep).join('/'), sourceUrl: item.sourceUrl, downloadUrl: item.url, sha256: digest, sizeBytes, format: 'webp', provider: 'Wikimedia Commons/Wikibooks', license: item.license, attribution: item.attribution, status: 'ready', evidence: item.stage === 'final' ? 'recipe-page-serving-or-final-image' : 'recipe-page-procedure-image' });
-    } catch (error) {
-      media.push({ position: item.position, stage: item.stage, sourceUrl: item.sourceUrl, status: 'failed', error: error instanceof Error ? error.message : String(error) });
-    }
+    } catch (error) { media.push({ position: item.position, stage: item.stage, sourceUrl: item.sourceUrl, status: 'failed', error: error instanceof Error ? error.message : String(error) }); }
   }
   const processReady = media.filter((x) => x.status === 'ready' && x.stage.startsWith('process-')).length;
   const finalReady = media.some((x) => x.status === 'ready' && x.stage === 'final');
@@ -102,10 +86,10 @@ async function mirror(title) {
 async function main() {
   const dataset = await json(DATASET_URL); if (!Array.isArray(dataset)) throw new Error('Recipe dataset is invalid');
   const rows = (MAX_RECIPES ? dataset.slice(0, MAX_RECIPES) : dataset).map((row) => { const data = row?.recipe_data ?? row ?? {}; const lines = Array.isArray(data.text_lines) ? data.text_lines : []; return { title: clean(data.title || row.title || row.filename?.split('/').pop()?.replace(/\.html$/i, '') || ''), ingredients: lines.filter((x) => x?.line_type === 'ul' && /ingredient/i.test(x.section || '')).length, steps: lines.filter((x) => x?.line_type === 'ol' && /procedure|direction|method|instruction|preparation/i.test(x.section || '')).length }; }).filter((x) => x.title && x.ingredients && x.steps);
-  let manifest = { schemaVersion: 4, generatedAt: null, root: ROOT, requiredMediaPerItem: REQUIRED_TOTAL, items: {} }; if (await exists(MANIFEST_PATH)) { try { manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8')); } catch {} }
+  let manifest = { schemaVersion: 5, generatedAt: null, root: ROOT, requiredMediaPerItem: REQUIRED_TOTAL, items: {} }; if (await exists(MANIFEST_PATH)) { try { manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8')); } catch {} }
   let cursor = 0; let done = 0; const total = rows.length;
-  const worker = async () => { while (cursor < rows.length) { const item = rows[cursor++]; const key = `recipe:${slug(item.title)}`; try { const result = await mirror(item.title); manifest.items[key] = { ...(manifest.items[key] ?? {}), kind: 'recipe', name: item.title, slug: slug(item.title), ...result, media: result.media, mediaCount: result.media.filter((x) => x.status === 'ready').length, legacyImagesRemoved: true }; } catch (error) { manifest.items[key] = { ...(manifest.items[key] ?? {}), kind: 'recipe', name: item.title, slug: slug(item.title), stageStatus: 'failed', media: [], mediaCount: 0, legacyImagesRemoved: true, error: error instanceof Error ? error.message : String(error) }; } done += 1; await saveJson(MANIFEST_PATH, { ...manifest, schemaVersion: 4, generatedAt: new Date().toISOString() }); console.log(`[recipe-stage] ${done}/${total} ${item.title} status=${manifest.items[key].stageStatus} process=${manifest.items[key].media.filter((x) => x.status === 'ready' && x.stage.startsWith('process-')).length}/3 final=${manifest.items[key].media.some((x) => x.status === 'ready' && x.stage === 'final') ? 1 : 0}`); } };
+  const worker = async () => { while (cursor < rows.length) { const item = rows[cursor++]; const key = `recipe:${slug(item.title)}`; try { const result = await mirror(item.title); manifest.items[key] = { ...(manifest.items[key] ?? {}), kind: 'recipe', name: item.title, slug: slug(item.title), ...result, media: result.media, mediaCount: result.media.filter((x) => x.status === 'ready').length, legacyImagesRemoved: true }; } catch (error) { manifest.items[key] = { ...(manifest.items[key] ?? {}), kind: 'recipe', name: item.title, slug: slug(item.title), stageStatus: 'failed', media: [], mediaCount: 0, legacyImagesRemoved: true, error: error instanceof Error ? error.message : String(error) }; } done += 1; await saveJson(MANIFEST_PATH, { ...manifest, schemaVersion: 5, generatedAt: new Date().toISOString() }); console.log(`[recipe-stage] ${done}/${total} ${item.title} status=${manifest.items[key].stageStatus} process=${manifest.items[key].media.filter((x) => x.status === 'ready' && x.stage.startsWith('process-')).length}/3 final=${manifest.items[key].media.some((x) => x.status === 'ready' && x.stage === 'final') ? 1 : 0}`); } };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
-  const recipes = Object.values(manifest.items).filter((x) => x.kind === 'recipe'); const complete = recipes.filter((x) => x.stageStatus === 'complete').length; const report = { schemaVersion: 2, generatedAt: new Date().toISOString(), root: ROOT, required: { processImages: REQUIRED_PROCESS, finalImage: 1, total: REQUIRED_TOTAL }, recipes: recipes.length, complete, incomplete: recipes.length - complete }; await saveJson(path.join(ROOT, 'recipe-stage-summary.json'), report); console.log(JSON.stringify(report, null, 2)); if (recipes.length && complete < recipes.length) process.exitCode = 2;
+  const recipes = Object.values(manifest.items).filter((x) => x.kind === 'recipe'); const complete = recipes.filter((x) => x.stageStatus === 'complete').length; const report = { schemaVersion: 3, generatedAt: new Date().toISOString(), root: ROOT, required: { processImages: REQUIRED_PROCESS, finalImage: 1, total: REQUIRED_TOTAL }, recipes: recipes.length, complete, incomplete: recipes.length - complete }; await saveJson(path.join(ROOT, 'recipe-stage-summary.json'), report); console.log(JSON.stringify(report, null, 2)); if (recipes.length && complete < recipes.length) process.exitCode = 2;
 }
 main().catch((error) => { console.error(error); process.exit(1); });
