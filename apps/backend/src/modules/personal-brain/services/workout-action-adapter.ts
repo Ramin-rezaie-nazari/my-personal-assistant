@@ -5,32 +5,94 @@ import {
 } from './decision-action-adapter.service';
 import { DecisionCandidate } from './unified-decision-engine.service';
 import { WorkoutService } from '../../workout/services/workout.service';
+import { FitnessCatalogService, FitnessDiscipline } from '../../fitness/services/fitness-catalog.service';
+
+const DISCIPLINES: FitnessDiscipline[] = ['gym', 'calisthenics', 'yoga'];
 
 @Injectable()
 export class WorkoutActionAdapter implements DecisionActionAdapter {
+  readonly actions = ['delete_workout', 'recommend_workout', 'update_workout'];
+
   constructor(
     private readonly registry: DecisionActionAdapterService,
     private readonly workouts: WorkoutService,
+    private readonly fitnessCatalog: FitnessCatalogService,
   ) {
     registry.register(this);
   }
+
   supports(candidate: DecisionCandidate): boolean {
-    return ['update_workout', 'delete_workout'].includes(candidate.action);
+    return this.actions.includes(candidate.action);
   }
+
   async execute(
     candidate: DecisionCandidate,
     context: Record<string, unknown>,
   ) {
     const userId = String(context.userId ?? '');
     if (!userId) throw new Error('Missing userId');
-    const state =
-      (context.contextualState as Record<string, unknown> | undefined) ?? {};
+    const state = (context.contextualState as Record<string, unknown> | undefined) ?? {};
+
+    if (candidate.action === 'recommend_workout') {
+      const understanding = (state.localUnderstanding as Record<string, unknown> | undefined) ?? {};
+      const entities = (understanding.entities as Record<string, unknown> | undefined) ?? {};
+      const targetArea = typeof entities.targetArea === 'string' ? entities.targetArea : 'full_body';
+      const requestedDiscipline = typeof entities.discipline === 'string' ? entities.discipline : undefined;
+      const fitnessContext = (state.fitnessContext as Record<string, unknown> | undefined) ?? {};
+      const profileDisciplines = Array.isArray(fitnessContext.disciplines)
+        ? fitnessContext.disciplines.filter((x): x is string => typeof x === 'string')
+        : [];
+      const selected = requestedDiscipline && DISCIPLINES.includes(requestedDiscipline as FitnessDiscipline)
+        ? [requestedDiscipline as FitnessDiscipline]
+        : profileDisciplines.filter((x): x is FitnessDiscipline => DISCIPLINES.includes(x as FitnessDiscipline));
+      const disciplines = selected.length ? selected : DISCIPLINES;
+      const equipment = Array.isArray(fitnessContext.equipment)
+        ? fitnessContext.equipment.filter((x): x is string => typeof x === 'string')
+        : [];
+      const results = await Promise.all(
+        disciplines.map((discipline) =>
+          this.fitnessCatalog.list({
+            discipline,
+            level: 10,
+            query: targetArea === 'full_body' ? undefined : targetArea,
+            page: 1,
+            pageSize: 10,
+            equipment,
+          }),
+        ),
+      );
+      const items = results
+        .flatMap((result) => result.items)
+        .filter(
+          (item) =>
+            targetArea === 'full_body' ||
+            item.focus.some((focus) =>
+              this.normalize(focus).includes(this.normalize(targetArea)),
+            ),
+        )
+        .sort(
+          (a, b) =>
+            a.difficultyLevel - b.difficultyLevel ||
+            a.name.localeCompare(b.name),
+        )
+        .slice(0, 10);
+      return {
+        targetArea,
+        disciplines,
+        count: items.length,
+        items,
+        sourceOfTruth: 'FitnessCatalogService',
+        mediaRequirement: '4 approved WebP assets per movement',
+      };
+    }
+
     const workoutId = String(
       state.targetResourceId ?? state.targetExecutionId ?? '',
     );
     if (!workoutId) throw new Error('Missing workout target');
     if (candidate.action === 'delete_workout')
       return this.workouts.deleteWorkout(userId, workoutId);
+
     const input = this.normalizeDigits(String(context.input ?? '').trim());
     const durationMinutes = this.extractNumber(
       input,
@@ -51,13 +113,20 @@ export class WorkoutActionAdapter implements DecisionActionAdapter {
       ...(performedAt ? { performedAt } : {}),
     });
   }
+
+  private normalize(value: string) {
+    return value.toLowerCase().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
   private normalizeDigits(input: string) {
     return input.replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)));
   }
+
   private extractNumber(input: string, pattern: RegExp): number | null {
     const match = input.match(pattern);
     return match ? Number(match[1]) : null;
   }
+
   private extractDateTime(input: string): string | null {
     const date = input.match(/\b(20\d{2}-\d{2}-\d{2})\b/);
     const time = input.match(/\b([01]?\d|2[0-3]):([0-5]\d)\b/);
