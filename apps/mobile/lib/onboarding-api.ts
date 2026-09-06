@@ -4,7 +4,7 @@ import type { OnboardingState } from './onboarding';
 
 export async function persistOnboardingToBackend(state: OnboardingState): Promise<void> {
   const token = await getStoredAccessToken();
-  if (!token) return;
+  if (!token) throw new Error('Authentication is required for onboarding sync.');
 
   const response = await fetch(`${MOBILE_API_URL}/users/onboarding`, {
     method: 'POST',
