@@ -49,12 +49,18 @@ export class LocalLanguageUnderstandingService {
       return this.result('CANCEL_REQUEST', entities, referencesPrevious ? 0.98 : 0.91, normalizedText);
     if (referencesPrevious && this.matches(normalizedText, ['تغییر', 'عوض', 'کن', 'بکن', 'ویرایش', 'به جاش', 'بجاش', 'update', 'change']))
       return this.result('UPDATE_REQUEST', entities, 0.96, normalizedText);
-    if (fitnessTarget || this.matches(normalizedText, ['تمرین', 'ورزش', 'workout', 'exercise', 'training', 'باشگاه', 'عضله']))
-      return this.result('RECOMMEND_WORKOUT', entities, fitnessTarget ? 0.97 : 0.88, normalizedText);
-    if (food && this.matches(normalizedText, ['اضافه', 'بذار', 'بگذار', 'بخر', 'خرید', 'سبد', 'اضافه کن', 'add', 'basket']))
+    const shoppingRequest = Boolean(food) && this.matches(normalizedText, ['اضافه', 'بذار', 'بگذار', 'بخر', 'خرید', 'سبد', 'اضافه کن', 'add', 'basket']);
+    if (shoppingRequest)
       return this.result('ADD_TO_BASKET', entities, 0.97, normalizedText);
     if (food && this.matches(normalizedText, ['حذف', 'بردار', 'پاک', 'remove', 'delete']))
       return this.result('REMOVE_FROM_BASKET', entities, 0.97, normalizedText);
+    const workoutRequest =
+      !shoppingRequest &&
+      !food &&
+      Boolean(fitnessTarget) ||
+      (!shoppingRequest && this.matches(normalizedText, ['تمرین', 'ورزش', 'workout', 'exercise', 'training', 'باشگاه', 'عضله']));
+    if (workoutRequest)
+      return this.result('RECOMMEND_WORKOUT', entities, fitnessTarget ? 0.97 : 0.88, normalizedText);
     if (this.matches(normalizedText, ['یادم بنداز', 'یادآوری', 'یادآور', 'یادم نره', 'یادآوری کن', 'remind', 'reminder']))
       return this.result('CREATE_REMINDER', entities, time ? 0.97 : 0.9, normalizedText);
     if (this.matches(normalizedText, ['چی بخور', 'چه بخور', 'شام', 'ناهار', 'صبحانه', 'غذا پیشنهاد', 'پیشنهاد غذا', 'غذا چی', 'meal', 'dinner', 'lunch']))
@@ -67,7 +73,6 @@ export class LocalLanguageUnderstandingService {
   private normalize(input: string): string {
     return input.trim().toLowerCase().replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit))).replace(/ي/g, 'ی').replace(/ك/g, 'ک').replace(/[ۀة]/g, 'ه').replace(/‌/g, ' ').replace(/[؟?!،؛]/g, ' ').replace(/\s+/g, ' ');
   }
-
   private extractQuantity(text: string): number | undefined {
     const numeric = text.match(/\b(\d+(?:\.\d+)?)\b/);
     if (numeric) return Number(numeric[1]);
@@ -75,7 +80,6 @@ export class LocalLanguageUnderstandingService {
     for (const [word, value] of Object.entries(words)) if (new RegExp(`(?:^|\\s)${word}(?:\\s|$)`).test(text)) return value;
     return undefined;
   }
-
   private extractTime(text: string): string | undefined {
     const clock = text.match(/\b([01]?\d|2[0-3])\s*(?::|\.)([0-5]\d)\b/);
     if (clock) return `${clock[1].padStart(2, '0')}:${clock[2]}`;
@@ -83,14 +87,12 @@ export class LocalLanguageUnderstandingService {
     if (hour && Number(hour[1]) <= 23) return `${hour[1].padStart(2, '0')}:00`;
     return undefined;
   }
-
   private findMealType(text: string): string | undefined {
     if (this.matches(text, ['صبحانه', 'صبح', 'breakfast'])) return 'breakfast';
     if (this.matches(text, ['ناهار', 'ظهر', 'lunch'])) return 'lunch';
     if (this.matches(text, ['شام', 'شب', 'dinner'])) return 'dinner';
     return undefined;
   }
-
   private findFitnessTarget(text: string): string | undefined {
     const aliases: Array<[string, string[]]> = [
       ['shoulders', ['سرشانه', 'سرشونه', 'شانه', 'شونه', 'shoulder', 'shoulders']],
@@ -107,19 +109,16 @@ export class LocalLanguageUnderstandingService {
     ];
     return aliases.find(([, words]) => this.matches(text, words))?.[0];
   }
-
   private findFitnessDiscipline(text: string): string | undefined {
     if (this.matches(text, ['یوگا', 'yoga'])) return 'yoga';
     if (this.matches(text, ['کالیستنیکس', 'calisthenics', 'bodyweight'])) return 'calisthenics';
     if (this.matches(text, ['بدنسازی', 'باشگاه', 'gym', 'weight training'])) return 'gym';
     return undefined;
   }
-
   private findFood(text: string): string | undefined {
     const foods: Record<string, string> = { 'سینه مرغ': 'chicken', 'ماست کم چرب': 'yogurt', 'تخم مرغ': 'eggs', شیر: 'milk', milk: 'milk', 'تخم‌مرغ': 'eggs', eggs: 'eggs', مرغ: 'chicken', chicken: 'chicken', برنج: 'rice', rice: 'rice', ماست: 'yogurt', yogurt: 'yogurt', نان: 'bread', bread: 'bread', موز: 'banana', banana: 'banana', سیب: 'apple', apple: 'apple', پنیر: 'cheese', cheese: 'cheese' };
     return Object.entries(foods).sort(([a], [b]) => b.length - a.length).find(([phrase]) => text.includes(phrase))?.[1];
   }
-
   private findNegatedFoods(text: string): string[] {
     const foods = this.findAllFoods(text); const excluded: string[] = [];
     for (const [phrase, value] of Object.entries(foods)) {
@@ -128,15 +127,12 @@ export class LocalLanguageUnderstandingService {
     }
     return [...new Set(excluded)];
   }
-
   private findAllFoods(_text: string): Record<string, string> {
     return { 'سینه مرغ': 'chicken', 'ماست کم چرب': 'yogurt', 'تخم مرغ': 'eggs', شیر: 'milk', مرغ: 'chicken', برنج: 'rice', ماست: 'yogurt', نان: 'bread', موز: 'banana', سیب: 'apple', پنیر: 'cheese' };
   }
-
   private hasReference(text: string): boolean {
     return this.matches(text, ['همون', 'همین', 'اینو', 'اونو', 'این یکی', 'اون یکی', 'قبلی', 'دوباره', 'همونی که', 'همون که', 'به جاش', 'بجاش', 'the previous', 'that one', 'same']);
   }
-
   private matches(text: string, phrases: string[]): boolean { return phrases.some((phrase) => text.includes(phrase)); }
   private result(intent: LocalIntent, entities: Record<string, string | number | boolean | string[]>, confidence: number, normalizedText: string): LocalUnderstanding { return { intent, entities, confidence, normalizedText }; }
 }
