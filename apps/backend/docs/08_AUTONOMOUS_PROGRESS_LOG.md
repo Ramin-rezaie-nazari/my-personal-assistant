@@ -4,6 +4,38 @@
 >
 > Companion source-of-truth documents: `03_PROJECT_BRAIN_BOOK.md`, `04_ARCHITECTURE_ATLAS.md`, `05_CURRENT_STATE.md`, `06_VALIDATION_LEDGER.md`.
 
+## 2026-09-06 — Semantic recipe/fitness recommendation audit
+
+### Findings
+
+- Re-audited previously implemented recipe-country and fitness-natural-language capabilities instead of assuming their existence meant the full user journey was complete.
+- Found the recipe country layer was previously a soft ranking boost: a Japan user could still receive a foreign signature recipe such as Ghormeh Sabzi in the default recommendation pool.
+- Found the project already had an explicit global-food pattern set (pizza, pasta, burger, sushi, ramen, taco, curry, sandwich and other widely consumed foods), so global foods should remain available independent of country while culturally specific recipes receive local relevance.
+- Found the fitness natural-goal parser already recognized target areas including shoulders, but the local assistant intent model had no end-to-end `RECOMMEND_WORKOUT` action. The parser result could therefore stop at understanding rather than selecting real exercises.
+
+### Implemented
+
+- `GlobalCountryFoodService` now has a hard default-pool relevance filter: current-country signature recipes and same-cuisine recipes remain eligible; recognized global recipes remain eligible; exact foreign-country signature recipes are removed from default recommendations.
+- `FoodOperatingLoopService.recommend(...)` now applies that country relevance filter before scoring, so the recommendation engine cannot score an excluded foreign-local recipe back into the top results.
+- Added regression coverage for the Japan example and global Pizza/Pasta/Hamburger availability.
+- Added `RECOMMEND_WORKOUT` to the deterministic local assistant intent contract.
+- Added Persian/English body-target extraction for shoulders, chest, back, arms, core, waist, glutes, thighs, legs, calves and full body, plus discipline extraction for gym/calisthenics/yoga and requested duration extraction.
+- Routed `RECOMMEND_WORKOUT` through `AssistantService` as `recommend_workout`.
+- Extended the existing registered `WorkoutActionAdapter` rather than creating a second adapter. It now reads the persisted fitness profile, selects the user's active disciplines/equipment, queries the real `FitnessCatalogService`, filters by requested body target and returns actual catalog movements with media metadata.
+- Added NLU regression tests for Persian shoulder requests, English shoulder requests, duration extraction and discipline-specific calisthenics requests.
+- Added the previous work to this ledger so later sessions do not repeat the same semantic audit or implementation.
+
+### Example behavior now encoded by design
+
+- User country = JP + default meal recommendation -> foreign Iranian signature recipes such as Ghormeh Sabzi are excluded from the default pool, while global foods such as Pizza/Pasta/Hamburger remain eligible.
+- User says `برای سرشونه تمرین می‌خوام` -> deterministic intent `RECOMMEND_WORKOUT`, entity `targetArea=shoulders`, then the registered workout action queries the actual fitness catalog for shoulder-focused movements and respects the persisted fitness profile/equipment.
+
+### Validation truth
+
+- Source-level implementation and regression tests have been added.
+- The new recipe/fitness semantic changes are not yet declared GREEN until the active backend CI/test run completes successfully.
+- Runtime corpus population is still blocked by missing GitHub Actions runtime secrets; no claim is made that all recipe/exercise rows or all mirrored images exist in the target runtime database/storage.
+
 ## 2026-09-06 — Current autonomous corpus/release continuation
 
 ### Work performed in this continuation
