@@ -13,12 +13,17 @@ export type RecipePresentationStep = {
   id:string; stepNumber:number; instruction:string; durationSeconds:number|null; temperatureC:number|null;
   imageUrl:string|null; imageSource:string|null; sourceLicense:string|null; sourceAttribution:string|null;
 };
+export type RecipePresentationMedia = {
+  id:string; position:number; url:string; sourceUrl:string; sourceProvider:string; license:string;
+  attribution:string|null; mimeType:string; width:number|null; height:number|null;
+};
 export type RecipePresentation = {
   id:string; name:string; description:string|null; imageUrl:string|null; imageSource:string|null;
   servings:number; calories:number; protein:number; carbs:number; fat:number; verified:boolean;
-  ingredients:Array<{foodId:string;name:string;quantity:number;unit:string;measurementKind:string}>;
+  ingredients:Array<{id?:string;foodId:string;name:string;quantity:number;unit:string;measurementKind:string;imageUrl?:string|null}>;
+  media:RecipePresentationMedia[];
   steps:RecipePresentationStep[];
-  contentCompleteness:{hasHeroImage:boolean;hasInstructions:boolean;instructionStepCount:number};
+  contentCompleteness:{hasHeroImage:boolean;galleryImageCount:number;hasInstructions:boolean;instructionStepCount:number};
 };
 export type ScaledRecipe = {
   recipeId:string; baseServings:number; targetServings:number; scaleFactor:number; estimatedBatches:number;
