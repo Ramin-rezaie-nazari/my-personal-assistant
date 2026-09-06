@@ -8,6 +8,7 @@ on:
       - 'apps/mobile/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
+      - '.npmrc'
       - '.github/workflows/android-apk.yml'
 
 permissions:
@@ -45,7 +46,7 @@ jobs:
         run: pnpm typecheck
 
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
@@ -54,7 +55,10 @@ jobs:
         uses: android-actions/setup-android@v3
 
       - name: Generate native Android project
-        run: pnpm exec expo prebuild --platform android --non-interactive
+        env:
+          CI: '1'
+          NODE_ENV: 'development'
+        run: pnpm exec expo prebuild --platform android
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
