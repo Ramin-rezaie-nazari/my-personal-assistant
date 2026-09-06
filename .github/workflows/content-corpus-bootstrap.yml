@@ -9,6 +9,7 @@ on:
       - 'apps/backend/scripts/fitness-content-balance-levels.mjs'
       - 'apps/backend/scripts/fitness-content-audit.mjs'
       - 'apps/backend/scripts/fitness-media-verify.mjs'
+      - 'apps/backend/scripts/fitness-media-download.mjs'
       - 'apps/backend/scripts/recipe-content-import.mjs'
       - 'apps/backend/scripts/recipe-content-audit.mjs'
       - 'apps/backend/scripts/recipe-media-download.mjs'
@@ -64,10 +65,49 @@ jobs:
       - name: Balance the ten difficulty levels
         working-directory: apps/backend
         run: pnpm fitness:content:balance-levels
-      - name: Audit fitness release corpus
+      - name: Audit fitness release corpus before media mirroring
         working-directory: apps/backend
         run: pnpm fitness:content:audit
-      - name: Verify fitness WebP URLs
+
+  fitness-images:
+    name: Fitness image download and storage mirror
+    needs: fitness
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      DATABASE_URL: ${{ secrets.MYPA_FITNESS_DATABASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      FITNESS_MEDIA_CONCURRENCY: '6'
+      FITNESS_MEDIA_MAX_BYTES: '65536'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Require fitness database and storage
+        run: |
+          test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is required for fitness media mirroring.'; exit 2; }
+          test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for fitness media mirroring.'; exit 2; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for fitness media mirroring.'; exit 2; }
+      - name: Install workspace
+        run: pnpm install --frozen-lockfile
+      - name: Generate Prisma client
+        working-directory: apps/backend
+        run: pnpm prisma generate
+      - name: Download, convert and mirror all approved fitness media
+        working-directory: apps/backend
+        run: node ./scripts/fitness-media-download.mjs
+      - name: Verify final fitness WebP URLs
         working-directory: apps/backend
         run: pnpm fitness:content:verify-media
 
