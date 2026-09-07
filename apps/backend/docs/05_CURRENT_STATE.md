@@ -2,7 +2,7 @@
 
 > Operational source of truth for progress, validated checkpoints, completed slices, unfinished work, and the test ledger.
 >
-> Latest fully validated local backend checkpoint remains 2026-09-05. New corpus/media pipeline changes are implemented and documented but are not claimed runtime-green until their actual database/storage runs complete.
+> Latest fully validated local backend checkpoint remains 2026-09-05. New corpus/media pipeline changes are implemented and are not claimed runtime-green until the actual production database/storage population and audits complete.
 
 ## Executive status
 
@@ -10,38 +10,41 @@
 
 This weighted index is intentionally conservative. The project has substantial backend/product foundations, but 100% requires real corpus population, media mirroring, native integrations, device validation, production hardening, and store-release evidence.
 
-## Latest corpus/media truth — 2026-09-06
+## Latest corpus/media truth — 2026-09-07
 
 ### Implemented
 
-- Real recipe content importer restored at `apps/backend/scripts/recipe-content-import.mjs` using the Wikibooks Cookbook dataset with explicit CC BY-SA 4.0 provenance.
-- Recipe content import is transactional per recipe and requires usable title, ingredients, and procedural steps.
-- Recipe source media is attached to the runtime Prisma `RecipeMedia` model instead of only an unrelated legacy Supabase table.
-- `apps/backend/scripts/recipe-content-audit.mjs` validates recipe integrity, verification, ingredient quantities/links, step sequence, image/media coverage, license/provenance and duplicates; an empty corpus fails.
-- `apps/backend/scripts/recipe-media-download.mjs` downloads approved recipe source images, converts to WebP <=64KB, mirrors them to Storage, and rewrites the runtime `RecipeMedia`/hero URLs to the mirrored files.
-- `apps/backend/scripts/fitness-media-download.mjs` performs the same real download -> WebP -> Storage -> DB URL rewrite for approved fitness media.
-- `.github/workflows/content-corpus-bootstrap.yml` now has separate Fitness, Fitness Images, Recipe, and Recipe Images gates with explicit dependencies.
+- Recipe media policy is now **exactly one image per recipe**, and that image is the canonical **finished-dish hero** rather than a preparation/process gallery.
+- Canonical recipe source priority is the real licensed recipe-image dataset using the exact `recipe_source_raw.image_name` mapping; unresolved records use a separately audited Wikimedia Commons fallback. Generated recipe illustrations are not accepted as release media.
+- `apps/backend/scripts/recipe-image-dataset-import-v2.mjs` now supports a force-dataset mode that rewrites canonical recipe heroes to `recipes/<recipeId>/hero.webp`, records CC BY-SA 3.0 provenance and enforces a <=60KB WebP budget.
+- `apps/backend/scripts/recipe-image-import-all-safe.mjs` retries unresolved dataset rows through a licensed Wikimedia Commons search and keeps the same single-hero storage contract.
+- A partial unique index was applied in the connected Supabase content DB to enforce **at most one hero row per recipe** for `image_type='hero'`.
+- Fitness media policy remains **exactly four distinct images per movement**, ordered as `Start`, `Setup`, `Movement`, `Finish`. The generated stage renderer now produces distinct stage poses rather than four identical assets.
+- `.github/workflows/content-corpus-bootstrap.yml` contains separate corpus/image/fallback gates plus an exact-one recipe hero audit and four-stage fitness audit.
 
 ### Runtime validation
 
-- First corpus workflow runs `34034400326` and `34035229912` were confirmed failures because required runtime secrets were unavailable to GitHub Actions. They stopped before import/download.
-- Therefore the actual corpus counts and downloaded asset counts remain **PENDING**, not green.
+- Live Supabase inspection showed 13,029 recipes and, before the canonical remirror run, 11,643 recipes with one hero after duplicate cleanup; 1,386 recipes still lacked a hero.
+- Source mapping contains 12,983 recipe IDs with usable `image_name` values; 30 source rows contain `#NAME?`, and 16 recipes have no source row. These are the known coverage edges that must be handled by fallback/source repair.
+- GitHub Actions currently lacks the runtime credentials required to perform the actual Storage mirror (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`) and also lacks the separate corpus database secrets used by the full recipe/fitness import jobs. Therefore the production population is **PENDING**, not green.
+- Recipe real-image smoke validation is green on GitHub (`34094916385`) and proves one real finished-dish WebP asset without generated fallback.
+- The full/live corpus has not been marked complete because credential-gated runs stop before population.
 
 ### Required completion evidence
 
 Fitness must prove:
 - 500 published movements per discipline (Gym, Calisthenics, Yoga);
 - all 10 difficulty levels represented with >=50 publishable movements each;
-- >=4 approved WebP assets per movement;
-- source downloads completed and final `webpUrl` values point to the mirrored application assets;
+- exactly 4 approved/deliverable images per movement in Start/Setup/Movement/Finish order;
+- source downloads completed and final `webpUrl` values point to mirrored application assets;
 - final WebP verification passes.
 
 Recipes must prove:
 - non-empty large runtime corpus from the source dataset;
 - every release recipe verified with >=3 ingredients and >=2 contiguous procedural steps;
-- approved media/hero coverage for every release recipe;
-- every approved media asset downloaded, converted to WebP, mirrored to application Storage and linked through `RecipeMedia`;
-- content audit passes with zero failures.
+- exactly 1 finished-dish hero per release recipe;
+- every approved hero asset downloaded/converted to WebP, mirrored to application Storage and linked through the runtime recipe media layer;
+- exact-one audit passes with zero missing, duplicate, generated or non-WebP heroes.
 
 ## Latest validated local checkpoint — 2026-09-05
 
