@@ -10,6 +10,7 @@ on:
       - 'apps/backend/package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/content-media-full-corpus.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
