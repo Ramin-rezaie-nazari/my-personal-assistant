@@ -5,10 +5,20 @@ const API_URL = MOBILE_API_URL;
 const ACCESS_TOKEN_KEY = 'mpa.accessToken';
 const REFRESH_TOKEN_KEY = 'mpa.refreshToken';
 
+export type RecipeDetailMedia = {
+  id:string; position:number; url:string; sourceUrl:string; sourceProvider:string; license:string;
+  attribution:string|null; mimeType:string; width:number|null; height:number|null;
+};
+export type RecipeDetailStep = {
+  id:string; stepNumber:number; instruction:string; durationSeconds:number|null; temperatureC:number|null;
+  imageUrl:string|null; imageSource:string|null; sourceLicense:string|null; sourceAttribution:string|null;
+};
 export type RecipeDetail = {
   id:string; userId:string|null; name:string; description:string|null; imageUrl:string|null; imageSource:string|null;
   servings:number; calories:number; protein:number; carbs:number; fat:number; verified:boolean;
   ingredients:Array<{id:string;foodId:string;quantity:number;unit:string;calories:number;protein:number;carbs:number;fat:number;measurementKind?:string;food:{id:string;name:string;category:string;calories:number;protein:number;carbs:number;fat:number;imageUrl?:string|null;verified:boolean}}>;
+  steps?:RecipeDetailStep[];
+  media?:RecipeDetailMedia[];
 };
 export type RecipePresentationStep = {
   id:string; stepNumber:number; instruction:string; durationSeconds:number|null; temperatureC:number|null;
