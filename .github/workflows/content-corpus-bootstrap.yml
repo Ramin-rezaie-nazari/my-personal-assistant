@@ -94,7 +94,7 @@ jobs:
     env:
       DATABASE_URL: ${{ secrets.MYPA_RECIPE_DATABASE_URL }}
       RECIPE_IMPORT_CONCURRENCY: '2'
-      RECIPE_MAX_MEDIA: '1'
+      RECIPE_REQUIRE_IMAGE: '0'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -113,7 +113,6 @@ jobs:
   recipe-images:
     name: Recipe canonical real-image dataset mirror
     runs-on: ubuntu-24.04
-    timeout-minutes: 360
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
@@ -138,7 +137,6 @@ jobs:
     name: Recipe runtime media sync
     needs: [recipes, recipe-images]
     runs-on: ubuntu-24.04
-    timeout-minutes: 360
     env:
       DATABASE_URL: ${{ secrets.MYPA_RECIPE_DATABASE_URL }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -165,7 +163,6 @@ jobs:
     name: Recipe Wikimedia fallback
     needs: recipe-images
     runs-on: ubuntu-24.04
-    timeout-minutes: 360
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
