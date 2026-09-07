@@ -1,9 +1,10 @@
 import http from 'node:http';
+import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
 const REAL_URL = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '');
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-const PIPELINE = new URL('./recipe-images-local-mac-pipeline.mjs', import.meta.url);
+const PIPELINE = fileURLToPath(new URL('./recipe-images-local-mac-pipeline.mjs', import.meta.url));
 
 if (!REAL_URL || !KEY) {
   throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
@@ -73,6 +74,9 @@ if (mode !== 'secret') {
   const childEnv = {
     ...process.env,
     SUPABASE_URL: `http://127.0.0.1:${port}`,
+    // Keep the real project URL separately so local manifest/storage URLs
+    // continue to point at Supabase instead of localhost.
+    SUPABASE_PUBLIC_URL: REAL_URL,
     // The proxy owns the secret key; the child receives only a marker so the
     // pipeline can build its existing auth headers without exposing the real
     // key outside this process. The proxy replaces the upstream apikey value.
