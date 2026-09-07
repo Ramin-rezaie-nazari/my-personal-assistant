@@ -41,30 +41,37 @@ async function syncHero(hero) {
   const recipeId = hero.recipe_id;
   const url = hero.image_url || publicStorageUrl(recipeId);
   if (!recipeId || !url) return false;
+  if ((hero.mime_type || 'image/webp').toLowerCase() !== 'image/webp') {
+    throw new Error(`Runtime sync rejected non-WebP hero for ${recipeId}: ${hero.mime_type}`);
+  }
 
-  await prisma.recipe.updateMany({
-    where: { id: recipeId },
-    data: {
-      imageUrl: url,
-      imageSource: `${hero.source_name || 'recipe-images'}; ${hero.source_license || 'unknown'}`,
-    },
-  });
+  await prisma.$transaction(async (tx) => {
+    const existing = await tx.recipe.count({ where: { id: recipeId } });
+    if (existing !== 1) return;
+    await tx.recipe.updateMany({
+      where: { id: recipeId },
+      data: {
+        imageUrl: url,
+        imageSource: `${hero.source_name || 'recipe-images'}; ${hero.source_license || 'unknown'}`,
+      },
+    });
 
-  await prisma.recipeMedia.deleteMany({ where: { recipeId } });
-  await prisma.recipeMedia.create({
-    data: {
-      recipeId,
-      position: 1,
-      url,
-      sourceUrl: hero.source_url || url,
-      sourceProvider: hero.source_name || 'recipe-images',
-      license: hero.source_license || 'unknown',
-      attribution: hero.source_attribution || null,
-      mimeType: hero.mime_type || 'image/webp',
-      width: hero.width || null,
-      height: hero.height || null,
-      status: 'approved',
-    },
+    await tx.recipeMedia.deleteMany({ where: { recipeId } });
+    await tx.recipeMedia.create({
+      data: {
+        recipeId,
+        position: 1,
+        url,
+        sourceUrl: hero.source_url || url,
+        sourceProvider: hero.source_name || 'recipe-images',
+        license: hero.source_license || 'unknown',
+        attribution: hero.source_attribution || null,
+        mimeType: 'image/webp',
+        width: hero.width || null,
+        height: hero.height || null,
+        status: 'approved',
+      },
+    });
   });
   return true;
 }
