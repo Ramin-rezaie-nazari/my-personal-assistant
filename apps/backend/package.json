@@ -39,8 +39,9 @@
     "fitness:media:guaranteed": "node ./scripts/fitness-media-guaranteed-mirror-v2.mjs",
     "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs",
     "recipe:media:stage": "node ./scripts/recipe-media-guaranteed-mirror-v6.mjs",
+    "recipe:media:final": "node ./scripts/recipe-media-final-only-v1.mjs",
     "content:mirror": "pnpm content:mirror:recipes; recipe_status=$?; pnpm fitness:media:guaranteed; fitness_status=$?; test $recipe_status -eq 0 -a $fitness_status -eq 0",
-    "content:mirror:recipes": "node ./scripts/recipe-media-guaranteed-mirror-v6.mjs",
+    "content:mirror:recipes": "node ./scripts/recipe-media-final-only-v1.mjs",
     "content:mirror:fitness": "pnpm fitness:media:guaranteed",
     "content:mirror:audit": "node ./scripts/content-mirror-audit.mjs"
   },
