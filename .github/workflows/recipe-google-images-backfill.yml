@@ -1,6 +1,13 @@
 name: MYPA recipe Google Images hero backfill
 
 on:
+  push:
+    branches:
+      - agent/mypa-autonomous-control-plane
+    paths:
+      - 'apps/backend/scripts/recipe-image-google-first-result-import.mjs'
+      - 'apps/backend/package.json'
+      - '.github/workflows/recipe-google-images-backfill.yml'
   workflow_dispatch:
     inputs:
       limit:
@@ -36,6 +43,13 @@ concurrency:
   group: mypa-recipe-google-images-backfill
   cancel-in-progress: false
 
+env:
+  RECIPE_GOOGLE_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || '0' }}
+  RECIPE_GOOGLE_DELAY_MS: ${{ github.event_name == 'workflow_dispatch' && inputs.delay_ms || '2500' }}
+  RECIPE_GOOGLE_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && inputs.concurrency || '2' }}
+  RECIPE_GOOGLE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true && '1' || '0' }}
+  RECIPE_GOOGLE_FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force == true && '1' || '0' }}
+
 jobs:
   google-first-result:
     name: Import first Google Images result as recipe hero
@@ -44,11 +58,6 @@ jobs:
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      RECIPE_GOOGLE_LIMIT: ${{ inputs.limit }}
-      RECIPE_GOOGLE_DELAY_MS: ${{ inputs.delay_ms }}
-      RECIPE_GOOGLE_CONCURRENCY: ${{ inputs.concurrency }}
-      RECIPE_GOOGLE_DRY_RUN: ${{ inputs.dry_run == true && '1' || '0' }}
-      RECIPE_GOOGLE_FORCE: ${{ inputs.force == true && '1' || '0' }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -71,8 +80,8 @@ jobs:
       - name: Run Google Images first-result backfill
         working-directory: apps/backend
         run: pnpm recipe-images:google-first
-      - name: Audit missing hero count
-        if: ${{ inputs.dry_run != true }}
+      - name: Audit hero coverage
+        if: ${{ env.RECIPE_GOOGLE_DRY_RUN != '1' }}
         working-directory: apps/backend
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
