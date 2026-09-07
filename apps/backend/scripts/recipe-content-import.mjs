@@ -49,8 +49,14 @@ function parseRecipe(row) {
 async function fetchJson(url, attempts = 5) {
   let last;
   for (let i = 0; i < attempts; i += 1) {
-    try { const response = await fetch(url, { headers: { 'User-Agent': 'MYPA-RecipeImporter/1.0' } }); if (!response.ok) throw new Error(`${response.status} ${url}`); return response.json(); }
-    catch (error) { last = error; if (i < attempts - 1) await sleep(700 * 2 ** i); }
+    try {
+      const response = await fetch(url, { headers: { 'User-Agent': 'MYPA-RecipeImporter/1.0' } });
+      if (!response.ok) throw new Error(`${response.status} ${url}`);
+      return response.json();
+    } catch (error) {
+      last = error;
+      if (i < attempts - 1) await sleep(700 * 2 ** i);
+    }
   }
   throw last;
 }
@@ -60,23 +66,80 @@ async function getOrCreateFood(tx, name) {
   return tx.foodItem.create({ data: { id: randomUUID(), userId: null, name, category: 'recipe ingredient', verified: false, calories: 0, protein: 0, carbs: 0, fat: 0 } });
 }
 async function importRecipe(parsed) {
-  if (!parsed.title || parsed.title === 'Untitled Recipe' || parsed.ingredients.length === 0 || parsed.steps.length === 0) return { status: 'skipped', title: parsed.title, reason: 'missing title/ingredients/steps' };
+  if (!parsed.title || parsed.title === 'Untitled Recipe' || parsed.ingredients.length === 0 || parsed.steps.length === 0) {
+    return { status: 'skipped', title: parsed.title, reason: 'missing title/ingredients/steps' };
+  }
   return prisma.$transaction(async (tx) => {
     const existing = await tx.recipe.findFirst({ where: { userId: null, name: parsed.title } });
     const recipe = existing
-      ? await tx.recipe.update({ where: { id: existing.id }, data: { description: parsed.description, servings: parsed.servings, verified: true, imageUrl: null, imageSource: DATASET_SOURCE } })
-      : await tx.recipe.create({ data: { id: randomUUID(), userId: null, name: parsed.title, description: parsed.description, servings: parsed.servings, calories: 0, protein: 0, carbs: 0, fat: 0, verified: true, imageUrl: null, imageSource: DATASET_SOURCE } });
+      ? await tx.recipe.update({
+          where: { id: existing.id },
+          data: {
+            description: parsed.description,
+            servings: parsed.servings,
+            verified: true,
+            // Content import must never delete or reset release media.
+          },
+        })
+      : await tx.recipe.create({
+          data: {
+            id: randomUUID(),
+            userId: null,
+            name: parsed.title,
+            description: parsed.description,
+            servings: parsed.servings,
+            calories: 0,
+            protein: 0,
+            carbs: 0,
+            fat: 0,
+            verified: true,
+            imageUrl: null,
+            imageSource: DATASET_SOURCE,
+          },
+        });
+
     await tx.recipeStep.deleteMany({ where: { recipeId: recipe.id } });
     await tx.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } });
-    await tx.recipeMedia.deleteMany({ where: { recipeId: recipe.id } });
+
     for (const ingredient of parsed.ingredients) {
       const food = await getOrCreateFood(tx, ingredient.name);
-      await tx.recipeIngredient.create({ data: { id: randomUUID(), recipeId: recipe.id, foodId: food.id, quantity: ingredient.quantity, unit: ingredient.unit, measurementKind: ingredient.measurementKind, scalingPolicy: ingredient.scalingPolicy, calories: 0, protein: 0, carbs: 0, fat: 0 } });
+      await tx.recipeIngredient.create({
+        data: {
+          id: randomUUID(),
+          recipeId: recipe.id,
+          foodId: food.id,
+          quantity: ingredient.quantity,
+          unit: ingredient.unit,
+          measurementKind: ingredient.measurementKind,
+          scalingPolicy: ingredient.scalingPolicy,
+          calories: 0,
+          protein: 0,
+          carbs: 0,
+          fat: 0,
+        },
+      });
     }
+
     for (const [index, instruction] of parsed.steps.entries()) {
-      await tx.recipeStep.create({ data: { id: randomUUID(), recipeId: recipe.id, stepNumber: index + 1, instruction, sourceLicense: DATASET_LICENSE, sourceAttribution: `${DATASET_SOURCE}; ${parsed.sourceUrl}` } });
+      await tx.recipeStep.create({
+        data: {
+          id: randomUUID(),
+          recipeId: recipe.id,
+          stepNumber: index + 1,
+          instruction,
+          sourceLicense: DATASET_LICENSE,
+          sourceAttribution: `${DATASET_SOURCE}; ${parsed.sourceUrl}`,
+        },
+      });
     }
-    return { status: 'imported', recipeId: recipe.id, ingredientCount: parsed.ingredients.length, stepCount: parsed.steps.length, mediaCount: 0 };
+
+    return {
+      status: 'imported',
+      recipeId: recipe.id,
+      ingredientCount: parsed.ingredients.length,
+      stepCount: parsed.steps.length,
+      mediaCount: await tx.recipeMedia.count({ where: { recipeId: recipe.id, status: 'approved' } }),
+    };
   });
 }
 async function main() {
@@ -89,9 +152,27 @@ async function main() {
   const parsed = batch.map(parseRecipe);
   const results = new Array(parsed.length);
   let cursor = 0;
-  const worker = async () => { while (true) { const index = cursor++; if (index >= parsed.length) return; try { results[index] = await importRecipe(parsed[index]); } catch (error) { results[index] = { status: 'failed', title: parsed[index].title, error: error instanceof Error ? error.message : String(error) }; } } };
+  const worker = async () => {
+    while (true) {
+      const index = cursor++;
+      if (index >= parsed.length) return;
+      try {
+        results[index] = await importRecipe(parsed[index]);
+      } catch (error) {
+        results[index] = { status: 'failed', title: parsed[index].title, error: error instanceof Error ? error.message : String(error) };
+      }
+    }
+  };
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, parsed.length) }, worker));
-  const stats = { datasetRows: dataset.length, selectedRows: batch.length, imported: results.filter((r) => r?.status === 'imported').length, skipped: results.filter((r) => r?.status === 'skipped').length, failed: results.filter((r) => r?.status === 'failed').length, ingredientsImported: results.reduce((sum, r) => sum + Number(r?.ingredientCount || 0), 0), stepsImported: results.reduce((sum, r) => sum + Number(r?.stepCount || 0), 0) };
+  const stats = {
+    datasetRows: dataset.length,
+    selectedRows: batch.length,
+    imported: results.filter((r) => r?.status === 'imported').length,
+    skipped: results.filter((r) => r?.status === 'skipped').length,
+    failed: results.filter((r) => r?.status === 'failed').length,
+    ingredientsImported: results.reduce((sum, r) => sum + Number(r?.ingredientCount || 0), 0),
+    stepsImported: results.reduce((sum, r) => sum + Number(r?.stepCount || 0), 0),
+  };
   console.log(JSON.stringify({ source: DATASET_SOURCE, license: DATASET_LICENSE, offset, limit: batch.length, ...stats }, null, 2));
   if (stats.imported === 0 || stats.failed > 0) process.exitCode = 1;
 }
