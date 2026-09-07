@@ -1,12 +1,11 @@
-import http from 'node:http';
 import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
-const REAL_URL = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '');
+const SUPABASE_URL = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '');
 const KEY = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 const PIPELINE = fileURLToPath(new URL('./recipe-images-local-mac-pipeline.mjs', import.meta.url));
 
-if (!REAL_URL || !KEY) {
+if (!SUPABASE_URL || !KEY) {
   throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
 }
 
@@ -32,70 +31,30 @@ if (mode !== 'secret') {
     process.exit(code ?? 1);
   });
 } else {
-  // New Supabase secret keys are API keys, not JWT bearer tokens.
-  // The existing local pipeline sends its configured key as both `apikey`
-  // and `Authorization: Bearer ...`. This localhost proxy removes the
-  // bearer header before forwarding requests, while preserving the key
-  // as the upstream `apikey` header.
-  const target = new URL(REAL_URL);
-
-  const server = http.createServer((req, res) => {
-    const upstream = new URL(req.url || '/', target);
-    const headers = { ...req.headers };
-    delete headers.host;
-    delete headers.authorization;
-    headers.apikey = KEY;
-    headers['user-agent'] = headers['user-agent'] || 'MYPA-local-mac-recipe-pipeline';
-
-    const request = http.request(
-      upstream,
-      {
-        method: req.method,
-        headers,
-      },
-      (response) => {
-        res.writeHead(response.statusCode || 502, response.headers);
-        response.pipe(res);
-      },
-    );
-
-    request.on('error', (error) => {
-      res.statusCode = 502;
-      res.end(`Supabase proxy error: ${error.message}`);
-    });
-    req.pipe(request);
-  });
-
-  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const address = server.address();
-  const port = typeof address === 'object' && address ? address.port : null;
-  if (!port) throw new Error('Failed to start local Supabase compatibility proxy.');
-
-  const childEnv = {
-    ...process.env,
-    SUPABASE_URL: `http://127.0.0.1:${port}`,
-    // Keep the real project URL separately so local manifest/storage URLs
-    // continue to point at Supabase instead of localhost.
-    SUPABASE_PUBLIC_URL: REAL_URL,
-    // The proxy owns the secret key; the child receives only a marker so the
-    // pipeline can build its existing auth headers without exposing the real
-    // key outside this process. The proxy replaces the upstream apikey value.
-    SUPABASE_SERVICE_ROLE_KEY: 'sb_secret_local_proxy_marker',
-  };
+  // Supabase Secret keys are API keys, not JWT bearer tokens. The existing
+  // pipeline sends its key as both `apikey` and `Authorization: Bearer ...`.
+  // Patch fetch in the child process so the real Supabase URL is preserved
+  // while the upstream request receives only the API-key form of auth.
+  const authShim = [
+    'const originalFetch = globalThis.fetch;',
+    'globalThis.fetch = (input, init = {}) => {',
+    '  const headers = new Headers(init.headers || {});',
+    '  headers.delete("authorization");',
+    '  headers.set("apikey", process.env.SUPABASE_SERVICE_ROLE_KEY);',
+    '  return originalFetch(input, { ...init, headers });',
+    '};',
+  ].join('\n');
+  const shim = `data:text/javascript,${encodeURIComponent(authShim)}`;
 
   console.log('[MYPA] Supabase key mode: new secret key (API key).');
-  console.log('[MYPA] Using localhost compatibility proxy; Authorization bearer header will NOT be sent upstream.');
+  console.log('[MYPA] Using real Supabase URL; Authorization bearer header is stripped before each fetch.');
 
-  const child = spawn(process.execPath, [PIPELINE], {
+  const child = spawn(process.execPath, ['--import', shim, PIPELINE], {
     stdio: 'inherit',
-    env: childEnv,
+    env: process.env,
   });
 
-  const cleanup = () => {
-    try { server.close(); } catch {}
-  };
   child.on('exit', (code, signal) => {
-    cleanup();
     if (signal) process.kill(process.pid, signal);
     process.exit(code ?? 1);
   });
