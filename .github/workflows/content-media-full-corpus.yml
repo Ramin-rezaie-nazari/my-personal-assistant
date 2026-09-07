@@ -1,0 +1,83 @@
+name: Full Content Media Corpus
+
+on:
+  push:
+    paths:
+      - 'apps/backend/scripts/recipe-media-guaranteed-mirror-v6.mjs'
+      - 'apps/backend/scripts/fitness-media-guaranteed-mirror-v2.mjs'
+      - 'apps/backend/package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/content-media-full-corpus.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  full-corpus:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Build full recipe media corpus
+        working-directory: apps/backend
+        env:
+          MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/.tmp-content-mirror
+          RECIPE_STAGE_CONCURRENCY: 4
+          RECIPE_STAGE_PROGRESS_EVERY: 25
+        run: pnpm content:mirror:recipes
+      - name: Build full fitness media corpus
+        working-directory: apps/backend
+        env:
+          MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/.tmp-content-mirror
+          FITNESS_MEDIA_CONCURRENCY: 6
+        run: pnpm fitness:media:guaranteed
+      - name: Audit full four-asset contract
+        working-directory: apps/backend
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const root = path.resolve('.tmp-content-mirror');
+          const recipeSummary = JSON.parse(fs.readFileSync(path.join(root, 'recipe-stage-summary.json'), 'utf8'));
+          const fitnessSummary = JSON.parse(fs.readFileSync(path.join(root, 'fitness-media-guaranteed-summary.json'), 'utf8'));
+          if (recipeSummary.complete !== recipeSummary.recipes) throw new Error(`Recipe corpus incomplete: ${JSON.stringify(recipeSummary)}`);
+          if (!fitnessSummary.corpusComplete || fitnessSummary.complete !== fitnessSummary.exercises) throw new Error(`Fitness corpus incomplete: ${JSON.stringify(fitnessSummary)}`);
+          const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+          for (const item of Object.values(manifest.items ?? {})) {
+            if (item.kind !== 'recipe') continue;
+            if (item.mediaCount !== 4 || item.media?.length !== 4 || item.stageStatus !== 'complete') throw new Error(`Recipe contract failed: ${item.name}`);
+            const stages = item.media.map((m) => m.stage).sort().join(',');
+            if (stages !== 'final,process-1,process-2,process-3') throw new Error(`Recipe stages failed: ${item.name}`);
+            const process = item.media.filter((m) => m.stage.startsWith('process-'));
+            if (new Set(process.map((m) => m.sha256)).size !== 3) throw new Error(`Recipe process duplicates: ${item.name}`);
+            for (const media of item.media) {
+              const f = path.join(root, media.localPath);
+              if (media.status !== 'ready' || media.format !== 'webp' || media.sizeBytes <= 0 || media.sizeBytes > 65536 || !fs.existsSync(f)) throw new Error(`Recipe media invalid: ${item.name}/${media.stage}`);
+            }
+          }
+          const fitnessManifest = JSON.parse(fs.readFileSync(path.join(root, 'fitness-media-guaranteed-manifest.json'), 'utf8'));
+          for (const item of Object.values(fitnessManifest.items ?? {})) {
+            if (item.mediaCount !== 4 || item.media?.length !== 4 || item.physicalStatus !== 'complete') throw new Error(`Fitness contract failed: ${item.name}`);
+            for (const media of item.media) {
+              const f = path.join(root, media.localPath);
+              if (media.status !== 'ready' || media.format !== 'webp' || media.sizeBytes <= 0 || media.sizeBytes > 65536 || !fs.existsSync(f)) throw new Error(`Fitness media invalid: ${item.name}/${media.position}`);
+            }
+          }
+          console.log(JSON.stringify({ recipeSummary, fitnessSummary }, null, 2));
+          NODE
+      - name: Upload complete media corpus
+        uses: actions/upload-artifact@v4
+        with:
+          name: mypa-full-content-media-${{ github.sha }}
+          path: apps/backend/.tmp-content-mirror
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
