@@ -2,7 +2,7 @@
 CREATE TABLE "RecipeMedia" (
     "id" TEXT NOT NULL,
     "recipeId" TEXT NOT NULL,
-    "position" INTEGER NOT NULL,
+    "position" INTEGER NOT NULL DEFAULT 0,
     "url" TEXT NOT NULL,
     "sourceUrl" TEXT NOT NULL,
     "sourceProvider" TEXT NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE "RecipeMedia" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "RecipeMedia_recipeId_position_key" ON "RecipeMedia"("recipeId", "position");
+CREATE UNIQUE INDEX "RecipeMedia_recipeId_key" ON "RecipeMedia"("recipeId");
 CREATE INDEX "RecipeMedia_recipeId_status_idx" ON "RecipeMedia"("recipeId", "status");
 CREATE INDEX "RecipeMedia_sourceProvider_license_idx" ON "RecipeMedia"("sourceProvider", "license");
 
