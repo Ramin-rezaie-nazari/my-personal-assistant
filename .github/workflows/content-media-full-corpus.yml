@@ -46,6 +46,7 @@ jobs:
           node --input-type=module <<'NODE'
           import fs from 'node:fs';
           import path from 'node:path';
+          import sharp from 'sharp';
           const root = path.resolve('.tmp-content-mirror');
           const recipes = JSON.parse(fs.readFileSync(path.join(root, 'recipe-final-summary.json'), 'utf8'));
           const recipeManifest = JSON.parse(fs.readFileSync(path.join(root, 'recipe-final-manifest.json'), 'utf8'));
@@ -53,23 +54,41 @@ jobs:
           for (const item of Object.values(recipeManifest.items ?? {})) {
             if (item.status !== 'ready' || item.mediaCount !== 1 || item.stage !== 'final' || item.format !== 'webp' || item.sizeBytes <= 0 || item.sizeBytes > 65536 || item.generated !== false || item.sourceType !== 'real-dataset-image') throw new Error(`Recipe media contract failed: ${item.name}`);
             if (!item.sourceUrl && !item.imageName) throw new Error(`Recipe provenance missing: ${item.name}`);
-            if (!fs.existsSync(path.join(root, item.localPath))) throw new Error(`Recipe file missing: ${item.name}`);
+            const file = path.join(root, item.localPath);
+            if (!fs.existsSync(file)) throw new Error(`Recipe file missing: ${item.name}`);
+            const meta = await sharp(file).metadata();
+            if (meta.format !== 'webp') throw new Error(`Recipe media magic/format failed: ${item.name}`);
           }
           const fitness = JSON.parse(fs.readFileSync(path.join(root, 'fitness-media-guaranteed-summary.json'), 'utf8'));
           if (!fitness.corpusComplete || fitness.datasetRows !== fitness.exercises || fitness.complete !== fitness.exercises || fitness.incomplete !== 0 || fitness.failed !== 0) throw new Error(`Fitness corpus incomplete: ${JSON.stringify(fitness)}`);
           const fitnessManifest = JSON.parse(fs.readFileSync(path.join(root, 'fitness-media-guaranteed-manifest.json'), 'utf8'));
           const expectedStages = ['Start','Setup','Movement','Finish'];
+          const byDiscipline = new Map();
+          const byLevel = new Map();
           for (const item of Object.values(fitnessManifest.items ?? {})) {
             if (item.mediaCount !== 4 || item.media?.length !== 4 || item.physicalStatus !== 'complete') throw new Error(`Fitness contract failed: ${item.name}`);
             if (JSON.stringify(item.stageContract) !== JSON.stringify(expectedStages)) throw new Error(`Fitness stage contract failed: ${item.name}`);
             if (JSON.stringify(item.media.map((m) => m.stage)) !== JSON.stringify(expectedStages)) throw new Error(`Fitness stage ordering failed: ${item.name}`);
             if (new Set(item.media.map((m) => m.sha256)).size !== 4) throw new Error(`Fitness duplicate media: ${item.name}`);
+            const discipline = String(item.discipline ?? item.kind ?? '').toLowerCase();
+            const level = Number(item.difficultyLevel);
+            byDiscipline.set(discipline, (byDiscipline.get(discipline) ?? 0) + 1);
+            const levelKey = `${discipline}:${level}`;
+            byLevel.set(levelKey, (byLevel.get(levelKey) ?? 0) + 1);
             for (const media of item.media) {
               const file = path.join(root, media.localPath);
               if (media.status !== 'ready' || media.format !== 'webp' || media.sizeBytes <= 0 || media.sizeBytes > 65536 || !fs.existsSync(file)) throw new Error(`Fitness media invalid: ${item.name}/${media.position}`);
+              const meta = await sharp(file).metadata();
+              if (meta.format !== 'webp') throw new Error(`Fitness media magic/format failed: ${item.name}/${media.position}`);
             }
           }
-          console.log(JSON.stringify({ recipes, fitness }, null, 2));
+          for (const discipline of ['gym','calisthenics','yoga']) {
+            if ((byDiscipline.get(discipline) ?? 0) !== 500) throw new Error(`Fitness discipline target failed: ${discipline}=${byDiscipline.get(discipline) ?? 0}`);
+            for (let level = 1; level <= 10; level += 1) {
+              if ((byLevel.get(`${discipline}:${level}`) ?? 0) < 50) throw new Error(`Fitness level balance failed: ${discipline} level ${level}=${byLevel.get(`${discipline}:${level}`) ?? 0}`);
+            }
+          }
+          console.log(JSON.stringify({ recipes, fitness, byDiscipline: Object.fromEntries(byDiscipline), byLevel: Object.fromEntries(byLevel) }, null, 2));
           NODE
       - name: Upload complete media corpus
         uses: actions/upload-artifact@v4
