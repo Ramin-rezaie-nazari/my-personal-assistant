@@ -83,8 +83,12 @@ function imageIndex(root) {
       else if (exts.has(extname(name).toLowerCase())) {
         count += 1;
         const stem = name.slice(0, -extname(name).length);
+        const normalizedName = name.toLowerCase().replace(/\s+/g, ' ').trim();
         if (!index.has(name)) index.set(name, full);
+        if (!index.has(normalizedName)) index.set(normalizedName, full);
         if (!index.has(stem)) index.set(stem, full);
+        const normalizedStem = stem.toLowerCase().replace(/\s+/g, ' ').trim();
+        if (!index.has(normalizedStem)) index.set(normalizedStem, full);
       }
     }
   }
@@ -94,11 +98,29 @@ function imageIndex(root) {
 async function sourceRows() {
   const rows = [];
   for (let offset = 0; ; offset += 1000) {
-    const page = await rest(`recipe_source_raw?select=recipe_id,image_name&order=created_at.asc&limit=1000&offset=${offset}`);
+    const page = await rest(`recipe_source_raw?select=recipe_id,image_name&order=recipe_id.asc&limit=1000&offset=${offset}`);
     rows.push(...(page || []));
     if (!page || page.length < 1000) break;
   }
-  return rows;
+  const byRecipe = new Map();
+  for (const row of rows) {
+    const id = row?.recipe_id;
+    if (!id || byRecipe.has(id)) continue;
+    const image = String(row?.image_name ?? '').trim();
+    if (!image || image === '#NAME?') continue;
+    byRecipe.set(id, { recipe_id: id, image_name: image });
+  }
+  return [...byRecipe.values()];
+}
+
+async function recipeIds() {
+  const ids = [];
+  for (let offset = 0; ; offset += 1000) {
+    const page = await rest(`recipes?select=id&order=id.asc&limit=1000&offset=${offset}`);
+    ids.push(...(page || []).map((r) => r.id).filter(Boolean));
+    if (!page || page.length < 1000) break;
+  }
+  return ids;
 }
 
 async function existingIds() {
@@ -144,26 +166,36 @@ async function main() {
   if (RESET) await resetState();
   const root = datasetRoot();
   const { index, count } = imageIndex(root);
-  const rows = await sourceRows();
+  const [rows, allRecipeIds] = await Promise.all([sourceRows(), recipeIds()]);
   const done = await existingIds();
-  const work = rows.filter((row) => row.image_name && !done.has(row.recipe_id));
-  const stats = { imported: 0, skipped: 0, failed: 0, alreadyDone: rows.length - work.length, total: work.length };
-  console.log(JSON.stringify({ datasetRoot: root, discoveredImages: count, sourceRows: rows.length, todo: work.length, concurrency: CONCURRENCY }, null, 2));
+  const work = rows.filter((row) => !done.has(row.recipe_id));
+  const expectedWithSource = new Set(rows.map((r) => r.recipe_id));
+  const recipesWithoutSource = allRecipeIds.filter((id) => !expectedWithSource.has(id));
+  const stats = { imported: 0, skipped: 0, failed: 0, alreadyDone: rows.length - work.length, total: work.length, recipeCount: allRecipeIds.length, sourceMappedRecipes: rows.length, recipesWithoutValidSourceImageName: recipesWithoutSource.length };
+  console.log(JSON.stringify({ datasetRoot: root, discoveredImages: count, ...stats, concurrency: CONCURRENCY }, null, 2));
   let cursor = 0;
   async function worker() {
     while (true) {
       const i = cursor++;
       if (i >= work.length) return;
       const row = work[i];
-      const file = index.get(row.image_name) || index.get(`${row.image_name}.jpg`) || index.get(`${row.image_name}.jpeg`) || index.get(`${row.image_name}.png`);
+      const candidateNames = [row.image_name, basename(row.image_name), `${row.image_name}.jpg`, `${row.image_name}.jpeg`, `${row.image_name}.png`];
+      let file = null;
+      for (const candidate of candidateNames) {
+        const normalized = candidate.toLowerCase().replace(/\s+/g, ' ').trim();
+        file = index.get(candidate) || index.get(normalized) || index.get(basename(candidate).replace(/\.[^.]+$/, '')) || index.get(normalized.replace(/\.[^.]+$/, ''));
+        if (file) break;
+      }
       if (!file) { stats.skipped += 1; await mark(row.recipe_id, 'skipped', `Dataset image not found for Image_Name=${row.image_name}`); continue; }
       try { const bytes = await importOne(row, file); stats.imported += 1; if ((stats.imported + stats.skipped + stats.failed) % 25 === 0) console.log(JSON.stringify({ progress: stats.imported + stats.skipped + stats.failed, ...stats, lastBytes: bytes }, null, 2)); }
       catch (e) { stats.failed += 1; const reason = e instanceof Error ? e.message : String(e); await mark(row.recipe_id, 'failed', reason); console.error(`[FAILED] ${row.recipe_id} ${row.image_name}: ${reason}`); }
     }
   }
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, work.length) }, () => worker()));
-  console.log(JSON.stringify({ status: 'complete', ...stats }, null, 2));
-  if (stats.failed > 0) process.exitCode = 1;
+  const finalHeroCount = Number((await rest('recipe_images?select=id&image_type=eq.hero&limit=1', { headers: { Prefer: 'count=exact' } }))?.length ?? 0);
+  const finalCoverage = allRecipeIds.length ? Math.max(0, allRecipeIds.length - recipesWithoutSource.length - stats.skipped - stats.failed) : stats.imported;
+  console.log(JSON.stringify({ status: stats.failed || stats.skipped || recipesWithoutSource.length ? 'failed' : 'complete', ...stats, finalHeroCount, finalCoverageEstimate: finalCoverage }, null, 2));
+  if (stats.failed > 0 || stats.skipped > 0 || recipesWithoutSource.length > 0) process.exitCode = 1;
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
