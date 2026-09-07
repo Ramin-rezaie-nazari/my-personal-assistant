@@ -26,7 +26,6 @@ on:
 
 permissions:
   contents: read
-
 concurrency:
   group: mypa-content-corpus-bootstrap
   cancel-in-progress: false
@@ -45,10 +44,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with: { version: 11.18.0, run_install: false }
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: pnpm-lock.yaml }
       - run: test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is required for the fitness corpus.'; exit 2; }
       - run: pnpm install --frozen-lockfile
       - working-directory: apps/backend
@@ -76,10 +72,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with: { version: 11.18.0, run_install: false }
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: pnpm-lock.yaml }
       - run: |
           test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is required for fitness media mirroring.'; exit 2; }
           test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for fitness media mirroring.'; exit 2; }
@@ -105,10 +98,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with: { version: 11.18.0, run_install: false }
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: pnpm-lock.yaml }
       - run: test -n "$DATABASE_URL" || { echo 'MYPA_RECIPE_DATABASE_URL is required for the recipe content corpus.'; exit 2; }
       - run: pnpm install --frozen-lockfile
       - working-directory: apps/backend
@@ -119,7 +109,7 @@ jobs:
         run: pnpm recipe:content:audit
 
   recipe-images:
-    name: Recipe real-image dataset mirror
+    name: Recipe canonical real-image dataset mirror
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     env:
@@ -127,16 +117,14 @@ jobs:
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       RECIPE_IMAGE_CONCURRENCY: '4'
       RECIPE_IMAGE_RESET: '0'
+      RECIPE_IMAGE_FORCE_DATASET: '1'
       RECIPE_IMAGE_ALLOW_INCOMPLETE: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
         with: { version: 11.18.0, run_install: false }
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: pnpm-lock.yaml }
       - run: |
           test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for recipe media mirroring.'; exit 2; }
           test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for recipe media mirroring.'; exit 2; }
@@ -161,10 +149,7 @@ jobs:
       - uses: pnpm/action-setup@v4
         with: { version: 11.18.0, run_install: false }
       - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: pnpm
-          cache-dependency-path: pnpm-lock.yaml
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: pnpm-lock.yaml }
       - run: |
           test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for recipe fallback.'; exit 2; }
           test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for recipe fallback.'; exit 2; }
@@ -181,5 +166,5 @@ jobs:
           const base=process.env.SUPABASE_URL.replace(/\/+$/,''); const key=process.env.SUPABASE_SERVICE_ROLE_KEY; const headers={apikey:key,Authorization:`Bearer ${key}`};
           const fetchRows=async(table,q)=>{const r=await fetch(`${base}/rest/v1/${table}?${q}`,{headers});if(!r.ok)throw new Error(`${r.status} ${await r.text()}`);return r.json()};
           const count=async(table,q)=>{const r=await fetch(`${base}/rest/v1/${table}?select=id&${q}&limit=1`,{headers:{...headers,Prefer:'count=exact'}});if(!r.ok)throw new Error(`${r.status} ${await r.text()}`);return Number((r.headers.get('content-range')||'0/0').split('/')[1])};
-          const recipes=await count('recipes','id=not.is.null'); const heroes=await fetchRows('recipe_images','select=recipe_id,mime_type,image_url,storage_key&image_type=eq.hero&order=recipe_id.asc&limit=20000'); const by=new Map(); for(const r of heroes)by.set(r.recipe_id,(by.get(r.recipe_id)||0)+1); const dup=[...by.values()].filter(n=>n!==1).length; const webp=heroes.filter(r=>r.mime_type==='image/webp'&&/\/hero\.webp$/.test(r.storage_key||'')&&/\/hero\.webp$/.test(r.image_url||'')).length; if(heroes.length!==recipes||dup!==0||webp!==recipes)throw new Error(JSON.stringify({recipes,heroRows:heroes.length,duplicateRecipeIds:dup,webp})); console.log(JSON.stringify({recipes,heroRows:heroes.length,duplicateRecipeIds:dup,webp},null,2));
+          const recipes=await count('recipes','id=not.is.null'); const heroes=await fetchRows('recipe_images','select=recipe_id,mime_type,image_url,storage_key,source_name&image_type=eq.hero&order=recipe_id.asc&limit=20000'); const by=new Map(); for(const r of heroes)by.set(r.recipe_id,(by.get(r.recipe_id)||0)+1); const dup=[...by.values()].filter(n=>n!==1).length; const webp=heroes.filter(r=>r.mime_type==='image/webp'&&/\/hero\.webp$/.test(r.storage_key||'')&&/\/hero\.webp$/.test(r.image_url||'')).length; const sourceOk=heroes.filter(r=>/Food Ingredients and Recipes Dataset with Images|Wikimedia Commons/i.test(r.source_name||'')).length; if(heroes.length!==recipes||dup!==0||webp!==recipes||sourceOk!==recipes)throw new Error(JSON.stringify({recipes,heroRows:heroes.length,duplicateRecipeIds:dup,webp,approvedSources:sourceOk})); console.log(JSON.stringify({recipes,heroRows:heroes.length,duplicateRecipeIds:dup,webp,approvedSources:sourceOk},null,2));
           NODE
