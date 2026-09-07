@@ -4,7 +4,7 @@ const DATASET_URL =
   'https://huggingface.co/datasets/gossminn/wikibooks-cookbook/resolve/main/recipes_parsed.json?download=true';
 const WIKIBOOKS_API = 'https://en.wikibooks.org/w/api.php';
 const CACHE_MS = 30 * 60 * 1000;
-const MAX_MEDIA = 4;
+const MAX_MEDIA = 1;
 const MIN_STEP_CHARS = 20;
 
 type DatasetRow = {
@@ -78,16 +78,17 @@ export class PublicRecipeCatalogService {
     const recipe = rows.map((row) => this.parse(row)).find((item) => item.id === id);
     if (!recipe) return null;
     const media = await this.fetchMedia(recipe.sourceUrl, recipe.name);
-    const imageUrl = media[0]?.url ?? recipe.imageUrl;
-    const imageSource = media[0] ? `${media[0].sourceProvider}; ${media[0].license}` : recipe.imageSource;
+    const hero = media[0] ?? null;
+    const imageUrl = hero?.url ?? recipe.imageUrl;
+    const imageSource = hero ? `${hero.sourceProvider}; ${hero.license}` : recipe.imageSource;
     return {
       ...recipe,
       imageUrl,
       imageSource,
-      media,
+      media: hero ? [hero] : [],
       contentCompleteness: {
         hasHeroImage: Boolean(imageUrl),
-        galleryImageCount: media.length,
+        galleryImageCount: hero ? 1 : 0,
         hasInstructions: recipe.steps.length > 0,
         instructionStepCount: recipe.steps.length,
       },
@@ -153,8 +154,9 @@ export class PublicRecipeCatalogService {
     const directTitle = decodeURIComponent(sourceUrl.split('/wiki/')[1] || '').replace(/_/g, ' ');
     let media = directTitle ? await this.fetchPageImages(directTitle) : [];
     if (media.length < MAX_MEDIA) media = await this.searchWikimediaImages(recipeName, media);
-    this.mediaCache.set(sourceUrl, media.slice(0, MAX_MEDIA));
-    return this.mediaCache.get(sourceUrl) ?? [];
+    const result = media.slice(0, MAX_MEDIA);
+    this.mediaCache.set(sourceUrl, result);
+    return result;
   }
 
   private async fetchPageImages(title: string) {
@@ -207,7 +209,7 @@ export class PublicRecipeCatalogService {
       const url = info.thumburl || info.url;
       result.push({
         id: `${slug(fileTitle)}-${result.length + 1}`,
-        position: result.length,
+        position: result.length + 1,
         url,
         sourceUrl: info.descriptionurl || info.url,
         sourceProvider: 'Wikimedia Commons/Wikibooks',
