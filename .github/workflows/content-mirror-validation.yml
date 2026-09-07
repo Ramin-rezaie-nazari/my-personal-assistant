@@ -7,7 +7,15 @@ on:
       - 'apps/backend/scripts/content-mirror-audit.mjs'
       - 'apps/backend/scripts/fitness-media-guaranteed-mirror-v2.mjs'
       - 'apps/backend/scripts/recipe-media-guaranteed-mirror-v6.mjs'
+      - 'apps/backend/scripts/recipe-content-import.mjs'
+      - 'apps/backend/scripts/recipe-content-audit.mjs'
+      - 'apps/backend/scripts/recipe-source-mapping-repair.mjs'
+      - 'apps/backend/scripts/recipe-image-import-all-safe.mjs'
+      - 'apps/backend/scripts/recipe-image-dataset-import-v2.mjs'
+      - 'apps/backend/scripts/recipe-media-runtime-sync.mjs'
+      - 'apps/backend/scripts/recipe-media-runtime-audit.mjs'
       - 'apps/backend/package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/content-mirror-validation.yml'
   pull_request:
     paths:
@@ -15,13 +23,21 @@ on:
       - 'apps/backend/scripts/content-mirror-audit.mjs'
       - 'apps/backend/scripts/fitness-media-guaranteed-mirror-v2.mjs'
       - 'apps/backend/scripts/recipe-media-guaranteed-mirror-v6.mjs'
+      - 'apps/backend/scripts/recipe-content-import.mjs'
+      - 'apps/backend/scripts/recipe-content-audit.mjs'
+      - 'apps/backend/scripts/recipe-source-mapping-repair.mjs'
+      - 'apps/backend/scripts/recipe-image-import-all-safe.mjs'
+      - 'apps/backend/scripts/recipe-image-dataset-import-v2.mjs'
+      - 'apps/backend/scripts/recipe-media-runtime-sync.mjs'
+      - 'apps/backend/scripts/recipe-media-runtime-audit.mjs'
       - 'apps/backend/package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/content-mirror-validation.yml'
 
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -29,7 +45,16 @@ jobs:
           node-version: 24
       - name: Validate JSON
         run: node -e "JSON.parse(require('fs').readFileSync('apps/backend/package.json','utf8')); console.log('package.json OK')"
-      - name: Validate script syntax
+      - name: Validate recipe/content script syntax
+        run: |
+          node --check apps/backend/scripts/recipe-content-import.mjs
+          node --check apps/backend/scripts/recipe-content-audit.mjs
+          node --check apps/backend/scripts/recipe-source-mapping-repair.mjs
+          node --check apps/backend/scripts/recipe-image-import-all-safe.mjs
+          node --check apps/backend/scripts/recipe-image-dataset-import-v2.mjs
+          node --check apps/backend/scripts/recipe-media-runtime-sync.mjs
+          node --check apps/backend/scripts/recipe-media-runtime-audit.mjs
+      - name: Validate existing mirror script syntax
         run: |
           node --check apps/backend/scripts/content-mirror-run.mjs
           node --check apps/backend/scripts/content-mirror-audit.mjs
@@ -37,3 +62,8 @@ jobs:
           node --check apps/backend/scripts/recipe-media-guaranteed-mirror-v6.mjs
       - name: Confirm sharp remains declared
         run: node -e "const p=require('./apps/backend/package.json'); if(!p.dependencies.sharp) process.exit(1); console.log('sharp dependency OK')"
+      - name: Frozen install contract
+        run: |
+          corepack enable
+          corepack prepare pnpm@11.18.0 --activate
+          pnpm install --frozen-lockfile --ignore-scripts
