@@ -1,5 +1,5 @@
 # Full-corpus media build and audit for every recipe and every fitness movement.
-# Final media contract: one real finished-dish asset per recipe; four instructional assets per exercise.
+# Final media contract: one real finished-dish asset per recipe; four instructional stage assets per exercise.
 name: Full Content Media Corpus
 
 on:
@@ -58,8 +58,11 @@ jobs:
           const fitness = JSON.parse(fs.readFileSync(path.join(root, 'fitness-media-guaranteed-summary.json'), 'utf8'));
           if (!fitness.corpusComplete || fitness.datasetRows !== fitness.exercises || fitness.complete !== fitness.exercises || fitness.incomplete !== 0 || fitness.failed !== 0) throw new Error(`Fitness corpus incomplete: ${JSON.stringify(fitness)}`);
           const fitnessManifest = JSON.parse(fs.readFileSync(path.join(root, 'fitness-media-guaranteed-manifest.json'), 'utf8'));
+          const expectedStages = ['Start','Setup','Movement','Finish'];
           for (const item of Object.values(fitnessManifest.items ?? {})) {
             if (item.mediaCount !== 4 || item.media?.length !== 4 || item.physicalStatus !== 'complete') throw new Error(`Fitness contract failed: ${item.name}`);
+            if (JSON.stringify(item.stageContract) !== JSON.stringify(expectedStages)) throw new Error(`Fitness stage contract failed: ${item.name}`);
+            if (JSON.stringify(item.media.map((m) => m.stage)) !== JSON.stringify(expectedStages)) throw new Error(`Fitness stage ordering failed: ${item.name}`);
             if (new Set(item.media.map((m) => m.sha256)).size !== 4) throw new Error(`Fitness duplicate media: ${item.name}`);
             for (const media of item.media) {
               const file = path.join(root, media.localPath);
