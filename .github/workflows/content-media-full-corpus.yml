@@ -30,14 +30,14 @@ jobs:
       - name: Build full recipe media corpus
         working-directory: apps/backend
         env:
-          MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/.tmp-content-mirror
+          MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/apps/backend/.tmp-content-mirror
           RECIPE_STAGE_CONCURRENCY: 4
           RECIPE_STAGE_PROGRESS_EVERY: 25
         run: pnpm content:mirror:recipes
       - name: Build full fitness media corpus
         working-directory: apps/backend
         env:
-          MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/.tmp-content-mirror
+          MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/apps/backend/.tmp-content-mirror
           FITNESS_MEDIA_CONCURRENCY: 6
         run: pnpm fitness:media:guaranteed
       - name: Audit full four-asset contract
