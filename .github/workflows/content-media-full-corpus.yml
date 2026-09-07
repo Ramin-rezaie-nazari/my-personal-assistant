@@ -1,4 +1,5 @@
 # Full-corpus media build and audit for every recipe and every fitness movement.
+# This workflow intentionally runs on changes to either guaranteed media generator.
 name: Full Content Media Corpus
 
 on:
