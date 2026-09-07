@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const appDir = path.resolve(process.cwd(), 'apps/mobile/app');
+const appDir = fs.existsSync(path.resolve(process.cwd(), 'app'))
+  ? path.resolve(process.cwd(), 'app')
+  : path.resolve(process.cwd(), 'apps/mobile/app');
 const expected = [
   '/', '/assistant', '/daily', '/meals', '/meal-builder', '/smart-meals', '/recipe-library', '/recipe-match',
   '/inventory', '/shopping', '/habits', '/supplements', '/reminders', '/calendar', '/notifications',
