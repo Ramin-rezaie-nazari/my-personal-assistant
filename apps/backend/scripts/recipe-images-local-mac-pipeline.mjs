@@ -147,30 +147,64 @@ function decodeGoogleString(value) {
   }
 }
 
+function isGoogleThumbnail(url) {
+  const lower = String(url).toLowerCase();
+  return lower.includes('encrypted-tbn0.gstatic.com') ||
+    lower.includes('gstatic.com/images/branding') ||
+    lower.includes('googleusercontent.com/static') ||
+    lower.includes('google.com/images/branding');
+}
+
 function extractImageCandidates(html) {
-  const candidates = [];
-  const regexes = [
+  const ranked = [];
+  const add = (value, rank) => {
+    let url = normalizeUrl(value);
+    if (!url) return;
+    if (isGoogleThumbnail(url)) rank += 100;
+    ranked.push({ url, rank });
+  };
+
+  const originalRegexes = [
     /"ou"\s*:\s*"((?:\\.|[^"\\])+)"/g,
     /\\"ou\\"\s*:\s*\\"((?:\\.|[^"\\])+)\\"/g,
     /[?&]imgurl=([^&"']+)/g,
     /data-iurl=["']([^"']+)["']/g,
     /data-original=["']([^"']+)["']/g,
   ];
-  for (const regex of regexes) {
+
+  for (const [regexIndex, regex] of originalRegexes.entries()) {
     for (const match of html.matchAll(regex)) {
       let value = match[1];
       try { value = decodeURIComponent(value); } catch {}
       if (regex.source.includes('"ou"')) value = decodeGoogleString(value);
-      const url = normalizeUrl(value);
-      if (url) candidates.push(url);
+      // URLs extracted from imgurl/data-iurl/data-original are more likely to
+      // be the actual source image than the rendered 274x169 Google thumbnail.
+      add(value, regexIndex === 2 || regexIndex >= 3 ? 1 : 2);
     }
   }
-  return [...new Set(candidates)].filter((url) => {
-    const lower = url.toLowerCase();
-    return !lower.includes('gstatic.com/images/branding') &&
-      !lower.includes('googleusercontent.com/static') &&
-      !lower.includes('google.com/images/branding');
-  });
+
+  // Newer Google layouts can still expose the original target inside image
+  // redirect links. Collect explicit imgres/imgurl pairs as a second pass.
+  const redirectRegex = /https?:\/\/[^\s"'<>]+(?:imgres|url\?)[^\s"'<>]*/gi;
+  for (const match of html.matchAll(redirectRegex)) {
+    const raw = match[0].replaceAll('&amp;', '&');
+    try {
+      const parsed = new URL(raw);
+      const candidate = parsed.searchParams.get('imgurl') || parsed.searchParams.get('url');
+      if (candidate) add(candidate, 0);
+    } catch {}
+  }
+
+  const seen = new Set();
+  return ranked
+    .sort((a, b) => a.rank - b.rank)
+    .map((entry) => entry.url)
+    .filter((url) => {
+      const key = url.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 }
 
 async function googleCandidates(recipeName) {
@@ -362,7 +396,7 @@ async function importMissing(recipe, manifestMap) {
   const { query, searchUrl, candidates } = await googleCandidates(recipe.name);
   let candidateIndex = 0;
   let last;
-  for (const imageUrl of candidates.slice(0, 12)) {
+  for (const imageUrl of candidates.slice(0, 24)) {
     candidateIndex += 1;
     try {
       const input = await downloadBytes(imageUrl);
