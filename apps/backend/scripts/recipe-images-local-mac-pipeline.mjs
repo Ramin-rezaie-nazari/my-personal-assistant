@@ -23,8 +23,8 @@ const CATALOG_PATH = path.join(ROOT, 'recipe-catalog.jsonl');
 const MANIFEST_PATH = path.join(MANIFEST_DIR, 'recipe-hero-manifest.jsonl');
 const SUMMARY_PATH = path.join(MANIFEST_DIR, 'summary.json');
 
-const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, '');
-const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const SUPABASE_URL = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '');
+const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 const BUCKET = 'recipe-images';
 const MAX_BYTES = 60 * 1024;
 const PAGE_SIZE = 1000;
@@ -42,7 +42,11 @@ if (!SUPABASE_URL || !SERVICE_KEY) {
   throw new Error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY locally. This script only reads from Supabase and never writes to it.');
 }
 
-const authHeaders = { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` };
+const authHeaders = {
+  apikey: SERVICE_KEY,
+  Authorization: `Bearer ${SERVICE_KEY}`,
+  Accept: 'application/json',
+};
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const now = () => new Date().toISOString();
 
@@ -64,7 +68,7 @@ async function supabase(pathname, options = {}, attempts = 6) {
         headers: { ...authHeaders, 'Content-Type': 'application/json', ...(options.headers || {}) },
       });
       const text = await response.text();
-      if (response.ok) return text ? JSON.parse(text) : null;
+      if (response.ok) return { data: text ? JSON.parse(text) : null, response };
       if (response.status === 429 || response.status >= 500) {
         await sleep(Math.min(30_000, 1000 * 2 ** i));
         continue;
@@ -78,6 +82,26 @@ async function supabase(pathname, options = {}, attempts = 6) {
   throw last || new Error(`Supabase request failed: ${pathname}`);
 }
 
+async function verifySupabaseReadAccess() {
+  const { data, response } = await supabase(
+    'recipes?select=id,name&order=id.asc&limit=1',
+    { headers: { Prefer: 'count=exact' } },
+    3,
+  );
+  const contentRange = response.headers.get('content-range') || '';
+  const totalMatch = contentRange.match(/\/(\d+)$/);
+  const total = totalMatch ? Number(totalMatch[1]) : null;
+  if (!Array.isArray(data)) throw new Error('Supabase recipes response is not an array.');
+  if (total === 0 || (total === null && data.length === 0)) {
+    throw new Error(`Supabase read returned 0 recipes. Verify SUPABASE_URL points to the intended project and the supplied key has read access to public.recipes. URL=${SUPABASE_URL}`);
+  }
+  return { total, sample: data[0] || null };
+}
+
+function unwrap(result) {
+  return result?.data ?? result;
+}
+
 function publicStorageUrl(storageKey) {
   if (!storageKey) return null;
   const encoded = String(storageKey).split('/').map(encodeURIComponent).join('/');
@@ -87,7 +111,8 @@ function publicStorageUrl(storageKey) {
 async function fetchAllRecipes() {
   const rows = [];
   for (let offset = 0; ; offset += PAGE_SIZE) {
-    const page = await supabase(`recipes?select=id,name&order=id.asc&limit=${PAGE_SIZE}&offset=${offset}`);
+    const result = await supabase(`recipes?select=id,name&order=id.asc&limit=${PAGE_SIZE}&offset=${offset}`);
+    const page = unwrap(result);
     rows.push(...(page || []).filter((r) => r?.id && String(r.name || '').trim()));
     if (!page || page.length < PAGE_SIZE) break;
   }
@@ -97,9 +122,10 @@ async function fetchAllRecipes() {
 async function fetchHeroRelations() {
   const rows = [];
   for (let offset = 0; ; offset += PAGE_SIZE) {
-    const page = await supabase(
+    const result = await supabase(
       `recipe_images?select=recipe_id,image_type,image_url,storage_key,width,height,byte_size,mime_type,source_name,source_url,source_license,source_attribution&image_type=eq.hero&order=recipe_id.asc&limit=${PAGE_SIZE}&offset=${offset}`,
     );
+    const page = unwrap(result);
     rows.push(...(page || []));
     if (!page || page.length < PAGE_SIZE) break;
   }
@@ -267,16 +293,13 @@ async function appendErrorLog(row) {
 }
 
 async function writeCatalog(recipes) {
-  const lines = recipes.map((r) => JSON.stringify({ recipeId: r.id, name: r.name })).join('\n') + '\n';
+  const lines = recipes.map((r) => JSON.stringify({ recipeId: r.id, name: r.name })).join('\n') + (recipes.length ? '\n' : '');
   await fs.writeFile(CATALOG_PATH, lines, 'utf8');
 }
 
 async function mirrorExisting(recipe, relation, manifestMap) {
   const key = `recipes/${recipe.id}/hero.webp`;
   const destination = path.join(IMAGE_ROOT, key);
-  if (!FORCE && !manifestMap.has(String(recipe.id))) {
-    // no-op: manifest may have no row for a file that was placed manually; validate below.
-  }
 
   try {
     const existing = await fs.readFile(destination);
@@ -378,7 +401,11 @@ async function importMissing(recipe, manifestMap) {
 
 async function main() {
   await ensureDirs();
+  const access = await verifySupabaseReadAccess();
   const [recipes, heroRelations] = await Promise.all([fetchAllRecipes(), fetchHeroRelations()]);
+  if (recipes.length === 0) {
+    throw new Error(`Read access succeeded but 0 recipe rows were returned. Probe total=${access.total ?? 'unknown'}, sample=${JSON.stringify(access.sample)}`);
+  }
   const relationByRecipe = new Map();
   for (const row of heroRelations) {
     if (!relationByRecipe.has(String(row.recipe_id))) relationByRecipe.set(String(row.recipe_id), row);
@@ -401,7 +428,7 @@ async function main() {
     catalogOnly: CATALOG_ONLY,
   };
 
-  console.log(JSON.stringify(stats, null, 2));
+  console.log(JSON.stringify({ ...stats, supabaseProbe: access }, null, 2));
   if (CATALOG_ONLY) {
     stats.finishedAt = now();
     await fs.writeFile(SUMMARY_PATH, JSON.stringify(stats, null, 2));
