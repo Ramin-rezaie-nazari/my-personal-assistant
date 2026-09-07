@@ -1,13 +1,6 @@
 name: MYPA recipe Google Images hero backfill
 
 on:
-  push:
-    branches:
-      - agent/mypa-autonomous-control-plane
-    paths:
-      - 'apps/backend/scripts/recipe-image-google-first-result-import.mjs'
-      - 'apps/backend/package.json'
-      - '.github/workflows/recipe-google-images-backfill.yml'
   workflow_dispatch:
     inputs:
       limit:
@@ -40,19 +33,19 @@ permissions:
   contents: read
 
 concurrency:
-  group: mypa-recipe-google-images-backfill
+  group: mypa-recipe-google-images-backfill-manual
   cancel-in-progress: false
 
 env:
-  RECIPE_GOOGLE_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.limit || '0' }}
-  RECIPE_GOOGLE_DELAY_MS: ${{ github.event_name == 'workflow_dispatch' && inputs.delay_ms || '2500' }}
-  RECIPE_GOOGLE_CONCURRENCY: ${{ github.event_name == 'workflow_dispatch' && inputs.concurrency || '2' }}
-  RECIPE_GOOGLE_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run == true && '1' || '0' }}
-  RECIPE_GOOGLE_FORCE: ${{ github.event_name == 'workflow_dispatch' && inputs.force == true && '1' || '0' }}
+  RECIPE_GOOGLE_LIMIT: ${{ inputs.limit || '0' }}
+  RECIPE_GOOGLE_DELAY_MS: ${{ inputs.delay_ms || '2500' }}
+  RECIPE_GOOGLE_CONCURRENCY: ${{ inputs.concurrency || '2' }}
+  RECIPE_GOOGLE_DRY_RUN: ${{ inputs.dry_run == true && '1' || '0' }}
+  RECIPE_GOOGLE_FORCE: ${{ inputs.force == true && '1' || '0' }}
 
 jobs:
   google-first-result:
-    name: Import first Google Images result as recipe hero
+    name: Manual Google Images first-result backfill
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     env:
@@ -73,7 +66,8 @@ jobs:
         run: |
           test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required.'; exit 2; }
           test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required.'; exit 2; }
-      - run: pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
       - name: Syntax check importer
         working-directory: apps/backend
         run: node --check ./scripts/recipe-image-google-first-result-import.mjs
