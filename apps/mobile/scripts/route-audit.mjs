@@ -5,7 +5,7 @@ const appDir = fs.existsSync(path.resolve(process.cwd(), 'app'))
   ? path.resolve(process.cwd(), 'app')
   : path.resolve(process.cwd(), 'apps/mobile/app');
 const expected = [
-  '/', '/assistant', '/daily', '/meals', '/meal-builder', '/smart-meals', '/recipe-library', '/recipe-match',
+  '/', '/auth', '/onboarding', '/assistant', '/daily', '/meals', '/meal-builder', '/smart-meals', '/recipe-library', '/recipe-match',
   '/inventory', '/shopping', '/habits', '/supplements', '/reminders', '/calendar', '/notifications',
   '/insights', '/brain-overview', '/language', '/fitness', '/gym', '/calisthenics', '/yoga',
   '/exercise', '/meal/[id]', '/recipe/[id]',
