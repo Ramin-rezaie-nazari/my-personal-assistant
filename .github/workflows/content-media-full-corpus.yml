@@ -34,7 +34,7 @@ jobs:
         env:
           MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/apps/backend/.tmp-content-mirror
           RECIPE_FINAL_CONCURRENCY: 12
-        run: pnpm content:mirror:recipes
+        run: node ./scripts/recipe-media-final-generated-v1.mjs
       - name: Build full fitness media corpus
         working-directory: apps/backend
         env:
