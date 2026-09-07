@@ -122,7 +122,7 @@ async function main() {
     }
   }
 
-  const duplicateNames = await prisma.$queryRaw<Array<{ normalized: string; count: bigint }>>(Prisma.sql`
+  const duplicateNames = await prisma.$queryRaw(Prisma.sql`
     SELECT lower(regexp_replace(trim("name"), '\\s+', ' ', 'g')) AS normalized, count(*)
     FROM "Recipe"
     WHERE "userId" IS NULL
