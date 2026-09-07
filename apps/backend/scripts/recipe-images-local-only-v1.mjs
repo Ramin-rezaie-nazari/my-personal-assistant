@@ -20,8 +20,8 @@ const LIMIT = Math.max(Number(process.env.RECIPE_LOCAL_LIMIT || '0'), 0);
 const CONCURRENCY = Math.min(Math.max(Number(process.env.RECIPE_LOCAL_CONCURRENCY || '3'), 1), 6);
 const DELAY_MS = Math.max(Number(process.env.RECIPE_LOCAL_DELAY_MS || '700'), 0);
 const FORCE = process.env.RECIPE_LOCAL_FORCE === '1';
-const MAX_CANDIDATES_PER_PAGE = 32;
 const MAX_SEARCH_RESULTS = 8;
+const MAX_IMAGE_CANDIDATES = 24;
 const PAGE_TIMEOUT_MS = 20000;
 const IMAGE_TIMEOUT_MS = 20000;
 const MAX_OUTPUT_BYTES = 150 * 1024;
@@ -29,7 +29,26 @@ const MIN_OUTPUT_BYTES = 20 * 1024;
 const MIN_SOURCE_SIDE = 640;
 const MIN_OUTPUT_SIDE = 640;
 const MAX_SOURCE_RATIO = 2.5;
-const USER_AGENT = 'MYPA-recipe-media-local/1.0';
+const USER_AGENT = 'MYPA-recipe-media-local/2.0';
+
+const SOURCE_DOMAINS = [
+  'epicurious.com',
+  'bonappetit.com',
+  'foodandwine.com',
+  'seriouseats.com',
+  'allrecipes.com',
+  'bbcgoodfood.com',
+  'tasteofhome.com',
+  'simplyrecipes.com',
+  'thekitchn.com',
+  'delish.com',
+  'eatingwell.com',
+  'cooking.nytimes.com',
+  'foodnetwork.com',
+  'recipetineats.com',
+  'loveandlemons.com',
+  'onceuponachef.com',
+];
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const now = () => new Date().toISOString();
@@ -50,21 +69,21 @@ async function appendJsonl(file, row) {
 }
 
 async function loadCatalog() {
-  if (!ensureFileExists(CATALOG)) {
-    throw new Error(`Local recipe catalog not found: ${CATALOG}. Set RECIPE_LOCAL_CATALOG to a local JSONL catalog.`);
-  }
+  if (!ensureFileExists(CATALOG)) throw new Error(`Local recipe catalog not found: ${CATALOG}`);
   const text = await fs.readFile(CATALOG, 'utf8');
   const recipes = [];
   const seen = new Set();
   for (const line of text.split(/\r?\n/)) {
     if (!line.trim()) continue;
-    let row;
-    try { row = JSON.parse(line); } catch { continue; }
-    const id = String(row.recipeId || row.id || '').trim();
-    const name = String(row.name || row.recipeName || '').trim();
-    if (!id || !name || seen.has(id)) continue;
-    seen.add(id);
-    recipes.push({ id, name });
+    try {
+      const row = JSON.parse(line);
+      const id = String(row.recipeId || row.id || '').trim();
+      const name = String(row.name || row.recipeName || '').trim();
+      if (id && name && !seen.has(id)) {
+        seen.add(id);
+        recipes.push({ id, name });
+      }
+    } catch {}
   }
   if (!recipes.length) throw new Error(`Local recipe catalog is empty: ${CATALOG}`);
   return recipes;
@@ -110,71 +129,46 @@ function normalizeUrl(value) {
   return /^https?:\/\//i.test(url) ? url : null;
 }
 
-function pageScore(url, recipe) {
-  const u = String(url).toLowerCase();
-  const slug = slugify(recipe.name);
-  let score = 0;
-  if (u.includes('epicurious.com/recipes/food/views/')) score += 100;
-  if (u.includes(slug)) score += 80;
-  if (u.includes('/recipes/food/views/')) score += 50;
-  return score;
-}
-
-function discoverEpicuriousUrls(recipe, html) {
-  const urls = [];
-  const add = (value) => {
-    const url = normalizeUrl(value)?.replace(/[),.;]+$/, '');
-    if (url && /epicurious\.com\/recipes\/food\/views\//i.test(url)) urls.push(url);
-  };
-  for (const m of html.matchAll(/https?:\/\/www\.epicurious\.com\/recipes\/food\/views\/[A-Za-z0-9_%\-]+/gi)) add(m[0]);
-  for (const m of html.matchAll(/https?:\/\/www\.epicurious\.com\/recipes\/food\/views\/[A-Za-z0-9_%\-]+/gi)) add(m[0]);
-  return [...new Set(urls)].sort((a, b) => pageScore(b, recipe) - pageScore(a, recipe)).slice(0, MAX_SEARCH_RESULTS);
-}
-
-function epicuriousPageCandidates(recipe) {
-  const raw = String(recipe.name || '').trim();
-  const values = [...new Set([slugify(raw), raw.toLowerCase().replace(/\s+/g, '-'), raw].filter(Boolean))];
-  return values.map((value) => `https://www.epicurious.com/recipes/food/views/${encodeURIComponent(value)}`);
-}
-
-function extractImageCandidates(html) {
-  const found = [];
-  const add = (value, score = 50) => {
-    const url = normalizeUrl(value ? decodeURIComponentSafe(String(value)) : null);
-    if (!url) return;
-    const lower = url.toLowerCase();
-    if (!lower.includes('assets.epicurious.com') && !/\.(?:jpe?g|png|webp)(?:[?#]|$)/i.test(url)) return;
-    if (/encrypted-tbn|gstatic\.com\/images\/branding|googleusercontent\.com\/static/i.test(lower)) return;
-    let rank = score;
-    if (lower.includes('assets.epicurious.com')) rank -= 30;
-    if (lower.includes('/master/')) rank -= 15;
-    const width = lower.match(/(?:w_|width=|[?&]w=)(\d{3,4})/);
-    if (width) rank -= Math.min(Number(width[1]) / 400, 15);
-    found.push({ url, rank });
-  };
-
-  for (const m of html.matchAll(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image|twitter:image:src)["'][^>]+content=["']([^"']+)["'][^>]*>/gi)) add(m[1], -50);
-  for (const m of html.matchAll(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image|twitter:image:src)["'][^>]*>/gi)) add(m[1], -50);
-  for (const m of html.matchAll(/srcset=["']([^"']+)["']/gi)) {
-    for (const item of m[1].split(',')) add(item.trim().split(/\s+/)[0], 5);
-  }
-  for (const m of html.matchAll(/(?:src|data-src|data-original)=["']([^"']+)["']/gi)) add(m[1], 10);
-  for (const m of html.matchAll(/https?:\\?\/\\?\/assets\.epicurious\.com\/[^"'<>\\s]+/gi)) add(m[0], 0);
-
-  const seen = new Set();
-  return found
-    .sort((a, b) => a.rank - b.rank)
-    .filter((item) => {
-      const key = item.url.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .slice(0, MAX_CANDIDATES_PER_PAGE);
-}
-
-function decodeURIComponentSafe(value) {
+function decodeSafe(value) {
   try { return decodeURIComponent(value); } catch { return value; }
+}
+
+function cleanText(value) {
+  return String(value || '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function tokenize(value) {
+  return cleanText(value)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9 ]+/g, ' ')
+    .split(/\s+/)
+    .filter((x) => x.length > 2);
+}
+
+function textSimilarity(a, b) {
+  const left = new Set(tokenize(a));
+  const right = new Set(tokenize(b));
+  if (!left.size || !right.size) return 0;
+  let hit = 0;
+  for (const token of left) if (right.has(token)) hit += 1;
+  return hit / Math.max(left.size, right.size);
+}
+
+function sourceDomain(url) {
+  try { return new URL(url).hostname.replace(/^www\./, '').toLowerCase(); } catch { return ''; }
+}
+
+function allowedDomain(url) {
+  const host = sourceDomain(url);
+  return SOURCE_DOMAINS.some((domain) => host === domain || host.endsWith(`.${domain}`));
 }
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = PAGE_TIMEOUT_MS) {
@@ -192,10 +186,10 @@ async function fetchPage(url) {
     redirect: 'follow',
     headers: {
       'User-Agent': USER_AGENT,
-      Accept: 'text/html,application/xhtml+xml',
+      Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
       'Accept-Language': 'en-US,en;q=0.9',
     },
-  }, PAGE_TIMEOUT_MS);
+  });
   const html = await response.text();
   if (!response.ok || html.length < 1000) throw new Error(`Page ${response.status}: ${url}`);
   return { html, finalUrl: response.url || url };
@@ -225,57 +219,193 @@ async function validateSource(body) {
   return { width, height, format: metadata.format || 'unknown' };
 }
 
+function addImageCandidate(list, value, score = 50) {
+  const url = normalizeUrl(value ? decodeSafe(String(value)) : null);
+  if (!url) return;
+  const lower = url.toLowerCase();
+  if (/encrypted-tbn|gstatic\.com\/images\/branding|googleusercontent\.com\/static/i.test(lower)) return;
+  if (!/\.(?:jpe?g|png|webp)(?:[?#]|$)/i.test(url) && !/(image|photo|media|upload|assets)/i.test(lower)) return;
+  list.push({ url, score });
+}
+
+function extractJsonLdImages(html) {
+  const out = [];
+  for (const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    try {
+      const json = JSON.parse(m[1].trim());
+      const visit = (node) => {
+        if (!node) return;
+        if (Array.isArray(node)) { for (const item of node) visit(item); return; }
+        if (typeof node !== 'object') return;
+        if (node.image) {
+          const image = node.image;
+          if (typeof image === 'string') out.push(image);
+          else if (Array.isArray(image)) for (const item of image) {
+            if (typeof item === 'string') out.push(item);
+            else if (item?.url) out.push(item.url);
+          }
+          else if (image?.url) out.push(image.url);
+        }
+        if (node.itemListElement) visit(node.itemListElement);
+        if (node['@graph']) visit(node['@graph']);
+      };
+      visit(json);
+    } catch {}
+  }
+  return out;
+}
+
+function extractPageMetadata(html) {
+  const values = [];
+  const meta = (pattern) => {
+    const m = html.match(pattern);
+    return m ? cleanText(decodeSafe(m[1])) : '';
+  };
+  values.push(meta(/<title[^>]*>([\s\S]*?)<\/title>/i));
+  values.push(meta(/<meta[^>]+(?:property|name)=["']og:title["'][^>]+content=["']([^"']+)["'][^>]*>/i));
+  values.push(meta(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']og:title["'][^>]*>/i));
+  return values.filter(Boolean).join(' | ');
+}
+
+function extractImageCandidates(html, recipe) {
+  const found = [];
+  for (const url of extractJsonLdImages(html)) addImageCandidate(found, url, 0);
+  for (const m of html.matchAll(/<meta[^>]+(?:property|name)=["'](?:og:image|twitter:image|twitter:image:src)["'][^>]+content=["']([^"']+)["'][^>]*>/gi)) addImageCandidate(found, m[1], 5);
+  for (const m of html.matchAll(/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["'](?:og:image|twitter:image|twitter:image:src)["'][^>]*>/gi)) addImageCandidate(found, m[1], 5);
+  for (const m of html.matchAll(/(?:src|data-src|data-original)=["']([^"']+)["']/gi)) addImageCandidate(found, m[1], 30);
+  for (const m of html.matchAll(/srcset=["']([^"']+)["']/gi)) {
+    for (const item of m[1].split(',')) addImageCandidate(found, item.trim().split(/\s+/)[0], 25);
+  }
+
+  const pageText = extractPageMetadata(html);
+  const similarity = textSimilarity(recipe.name, pageText);
+  const seen = new Set();
+  return found
+    .map((item) => ({ ...item, score: item.score - Math.round(similarity * 20) }))
+    .sort((a, b) => a.score - b.score)
+    .filter((item) => {
+      const key = item.url.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, MAX_IMAGE_CANDIDATES);
+}
+
+function extractSearchLinks(html) {
+  const links = [];
+  const add = (value) => {
+    const url = normalizeUrl(decodeSafe(value));
+    if (!url || !allowedDomain(url)) return;
+    try {
+      const u = new URL(url);
+      u.hash = '';
+      links.push(u.toString());
+    } catch {}
+  };
+  for (const m of html.matchAll(/href=["']([^"']+)["']/gi)) add(m[1]);
+  for (const m of html.matchAll(/https?:\/\/[^"'<>\s]+/gi)) add(m[0]);
+  return [...new Set(links)];
+}
+
+async function searchEngine(url) {
+  const response = await fetchWithTimeout(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 Chrome/140 Safari/537.36',
+      Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+    },
+  });
+  const html = await response.text();
+  if (!response.ok) throw new Error(`Search ${response.status}`);
+  return html;
+}
+
+function searchUrls(recipe) {
+  const quoted = `"${recipe.name.replace(/"/g, '')}" recipe`;
+  const siteClause = SOURCE_DOMAINS.map((domain) => `site:${domain}`).join(' OR ');
+  return [
+    `https://www.google.com/search?hl=en&gl=us&q=${encodeURIComponent(`${quoted} (${siteClause})`)}`,
+    `https://www.bing.com/search?q=${encodeURIComponent(`${quoted} (${siteClause})`)}`,
+  ];
+}
+
+function scorePage(url, recipe, html = '') {
+  const domain = sourceDomain(url);
+  const pageTitle = extractPageMetadata(html);
+  const slug = slugify(recipe.name);
+  let score = 0;
+  if (url.toLowerCase().includes(slug)) score -= 80;
+  if (pageTitle) score -= Math.round(textSimilarity(recipe.name, pageTitle) * 100);
+  if (/(recipe|recipes|dish)/i.test(url)) score -= 10;
+  if (domain === 'epicurious.com') score -= 5;
+  return score;
+}
+
+async function tryPageForImage(recipe, pageUrl) {
+  if (!allowedDomain(pageUrl)) return null;
+  try {
+    const page = await fetchPage(pageUrl);
+    const candidates = extractImageCandidates(page.html, recipe);
+    for (const candidate of candidates) {
+      try {
+        const body = await fetchImage(candidate.url);
+        const source = await validateSource(body);
+        return {
+          body,
+          pageUrl: page.finalUrl,
+          imageUrl: candidate.url,
+          sourceWidth: source.width,
+          sourceHeight: source.height,
+          sourceType: sourceDomain(page.finalUrl),
+        };
+      } catch {}
+    }
+  } catch {}
+  return null;
+}
+
 async function resolveImage(recipe) {
   let lastError = null;
-  const directCandidates = epicuriousPageCandidates(recipe);
-  for (const pageUrl of directCandidates) {
-    try {
-      const page = await fetchPage(pageUrl);
-      const candidates = extractImageCandidates(page.html);
-      for (const candidate of candidates) {
-        try {
-          const body = await fetchImage(candidate.url);
-          const source = await validateSource(body);
-          return { body, pageUrl: page.finalUrl, imageUrl: candidate.url, sourceWidth: source.width, sourceHeight: source.height };
-        } catch (error) { lastError = error; }
-      }
-    } catch (error) { lastError = error; }
+  const candidates = new Map();
+  const addPage = (url, score = 0) => {
+    const normalized = normalizeUrl(url);
+    if (!normalized || !allowedDomain(normalized)) return;
+    const prev = candidates.get(normalized) ?? 9999;
+    if (score < prev) candidates.set(normalized, score);
+  };
+
+  const slug = slugify(recipe.name);
+  for (const domain of SOURCE_DOMAINS) {
+    addPage(`https://${domain}/recipes/${slug}`, 200);
+    addPage(`https://${domain}/recipe/${slug}`, 220);
   }
 
-  const queries = [
-    `https://www.google.com/search?hl=en&gl=us&q=${encodeURIComponent(`site:epicurious.com/recipes/food/views ${recipe.name}`)}`,
-    `https://www.bing.com/search?q=${encodeURIComponent(`site:epicurious.com/recipes/food/views ${recipe.name}`)}`,
-  ];
-  for (const searchUrl of queries) {
+  for (const searchUrl of searchUrls(recipe)) {
     try {
-      const response = await fetchWithTimeout(searchUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 Chrome/140 Safari/537.36',
-          Accept: 'text/html,application/xhtml+xml,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.9',
-        },
-      }, PAGE_TIMEOUT_MS);
-      const html = await response.text();
-      if (!response.ok) continue;
-      const pages = discoverEpicuriousUrls(recipe, html);
-      for (const pageUrl of pages) {
-        try {
-          const page = await fetchPage(pageUrl);
-          const candidates = extractImageCandidates(page.html);
-          for (const candidate of candidates) {
-            try {
-              const body = await fetchImage(candidate.url);
-              const source = await validateSource(body);
-              return { body, pageUrl: page.finalUrl, imageUrl: candidate.url, sourceWidth: source.width, sourceHeight: source.height };
-            } catch (error) { lastError = error; }
-          }
-        } catch (error) { lastError = error; }
-      }
-      if (pages.length) break;
-    } catch (error) { lastError = error; }
+      const html = await searchEngine(searchUrl);
+      const links = extractSearchLinks(html)
+        .map((url) => ({ url, score: scorePage(url, recipe, html) }))
+        .sort((a, b) => a.score - b.score)
+        .slice(0, MAX_SEARCH_RESULTS);
+      for (const item of links) addPage(item.url, item.score);
+    } catch (error) {
+      lastError = error;
+    }
   }
 
-  throw lastError || new Error(`No usable Epicurious image found for ${recipe.name}`);
+  const orderedPages = [...candidates.entries()]
+    .sort((a, b) => a[1] - b[1])
+    .slice(0, MAX_SEARCH_RESULTS * 2)
+    .map(([url]) => url);
+
+  for (const pageUrl of orderedPages) {
+    const result = await tryPageForImage(recipe, pageUrl);
+    if (result) return result;
+    lastError = new Error(`No usable image at ${pageUrl}`);
+  }
+
+  throw lastError || new Error(`No usable recipe image found across configured sources`);
 }
 
 async function encodeWebp(input) {
@@ -298,13 +428,13 @@ async function encodeWebp(input) {
         bytes: output.length,
         quality,
       };
-      if (result.width < MIN_OUTPUT_SIDE || result.height < MIN_OUTPUT_SIDE / MAX_SOURCE_RATIO) continue;
+      if (result.width < MIN_OUTPUT_SIDE || Math.min(result.width, result.height) < MIN_OUTPUT_SIDE) continue;
       if (!best || Math.abs(result.bytes - MAX_OUTPUT_BYTES * 0.75) < Math.abs(best.bytes - MAX_OUTPUT_BYTES * 0.75)) best = result;
       if (result.bytes >= MIN_OUTPUT_BYTES && result.bytes <= MAX_OUTPUT_BYTES) return result;
     }
   }
 
-  if (best && best.bytes <= MAX_OUTPUT_BYTES && best.bytes >= MIN_OUTPUT_BYTES) return best;
+  if (best && best.bytes >= MIN_OUTPUT_BYTES && best.bytes <= MAX_OUTPUT_BYTES) return best;
   throw new Error(`Could not encode a usable WebP <=150KB; best=${best?.bytes ?? 'none'} bytes`);
 }
 
@@ -317,7 +447,8 @@ async function loadExistingHero(recipe) {
   try {
     const body = await fs.readFile(file);
     const metadata = await sharp(body, { failOn: 'none' }).metadata();
-    if (metadata.format === 'webp' && Number(metadata.width || 0) >= MIN_OUTPUT_SIDE && Number(metadata.height || 0) >= 480 && body.length >= MIN_OUTPUT_BYTES && body.length <= MAX_OUTPUT_BYTES) {
+    const minSide = Math.min(Number(metadata.width || 0), Number(metadata.height || 0));
+    if (metadata.format === 'webp' && minSide >= MIN_OUTPUT_SIDE && body.length >= MIN_OUTPUT_BYTES && body.length <= MAX_OUTPUT_BYTES) {
       return { file, bytes: body.length, width: metadata.width, height: metadata.height };
     }
   } catch {}
@@ -328,7 +459,7 @@ async function main() {
   await ensureDirs();
   const recipes = await loadCatalog();
   const manifest = await loadManifest();
-  const eligible = recipes.filter((recipe) => FORCE || !manifest.get(recipe.id)?.status || manifest.get(recipe.id).status !== 'complete');
+  const eligible = recipes.filter((recipe) => FORCE || manifest.get(recipe.id)?.status !== 'complete');
   const work = eligible.slice(START, LIMIT > 0 ? START + LIMIT : undefined);
   const stats = {
     startedAt: now(),
@@ -344,6 +475,7 @@ async function main() {
     maxBytes: MAX_OUTPUT_BYTES,
     minBytesSanity: MIN_OUTPUT_BYTES,
     minSourceSide: MIN_SOURCE_SIDE,
+    sources: SOURCE_DOMAINS,
   };
   console.log(JSON.stringify(stats, null, 2));
 
@@ -371,7 +503,7 @@ async function main() {
           recipeId: recipe.id,
           recipeName: recipe.name,
           status: 'complete',
-          sourceType: 'epicurious-page',
+          sourceType: source.sourceType,
           sourcePageUrl: source.pageUrl,
           sourceImageUrl: source.imageUrl,
           sourceWidth: source.sourceWidth,
@@ -387,7 +519,7 @@ async function main() {
         await appendJsonl(MANIFEST_PATH, row);
         manifest.set(recipe.id, row);
         stats.completed += 1;
-        console.log(`[COMPLETE] ${recipe.id} ${recipe.name} ${source.sourceWidth}x${source.sourceHeight} -> ${packed.width}x${packed.height} ${packed.bytes}B q${packed.quality}`);
+        console.log(`[COMPLETE] ${recipe.id} ${recipe.name} [${source.sourceType}] ${source.sourceWidth}x${source.sourceHeight} -> ${packed.width}x${packed.height} ${packed.bytes}B q${packed.quality}`);
       } catch (error) {
         const row = {
           recipeId: recipe.id,
@@ -407,11 +539,19 @@ async function main() {
   }
 
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, work.length) }, () => worker()));
+
+  const finalManifest = await loadManifest();
+  let finalComplete = 0;
+  for (const recipe of recipes) {
+    if (finalManifest.get(recipe.id)?.status === 'complete') finalComplete += 1;
+  }
   stats.finishedAt = now();
-  stats.status = stats.failed === 0 ? 'complete' : 'incomplete';
+  stats.finalComplete = finalComplete;
+  stats.finalRemaining = recipes.length - finalComplete;
+  stats.status = stats.finalRemaining === 0 ? 'complete' : 'incomplete';
   await fs.writeFile(SUMMARY_PATH, JSON.stringify(stats, null, 2));
   console.log(JSON.stringify(stats, null, 2));
-  if (stats.failed > 0) process.exitCode = 1;
+  if (stats.finalRemaining > 0) process.exitCode = 1;
 }
 
 main().catch(async (error) => {
