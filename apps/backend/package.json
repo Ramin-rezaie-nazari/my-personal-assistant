@@ -38,6 +38,7 @@
     "fitness:content:verify-media": "node ./scripts/fitness-media-verify.mjs",
     "fitness:media:guaranteed": "node ./scripts/fitness-media-generated-v1.mjs",
     "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs",
+    "recipe:source:mapping:repair": "node ./scripts/recipe-source-mapping-repair.mjs",
     "recipe:media:stage": "node ./scripts/recipe-media-guaranteed-mirror-v6.mjs",
     "recipe:media:final": "node ./scripts/recipe-image-dataset-import-v2.mjs",
     "recipe:media:audit": "node ./scripts/recipe-media-release-audit.mjs",
