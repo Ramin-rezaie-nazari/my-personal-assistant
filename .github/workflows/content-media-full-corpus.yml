@@ -1,3 +1,4 @@
+# Full-corpus media build: deliberately runs on this workflow's changes so the repository can self-validate the complete media set.
 name: Full Content Media Corpus
 
 on:
