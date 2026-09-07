@@ -1,12 +1,11 @@
 # Full-corpus media build and audit for every recipe and every fitness movement.
-# This workflow intentionally runs on changes to either guaranteed media generator.
 name: Full Content Media Corpus
 
 on:
   push:
     paths:
-      - 'apps/backend/scripts/recipe-media-final-only-v2.mjs'
-      - 'apps/backend/scripts/fitness-media-guaranteed-mirror-v3.mjs'
+      - 'apps/backend/scripts/recipe-media-final-generated-v1.mjs'
+      - 'apps/backend/scripts/fitness-media-generated-v1.mjs'
       - 'apps/backend/package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/content-media-full-corpus.yml'
@@ -32,13 +31,13 @@ jobs:
         working-directory: apps/backend
         env:
           MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/apps/backend/.tmp-content-mirror
-          RECIPE_FINAL_CONCURRENCY: 4
+          RECIPE_FINAL_CONCURRENCY: 12
         run: pnpm content:mirror:recipes
       - name: Build full fitness media corpus
         working-directory: apps/backend
         env:
           MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/apps/backend/.tmp-content-mirror
-          FITNESS_MEDIA_CONCURRENCY: 6
+          FITNESS_MEDIA_CONCURRENCY: 12
         run: pnpm fitness:media:guaranteed
       - name: Audit complete corpus
         working-directory: apps/backend
@@ -49,13 +48,13 @@ jobs:
           const root = path.resolve('.tmp-content-mirror');
           const recipes = JSON.parse(fs.readFileSync(path.join(root, 'recipe-final-summary.json'), 'utf8'));
           const recipeManifest = JSON.parse(fs.readFileSync(path.join(root, 'recipe-final-manifest.json'), 'utf8'));
-          if (!recipes.corpusComplete || recipes.complete !== recipes.recipes || recipes.incomplete !== 0 || recipes.failed !== 0) throw new Error(`Recipe corpus incomplete: ${JSON.stringify(recipes)}`);
+          if (!recipes.corpusComplete || recipes.datasetRows !== recipes.recipes || recipes.complete !== recipes.recipes || recipes.incomplete !== 0 || recipes.failed !== 0) throw new Error(`Recipe corpus incomplete: ${JSON.stringify(recipes)}`);
           for (const item of Object.values(recipeManifest.items ?? {})) {
-            if (item.status !== 'ready' || item.mediaCount !== 1 || item.stage !== 'final' || item.format !== 'webp' || item.sizeBytes <= 0 || item.sizeBytes > 65536 || item.generated === undefined) throw new Error(`Recipe media contract failed: ${item.name}`);
+            if (item.status !== 'ready' || item.mediaCount !== 1 || item.stage !== 'final' || item.format !== 'webp' || item.sizeBytes <= 0 || item.sizeBytes > 65536 || item.generated !== true) throw new Error(`Recipe media contract failed: ${item.name}`);
             if (!fs.existsSync(path.join(root, item.localPath))) throw new Error(`Recipe file missing: ${item.name}`);
           }
           const fitness = JSON.parse(fs.readFileSync(path.join(root, 'fitness-media-guaranteed-summary.json'), 'utf8'));
-          if (!fitness.corpusComplete || fitness.complete !== fitness.exercises) throw new Error(`Fitness corpus incomplete: ${JSON.stringify(fitness)}`);
+          if (!fitness.corpusComplete || fitness.datasetRows !== fitness.exercises || fitness.complete !== fitness.exercises || fitness.incomplete !== 0 || fitness.failed !== 0) throw new Error(`Fitness corpus incomplete: ${JSON.stringify(fitness)}`);
           const fitnessManifest = JSON.parse(fs.readFileSync(path.join(root, 'fitness-media-guaranteed-manifest.json'), 'utf8'));
           for (const item of Object.values(fitnessManifest.items ?? {})) {
             if (item.mediaCount !== 4 || item.media?.length !== 4 || item.physicalStatus !== 'complete') throw new Error(`Fitness contract failed: ${item.name}`);
