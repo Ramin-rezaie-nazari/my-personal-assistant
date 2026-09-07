@@ -15,3 +15,7 @@ processed-images/
 # Mac/VPS content mirror: never bundle or commit the media corpus
 content-mirror/
 apps/backend/content-mirror/
+
+# MYPA local-first Mac recipe hero corpus (images + manifests + logs)
+data/mypa-recipe-media/
+apps/backend/data/mypa-recipe-media/
