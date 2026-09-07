@@ -7,7 +7,7 @@ const DATASET_SOURCE = 'Wikibooks Cookbook';
 const DATASET_LICENSE = 'CC BY-SA 4.0';
 const WIKIBOOKS_API = 'https://en.wikibooks.org/w/api.php';
 const CONCURRENCY = Math.min(Math.max(Number(process.env.RECIPE_IMPORT_CONCURRENCY ?? 2), 1), 4);
-const MAX_MEDIA = Math.min(Math.max(Number(process.env.RECIPE_MAX_MEDIA ?? 4), 1), 4);
+const MAX_MEDIA = 1;
 const MIN_STEP_CHARS = 20;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -46,26 +46,13 @@ function parseRecipe(row) {
   const ingredients = lines.filter((line) => line?.line_type === 'ul' && /ingredient/i.test(line.section || '')).map((line) => parseIngredient(line.text)).filter((item) => item.name);
   const steps = lines.filter((line) => line?.line_type === 'ol' && /procedure|direction|method|instruction|preparation/i.test(line.section || '')).map((line) => clean(line.text)).filter((text) => text.length >= MIN_STEP_CHARS);
   const paragraphs = lines.filter((line) => line?.line_type === 'p' && !/contributor|source/i.test(line.section || '')).map((line) => clean(line.text)).filter(Boolean);
-  return {
-    title,
-    description: paragraphs[0] ?? null,
-    servings: parseServings(data.infobox?.servings),
-    sourceUrl: data.url || (title ? `https://en.wikibooks.org/wiki/Cookbook:${encodeURIComponent(title.replace(/ /g, '_'))}` : null),
-    ingredients,
-    steps,
-  };
+  return { title, description: paragraphs[0] ?? null, servings: parseServings(data.infobox?.servings), sourceUrl: data.url || (title ? `https://en.wikibooks.org/wiki/Cookbook:${encodeURIComponent(title.replace(/ /g, '_'))}` : null), ingredients, steps };
 }
 async function fetchJson(url, attempts = 5) {
   let last;
   for (let i = 0; i < attempts; i += 1) {
-    try {
-      const response = await fetch(url, { headers: { 'User-Agent': 'MYPA-RecipeImporter/1.0' } });
-      if (!response.ok) throw new Error(`${response.status} ${url}`);
-      return response.json();
-    } catch (error) {
-      last = error;
-      if (i < attempts - 1) await sleep(700 * 2 ** i);
-    }
+    try { const response = await fetch(url, { headers: { 'User-Agent': 'MYPA-RecipeImporter/1.0' } }); if (!response.ok) throw new Error(`${response.status} ${url}`); return response.json(); }
+    catch (error) { last = error; if (i < attempts - 1) await sleep(700 * 2 ** i); }
   }
   throw last;
 }
@@ -98,14 +85,7 @@ async function fetchRecipeMedia(sourceUrl) {
     const license = allowedImageLicense(info.extmetadata || {});
     if (!license) continue;
     const url = info.thumburl || info.url;
-    result.push({
-      url,
-      sourceUrl: info.descriptionurl || info.url,
-      license,
-      provider: 'Wikimedia Commons/Wikibooks',
-      attribution: `${clean(info.extmetadata?.Artist?.value || info.extmetadata?.Credit?.value || 'Wikimedia contributor')}; ${license}`,
-      mimeType: /\.png(?:\?|$)/i.test(url) ? 'image/png' : /\.webp(?:\?|$)/i.test(url) ? 'image/webp' : 'image/jpeg',
-    });
+    result.push({ url, sourceUrl: info.descriptionurl || info.url, license, provider: 'Wikimedia Commons/Wikibooks', attribution: `${clean(info.extmetadata?.Artist?.value || info.extmetadata?.Credit?.value || 'Wikimedia contributor')}; ${license}`, mimeType: /\.png(?:\?|$)/i.test(url) ? 'image/png' : /\.webp(?:\?|$)/i.test(url) ? 'image/webp' : 'image/jpeg' });
     if (result.length >= MAX_MEDIA) break;
     await sleep(100);
   }
@@ -134,8 +114,9 @@ async function importRecipe(parsed) {
     for (const [index, instruction] of parsed.steps.entries()) {
       await tx.recipeStep.create({ data: { id: randomUUID(), recipeId: recipe.id, stepNumber: index + 1, instruction, sourceLicense: DATASET_LICENSE, sourceAttribution: `${DATASET_SOURCE}; ${parsed.sourceUrl}` } });
     }
-    for (const [index, item] of media.entries()) {
-      await tx.recipeMedia.create({ data: { id: randomUUID(), recipeId: recipe.id, position: index, url: item.url, sourceUrl: item.sourceUrl, sourceProvider: item.provider, license: item.license, attribution: `${item.attribution}; recipe source: ${parsed.sourceUrl}`, mimeType: item.mimeType, status: 'approved' } });
+    if (media[0]) {
+      const item = media[0];
+      await tx.recipeMedia.create({ data: { id: randomUUID(), recipeId: recipe.id, position: 0, url: item.url, sourceUrl: item.sourceUrl, sourceProvider: item.provider, license: item.license, attribution: `${item.attribution}; recipe source: ${parsed.sourceUrl}`, mimeType: item.mimeType, status: 'approved' } });
     }
     return { status: 'imported', recipeId: recipe.id, ingredientCount: parsed.ingredients.length, stepCount: parsed.steps.length, mediaCount: media.length };
   });
@@ -152,16 +133,7 @@ async function main() {
   let cursor = 0;
   const worker = async () => { while (true) { const index = cursor++; if (index >= parsed.length) return; try { results[index] = await importRecipe(parsed[index]); } catch (error) { results[index] = { status: 'failed', title: parsed[index].title, error: error instanceof Error ? error.message : String(error) }; } } };
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, parsed.length) }, worker));
-  const stats = {
-    datasetRows: dataset.length,
-    selectedRows: batch.length,
-    imported: results.filter((r) => r?.status === 'imported').length,
-    skipped: results.filter((r) => r?.status === 'skipped').length,
-    failed: results.filter((r) => r?.status === 'failed').length,
-    ingredientsImported: results.reduce((sum, r) => sum + Number(r?.ingredientCount || 0), 0),
-    stepsImported: results.reduce((sum, r) => sum + Number(r?.stepCount || 0), 0),
-    mediaImported: results.reduce((sum, r) => sum + Number(r?.mediaCount || 0), 0),
-  };
+  const stats = { datasetRows: dataset.length, selectedRows: batch.length, imported: results.filter((r) => r?.status === 'imported').length, skipped: results.filter((r) => r?.status === 'skipped').length, failed: results.filter((r) => r?.status === 'failed').length, ingredientsImported: results.reduce((sum, r) => sum + Number(r?.ingredientCount || 0), 0), stepsImported: results.reduce((sum, r) => sum + Number(r?.stepCount || 0), 0), mediaImported: results.reduce((sum, r) => sum + Number(r?.mediaCount || 0), 0) };
   console.log(JSON.stringify({ source: DATASET_SOURCE, license: DATASET_LICENSE, offset, limit: batch.length, ...stats }, null, 2));
   if (stats.imported === 0 || stats.failed > 0) process.exitCode = 1;
 }
