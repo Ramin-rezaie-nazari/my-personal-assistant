@@ -1,5 +1,6 @@
 # Full-corpus media build and audit for every recipe and every fitness movement.
 # Final media contract: one finished-dish asset per recipe; four instructional assets per exercise.
+# Re-run marker: ensure current branch head executes the latest generators.
 name: Full Content Media Corpus
 
 on:
