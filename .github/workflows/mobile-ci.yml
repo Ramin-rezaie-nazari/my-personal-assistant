@@ -2,7 +2,9 @@ name: Mobile CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - agent/mypa-autonomous-control-plane
   pull_request:
     branches: [main]
     paths:
