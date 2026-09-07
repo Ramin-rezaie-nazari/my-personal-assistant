@@ -15,6 +15,7 @@ on:
       - 'apps/backend/scripts/recipe-media-download.mjs'
       - 'apps/backend/scripts/recipe-image-dataset-import-v2.mjs'
       - 'apps/backend/scripts/recipe-image-import-all-safe.mjs'
+      - 'apps/backend/scripts/recipe-media-runtime-sync.mjs'
       - '.github/workflows/content-corpus-bootstrap.yml'
   workflow_dispatch:
     inputs:
@@ -131,6 +132,31 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - working-directory: apps/backend
         run: node ./scripts/recipe-image-dataset-import-v2.mjs
+
+  recipe-runtime-media-sync:
+    name: Recipe runtime media sync
+    needs: [recipes, recipe-images]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    env:
+      DATABASE_URL: ${{ secrets.MYPA_RECIPE_DATABASE_URL }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with: { version: 11.18.0, run_install: false }
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: pnpm, cache-dependency-path: pnpm-lock.yaml }
+      - run: |
+          test -n "$DATABASE_URL" || { echo 'MYPA_RECIPE_DATABASE_URL is required for runtime recipe media sync.'; exit 2; }
+          test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for runtime recipe media sync.'; exit 2; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for runtime recipe media sync.'; exit 2; }
+      - run: pnpm install --frozen-lockfile
+      - working-directory: apps/backend
+        run: pnpm prisma generate
+      - working-directory: apps/backend
+        run: pnpm recipe:media:sync-runtime
 
   recipe-wikimedia-fallback:
     name: Recipe Wikimedia fallback
