@@ -1,6 +1,5 @@
 # Full-corpus media build and audit for every recipe and every fitness movement.
-# Final media contract: one finished-dish asset per recipe; four instructional assets per exercise.
-# Re-run marker: ensure current branch head executes the latest generators.
+# Final media contract: one real finished-dish asset per recipe; four instructional assets per exercise.
 name: Full Content Media Corpus
 
 on:
@@ -50,9 +49,10 @@ jobs:
           const root = path.resolve('.tmp-content-mirror');
           const recipes = JSON.parse(fs.readFileSync(path.join(root, 'recipe-final-summary.json'), 'utf8'));
           const recipeManifest = JSON.parse(fs.readFileSync(path.join(root, 'recipe-final-manifest.json'), 'utf8'));
-          if (!recipes.corpusComplete || recipes.datasetRows !== recipes.recipes || recipes.complete !== recipes.recipes || recipes.incomplete !== 0 || recipes.failed !== 0) throw new Error(`Recipe corpus incomplete: ${JSON.stringify(recipes)}`);
+          if (!recipes.corpusComplete || recipes.datasetRows !== recipes.recipes || recipes.complete !== recipes.recipes || recipes.incomplete !== 0 || recipes.failed !== 0 || recipes.generatedImages !== 0) throw new Error(`Recipe corpus incomplete: ${JSON.stringify(recipes)}`);
           for (const item of Object.values(recipeManifest.items ?? {})) {
-            if (item.status !== 'ready' || item.mediaCount !== 1 || item.stage !== 'final' || item.format !== 'webp' || item.sizeBytes <= 0 || item.sizeBytes > 65536 || item.generated !== true) throw new Error(`Recipe media contract failed: ${item.name}`);
+            if (item.status !== 'ready' || item.mediaCount !== 1 || item.stage !== 'final' || item.format !== 'webp' || item.sizeBytes <= 0 || item.sizeBytes > 65536 || item.generated !== false || item.sourceType !== 'real-dataset-image') throw new Error(`Recipe media contract failed: ${item.name}`);
+            if (!item.sourceUrl && !item.imageName) throw new Error(`Recipe provenance missing: ${item.name}`);
             if (!fs.existsSync(path.join(root, item.localPath))) throw new Error(`Recipe file missing: ${item.name}`);
           }
           const fitness = JSON.parse(fs.readFileSync(path.join(root, 'fitness-media-guaranteed-summary.json'), 'utf8'));
