@@ -5,6 +5,7 @@ on:
     paths:
       - 'apps/backend/scripts/recipe-media-guaranteed-mirror-v6.mjs'
       - 'apps/backend/package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/recipe-media-guaranteed-smoke.yml'
 
 jobs:
@@ -20,14 +21,42 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Run guaranteed media smoke test
+      - name: Run deterministic guaranteed media smoke test
         working-directory: apps/backend
         env:
+          RECIPE_DISABLE_REMOTE_MEDIA: '1'
           RECIPE_STAGE_CONCURRENCY: 1
           MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/.tmp-content-mirror
-          RECIPE_DATASET_URL: data:application/json,%5B%7B%22title%22%3A%221-2-3-4%20Cake%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3A1-2-3-4_Cake%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22flour%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Mix ingredients.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Bake the cake.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Cool and decorate.%22%7D%5D%7D%2C%7B%22title%22%3A%2220-Ingredient%20Brownies%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3A20-Ingredient_Brownies%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22chocolate%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Melt the chocolate.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Bake the mixture.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Cool and cut the brownies.%22%7D%5D%7D%5D
-        run: node ./scripts/recipe-media-guaranteed-mirror-v6.mjs
-      - name: Verify four-stage contract and image files
+          RECIPE_DATASET_URL: data:application/json,%5B%7B%22title%22%3A%221-2-3-4%20Cake%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3A1-2-3-4_Cake%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22flour%22%7D%2C%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22sugar%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Mix the flour and sugar.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Bake the cake.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Cool and decorate the cake.%22%7D%5D%7D%2C%7B%22title%22%3A%2220-Ingredient%20Brownies%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3A20-Ingredient_Brownies%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22chocolate%22%7D%2C%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22butter%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Melt the chocolate and butter.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Bake the mixture and cool it.%22%7D%5D%7D%2C%7B%22title%22%3A%22Tomato%20Salad%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3ATomato_Salad%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22tomato%22%7D%2C%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22olive oil%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Instructions%22%2C%22text%22%3A%22Chop the tomato and dress with olive oil.%22%7D%5D%7D%2C%7B%22title%22%3A%22Pantry%20Snack%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3APantry_Snack%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22oats%22%7D%2C%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22nuts%22%7D%5D%7D%5D
+          run: node ./scripts/recipe-media-guaranteed-mirror-v6.mjs
+      - name: Verify four-stage contract, provenance, uniqueness, and files
         working-directory: apps/backend
         run: |
-          node -e "const fs=require('fs');const path=require('path');const root='.tmp-content-mirror';const summary=JSON.parse(fs.readFileSync(path.join(root,'recipe-stage-summary.json'),'utf8'));if(summary.recipes!==2||summary.complete!==2)throw new Error(JSON.stringify(summary));const manifest=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'),'utf8'));for(const recipe of Object.values(manifest.items)){if(recipe.mediaCount!==4||recipe.media.length!==4)throw new Error('media count '+recipe.name);const stages=recipe.media.map(x=>x.stage).sort();if(stages.join(',')!=='final,process-1,process-2,process-3')throw new Error('stages '+recipe.name);for(const item of recipe.media){if(item.status!=='ready'||item.format!=='webp')throw new Error('media invalid '+recipe.name+'/'+item.stage);const full=path.join(root,item.localPath);if(!fs.existsSync(full))throw new Error('missing '+full);const size=fs.statSync(full).size;if(size===0||size>64*1024)throw new Error('bad size '+full)}}console.log(JSON.stringify(summary,null,2));"
+          node - <<'NODE'
+          const fs = require('fs');
+          const path = require('path');
+          const root = '.tmp-content-mirror';
+          const summary = JSON.parse(fs.readFileSync(path.join(root, 'recipe-stage-summary.json'), 'utf8'));
+          if (summary.recipes !== 4 || summary.complete !== 4) throw new Error(JSON.stringify(summary));
+          const manifest = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
+          const recipes = Object.values(manifest.items);
+          if (recipes.length !== 4) throw new Error('unexpected recipe count');
+          for (const recipe of recipes) {
+            if (recipe.mediaCount !== 4 || recipe.media.length !== 4 || recipe.stageStatus !== 'complete') throw new Error('contract ' + recipe.name);
+            const stages = recipe.media.map((x) => x.stage).sort().join(',');
+            if (stages !== 'final,process-1,process-2,process-3') throw new Error('stages ' + recipe.name);
+            const process = recipe.media.filter((x) => x.stage.startsWith('process-'));
+            if (!process.every((x) => x.license === 'Generated' && x.evidence)) throw new Error('process provenance ' + recipe.name);
+            if (new Set(process.map((x) => x.sha256)).size !== 3) throw new Error('process files not unique ' + recipe.name);
+            if (recipe.media[3].license !== 'Generated' || recipe.media[3].evidence !== 'recipe-title-ingredient-derived-final') throw new Error('final provenance ' + recipe.name);
+            for (const item of recipe.media) {
+              if (item.status !== 'ready' || item.format !== 'webp' || item.sizeBytes <= 0 || item.sizeBytes > 64 * 1024 || !item.localPath) throw new Error('media invalid ' + recipe.name + '/' + item.stage);
+              if (!fs.existsSync(path.join(root, item.localPath))) throw new Error('missing file ' + recipe.name + '/' + item.stage);
+            }
+          }
+          const oneStep = recipes.find((x) => x.name === 'Tomato Salad');
+          if (!oneStep || oneStep.processCoverage.derivedStages !== 2 || oneStep.processCoverage.explicitStepStages !== 1) throw new Error('one-step planning not exercised');
+          const zeroStep = recipes.find((x) => x.name === 'Pantry Snack');
+          if (!zeroStep || zeroStep.processCoverage.derivedStages !== 3) throw new Error('zero-step planning not exercised');
+          console.log(JSON.stringify(summary, null, 2));
+          NODE

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createHash } from 'node:crypto';
-import { access, mkdir, readFile, rename, rm, writeFile, readdir } from 'node:fs/promises';
+import { access, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
 
@@ -15,8 +15,9 @@ const REQUIRED_PROCESS = 3;
 const REQUIRED_TOTAL = 4;
 const MAX_RECIPES = Number.isFinite(Number(process.env.RECIPE_STAGE_MAX)) && Number(process.env.RECIPE_STAGE_MAX) > 0 ? Math.floor(Number(process.env.RECIPE_STAGE_MAX)) : null;
 const CONCURRENCY = Math.min(4, Math.max(1, Number(process.env.RECIPE_STAGE_CONCURRENCY ?? 2)));
-const USER_AGENT = 'MYPA-recipe-guaranteed-media/6.0 (content pipeline)';
-const MIN_PHOTO_SCORE = 5;
+const USER_AGENT = 'MYPA-recipe-guaranteed-media/7.0 (content pipeline)';
+const MIN_PROCESS_SCORE = 7;
+const MIN_FINAL_SCORE = 6;
 
 const clean = (value = '') => String(value)
   .replace(/<[^>]*>/g, ' ')
@@ -24,10 +25,10 @@ const clean = (value = '') => String(value)
   .replace(/&amp;/gi, '&')
   .replace(/&quot;/gi, '"')
   .replace(/&#39;|&apos;/gi, "'")
-  .replace(/\\s+/g, ' ')
+  .replace(/\s+/g, ' ')
   .trim();
 const titleClean = (value = '') => clean(value).replace(/^["']+|["']+$/g, '').trim();
-const slug = (value) => titleClean(value).toLowerCase().normalize('NFKD').replace(/[^a-z0-9\\s-]/g, '').replace(/\\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || createHash('sha1').update(titleClean(value)).digest('hex').slice(0, 12);
+const slug = (value) => titleClean(value).toLowerCase().normalize('NFKD').replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || createHash('sha1').update(titleClean(value)).digest('hex').slice(0, 12);
 const sha256 = (buffer) => createHash('sha256').update(buffer).digest('hex');
 
 async function exists(file) { try { await access(file); return true; } catch { return false; } }
@@ -46,13 +47,18 @@ async function fetchBytes(url) {
   throw last;
 }
 async function json(url) { return JSON.parse((await fetchBytes(url)).toString('utf8')); }
-async function saveJson(file, value) { await mkdir(path.dirname(file), { recursive: true }); const tmp = `${file}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`; await writeFile(tmp, `${JSON.stringify(value, null, 2)}\\n`, 'utf8'); await rename(tmp, file); }
+async function saveJson(file, value) {
+  await mkdir(path.dirname(file), { recursive: true });
+  const tmp = `${file}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  await writeFile(tmp, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+  await rename(tmp, file);
+}
 
 function license(meta = {}) {
   const short = clean(meta.LicenseShortName?.value ?? meta.LicenseShortName ?? '');
   const terms = clean(meta.UsageTerms?.value ?? meta.UsageTerms ?? '');
   const text = `${short} ${terms}`;
-  if (/non[- ]?commercial|\\bNC\\b|no derivatives|\\bND\\b/i.test(text)) return null;
+  if (/non[- ]?commercial|\bNC\b|no derivatives|\bND\b/i.test(text)) return null;
   if (/CC0|public domain|public-domain|PDM/i.test(text)) return 'CC0/Public Domain';
   if (/CC BY-SA/i.test(text)) return 'CC BY-SA';
   if (/CC BY/i.test(text)) return 'CC BY';
@@ -60,73 +66,137 @@ function license(meta = {}) {
 }
 
 function tokens(text) {
-  return new Set(clean(text).toLowerCase().replace(/[^a-z0-9\\s]/g, ' ').split(/\\s+/).filter((x) => x.length >= 3));
+  return new Set(clean(text).toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter((x) => x.length >= 3));
 }
-function scoreCandidate(query, candidateText) {
-  const q = tokens(query); const c = tokens(candidateText); let score = 0;
-  for (const token of q) if (c.has(token)) score += token.length >= 6 ? 2 : 1;
-  if (/food|recipe|cooking|cook|dish|cake|bread|sauce|soup|pasta|rice|meat|fish|vegetable|batter|dough|pan|oven|boil|fry|mix|chop|slice|cut|serve|plate/i.test(candidateText)) score += 1;
-  return score;
+function extractAction(step = '') {
+  const text = clean(step).toLowerCase();
+  const actions = [
+    ['chop', ['chop', 'dice', 'mince', 'slice', 'cut', 'julienne'], 'knife'],
+    ['mix', ['mix', 'stir', 'whisk', 'beat', 'fold', 'combine', 'blend'], 'bowl'],
+    ['fry', ['fry', 'saute', 'sauté', 'sear', 'skillet'], 'pan'],
+    ['boil', ['boil', 'simmer', 'poach'], 'pot'],
+    ['bake', ['bake', 'oven', 'roast', 'broil'], 'oven'],
+    ['pour', ['pour', 'drizzle', 'sprinkle', 'season', 'add'], 'pour'],
+    ['shape', ['shape', 'knead', 'roll', 'form'], 'bowl']
+  ];
+  for (const [name, terms, icon] of actions) if (terms.some((term) => text.includes(term))) return { name, terms, icon };
+  return { name: 'prepare', terms: ['prepare', 'cook', 'serve', 'dish'], icon: 'bowl' };
+}
+function stageIcon(stage, step) {
+  if (stage === 'process-1') return 'prepare';
+  if (stage === 'final') return 'plate';
+  return extractAction(step).icon;
 }
 
 function parseRecipe(row) {
   const data = row?.recipe_data ?? row ?? {};
   const lines = Array.isArray(data.text_lines) ? data.text_lines : [];
-  const title = titleClean(data.title || row.title || row.filename?.split('/').pop()?.replace(/\\.html$/i, '') || 'Untitled Recipe');
+  const title = titleClean(data.title || row.title || row.filename?.split('/').pop()?.replace(/\.html$/i, '') || 'Untitled Recipe');
   const sourceUrl = data.url || `https://en.wikibooks.org/wiki/Cookbook:${encodeURIComponent(title.replace(/ /g, '_'))}`;
   const ingredients = lines.filter((x) => x?.line_type === 'ul' && /ingredient/i.test(x.section || '')).map((x) => clean(x.text)).filter(Boolean);
   const steps = lines.filter((x) => x?.line_type === 'ol').map((x) => clean(x.text)).filter((x) => x.length >= 10);
   return { title, sourceUrl, ingredients, steps };
 }
-function chooseThreeSteps(steps) {
-  if (!steps.length) return [];
-  if (steps.length === 1) return [steps[0], steps[0], steps[0]];
-  if (steps.length === 2) return [steps[0], steps[1], steps[1]];
-  return [steps[0], steps[Math.floor((steps.length - 1) / 2)], steps[steps.length - 1]];
-}
 
-async function parsePageImages(sourceUrl, title) {
-  let page;
-  try { page = decodeURIComponent(new URL(sourceUrl).pathname.split('/wiki/')[1] || '') || `Cookbook:${title}`; } catch { page = `Cookbook:${title}`; }
-  const params = new URLSearchParams({ action: 'parse', page, prop: 'images', format: 'json', formatversion: '2' });
-  const parsed = (await json(`${WIKIBOOKS_API}?${params}`))?.parse;
-  const names = Array.isArray(parsed?.images) ? parsed.images : [];
-  const results = [];
-  for (const name of names.slice(0, 30)) {
-    if (/icon|logo|flag|difficulty/i.test(name) || !/\\.(jpe?g|png|webp)$/i.test(name)) continue;
-    const infoParams = new URLSearchParams({ action: 'query', titles: `File:${name}`, prop: 'imageinfo', iiprop: 'url|size|mime|extmetadata', iiurlwidth: '1600', format: 'json', formatversion: '2' });
-    const info = (await json(`${WIKIBOOKS_API}?${infoParams}`))?.query?.pages?.[0]?.imageinfo?.[0];
-    const approved = license(info?.extmetadata ?? {});
-    if (!info?.url || !approved || Number(info.width || 0) < 500 || Number(info.height || 0) < 500) continue;
-    results.push({ url: info.thumburl || info.url, sourceUrl: info.descriptionurl || info.url, license: approved, attribution: clean(info.extmetadata?.Artist?.value || info.extmetadata?.Credit?.value || 'Wikimedia contributor'), title: name, score: scoreCandidate(title, name) });
+function buildStagePlan(item) {
+  const ingredients = item.ingredients.slice(0, 8);
+  const steps = [...new Map(item.steps.map((step) => [clean(step).toLowerCase(), clean(step)])).values()];
+  const ingredientSummary = ingredients.length ? ingredients.join(', ') : 'the listed recipe ingredients';
+  if (steps.length >= 3) {
+    return [
+      { stage: 'process-1', sourceType: 'explicit-step', step: steps[0], basedOnSteps: [0], visualHint: 'preparation' },
+      { stage: 'process-2', sourceType: 'explicit-step', step: steps[Math.floor((steps.length - 1) / 2)], basedOnSteps: [Math.floor((steps.length - 1) / 2)], visualHint: 'core-process' },
+      { stage: 'process-3', sourceType: 'explicit-step', step: steps.at(-1), basedOnSteps: [steps.length - 1], visualHint: 'finishing' }
+    ];
   }
-  return results.sort((a, b) => b.score - a.score);
+  if (steps.length === 2) {
+    return [
+      { stage: 'process-1', sourceType: 'ingredient-derived-stage', step: `Prepare the listed ingredients: ${ingredientSummary}.`, basedOnSteps: [], visualHint: 'preparation' },
+      { stage: 'process-2', sourceType: 'explicit-step', step: steps[0], basedOnSteps: [0], visualHint: 'core-process' },
+      { stage: 'process-3', sourceType: 'explicit-step', step: steps[1], basedOnSteps: [1], visualHint: 'finishing' }
+    ];
+  }
+  if (steps.length === 1) {
+    return [
+      { stage: 'process-1', sourceType: 'ingredient-derived-stage', step: `Prepare the listed ingredients: ${ingredientSummary}.`, basedOnSteps: [], visualHint: 'preparation' },
+      { stage: 'process-2', sourceType: 'explicit-step', step: steps[0], basedOnSteps: [0], visualHint: 'core-process' },
+      { stage: 'process-3', sourceType: 'step-derived-stage', step: `Finishing view derived from the recipe procedure: ${steps[0]}`, basedOnSteps: [0], visualHint: 'finishing' }
+    ];
+  }
+  return [
+    { stage: 'process-1', sourceType: 'ingredient-derived-stage', step: `Ingredient preparation reference: ${ingredientSummary}.`, basedOnSteps: [], visualHint: 'preparation' },
+    { stage: 'process-2', sourceType: 'procedure-missing-fallback', step: `Recipe procedure is unavailable; process illustration is derived from the recipe title and ingredients for ${item.title}.`, basedOnSteps: [], visualHint: 'core-process' },
+    { stage: 'process-3', sourceType: 'procedure-missing-fallback', step: `Finishing illustration derived from the recipe title and ingredients for ${item.title}.`, basedOnSteps: [], visualHint: 'finishing' }
+  ];
 }
 
-async function commonsSearch(query, limit = 12) {
-  const params = new URLSearchParams({ action: 'query', list: 'search', srnamespace: '6', srsearch: query, srlimit: String(limit), srwhat: 'text', format: 'json', formatversion: '2' });
-  const hits = (await json(`${COMMONS_API}?${params}`))?.query?.search ?? [];
+function scoreCandidate(query, candidateText, action) {
+  const q = tokens(query);
+  const c = tokens(candidateText);
+  const titleOverlap = [...q].filter((token) => c.has(token)).reduce((sum, token) => sum + (token.length >= 6 ? 2 : 1), 0);
+  const actionOverlap = action.terms.filter((term) => candidateText.toLowerCase().includes(term)).length * 3;
+  const processCue = /pan|skillet|pot|bowl|oven|knife|chop|slice|dice|mix|stir|whisk|bake|boil|fry|cook|knead|roll/i.test(candidateText) ? 2 : 0;
+  const finishedCue = /finished|served|plated|dish|meal|ready to eat/i.test(candidateText) ? 2 : 0;
+  return titleOverlap + actionOverlap + processCue - finishedCue;
+}
+
+async function commonsSearch(query, { mode = 'process', action = extractAction(query), limit = 12 } = {}) {
+  const params = new URLSearchParams({
+    action: 'query',
+    generator: 'search',
+    gsrnamespace: '6',
+    gsrsearch: query,
+    gsrlimit: String(limit),
+    prop: 'imageinfo',
+    iiprop: 'url|size|mime|extmetadata',
+    iiurlwidth: '1600',
+    format: 'json',
+    formatversion: '2'
+  });
+  const pages = (await json(`${COMMONS_API}?${params}`))?.query?.pages ?? [];
   const out = [];
-  for (const hit of hits) {
-    const title = hit?.title;
-    if (!title || !/^File:/i.test(title) || /\\.(svg|gif|ico)$/i.test(title)) continue;
-    const detail = new URLSearchParams({ action: 'query', titles: title, prop: 'imageinfo', iiprop: 'url|size|mime|extmetadata', iiurlwidth: '1600', format: 'json', formatversion: '2' });
-    const info = (await json(`${COMMONS_API}?${detail}`))?.query?.pages?.[0]?.imageinfo?.[0];
-    const approved = license(info?.extmetadata ?? {});
-    if (!info?.url || !approved || !/^image\\/(jpeg|png|webp)$/i.test(info.mime ?? '') || Number(info.width || 0) < 500 || Number(info.height || 0) < 500) continue;
-    const text = `${title} ${hit.snippet || ''}`;
-    out.push({ url: info.thumburl || info.url, sourceUrl: info.descriptionurl || info.url, license: approved, attribution: clean(info.extmetadata?.Artist?.value || info.extmetadata?.Credit?.value || 'Wikimedia contributor'), title: title.replace(/^File:/i, ''), score: scoreCandidate(query, text) });
+  for (const page of pages) {
+    const info = page?.imageinfo?.[0];
+    if (!info?.url || !/^image\/(jpeg|png|webp)$/i.test(info.mime ?? '')) continue;
+    if (Number(info.width || 0) < 500 || Number(info.height || 0) < 500) continue;
+    const approved = license(info.extmetadata ?? {});
+    if (!approved) continue;
+    const text = `${page.title || ''} ${info.extmetadata?.ImageDescription?.value || ''} ${info.extmetadata?.Categories?.value || ''}`;
+    const score = scoreCandidate(query, clean(text), action);
+    if (mode === 'process') {
+      const hasActionCue = action.terms.some((term) => clean(text).toLowerCase().includes(term));
+      if (!hasActionCue || score < MIN_PROCESS_SCORE || /finished|served|plated/i.test(text)) continue;
+    } else if (score < MIN_FINAL_SCORE && !/finished|served|plated|dish|meal/i.test(text)) continue;
+    out.push({ url: info.thumburl || info.url, sourceUrl: info.descriptionurl || info.url, license: approved, attribution: clean(info.extmetadata?.Artist?.value || info.extmetadata?.Credit?.value || 'Wikimedia contributor'), title: String(page.title || '').replace(/^File:/i, ''), score });
   }
   return out.sort((a, b) => b.score - a.score);
 }
 
-async function downloadAndConvert(url, target) {
-  const input = await fetchBytes(url);
-  for (const [width, quality] of [[1200, 84], [1000, 76], [820, 68], [680, 58], [560, 50]]) {
-    const image = await sharp(input, { failOn: 'none' }).rotate().resize({ width, height: width, fit: 'inside', withoutEnlargement: true }).webp({ quality, effort: 5 }).toBuffer();
-    if (image.length <= 64 * 1024 || width === 560) { await writeFile(target, image); return { sizeBytes: image.length, digest: sha256(input) }; }
+async function pageImages(item) {
+  let page;
+  try { page = decodeURIComponent(new URL(item.sourceUrl).pathname.split('/wiki/')[1] || '') || `Cookbook:${item.title}`; } catch { page = `Cookbook:${item.title}`; }
+  const params = new URLSearchParams({ action: 'parse', page, prop: 'images', format: 'json', formatversion: '2' });
+  const names = (await json(`${WIKIBOOKS_API}?${params}`))?.parse?.images ?? [];
+  const filtered = names.filter((name) => /\.(jpe?g|png|webp)$/i.test(name) && !/icon|logo|flag|difficulty/i.test(name)).slice(0, 24);
+  if (!filtered.length) return [];
+  const infoParams = new URLSearchParams({ action: 'query', titles: filtered.map((name) => `File:${name}`).join('|'), prop: 'imageinfo', iiprop: 'url|size|mime|extmetadata', iiurlwidth: '1600', format: 'json', formatversion: '2' });
+  const pages = (await json(`${WIKIBOOKS_API}?${infoParams}`))?.query?.pages ?? [];
+  return pages.map((page) => page?.imageinfo?.[0]).filter((info) => info?.url && /^image\/(jpeg|png|webp)$/i.test(info.mime ?? '') && Number(info.width || 0) >= 500 && Number(info.height || 0) >= 500 && license(info.extmetadata ?? {})).map((info) => ({ url: info.thumburl || info.url, sourceUrl: info.descriptionurl || info.url, license: license(info.extmetadata ?? {}), attribution: clean(info.extmetadata?.Artist?.value || info.extmetadata?.Credit?.value || 'Wikimedia contributor'), title: clean(info.extmetadata?.ObjectName?.value || info.descriptionurl || 'Wikibooks image') }));
+}
+
+async function encodeWebp(source, target) {
+  const attempts = [
+    [1200, 82], [1000, 74], [900, 66], [800, 58], [700, 50], [600, 44], [520, 38], [440, 32], [360, 26]
+  ];
+  let best = null;
+  for (const [width, quality] of attempts) {
+    const image = await sharp(source, { failOn: 'none' }).rotate().resize({ width, height: width, fit: 'inside', withoutEnlargement: true }).webp({ quality, effort: 5 }).toBuffer();
+    best = image;
+    if (image.length <= 64 * 1024) break;
   }
-  throw new Error('Unable to satisfy WebP size budget');
+  if (!best || best.length > 64 * 1024) throw new Error('WebP size budget exceeded');
+  await writeFile(target, best);
+  return { sizeBytes: best.length, sha256: sha256(best) };
 }
 
 function escapeXml(value) { return String(value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;'); }
@@ -135,73 +205,175 @@ function wrapText(text, maxChars) {
   for (const word of words) { const next = line ? `${line} ${word}` : word; if (next.length > maxChars && line) { lines.push(line); line = word; } else line = next; }
   if (line) lines.push(line); return lines.slice(0, 6);
 }
-async function generateFallback({ title, step, stage, target }) {
+function iconSvg(kind, accent) {
+  const common = `fill="none" stroke="${accent}" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"`;
+  if (kind === 'knife') return `<path ${common} d="M160 330 L430 70 L560 200 L290 460 Z"/><path ${common} d="M340 410 L540 610"/>`;
+  if (kind === 'oven') return `<rect ${common} x="170" y="100" width="460" height="500" rx="34"/><rect ${common} x="235" y="235" width="330" height="240" rx="20"/><circle ${common} cx="255" cy="160" r="10"/><circle ${common} cx="320" cy="160" r="10"/>`;
+  if (kind === 'pan') return `<ellipse ${common} cx="330" cy="310" rx="210" ry="110"/><path ${common} d="M520 285 L720 150"/><path ${common} d="M150 360 Q330 545 510 360"/>`;
+  if (kind === 'pot') return `<rect ${common} x="190" y="235" width="340" height="310" rx="40"/><path ${common} d="M135 235 H585"/><path ${common} d="M250 160 H470"/><path ${common} d="M170 300 H110"/><path ${common} d="M610 300 H550"/>`;
+  if (kind === 'pour') return `<path ${common} d="M210 150 H500 L450 520 H260 Z"/><path ${common} d="M520 190 Q640 235 550 350"/><path ${common} d="M480 370 C555 425 620 425 690 365"/>`;
+  if (kind === 'plate') return `<ellipse ${common} cx="400" cy="380" rx="270" ry="160"/><ellipse ${common} cx="400" cy="380" rx="205" ry="112"/>`;
+  return `<path ${common} d="M160 280 Q400 520 640 280"/><path ${common} d="M175 280 Q400 150 625 280"/><path ${common} d="M250 255 C300 200 340 200 390 255"/><path ${common} d="M410 255 C460 200 500 200 550 255"/>`;
+}
+
+async function generateProcessIllustration({ item, stage, step, visualHint, target }) {
+  const action = extractAction(step);
+  const kind = visualHint === 'preparation' ? (item.ingredients.some((x) => /chop|slice|dice|mince|cut/i.test(x)) ? 'knife' : 'bowl') : stage === 'process-3' ? action.icon : action.icon;
+  const seed = createHash('sha1').update(`${item.title}|${stage}|${step}`).digest('hex');
+  const accent = `#${seed.slice(0, 6)}`;
   const lines = wrapText(step, 34);
-  const icon = /bake|oven|roast/i.test(step) ? 'OVEN' : /fry|saute|sauté|pan|skillet/i.test(step) ? 'PAN' : /boil|simmer|cook/i.test(step) ? 'POT' : /chop|slice|dice|mince|cut/i.test(step) ? 'CUT' : /pour|add|sprinkle|season/i.test(step) ? 'ADD' : 'MIX';
-  const svg = `<?xml version="1.0" encoding="UTF-8"?><svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900"><rect width="1200" height="900" rx="48" fill="#F7F5EF"/><text x="70" y="92" font-family="Arial" font-size="28" font-weight="700" fill="#6B7280">MYPA RECIPE PROCESS</text><text x="70" y="155" font-family="Arial" font-size="44" font-weight="800" fill="#172033">${escapeXml(title).slice(0,48)}</text><text x="70" y="205" font-family="Arial" font-size="30" font-weight="700" fill="#4B5563">Stage ${stage} of 3 • ${icon}</text><circle cx="930" cy="300" r="175" fill="#E9EEF5"/><rect x="750" y="520" width="360" height="170" rx="28" fill="#FFFFFF" stroke="#D9DEE7" stroke-width="4"/><text x="790" y="575" font-family="Arial" font-size="26" font-weight="700" fill="#6B7280">RECIPE STEP</text>${lines.map((line,i)=>`<text x="790" y="${620+i*34}" font-family="Arial" font-size="24" fill="#172033">${escapeXml(line)}</text>`).join('')}<rect x="70" y="300" width="610" height="390" rx="34" fill="#FFFFFF" stroke="#D9DEE7" stroke-width="4"/><text x="110" y="360" font-family="Arial" font-size="28" font-weight="700" fill="#6B7280">WHAT TO DO</text>${lines.map((line,i)=>`<text x="110" y="${425+i*48}" font-family="Arial" font-size="32" font-weight="600" fill="#172033">${escapeXml(line)}</text>`).join('')}<text x="70" y="815" font-family="Arial" font-size="23" fill="#6B7280">Generated from the recipe procedure because no sufficiently relevant free photo was found.</text></svg>`;
+  const ingredientLine = wrapText(item.ingredients.slice(0, 5).join(' • ') || 'Recipe ingredients', 42).slice(0, 2);
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <rect width="1200" height="900" rx="48" fill="#F7F5EF"/>
+  <text x="70" y="90" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#6B7280">MYPA RECIPE PROCESS</text>
+  <text x="70" y="150" font-family="Arial, Helvetica, sans-serif" font-size="46" font-weight="800" fill="#172033">${escapeXml(item.title).slice(0, 48)}</text>
+  <text x="70" y="200" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="700" fill="#4B5563">${escapeXml(stage.replace('-', ' ').toUpperCase())} • ${escapeXml(action.name)}</text>
+  <circle cx="920" cy="320" r="190" fill="#E9EEF5"/>
+  <g transform="translate(700 100) scale(.7)">${iconSvg(stage === 'process-3' ? 'plate' : kind, accent)}</g>
+  <rect x="70" y="275" width="710" height="430" rx="34" fill="#FFFFFF" stroke="#D9DEE7" stroke-width="4"/>
+  <text x="110" y="335" font-family="Arial, Helvetica, sans-serif" font-size="27" font-weight="700" fill="#6B7280">RECIPE-DERIVED STAGE</text>
+  ${lines.map((line, i) => `<text x="110" y="${405 + i * 52}" font-family="Arial, Helvetica, sans-serif" font-size="34" font-weight="600" fill="#172033">${escapeXml(line)}</text>`).join('')}
+  <text x="110" y="610" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="700" fill="#6B7280">Ingredients context</text>
+  ${ingredientLine.map((line, i) => `<text x="110" y="${650 + i * 30}" font-family="Arial, Helvetica, sans-serif" font-size="21" fill="#374151">${escapeXml(line)}</text>`).join('')}
+  <text x="70" y="815" font-family="Arial, Helvetica, sans-serif" font-size="23" fill="#6B7280">Deterministic illustration generated from this recipe's procedure text.</text>
+</svg>`;
   const png = await sharp(Buffer.from(svg)).png().toBuffer();
-  for (const quality of [82, 64, 50]) { const webp = await sharp(png).webp({ quality, effort: 5 }).toBuffer(); if (webp.length <= 64 * 1024 || quality === 50) { await writeFile(target, webp); return webp.length; } }
-  throw new Error('Fallback generation failed');
+  return encodeWebp(png, target);
+}
+
+async function generateFinalIllustration(item, target) {
+  const seed = createHash('sha1').update(item.title).digest('hex');
+  const accentA = `#${seed.slice(0, 6)}`;
+  const accentB = `#${seed.slice(6, 12)}`;
+  const ingredientWords = item.ingredients.slice(0, 6).map((x) => clean(x).split(/\s+/).slice(0, 3).join(' '));
+  const garnish = ingredientWords.map((word, i) => {
+    const x = 390 + ((i * 97) % 380); const y = 465 + ((i * 37) % 65);
+    return `<ellipse cx="${x}" cy="${y}" rx="${30 + (i % 3) * 8}" ry="${18 + (i % 2) * 6}" fill="${i % 2 ? accentA : accentB}" opacity="0.82"/><text x="${x - 26}" y="${y + 6}" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="700" fill="#172033">${escapeXml(word.slice(0, 12))}</text>`;
+  }).join('');
+  const svg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="900" viewBox="0 0 1200 900">
+  <rect width="1200" height="900" rx="48" fill="#F7F5EF"/>
+  <text x="70" y="95" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="700" fill="#6B7280">MYPA RECIPE FINAL</text>
+  <text x="70" y="160" font-family="Arial, Helvetica, sans-serif" font-size="48" font-weight="800" fill="#172033">${escapeXml(item.title).slice(0, 44)}</text>
+  <ellipse cx="600" cy="600" rx="365" ry="175" fill="#D9DEE7" opacity="0.7"/>
+  <ellipse cx="600" cy="500" rx="330" ry="195" fill="#FFFFFF" stroke="#C9CFD8" stroke-width="10"/>
+  <ellipse cx="600" cy="500" rx="270" ry="145" fill="#F3F5F7"/>
+  <path d="M380 500 Q600 360 820 500 Q600 650 380 500 Z" fill="#FFFFFF"/>
+  ${garnish}
+  <circle cx="565" cy="455" r="15" fill="#FFFFFF" opacity="0.8"/><circle cx="635" cy="470" r="11" fill="#FFFFFF" opacity="0.8"/>
+  <text x="70" y="790" font-family="Arial, Helvetica, sans-serif" font-size="24" fill="#6B7280">Recipe-derived final illustration from title + ingredient context; not a licensed photo.</text>
+</svg>`;
+  const png = await sharp(Buffer.from(svg)).png().toBuffer();
+  return encodeWebp(png, target);
 }
 
 async function mirror(item) {
   const dir = path.join(MEDIA_ROOT, slug(item.title), 'stages');
+  await rm(dir, { recursive: true, force: true });
   await mkdir(dir, { recursive: true });
-  for (const entry of await readdir(path.dirname(dir), { withFileTypes: true }).catch(() => [])) if (entry.name !== 'stages') await rm(path.join(path.dirname(dir), entry.name), { recursive: true, force: true });
-  await mkdir(dir, { recursive: true });
-  const chosenSteps = chooseThreeSteps(item.steps);
-  if (!chosenSteps.length) throw new Error('Recipe has no usable procedure steps');
+  const plan = buildStagePlan(item);
   const media = [];
-  for (let index = 0; index < REQUIRED_PROCESS; index += 1) {
-    const step = chosenSteps[index];
-    const target = path.join(dir, `${String(index + 1).padStart(2, '0')}-process-${index + 1}.webp`);
-    const query = `${item.title} ${step}`;
+  for (const stagePlan of plan) {
+    const target = path.join(dir, `${Number(stagePlan.stage.replace(/\D/g, '')) .toString().padStart(2, '0')}-${stagePlan.stage}.webp`);
+    const action = extractAction(stagePlan.step);
+    const query = `${item.title} ${action.name} ${clean(stagePlan.step).slice(0, 160)}`;
     let candidate = null;
     try {
-      const results = await commonsSearch(query, 12);
-      candidate = results.find((x) => x.score >= MIN_PHOTO_SCORE && !media.some((m) => m.sourceUrl === x.sourceUrl)) ?? null;
+      const candidates = await commonsSearch(query, { mode: 'process', action, limit: 10 });
+      candidate = candidates.find((x) => !media.some((m) => m.sourceUrl === x.sourceUrl));
     } catch {}
     if (candidate) {
       try {
-        const converted = await downloadAndConvert(candidate.url, target);
-        media.push({ position: index + 1, stage: `process-${index + 1}`, localPath: path.relative(ROOT, target).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), target).split(path.sep).join('/'), sizeBytes: converted.sizeBytes, sha256: converted.digest, format: 'webp', provider: 'Wikimedia Commons semantic search', sourceUrl: candidate.sourceUrl, license: candidate.license, attribution: candidate.attribution, caption: candidate.title, status: 'ready', evidence: 'commons-step-search', query, relevanceScore: candidate.score, step });
+        const input = await fetchBytes(candidate.url);
+        const converted = await encodeWebp(input, target);
+        media.push({ position: media.length + 1, stage: stagePlan.stage, localPath: path.relative(ROOT, target).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), target).split(path.sep).join('/'), ...converted, format: 'webp', provider: 'Wikimedia Commons semantic process search', sourceUrl: candidate.sourceUrl, license: candidate.license, attribution: candidate.attribution, caption: candidate.title, status: 'ready', evidence: 'commons-action-and-title-match', relevanceScore: candidate.score, query, step: stagePlan.step, stageSourceType: stagePlan.sourceType, basedOnSteps: stagePlan.basedOnSteps });
         continue;
       } catch {}
     }
-    const sizeBytes = await generateFallback({ title: item.title, step, stage: index + 1, target });
-    media.push({ position: index + 1, stage: `process-${index + 1}`, localPath: path.relative(ROOT, target).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), target).split(path.sep).join('/'), sizeBytes, format: 'webp', provider: 'MYPA deterministic recipe-step illustration', license: 'Generated', attribution: 'MYPA', status: 'ready', evidence: 'recipe-procedure-derived-fallback', query, step });
+    const converted = await generateProcessIllustration({ item, stage: stagePlan.stage, step: stagePlan.step, visualHint: stagePlan.visualHint, target });
+    media.push({ position: media.length + 1, stage: stagePlan.stage, localPath: path.relative(ROOT, target).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), target).split(path.sep).join('/'), ...converted, format: 'webp', provider: 'MYPA deterministic recipe-step illustration', license: 'Generated', attribution: 'MYPA', status: 'ready', evidence: stagePlan.sourceType === 'explicit-step' ? 'recipe-procedure-step' : stagePlan.sourceType, query, step: stagePlan.step, stageSourceType: stagePlan.sourceType, basedOnSteps: stagePlan.basedOnSteps });
   }
+
   const finalTarget = path.join(dir, '04-final.webp');
   let finalSource = null;
-  try { finalSource = (await parsePageImages(item.sourceUrl, item.title))[0] ?? null; } catch {}
-  if (!finalSource) { try { finalSource = (await commonsSearch(`${item.title} finished dish`, 12)).find((x) => x.score >= Math.max(MIN_PHOTO_SCORE, 6)); } catch {} }
-  if (finalSource) {
+  try {
+    const candidates = await commonsSearch(`${item.title} finished dish`, { mode: 'final', action: { name: 'finish', terms: ['finished', 'served', 'plated', 'dish', 'meal'], icon: 'plate' }, limit: 12 });
+    finalSource = candidates[0] ?? null;
+  } catch {}
+  if (!finalSource) {
     try {
-      const converted = await downloadAndConvert(finalSource.url, finalTarget);
-      media.push({ position: 4, stage: 'final', localPath: path.relative(ROOT, finalTarget).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), finalTarget).split(path.sep).join('/'), sizeBytes: converted.sizeBytes, sha256: converted.digest, format: 'webp', provider: finalSource.sourceUrl.includes('wikimedia') || finalSource.sourceUrl.includes('commons') ? 'Wikimedia Commons semantic search' : 'Wikimedia Commons/Wikibooks', sourceUrl: finalSource.sourceUrl, license: finalSource.license, attribution: finalSource.attribution, caption: finalSource.title, status: 'ready', evidence: finalSource.sourceUrl.includes('commons') ? 'commons-final-search' : 'licensed-recipe-page-image' });
+      const candidates = await pageImages(item);
+      finalSource = candidates[0] ?? null;
     } catch {}
   }
-  if (!media.some((x) => x.stage === 'final')) {
-    const sizeBytes = await generateFallback({ title: item.title, step: `Finished dish: ${item.title}`, stage: 4, target: finalTarget });
-    media.push({ position: 4, stage: 'final', localPath: path.relative(ROOT, finalTarget).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), finalTarget).split(path.sep).join('/'), sizeBytes, format: 'webp', provider: 'MYPA deterministic recipe final illustration', license: 'Generated', attribution: 'MYPA', status: 'ready', evidence: 'recipe-derived-final-fallback' });
+  if (finalSource) {
+    try {
+      const input = await fetchBytes(finalSource.url);
+      const converted = await encodeWebp(input, finalTarget);
+      media.push({ position: 4, stage: 'final', localPath: path.relative(ROOT, finalTarget).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), finalTarget).split(path.sep).join('/'), ...converted, format: 'webp', provider: 'Wikimedia Commons/Wikibooks licensed final image', sourceUrl: finalSource.sourceUrl, license: finalSource.license, attribution: finalSource.attribution, caption: finalSource.title, status: 'ready', evidence: finalSource.sourceUrl.includes('wikibooks') ? 'licensed-recipe-page-image' : 'commons-finished-dish-search' });
+    } catch {}
   }
-  return { media, mediaCount: media.length, stageStatus: media.length === REQUIRED_TOTAL && media.every((x) => x.status === 'ready') ? 'complete' : 'incomplete', stageRequirement: { processImages: REQUIRED_PROCESS, finalImage: 1 }, sourceEvidence: { procedureStepsAvailable: item.steps.length, processRealPhotos: media.filter((x) => x.stage.startsWith('process-') && x.provider.includes('Wikimedia')).length, finalRealPhoto: media.some((x) => x.stage === 'final' && x.license !== 'Generated') }, mediaPolicy: '3 semantic step images + 1 final image; free licensed photos preferred, deterministic recipe-derived fallback otherwise' };
+  if (!media.some((x) => x.stage === 'final' && x.status === 'ready')) {
+    const converted = await generateFinalIllustration(item, finalTarget);
+    media.push({ position: 4, stage: 'final', localPath: path.relative(ROOT, finalTarget).split(path.sep).join('/'), objectKey: path.relative(path.join(ROOT, 'media'), finalTarget).split(path.sep).join('/'), ...converted, format: 'webp', provider: 'MYPA deterministic recipe final illustration', license: 'Generated', attribution: 'MYPA', status: 'ready', evidence: 'recipe-title-ingredient-derived-final' });
+  }
+  const stageSourceTypes = media.filter((x) => x.stage.startsWith('process-')).map((x) => x.stageSourceType);
+  return {
+    media,
+    mediaCount: media.length,
+    stageStatus: media.length === REQUIRED_TOTAL && media.every((x) => x.status === 'ready' && x.format === 'webp' && x.sizeBytes > 0 && x.sizeBytes <= 64 * 1024) ? 'complete' : 'incomplete',
+    stageRequirement: { processImages: REQUIRED_PROCESS, finalImage: 1, total: REQUIRED_TOTAL },
+    processCoverage: { explicitStepStages: stageSourceTypes.filter((x) => x === 'explicit-step').length, derivedStages: stageSourceTypes.filter((x) => x !== 'explicit-step').length },
+    mediaPolicy: 'Exactly 3 stage-aware process visuals plus 1 final visual. Licensed Wikimedia media is accepted only with source/license metadata and semantic matching; otherwise a deterministic recipe-derived illustration is used.'
+  };
 }
 
 async function main() {
   const dataset = await json(DATASET_URL);
   if (!Array.isArray(dataset) || dataset.length === 0) throw new Error('Recipe dataset is invalid');
   const rows = (MAX_RECIPES ? dataset.slice(0, MAX_RECIPES) : dataset).map(parseRecipe).filter((x) => x.title && x.title !== 'Untitled Recipe');
-  let manifest = { schemaVersion: 11, generatedAt: null, root: ROOT, requiredMediaPerItem: REQUIRED_TOTAL, items: {} };
+  let manifest = { schemaVersion: 12, generatedAt: null, root: ROOT, requiredMediaPerItem: REQUIRED_TOTAL, items: {} };
   if (await exists(MANIFEST_PATH)) { try { manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8')); } catch {} }
-  let cursor = 0; let done = 0;
-  const worker = async () => { while (cursor < rows.length) { const item = rows[cursor++]; const key = `recipe:${slug(item.title)}`; try { const result = await mirror(item); manifest.items[key] = { kind: 'recipe', name: item.title, slug: slug(item.title), sourceUrl: item.sourceUrl, ingredients: item.ingredients.length, steps: item.steps.length, ...result, legacyImagesRemoved: true }; } catch (error) { manifest.items[key] = { kind: 'recipe', name: item.title, slug: slug(item.title), sourceUrl: item.sourceUrl, stageStatus: 'failed', media: [], mediaCount: 0, legacyImagesRemoved: true, error: error instanceof Error ? error.message : String(error) }; } done += 1; const current = manifest.items[key]; await saveJson(MANIFEST_PATH, { ...manifest, schemaVersion: 11, generatedAt: new Date().toISOString() }); console.log(`[recipe-guaranteed-v6] ${done}/${rows.length} '${item.title}' status=${current.stageStatus} process=${current.media.filter((x) => x.status === 'ready' && x.stage.startsWith('process-')).length}/3 photoProcess=${current.media.filter((x) => x.stage.startsWith('process-') && x.license !== 'Generated').length} final=${current.media.some((x) => x.status === 'ready' && x.stage === 'final') ? 1 : 0} finalType=${current.media.find((x) => x.stage === 'final')?.license === 'Generated' ? 'illustration' : 'photo'}`); } };
+  let cursor = 0;
+  let done = 0;
+  const worker = async () => {
+    while (cursor < rows.length) {
+      const item = rows[cursor++];
+      const key = `recipe:${slug(item.title)}`;
+      try {
+        const result = await mirror(item);
+        manifest.items[key] = { kind: 'recipe', name: item.title, slug: slug(item.title), sourceUrl: item.sourceUrl, ingredients: item.ingredients.length, steps: item.steps.length, ...result, legacyImagesRemoved: true };
+      } catch (error) {
+        manifest.items[key] = { kind: 'recipe', name: item.title, slug: slug(item.title), sourceUrl: item.sourceUrl, stageStatus: 'failed', media: [], mediaCount: 0, legacyImagesRemoved: true, error: error instanceof Error ? error.message : String(error) };
+      }
+      done += 1;
+      const current = manifest.items[key];
+      await saveJson(MANIFEST_PATH, { ...manifest, schemaVersion: 12, generatedAt: new Date().toISOString() });
+      console.log(`[recipe-guaranteed-v7] ${done}/${rows.length} '${item.title}' status=${current.stageStatus} process=${current.media.filter((x) => x.status === 'ready' && x.stage.startsWith('process-')).length}/3 final=${current.media.some((x) => x.status === 'ready' && x.stage === 'final') ? 1 : 0} generatedProcess=${current.media.filter((x) => x.stage.startsWith('process-') && x.license === 'Generated').length}`);
+    }
+  };
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
   const recipes = Object.values(manifest.items).filter((x) => x.kind === 'recipe');
   const complete = recipes.filter((x) => x.stageStatus === 'complete').length;
-  const report = { schemaVersion: 9, generatedAt: new Date().toISOString(), root: ROOT, required: { processImages: REQUIRED_PROCESS, finalImage: 1, total: REQUIRED_TOTAL }, recipes: recipes.length, complete, incomplete: recipes.length - complete, mediaPolicy: 'Every recipe receives 3 semantic process images and 1 final image. Licensed real photos are preferred; a deterministic recipe-derived illustration is used only when no sufficiently relevant free photo is available.' };
+  const generatedProcessImages = recipes.reduce((sum, x) => sum + x.media.filter((m) => m.stage.startsWith('process-') && m.license === 'Generated').length, 0);
+  const licensedProcessImages = recipes.reduce((sum, x) => sum + x.media.filter((m) => m.stage.startsWith('process-') && m.license !== 'Generated').length, 0);
+  const finalPhotos = recipes.filter((x) => x.media.some((m) => m.stage === 'final' && m.license !== 'Generated')).length;
+  const report = {
+    schemaVersion: 10,
+    generatedAt: new Date().toISOString(),
+    root: ROOT,
+    required: { processImages: REQUIRED_PROCESS, finalImage: 1, total: REQUIRED_TOTAL, maxBytes: 64 * 1024, format: 'webp' },
+    recipes: recipes.length,
+    complete,
+    incomplete: recipes.length - complete,
+    processImages: { licensed: licensedProcessImages, generated: generatedProcessImages },
+    licensedFinalPhotos: finalPhotos,
+    mediaPolicy: 'Every recipe receives exactly 3 stage-aware process visuals and 1 final visual. Real Wikimedia media is used only with license/source metadata and semantic matching; otherwise the stage is generated deterministically from recipe content. Generated media is never represented as licensed evidence.'
+  };
   await saveJson(SUMMARY_PATH, report);
   console.log(JSON.stringify(report, null, 2));
   if (recipes.length && complete < recipes.length) process.exitCode = 2;
 }
+
 main().catch((error) => { console.error(error); process.exit(1); });
