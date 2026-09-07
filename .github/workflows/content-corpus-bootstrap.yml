@@ -16,6 +16,7 @@ on:
       - 'apps/backend/scripts/recipe-image-dataset-import-v2.mjs'
       - 'apps/backend/scripts/recipe-image-import-all-safe.mjs'
       - 'apps/backend/scripts/recipe-media-runtime-sync.mjs'
+      - 'apps/backend/scripts/recipe-media-runtime-audit.mjs'
       - '.github/workflows/content-corpus-bootstrap.yml'
   workflow_dispatch:
     inputs:
@@ -157,6 +158,8 @@ jobs:
         run: pnpm prisma generate
       - working-directory: apps/backend
         run: pnpm recipe:media:sync-runtime
+      - working-directory: apps/backend
+        run: pnpm recipe:media:audit-runtime
 
   recipe-wikimedia-fallback:
     name: Recipe Wikimedia fallback
