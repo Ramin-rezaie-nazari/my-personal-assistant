@@ -5,9 +5,7 @@ const prisma = new PrismaClient();
 const DATASET_URL = process.env.RECIPE_DATASET_URL ?? 'https://huggingface.co/datasets/gossminn/wikibooks-cookbook/resolve/main/recipes_parsed.json?download=true';
 const DATASET_SOURCE = 'Wikibooks Cookbook';
 const DATASET_LICENSE = 'CC BY-SA 4.0';
-const WIKIBOOKS_API = 'https://en.wikibooks.org/w/api.php';
 const CONCURRENCY = Math.min(Math.max(Number(process.env.RECIPE_IMPORT_CONCURRENCY ?? 2), 1), 4);
-const MAX_MEDIA = 1;
 const MIN_STEP_CHARS = 20;
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -56,41 +54,6 @@ async function fetchJson(url, attempts = 5) {
   }
   throw last;
 }
-function allowedImageLicense(meta = {}) {
-  const short = clean(meta.LicenseShortName?.value || meta.LicenseShortName || '');
-  const terms = clean(meta.UsageTerms?.value || meta.UsageTerms || '');
-  const combined = `${short} ${terms}`;
-  if (/non[- ]?commercial|\bNC\b|no derivatives|\bND\b/i.test(combined)) return null;
-  if (/CC0|public domain|public-domain|PDM/i.test(combined)) return 'CC0/Public Domain';
-  if (/CC BY-SA/i.test(combined)) return 'CC BY-SA';
-  if (/CC BY/i.test(combined)) return 'CC BY';
-  return null;
-}
-async function fetchRecipeMedia(sourceUrl) {
-  if (!sourceUrl) return [];
-  const rawTitle = decodeURIComponent(sourceUrl.split('/wiki/')[1] || '').replace(/_/g, ' ');
-  if (!rawTitle) return [];
-  const params = new URLSearchParams({ action: 'query', titles: rawTitle, prop: 'images', imlimit: String(MAX_MEDIA * 3), format: 'json', formatversion: '2' });
-  const data = await fetchJson(`${WIKIBOOKS_API}?${params.toString()}`);
-  const pages = data?.query?.pages || [];
-  const images = pages[0]?.images || [];
-  const result = [];
-  for (const image of images) {
-    const fileTitle = image?.title || '';
-    if (!/^File:/i.test(fileTitle) || /\.svg$|\.gif$|\.ico$/i.test(fileTitle)) continue;
-    const details = new URLSearchParams({ action: 'query', titles: fileTitle, prop: 'imageinfo', iiprop: 'url|extmetadata', iiurlwidth: '1200', format: 'json', formatversion: '2' });
-    const detail = await fetchJson(`${WIKIBOOKS_API}?${details.toString()}`);
-    const info = detail?.query?.pages?.[0]?.imageinfo?.[0];
-    if (!info?.url && !info?.thumburl) continue;
-    const license = allowedImageLicense(info.extmetadata || {});
-    if (!license) continue;
-    const url = info.thumburl || info.url;
-    result.push({ url, sourceUrl: info.descriptionurl || info.url, license, provider: 'Wikimedia Commons/Wikibooks', attribution: `${clean(info.extmetadata?.Artist?.value || info.extmetadata?.Credit?.value || 'Wikimedia contributor')}; ${license}`, mimeType: /\.png(?:\?|$)/i.test(url) ? 'image/png' : /\.webp(?:\?|$)/i.test(url) ? 'image/webp' : 'image/jpeg' });
-    if (result.length >= MAX_MEDIA) break;
-    await sleep(100);
-  }
-  return result;
-}
 async function getOrCreateFood(tx, name) {
   const existing = await tx.foodItem.findFirst({ where: { userId: null, name } });
   if (existing) return existing;
@@ -98,12 +61,11 @@ async function getOrCreateFood(tx, name) {
 }
 async function importRecipe(parsed) {
   if (!parsed.title || parsed.title === 'Untitled Recipe' || parsed.ingredients.length === 0 || parsed.steps.length === 0) return { status: 'skipped', title: parsed.title, reason: 'missing title/ingredients/steps' };
-  const media = await fetchRecipeMedia(parsed.sourceUrl);
   return prisma.$transaction(async (tx) => {
     const existing = await tx.recipe.findFirst({ where: { userId: null, name: parsed.title } });
     const recipe = existing
-      ? await tx.recipe.update({ where: { id: existing.id }, data: { description: parsed.description, servings: parsed.servings, verified: true, imageUrl: media[0]?.url ?? undefined, imageSource: media[0] ? `${media[0].provider}; ${media[0].license}` : DATASET_SOURCE } })
-      : await tx.recipe.create({ data: { id: randomUUID(), userId: null, name: parsed.title, description: parsed.description, servings: parsed.servings, calories: 0, protein: 0, carbs: 0, fat: 0, verified: true, imageUrl: media[0]?.url, imageSource: media[0] ? `${media[0].provider}; ${media[0].license}` : DATASET_SOURCE } });
+      ? await tx.recipe.update({ where: { id: existing.id }, data: { description: parsed.description, servings: parsed.servings, verified: true, imageUrl: null, imageSource: DATASET_SOURCE } })
+      : await tx.recipe.create({ data: { id: randomUUID(), userId: null, name: parsed.title, description: parsed.description, servings: parsed.servings, calories: 0, protein: 0, carbs: 0, fat: 0, verified: true, imageUrl: null, imageSource: DATASET_SOURCE } });
     await tx.recipeStep.deleteMany({ where: { recipeId: recipe.id } });
     await tx.recipeIngredient.deleteMany({ where: { recipeId: recipe.id } });
     await tx.recipeMedia.deleteMany({ where: { recipeId: recipe.id } });
@@ -114,11 +76,7 @@ async function importRecipe(parsed) {
     for (const [index, instruction] of parsed.steps.entries()) {
       await tx.recipeStep.create({ data: { id: randomUUID(), recipeId: recipe.id, stepNumber: index + 1, instruction, sourceLicense: DATASET_LICENSE, sourceAttribution: `${DATASET_SOURCE}; ${parsed.sourceUrl}` } });
     }
-    if (media[0]) {
-      const item = media[0];
-      await tx.recipeMedia.create({ data: { id: randomUUID(), recipeId: recipe.id, position: 0, url: item.url, sourceUrl: item.sourceUrl, sourceProvider: item.provider, license: item.license, attribution: `${item.attribution}; recipe source: ${parsed.sourceUrl}`, mimeType: item.mimeType, status: 'approved' } });
-    }
-    return { status: 'imported', recipeId: recipe.id, ingredientCount: parsed.ingredients.length, stepCount: parsed.steps.length, mediaCount: media.length };
+    return { status: 'imported', recipeId: recipe.id, ingredientCount: parsed.ingredients.length, stepCount: parsed.steps.length, mediaCount: 0 };
   });
 }
 async function main() {
@@ -133,7 +91,7 @@ async function main() {
   let cursor = 0;
   const worker = async () => { while (true) { const index = cursor++; if (index >= parsed.length) return; try { results[index] = await importRecipe(parsed[index]); } catch (error) { results[index] = { status: 'failed', title: parsed[index].title, error: error instanceof Error ? error.message : String(error) }; } } };
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, parsed.length) }, worker));
-  const stats = { datasetRows: dataset.length, selectedRows: batch.length, imported: results.filter((r) => r?.status === 'imported').length, skipped: results.filter((r) => r?.status === 'skipped').length, failed: results.filter((r) => r?.status === 'failed').length, ingredientsImported: results.reduce((sum, r) => sum + Number(r?.ingredientCount || 0), 0), stepsImported: results.reduce((sum, r) => sum + Number(r?.stepCount || 0), 0), mediaImported: results.reduce((sum, r) => sum + Number(r?.mediaCount || 0), 0) };
+  const stats = { datasetRows: dataset.length, selectedRows: batch.length, imported: results.filter((r) => r?.status === 'imported').length, skipped: results.filter((r) => r?.status === 'skipped').length, failed: results.filter((r) => r?.status === 'failed').length, ingredientsImported: results.reduce((sum, r) => sum + Number(r?.ingredientCount || 0), 0), stepsImported: results.reduce((sum, r) => sum + Number(r?.stepCount || 0), 0) };
   console.log(JSON.stringify({ source: DATASET_SOURCE, license: DATASET_LICENSE, offset, limit: batch.length, ...stats }, null, 2));
   if (stats.imported === 0 || stats.failed > 0) process.exitCode = 1;
 }
