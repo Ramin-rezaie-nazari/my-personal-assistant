@@ -1,9 +1,9 @@
-name: Recipe Media Guaranteed Smoke
+name: Recipe Media Real-Image Smoke
 
 on:
   push:
     paths:
-      - 'apps/backend/scripts/recipe-media-guaranteed-mirror-v6.mjs'
+      - 'apps/backend/scripts/recipe-media-final-generated-v1.mjs'
       - 'apps/backend/package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/recipe-media-guaranteed-smoke.yml'
@@ -11,6 +11,7 @@ on:
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -21,13 +22,34 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Run guaranteed media smoke test
+      - name: Prepare real-food fixture
         working-directory: apps/backend
         env:
-          RECIPE_STAGE_CONCURRENCY: 1
-          MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/.tmp-content-mirror
-          RECIPE_DATASET_URL: data:application/json,%5B%7B%22title%22%3A%221-2-3-4%20Cake%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3A1-2-3-4_Cake%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22flour%22%7D%2C%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22sugar%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Mix the flour and sugar.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Bake the cake.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Method%22%2C%22text%22%3A%22Cool and decorate the cake.%22%7D%5D%7D%2C%7B%22title%22%3A%2220-Ingredient%20Brownies%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3A20-Ingredient_Brownies%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22chocolate%22%7D%2C%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22butter%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Melt the chocolate and butter.%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Procedure%22%2C%22text%22%3A%22Bake the mixture and cool it.%22%7D%5D%7D%2C%7B%22title%22%3A%22Tomato%20Salad%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3ATomato_Salad%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22tomato%22%7D%2C%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22olive%20oil%22%7D%2C%7B%22line_type%22%3A%22ol%22%2C%22section%22%3A%22Instructions%22%2C%22text%22%3A%22Chop%20the%20tomato%20and%20dress%20with%20olive%20oil.%22%7D%5D%7D%2C%7B%22title%22%3A%22Pantry%20Snack%22%2C%22url%22%3A%22https%3A%2F%2Fen.wikibooks.org%2Fwiki%2FCookbook%3APantry_Snack%22%2C%22text_lines%22%3A%5B%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22oats%22%7D%2C%7B%22line_type%22%3A%22ul%22%2C%22section%22%3A%22Ingredients%22%2C%22text%22%3A%22nuts%22%7D%5D%7D%5D
-          run: node ./scripts/recipe-media-guaranteed-mirror-v6.mjs
-      - name: Verify four-stage contract and provenance
+          IMAGE_URL: https://commons.wikimedia.org/wiki/Special:Redirect/file/Cake!.jpg?width=640
+        run: |
+          mkdir -p .tmp-recipe-images
+          curl -L --fail --retry 4 --retry-all-errors "$IMAGE_URL" -o .tmp-recipe-images/Cake.jpg
+          file .tmp-recipe-images/Cake.jpg
+      - name: Run real-image final-media generator
         working-directory: apps/backend
-        run: node -e "const fs=require('fs'),path=require('path');const root='.tmp-content-mirror';const s=JSON.parse(fs.readFileSync(path.join(root,'recipe-stage-summary.json')));if(s.recipes!==4||s.complete!==4)throw Error(JSON.stringify(s));const m=JSON.parse(fs.readFileSync(path.join(root,'manifest.json'))),r=Object.values(m.items);for(const x of r){if(x.mediaCount!==4||x.media.length!==4||x.stageStatus!=='complete')throw Error('contract '+x.name);if(x.media.map(v=>v.stage).sort().join(',')!=='final,process-1,process-2,process-3')throw Error('stages '+x.name);const p=x.media.filter(v=>v.stage.startsWith('process-'));if(p.length!==3||!p.every(v=>v.evidence&&v.stageSourceType))throw Error('provenance '+x.name);if(new Set(p.map(v=>v.sha256)).size!==3)throw Error('duplicate process media '+x.name);for(const v of x.media){const f=path.join(root,v.localPath);if(v.status!=='ready'||v.format!=='webp'||v.sizeBytes<=0||v.sizeBytes>65536||!fs.existsSync(f))throw Error('media '+x.name+'/'+v.stage)}}const one=r.find(x=>x.name==='Tomato Salad');if(one.processCoverage.derivedStages!==2||one.processCoverage.explicitStepStages!==1)throw Error('one-step plan');const zero=r.find(x=>x.name==='Pantry Snack');if(zero.processCoverage.derivedStages!==3)throw Error('zero-step plan');console.log(JSON.stringify(s,null,2));"
+        env:
+          RECIPE_FINAL_CONCURRENCY: 1
+          RECIPE_IMAGE_DATASET_DIR: ${{ github.workspace }}/apps/backend/.tmp-recipe-images
+          MYPA_CONTENT_MIRROR_ROOT: ${{ github.workspace }}/apps/backend/.tmp-content-mirror
+          RECIPE_DATASET_URL: data:application/json,%5B%7B%22title%22%3A%22Cake%22%2C%22image_name%22%3A%22Cake.jpg%22%2C%22url%22%3A%22https%3A%2F%2Fcommons.wikimedia.org%2Fwiki%2FFile%3ACake%2521.jpg%22%7D%5D
+        run: node ./scripts/recipe-media-final-generated-v1.mjs
+      - name: Verify one-real-image contract
+        working-directory: apps/backend
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          const root = path.resolve('.tmp-content-mirror');
+          const s = JSON.parse(fs.readFileSync(path.join(root,'recipe-final-summary.json'),'utf8'));
+          if (!s.corpusComplete || s.recipes !== 1 || s.complete !== 1 || s.failed !== 0 || s.generatedImages !== 0) throw new Error(JSON.stringify(s));
+          const m = JSON.parse(fs.readFileSync(path.join(root,'recipe-final-manifest.json'),'utf8'));
+          const x = Object.values(m.items)[0];
+          if (!x || x.mediaCount !== 1 || x.stage !== 'final' || x.generated !== false || x.sourceType !== 'real-dataset-image' || x.format !== 'webp' || x.sizeBytes <= 0 || x.sizeBytes > 65536) throw new Error('real-image contract failed');
+          if (!fs.existsSync(path.join(root,x.localPath))) throw new Error('media file missing');
+          console.log(JSON.stringify({summary:s,item:x},null,2));
+          NODE
