@@ -12,6 +12,7 @@ on:
       - 'apps/backend/scripts/fitness-media-download.mjs'
       - 'apps/backend/scripts/recipe-content-import.mjs'
       - 'apps/backend/scripts/recipe-content-audit.mjs'
+      - 'apps/backend/scripts/recipe-source-mapping-repair.mjs'
       - 'apps/backend/scripts/recipe-media-download.mjs'
       - 'apps/backend/scripts/recipe-image-dataset-import-v2.mjs'
       - 'apps/backend/scripts/recipe-image-import-all-safe.mjs'
@@ -131,6 +132,8 @@ jobs:
           test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for recipe media mirroring.'; exit 2; }
       - run: pnpm install --frozen-lockfile
       - working-directory: apps/backend
+        run: pnpm recipe:source:mapping:repair
+      - working-directory: apps/backend
         run: node ./scripts/recipe-image-dataset-import-v2.mjs
 
   recipe-runtime-media-sync:
@@ -163,11 +166,12 @@ jobs:
     name: Recipe Wikimedia fallback
     needs: recipe-images
     runs-on: ubuntu-24.04
+    timeout-minutes: 360
     env:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
       RECIPE_IMAGE_BATCH_SIZE: '25'
-      RECIPE_IMAGE_MAX_PASSES: '20'
+      RECIPE_IMAGE_MAX_PASSES: '60'
       RECIPE_IMAGE_RETRY_SKIPPED: '1'
       WIKIMEDIA_DELAY_MS: '1000'
     steps:
