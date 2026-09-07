@@ -26,7 +26,8 @@ const SUMMARY_PATH = path.join(MANIFEST_DIR, 'summary.json');
 const SUPABASE_URL = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '');
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
 const BUCKET = 'recipe-images';
-const MAX_BYTES = 60 * 1024;
+const MAX_BYTES = 150 * 1024;
+const MIN_BYTES = 12 * 1024;
 const PAGE_SIZE = 1000;
 const LIMIT = Math.max(Number(process.env.RECIPE_LOCAL_LIMIT || '0'), 0);
 const START = Math.max(Number(process.env.RECIPE_LOCAL_START || '0'), 0);
@@ -141,7 +142,7 @@ function normalizeUrl(url) {
 
 function decodeGoogleString(value) {
   try {
-    return JSON.parse(`"${String(value).replace(/"/g, '\\"')}"`);
+    return JSON.parse(`\"${String(value).replace(/\"/g, '\\\"')}\"`);
   } catch {
     return String(value).replaceAll('\\/', '/').replaceAll('\\u0026', '&');
   }
@@ -165,27 +166,23 @@ function extractImageCandidates(html) {
   };
 
   const originalRegexes = [
-    /"ou"\s*:\s*"((?:\\.|[^"\\])+)"/g,
-    /\\"ou\\"\s*:\s*\\"((?:\\.|[^"\\])+)\\"/g,
-    /[?&]imgurl=([^&"']+)/g,
-    /data-iurl=["']([^"']+)["']/g,
-    /data-original=["']([^"']+)["']/g,
+    /\"ou\"\s*:\s*\"((?:\\.|[^\"\\])+?)\"/g,
+    /\\\"ou\\\"\s*:\s*\\\"((?:\\.|[^\"\\])+?)\\\"/g,
+    /[?&]imgurl=([^&\"']+)/g,
+    /data-iurl=[\"']([^\"']+)[\"']/g,
+    /data-original=[\"']([^\"']+)[\"']/g,
   ];
 
   for (const [regexIndex, regex] of originalRegexes.entries()) {
     for (const match of html.matchAll(regex)) {
       let value = match[1];
       try { value = decodeURIComponent(value); } catch {}
-      if (regex.source.includes('"ou"')) value = decodeGoogleString(value);
-      // URLs extracted from imgurl/data-iurl/data-original are more likely to
-      // be the actual source image than the rendered 274x169 Google thumbnail.
+      if (regex.source.includes('\\"ou\\"') || regex.source.includes('"ou"')) value = decodeGoogleString(value);
       add(value, regexIndex === 2 || regexIndex >= 3 ? 1 : 2);
     }
   }
 
-  // Newer Google layouts can still expose the original target inside image
-  // redirect links. Collect explicit imgres/imgurl pairs as a second pass.
-  const redirectRegex = /https?:\/\/[^\s"'<>]+(?:imgres|url\?)[^\s"'<>]*/gi;
+  const redirectRegex = /https?:\/\/[^\s\"'<>]+(?:imgres|url\?)[^\s\"'<>]*/gi;
   for (const match of html.matchAll(redirectRegex)) {
     const raw = match[0].replaceAll('&amp;', '&');
     try {
@@ -281,21 +278,21 @@ async function validateAndCompress(input) {
   if (ratio < 0.35 || ratio > 3.0) throw new Error(`Image aspect ratio rejected: ${ratio.toFixed(2)}`);
 
   let best = null;
-  for (const width of [960, 880, 800, 720, 640, 576, 512, 448, 384, 320]) {
-    for (const quality of [76, 70, 64, 58, 52, 46, 40, 34, 28]) {
+  for (const width of [1024, 960, 880, 800, 720, 640, 576, 512, 448, 384, 320]) {
+    for (const quality of [82, 78, 74, 70, 66, 62, 58, 54, 50, 46, 42, 38, 34, 30, 26]) {
       const out = await sharp(input, { failOn: 'none' })
         .rotate()
         .resize({ width, fit: 'inside', withoutEnlargement: true })
         .webp({ quality, effort: 6 })
         .toBuffer();
       if (!best || out.byteLength < best.byteLength) best = out;
-      if (out.byteLength <= MAX_BYTES) {
+      if (out.byteLength <= MAX_BYTES && out.byteLength >= MIN_BYTES) {
         const outMeta = await sharp(out, { failOn: 'none' }).metadata();
         return { out, width: outMeta.width ?? width, height: outMeta.height ?? width, inputMime: metadata.format || null };
       }
     }
   }
-  throw new Error(`Could not reach ${MAX_BYTES} bytes; smallest=${best?.byteLength ?? 'unknown'}`);
+  throw new Error(`Could not fit image into ${MAX_BYTES} bytes; smallest=${best?.byteLength ?? 'unknown'}`);
 }
 
 async function sha256(buffer) {
@@ -391,12 +388,12 @@ async function mirrorExisting(recipe, relation, manifestMap) {
 
 async function importMissing(recipe, manifestMap) {
   const existing = manifestMap.get(String(recipe.id));
-  if (!FORCE && existing?.status && existing.status !== 'failed') return { status: 'skipped-existing-manifest' };
+  if (!FORCE && existing && existing.status !== 'failed' && existing.status !== 'retry-exhausted') return { status: 'skipped-existing-manifest' };
 
   const { query, searchUrl, candidates } = await googleCandidates(recipe.name);
   let candidateIndex = 0;
   let last;
-  for (const imageUrl of candidates.slice(0, 24)) {
+  for (const imageUrl of candidates.slice(0, 36)) {
     candidateIndex += 1;
     try {
       const input = await downloadBytes(imageUrl);
@@ -477,17 +474,18 @@ async function main() {
       const recipe = inRange[index];
       const relation = relationByRecipe.get(String(recipe.id));
       try {
-        const hasLocal = manifestMap.get(String(recipe.id))?.status && !FORCE;
+        const manifestRow = manifestMap.get(String(recipe.id));
+        const hasUsableLocal = Boolean(manifestRow && ['present-local', 'mirrored', 'imported-google-first-valid'].includes(manifestRow.status));
         let row = null;
-        if (hasLocal) {
+        if (hasUsableLocal && !FORCE) {
           stats.skipped += 1;
           console.log(`[SKIP] ${recipe.id} ${recipe.name}`);
-        } else if (relation && MIRROR_EXISTING) {
+        } else if (relation && MIRROR_EXISTING && !hasUsableLocal) {
           row = await mirrorExisting(recipe, relation, manifestMap);
           if (row.status === 'mirrored') stats.mirrored += 1;
           else stats.skipped += 1;
           console.log(`[MIRROR] ${recipe.id} ${recipe.name}`);
-        } else if (GOOGLE_MISSING) {
+        } else if (GOOGLE_MISSING && (!relation || RETRY_FAILED || FORCE)) {
           row = await importMissing(recipe, manifestMap);
           stats.importedGoogle += 1;
           console.log(`[GOOGLE] ${recipe.id} ${recipe.name} -> result #${row.resultPosition}`);
@@ -507,7 +505,6 @@ async function main() {
         };
         await appendManifest(row);
         await appendErrorLog(row);
-        if (!RETRY_FAILED) manifestMap.set(String(recipe.id), row);
         console.error(`[FAILED] ${recipe.id} ${recipe.name}: ${reason}`);
       }
       await sleep(DELAY_MS);
