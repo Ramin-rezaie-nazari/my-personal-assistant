@@ -7,12 +7,11 @@
 
 ```text
 MYPA_START_HERE.md                         ← همین فایل؛ نقطه شروع هر جلسه
-apps/backend/docs/05_CURRENT_STATE.md     ← A: وضعیت واقعی، درصد، blockers، آخرین کارها
-apps/backend/docs/06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md ← B: قرارداد رفتار/UX و memory
+apps/backend/docs/05_CURRENT_STATE.md     ← مرجع اصلی وضعیت واقعی، درصدها و blockers
 apps/backend/docs/03_PROJECT_BRAIN_BOOK.md ← حافظه مهندسی و تصمیم‌های معماری/محصول
 apps/backend/docs/04_ARCHITECTURE_ATLAS.md ← نقشه ارتباط فایل‌ها، ماژول‌ها و data flow
 apps/backend/docs/06_VALIDATION_LEDGER.md ← فقط evidence واقعی تست/validation
-apps/backend/docs/08_AUTONOMOUS_PROGRESS_LOG.md ← تاریخچه جلسه‌به‌جلسه پیشرفت
+apps/backend/docs/08_AUTONOMOUS_PROGRESS_LOG.md ← تاریخچه‌ی session-by-session پیشرفت
 .agents/MYPA_AUTONOMOUS_TASK_QUEUE.md     ← صف کارهای بعدی
 AGENTS.md                                  ← قوانین اجباری کار روی repo
 ```
@@ -26,9 +25,7 @@ AGENTS.md                                  ← قوانین اجباری کار 
 ```text
 START_HERE
    ↓
-A / CURRENT_STATE
-   ↓
-B / UX + MEMORY CONTRACT
+CURRENT_STATE
    ↓
 BRAIN_BOOK + ARCHITECTURE_ATLAS
    ↓
@@ -50,11 +47,10 @@ NEXT ITEM
 هر milestone واقعی باید در این لایه‌ها ثبت شود:
 
 1. `05_CURRENT_STATE.md` → الان پروژه دقیقاً کجاست؟ چه چیزی green است و چه چیزی pending؟
-2. `06_USER_EXPERIENCE_AND_MEMORY_CONTRACT.md` → رفتار مورد انتظار کاربر، UX و memory چه قراردادی دارند؟
-3. `03_PROJECT_BRAIN_BOOK.md` → چه کاری انجام شد و چرا این تصمیم معماری/محصول گرفته شد؟
-4. `04_ARCHITECTURE_ATLAS.md` → کدام فایل/ماژول/رابطه تغییر کرد و اتصال آن چیست؟
-5. `06_VALIDATION_LEDGER.md` → دقیقاً چه چیزی واقعاً اجرا و validate شد؟
-6. `08_AUTONOMOUS_PROGRESS_LOG.md` → تاریخچه‌ی session-by-session.
+2. `03_PROJECT_BRAIN_BOOK.md` → چه کاری انجام شد و چرا این تصمیم معماری/محصول گرفته شد؟
+3. `04_ARCHITECTURE_ATLAS.md` → کدام فایل/ماژول/رابطه تغییر کرد و اتصال آن چیست؟
+4. `06_VALIDATION_LEDGER.md` → دقیقاً چه چیزی واقعاً اجرا و validate شد؟
+5. `08_AUTONOMOUS_PROGRESS_LOG.md` → تاریخچه‌ی session-by-session.
 
 ## 4. قانون Evidence
 
@@ -87,29 +83,31 @@ PENDING = هنوز بررسی نشده
 
 ## 6. Snapshot این دوره‌ی توسعه — 2026-09-07
 
-در این batch چند کار اجرایی واقعی انجام شد و باید در ادامه همین‌جا قابل ردیابی باشد:
+در این batch چند کار اجرایی واقعی انجام شد:
 
 - قرارداد Recipe Media به **دقیقاً یک تصویر نهایی از غذای پخته/کامل‌شده** تثبیت شد؛ process gallery دیگر release media محسوب نمی‌شود.
 - `recipe-content-audit.mjs` به یک release gate واقعی ارتقا پیدا کرد: حداقل ingredient/step، verified بودن، contiguous steps، دقیقاً یک approved media، WebP، provenance/licence و جلوگیری از generated/illustration media.
 - مشکل `pnpm install --frozen-lockfile` در CI ریشه‌یابی شد؛ package manifest و lockfile drift عامل blocker بود. lockfile synchronization به‌صورت واقعی در GitHub Actions اجرا شد و موفق برگشت.
-- خطای TypeScript شناخته‌شده در `apps/mobile/app/reminders-localized.tsx` نیز به‌صورت repository change اصلاح شد.
-- Full Content Media و Content Mirror بعد از اصلاح lockfile دوباره وارد اجرا شدند؛ وضعیت نهایی آن runها باید بر اساس evidence خوانده شود و تا پایان audit نباید green فرض شوند.
-- یک workflow موقت برای sync lockfile ساخته شد، بعد از استفاده حذف شد؛ در branch کاری باقی‌مانده‌ی دائم آن فقط خود `pnpm-lock.yaml` هماهنگ‌شده و تغییرات لازم است.
+- خطای TypeScript شناخته‌شده در `apps/mobile/app/reminders-localized.tsx` به‌صورت repository change اصلاح شد.
+- یک workflow موقت برای sync lockfile ساخته شد، بعد از استفاده حذف شد؛ در branch کاری فقط lockfile هماهنگ‌شده و تغییرات لازم باقی مانده است.
+- fallback recipe image importer بازبینی شد و جست‌وجوی licensed Wikimedia برای نام‌های طولانی/ترکیبی broad‌تر شد، بدون حذف فیلتر license و relevance.
+- اجرای واقعی content bootstrap پس از این تغییر نشان داد سه credential اصلی runtime هنوز در GitHub Actions در دسترس نیستند؛ بنابراین corpus population عمداً GREEN اعلام نشد.
+- بررسی مستقیم محتوای Supabase نشان داد corpus فعلی **13,029 recipe** دارد، **11,643** recipe دارای hero فعلی هستند و **1,386** recipe هنوز hero ندارند؛ این gap هنوز باید با runtime credentials و mirror واقعی بسته شود.
 
 ### وضعیت فعلی این snapshot
 
 ```text
 Recipe exact-one contract implementation:    YELLOW
-Recipe full-corpus runtime population:      PENDING
-Fitness full-corpus runtime population:     PENDING
-Backend CI latest head:                     PENDING / must re-check exact head
-Mobile typecheck/build:                     PENDING / must re-check exact head
-Android/iOS native integrations:            PENDING
+Recipe image coverage in connected DB:      YELLOW (11,643 / 13,029)
+Recipe full-corpus runtime population:      PENDING — CI secrets missing
+Fitness full-corpus runtime population:     PENDING — fitness DB secret missing
+Content bootstrap workflow:                 RED/BLOCKED at credential gate
+Android/iOS native integrations:             PENDING
 Yoga live pose provider:                    PENDING
 Play Store release:                         PENDING
 ```
 
-**برای درصد و وضعیت نهایی، `05_CURRENT_STATE.md` مرجع اصلی است.**
+**برای درصد و وضعیت نهایی، `apps/backend/docs/05_CURRENT_STATE.md` مرجع اصلی است.**
 
 ## 7. آخرین snapshot
 
