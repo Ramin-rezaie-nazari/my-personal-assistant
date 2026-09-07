@@ -5,12 +5,16 @@ on:
     paths:
       - 'apps/backend/scripts/content-mirror-run.mjs'
       - 'apps/backend/scripts/content-mirror-audit.mjs'
+      - 'apps/backend/scripts/fitness-media-guaranteed-mirror-v2.mjs'
+      - 'apps/backend/scripts/recipe-media-guaranteed-mirror-v6.mjs'
       - 'apps/backend/package.json'
       - '.github/workflows/content-mirror-validation.yml'
   pull_request:
     paths:
       - 'apps/backend/scripts/content-mirror-run.mjs'
       - 'apps/backend/scripts/content-mirror-audit.mjs'
+      - 'apps/backend/scripts/fitness-media-guaranteed-mirror-v2.mjs'
+      - 'apps/backend/scripts/recipe-media-guaranteed-mirror-v6.mjs'
       - 'apps/backend/package.json'
       - '.github/workflows/content-mirror-validation.yml'
 
@@ -29,5 +33,7 @@ jobs:
         run: |
           node --check apps/backend/scripts/content-mirror-run.mjs
           node --check apps/backend/scripts/content-mirror-audit.mjs
+          node --check apps/backend/scripts/fitness-media-guaranteed-mirror-v2.mjs
+          node --check apps/backend/scripts/recipe-media-guaranteed-mirror-v6.mjs
       - name: Confirm sharp remains declared
         run: node -e "const p=require('./apps/backend/package.json'); if(!p.dependencies.sharp) process.exit(1); console.log('sharp dependency OK')"
