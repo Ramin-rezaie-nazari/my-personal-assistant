@@ -26,6 +26,7 @@
     "recipe-images:dataset": "node ./scripts/recipe-image-dataset-import-v2.mjs",
     "recipe-images:google-first": "node ./scripts/recipe-image-google-first-result-import.mjs",
     "recipe-images:local-mac": "node ./scripts/recipe-images-local-mac-pipeline.mjs",
+    "recipe-images:local-mac:audit": "node ./scripts/recipe-images-local-mac-audit.mjs",
     "recipe-images:reprocess-quality": "node ./scripts/recipe-image-reprocess-quality.mjs",
     "recipe-images:retry-quality": "node ./scripts/recipe-image-reprocess-retry.mjs",
     "recipe-intelligence:classify": "node ./scripts/recipe-intelligence-classify.mjs",
