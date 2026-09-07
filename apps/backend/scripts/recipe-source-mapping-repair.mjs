@@ -3,8 +3,9 @@ import { randomUUID } from 'node:crypto';
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, '');
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const CSV_URL = process.env.RECIPE_IMAGE_MAPPING_CSV_URL ?? 'https://huggingface.co/datasets/Hieu-Pham/kaggle_food_recipes/resolve/main/Food%20Ingredients%20and%20Recipe%20Dataset%20with%20Image%20Name%20Mapping.csv?download=true';
-const PAGE_SIZE = 500;
-const UA = 'MYPA-RecipeSourceMappingRepair/1.0';
+const PAGE_SIZE = 1000;
+const WRITE_BATCH = 500;
+const UA = 'MYPA-RecipeSourceMappingRepair/1.1';
 
 if (!SUPABASE_URL || !SERVICE_KEY) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
 
@@ -22,10 +23,8 @@ function parseCsv(text) {
     const char = text[i];
     if (quoted) {
       if (char === '"') {
-        if (text[i + 1] === '"') {
-          field += '"';
-          i += 1;
-        } else quoted = false;
+        if (text[i + 1] === '"') { field += '"'; i += 1; }
+        else quoted = false;
       } else field += char;
     } else if (char === '"') quoted = true;
     else if (char === ',') { row.push(field); field = ''; }
@@ -53,14 +52,26 @@ async function fetchJson(path, options = {}, attempts = 6) {
   throw last;
 }
 
+async function fetchAll(path, select) {
+  const out = [];
+  for (let offset = 0; ; offset += PAGE_SIZE) {
+    const page = await fetchJson(`${path}?select=${select}&order=id.asc&limit=${PAGE_SIZE}&offset=${offset}`);
+    out.push(...(page ?? []));
+    if (!page || page.length < PAGE_SIZE) break;
+  }
+  return out;
+}
+
 async function updateRows(rows) {
-  if (!rows.length) return;
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/recipe_source_raw`, {
-    method: 'POST',
-    headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
-    body: JSON.stringify(rows),
-  });
-  if (!response.ok) throw new Error(`source mapping upsert failed: ${response.status} ${await response.text()}`);
+  for (let offset = 0; offset < rows.length; offset += WRITE_BATCH) {
+    const batch = rows.slice(offset, offset + WRITE_BATCH);
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/recipe_source_raw`, {
+      method: 'POST',
+      headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify(batch),
+    });
+    if (!response.ok) throw new Error(`source mapping upsert failed: ${response.status}: ${await response.text()}`);
+  }
 }
 
 async function main() {
@@ -75,41 +86,36 @@ async function main() {
   const imageIndex = header.findIndex((value) => ['image name', 'imagename', 'image_name'].includes(value));
   if (titleIndex < 0 || imageIndex < 0) throw new Error(`Mapping CSV missing title/image columns: ${header.join(', ')}`);
 
-  const byTitle = new Map();
+  const csvByTitle = new Map();
   for (const row of rows.slice(1)) {
     const title = normalize(row[titleIndex]);
     const imageName = clean(row[imageIndex]);
     if (!title || !imageName || imageName === '#NAME?') continue;
-    byTitle.set(title, imageName);
+    csvByTitle.set(title, imageName);
   }
 
-  let repaired = 0;
-  let unresolved = 0;
-  for (let offset = 0; ; offset += PAGE_SIZE) {
-    const recipes = await fetchJson(`recipes?select=id,name&order=id.asc&limit=${PAGE_SIZE}&offset=${offset}`);
-    if (!recipes?.length) break;
-    const payload = [];
-    for (const recipe of recipes) {
-      const title = normalize(recipe.name);
-      const imageName = byTitle.get(title);
-      if (!imageName) continue;
-      const source = await fetchJson(`recipe_source_raw?select=id,recipe_id,image_name&recipe_id=eq.${encodeURIComponent(recipe.id)}&limit=1`);
-      const current = source?.[0];
-      const currentImage = clean(current?.image_name);
-      if (currentImage && currentImage !== '#NAME?' && !currentImage.includes('[')) continue;
-      payload.push({
-        id: current?.id ?? randomUUID(),
-        recipe_id: recipe.id,
-        image_name: imageName,
-      });
-    }
-    if (payload.length) { await updateRows(payload); repaired += payload.length; }
-    if (recipes.length < PAGE_SIZE) break;
+  const recipes = await fetchAll('recipes', 'id,name');
+  const sourceRows = await fetchAll('recipe_source_raw', 'id,recipe_id,image_name');
+  const sourceByRecipe = new Map(sourceRows.map((row) => [row.recipe_id, row]));
+  const repairs = [];
+  for (const recipe of recipes) {
+    const current = sourceByRecipe.get(recipe.id);
+    const currentImage = clean(current?.image_name);
+    if (currentImage && currentImage !== '#NAME?' && !currentImage.includes('[')) continue;
+    const imageName = csvByTitle.get(normalize(recipe.name));
+    if (!imageName) continue;
+    repairs.push({ id: current?.id ?? randomUUID(), recipe_id: recipe.id, image_name: imageName });
   }
 
-  const remaining = await fetchJson("recipe_source_raw?select=recipe_id&or=(image_name.is.null,image_name.eq.#NAME?,image_name.like.*[*]*)&limit=10000");
-  unresolved = remaining?.length ?? 0;
-  console.log(JSON.stringify({ status: unresolved === 0 ? 'complete' : 'partial', csvRows: rows.length - 1, mappedTitles: byTitle.size, repaired, unresolved }, null, 2));
+  await updateRows(repairs);
+  const repairedIds = new Set(repairs.map((row) => row.recipe_id));
+  const unresolved = sourceRows.filter((row) => {
+    if (repairedIds.has(row.recipe_id)) return false;
+    const value = clean(row.image_name);
+    return !value || value === '#NAME?' || value.includes('[');
+  }).length;
+
+  console.log(JSON.stringify({ status: unresolved === 0 ? 'complete' : 'partial', csvRows: rows.length - 1, mappedTitles: csvByTitle.size, recipes: recipes.length, existingSourceRows: sourceRows.length, repaired: repairs.length, unresolvedKnownRows: unresolved }, null, 2));
   if (unresolved > 0) process.exitCode = 2;
 }
 
