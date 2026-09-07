@@ -13,6 +13,7 @@ on:
       - 'apps/backend/scripts/recipe-content-import.mjs'
       - 'apps/backend/scripts/recipe-content-audit.mjs'
       - 'apps/backend/scripts/recipe-media-download.mjs'
+      - 'apps/backend/scripts/recipe-image-dataset-import-v2.mjs'
       - '.github/workflows/content-corpus-bootstrap.yml'
   workflow_dispatch:
     inputs:
@@ -116,9 +117,9 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     env:
-      DATABASE_URL: ${{ secrets.MYPA_FITNESS_DATABASE_URL }}
+      DATABASE_URL: ${{ secrets.MYPA_RECIPE_DATABASE_URL }}
       RECIPE_IMPORT_CONCURRENCY: '2'
-      RECIPE_MAX_MEDIA: '4'
+      RECIPE_MAX_MEDIA: '1'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -134,13 +135,13 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
       - name: Require recipe database
-        run: test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is required for the recipe corpus.'; exit 2; }
+        run: test -n "$DATABASE_URL" || { echo 'MYPA_RECIPE_DATABASE_URL is required for the recipe corpus.'; exit 2; }
       - name: Install workspace
         run: pnpm install --frozen-lockfile
       - name: Generate Prisma client
         working-directory: apps/backend
         run: pnpm prisma generate
-      - name: Import recipe content corpus and source media
+      - name: Import recipe content corpus with one approved source image
         working-directory: apps/backend
         run: node ./scripts/recipe-content-import.mjs
       - name: Audit recipe corpus
@@ -148,16 +149,16 @@ jobs:
         run: pnpm recipe:content:audit
 
   recipe-images:
-    name: Recipe image download and storage mirror
+    name: Recipe real-image dataset mirror
     needs: recipes
     runs-on: ubuntu-24.04
     timeout-minutes: 360
     env:
-      DATABASE_URL: ${{ secrets.MYPA_FITNESS_DATABASE_URL }}
+      DATABASE_URL: ${{ secrets.MYPA_RECIPE_DATABASE_URL }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      RECIPE_MEDIA_CONCURRENCY: '4'
-      RECIPE_MEDIA_MAX_BYTES: '65536'
+      RECIPE_IMAGE_CONCURRENCY: '4'
+      RECIPE_IMAGE_RESET: '0'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -174,7 +175,7 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - name: Require recipe database and storage
         run: |
-          test -n "$DATABASE_URL" || { echo 'MYPA_FITNESS_DATABASE_URL is required for recipe media mirroring.'; exit 2; }
+          test -n "$DATABASE_URL" || { echo 'MYPA_RECIPE_DATABASE_URL is required for recipe media mirroring.'; exit 2; }
           test -n "$SUPABASE_URL" || { echo 'SUPABASE_URL is required for recipe media mirroring.'; exit 2; }
           test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo 'SUPABASE_SERVICE_ROLE_KEY is required for recipe media mirroring.'; exit 2; }
       - name: Install workspace
@@ -182,6 +183,29 @@ jobs:
       - name: Generate Prisma client
         working-directory: apps/backend
         run: pnpm prisma generate
-      - name: Download, convert and mirror all approved recipe media
+      - name: Mirror one real finished-dish image per recipe from the licensed dataset
         working-directory: apps/backend
-        run: node ./scripts/recipe-media-download.mjs
+        run: node ./scripts/recipe-image-dataset-import-v2.mjs
+      - name: Assert exactly one hero row per recipe and WebP-backed storage
+        working-directory: apps/backend
+        run: |
+          node --input-type=module <<'NODE'
+          const base = process.env.SUPABASE_URL.replace(/\/+$/, '');
+          const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+          const headers = { apikey: key, Authorization: `Bearer ${key}` };
+          const getCount = async (table, query) => {
+            const r = await fetch(`${base}/rest/v1/${table}?select=id&${query}&limit=1`, { headers: { ...headers, Prefer: 'count=exact' } });
+            if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+            const range = r.headers.get('content-range');
+            return Number(range?.split('/')?.[1] ?? 0);
+          };
+          const recipes = await getCount('recipes', 'id=not.is.null');
+          const heroes = await getCount('recipe_images', 'image_type=eq.hero');
+          const webp = await getCount('recipe_images', 'image_type=eq.hero&mime_type=eq.image/webp');
+          const dupR = await fetch(`${base}/rest/v1/recipe_images?select=recipe_id&image_type=eq.hero`, { headers });
+          if (!dupR.ok) throw new Error(await dupR.text());
+          const rows = await dupR.json(); const counts = new Map(); for (const row of rows) counts.set(row.recipe_id, (counts.get(row.recipe_id) ?? 0) + 1);
+          const duplicates = [...counts.values()].filter((n) => n !== 1).length;
+          if (heroes !== recipes || webp !== recipes || duplicates !== 0) throw new Error(JSON.stringify({ recipes, heroes, webp, duplicateRecipeIds: duplicates }));
+          console.log(JSON.stringify({ recipes, heroes, webp, duplicateRecipeIds: duplicates }, null, 2));
+          NODE
