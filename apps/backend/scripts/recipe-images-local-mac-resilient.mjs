@@ -26,7 +26,8 @@ const FORCE = process.env.RECIPE_LOCAL_FORCE === '1';
 const MIRROR_EXISTING = process.env.RECIPE_LOCAL_MIRROR_EXISTING !== '0';
 const GOOGLE_MISSING = process.env.RECIPE_LOCAL_GOOGLE_MISSING !== '0';
 const BING_FALLBACK = process.env.RECIPE_LOCAL_BING_FALLBACK !== '0';
-const RETRY_EXHAUSTED = process.env.RECIPE_LOCAL_RETRY_EXHAUSTED !== '0';
+const RETRY_EXHAUSTED = process.env.RECIPE_LOCAL_RETRY_EXHAUSTED === '1';
+const MAX_FAILURE_ATTEMPTS = Math.min(Math.max(Number(process.env.RECIPE_LOCAL_MAX_FAILURE_ATTEMPTS || '3'), 1), 10);
 
 if (!SUPABASE_URL || !SERVICE_KEY) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
 
@@ -120,7 +121,6 @@ function extractGoogleCandidates(html) {
   ];
   for (const regex of patterns) for (const match of html.matchAll(regex)) add(match[1], 0);
 
-  // Google result links commonly carry the original image in imgres?imgurl=...
   for (const match of html.matchAll(/href=[\"']([^\"']*\/imgres\?[^\"']+)[\"']/gi)) {
     try {
       const parsed = new URL(normalizeUrl(match[1]) || `https://www.google.com${match[1]}`);
@@ -128,7 +128,6 @@ function extractGoogleCandidates(html) {
     } catch {}
   }
 
-  // JSON/object markup used by several Google Images layouts.
   for (const match of html.matchAll(/\"ou\"\s*:\s*\"((?:\\.|[^\"\\])+)\"/g)) {
     let value = match[1];
     try { value = JSON.parse(`\"${value.replace(/\"/g, '\\\"')}\"`); } catch {}
@@ -285,18 +284,7 @@ async function mirrorExisting(recipe, relation, manifestMap) {
   await appendManifest(row); manifestMap.set(String(recipe.id), row); return row;
 }
 
-async function importMissing(recipe, manifestMap) {
-  const latest = manifestMap.get(String(recipe.id));
-  if (!FORCE && latest && ['present-local', 'mirrored', 'imported-google-first-valid', 'imported-bing-fallback-valid'].includes(latest.status)) return { status: 'skipped-valid-local' };
-  if (!RETRY_FAILED && latest?.status === 'failed') return { status: 'skipped-failed' };
-
-  let search;
-  try { search = await googleCandidates(recipe.name); }
-  catch (googleError) {
-    if (!BING_FALLBACK) throw googleError;
-    search = await bingCandidates(recipe.name);
-  }
-
+async function trySearchAndImport(recipe, search, manifestMap) {
   let pos = 0;
   let last;
   for (const imageUrl of search.candidates.slice(0, 48)) {
@@ -309,11 +297,40 @@ async function importMissing(recipe, manifestMap) {
       await fs.mkdir(path.dirname(dest), { recursive: true });
       await fs.writeFile(dest, compressed.out);
       const sourceStatus = search.sourceType === 'google-images' ? 'imported-google-first-valid' : 'imported-bing-fallback-valid';
-      const row = { recipeId: recipe.id, recipeName: recipe.name, status: sourceStatus, sourceType: search.sourceType, sourceName: search.sourceType === 'google-images' ? 'Google Images — first valid original image' : 'Bing Images — fallback after Google failure', sourceUrl: imageUrl, searchUrl: search.searchUrl, query: search.query, resultPosition: pos, storageKey, localPath: path.relative(ROOT, dest), bytes: compressed.out.length, width: compressed.width, height: compressed.height, sha256: await sha256(compressed.out), importedAt: now() };
+      const row = { recipeId: recipe.id, recipeName: recipe.name, status: sourceStatus, sourceType: search.sourceType, sourceName: search.sourceType === 'google-images' ? 'Google Images — first valid original image' : 'Bing Images — fallback after Google candidate exhaustion', sourceUrl: imageUrl, searchUrl: search.searchUrl, query: search.query, resultPosition: pos, storageKey, localPath: path.relative(ROOT, dest), bytes: compressed.out.length, width: compressed.width, height: compressed.height, sha256: await sha256(compressed.out), importedAt: now() };
       await appendManifest(row); manifestMap.set(String(recipe.id), row); return row;
     } catch (error) { last = error; }
   }
   throw last || new Error(`All ${search.sourceType} candidates failed`);
+}
+
+async function importMissing(recipe, manifestMap) {
+  const latest = manifestMap.get(String(recipe.id));
+  if (!FORCE && latest && ['present-local', 'mirrored', 'imported-google-first-valid', 'imported-bing-fallback-valid'].includes(latest.status)) return { status: 'skipped-valid-local' };
+  if (!RETRY_FAILED && latest?.status === 'failed') return { status: 'skipped-failed' };
+  const previousFailures = Number(latest?.failureAttempt || 0);
+  if (!FORCE && latest?.status === 'failed' && previousFailures >= MAX_FAILURE_ATTEMPTS && !RETRY_EXHAUSTED) return { status: 'skipped-exhausted' };
+
+  let googleSearch;
+  try {
+    googleSearch = await googleCandidates(recipe.name);
+  } catch (googleError) {
+    if (!BING_FALLBACK) throw googleError;
+    return trySearchAndImport(recipe, await bingCandidates(recipe.name), manifestMap);
+  }
+
+  try {
+    return await trySearchAndImport(recipe, googleSearch, manifestMap);
+  } catch (googleCandidatesError) {
+    if (!BING_FALLBACK) throw googleCandidatesError;
+    try {
+      return await trySearchAndImport(recipe, await bingCandidates(recipe.name), manifestMap);
+    } catch (bingError) {
+      const error = new Error(`Google exhausted candidates (${googleCandidatesError.message}); Bing exhausted candidates (${bingError.message})`);
+      error.cause = bingError;
+      throw error;
+    }
+  }
 }
 
 async function fetchData() {
@@ -331,7 +348,7 @@ async function main() {
   for (const row of heroes) if (!relationByRecipe.has(String(row.recipe_id))) relationByRecipe.set(String(row.recipe_id), row);
   const manifestMap = await loadLatestManifest();
   const selected = recipes.slice(START, LIMIT > 0 ? START + LIMIT : undefined);
-  const stats = { startedAt: now(), totalRecipes: recipes.length, existingHeroRelations: heroes.length, localManifestBefore: manifestMap.size, selected: selected.length, mirrored: 0, importedGoogle: 0, importedBing: 0, skipped: 0, failed: 0, supabaseProbe: probe };
+  const stats = { startedAt: now(), totalRecipes: recipes.length, existingHeroRelations: heroes.length, localManifestBefore: manifestMap.size, selected: selected.length, mirrored: 0, importedGoogle: 0, importedBing: 0, skipped: 0, failed: 0, exhausted: 0, supabaseProbe: probe };
   console.log(JSON.stringify(stats, null, 2));
 
   let cursor = 0;
@@ -354,12 +371,15 @@ async function main() {
           const row = await importMissing(recipe, manifestMap);
           if (row.status === 'imported-google-first-valid') stats.importedGoogle += 1;
           else if (row.status === 'imported-bing-fallback-valid') stats.importedBing += 1;
+          else if (row.status === 'skipped-exhausted') stats.exhausted += 1;
           else stats.skipped += 1;
           console.log(`[${row.status}] ${recipe.id} ${recipe.name}`);
         } else { stats.skipped += 1; }
       } catch (error) {
         stats.failed += 1;
-        const row = { recipeId: recipe.id, recipeName: recipe.name, status: 'failed', reason: error instanceof Error ? error.message : String(error), sourceType: relation ? 'supabase-mirror' : 'google-images', failedAt: now() };
+        const previous = manifestMap.get(String(recipe.id));
+        const failureAttempt = Number(previous?.failureAttempt || 0) + 1;
+        const row = { recipeId: recipe.id, recipeName: recipe.name, status: 'failed', failureAttempt, reason: error instanceof Error ? error.message : String(error), sourceType: relation ? 'supabase-mirror' : 'google-images', failedAt: now() };
         await appendManifest(row); await appendFailure(row);
         console.error(`[FAILED] ${recipe.id} ${recipe.name}: ${row.reason}`);
       }
