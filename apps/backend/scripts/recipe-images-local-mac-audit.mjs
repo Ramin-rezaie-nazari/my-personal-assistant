@@ -14,6 +14,10 @@ async function readCatalog() {
 
 async function main() {
   const recipes = await readCatalog();
+  if (recipes.length === 0) {
+    throw new Error('Local recipe catalog is empty; refusing to report a false complete audit. Run the local pipeline with a valid Supabase recipe catalog first.');
+  }
+
   const failures = [];
   const seenHashes = new Map();
   let valid = 0;
@@ -37,16 +41,16 @@ async function main() {
   }
 
   let files = 0;
-  try {
-    for (const recipe of recipes) {
-      const file = path.join(IMAGE_ROOT, String(recipe.recipeId), 'hero.webp');
+  for (const recipe of recipes) {
+    const file = path.join(IMAGE_ROOT, String(recipe.recipeId), 'hero.webp');
+    try {
       const body = await fs.readFile(file);
       const hash = await import('node:crypto').then(({ createHash }) => createHash('sha256').update(body).digest('hex'));
       files += 1;
       if (seenHashes.has(hash)) seenHashes.get(hash).push(recipe.recipeId);
       else seenHashes.set(hash, [recipe.recipeId]);
-    }
-  } catch {}
+    } catch {}
+  }
 
   const duplicateContent = [...seenHashes.entries()]
     .filter(([, ids]) => ids.length > 1)
@@ -60,11 +64,11 @@ async function main() {
     heroFiles: files,
     duplicateContentGroups: duplicateContent.length,
     duplicateContent,
-    status: failures.length === 0 && files === recipes.length ? 'complete' : 'incomplete',
+    status: failures.length === 0 && files === recipes.length && recipes.length > 0 ? 'complete' : 'incomplete',
     failures,
   };
   console.log(JSON.stringify(summary, null, 2));
-  if (failures.length || files !== recipes.length) process.exitCode = 1;
+  if (failures.length || files !== recipes.length || recipes.length === 0) process.exitCode = 1;
 }
 
 main().catch((error) => {
