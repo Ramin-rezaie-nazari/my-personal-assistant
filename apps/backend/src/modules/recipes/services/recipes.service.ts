@@ -28,6 +28,19 @@ export type RecipeInput = {
   ingredients: RecipeIngredientInput[];
 };
 
+const releaseMediaInclude = {
+  media: {
+    where: { status: 'approved' },
+    orderBy: { position: 'asc' as const },
+  },
+};
+
+const recipeDetailInclude = {
+  ingredients: { include: { food: true } },
+  steps: { orderBy: { stepNumber: 'asc' as const } },
+  media: { where: { status: 'approved' }, orderBy: { position: 'asc' as const } },
+};
+
 @Injectable()
 export class RecipesService {
   constructor(
@@ -71,17 +84,24 @@ export class RecipesService {
           ...totals,
           ingredients: { create: ingredients },
         },
-        include: { ingredients: { include: { food: true } } },
+        include: { ...recipeDetailInclude },
       });
     });
   }
 
   async getRecipes(userId: string) {
-    return this.prisma.recipe.findMany({ where: { OR: [{ userId: null }, { userId }] }, include: { ingredients: { include: { food: true } } }, orderBy: [{ verified: 'desc' }, { name: 'asc' }] });
+    return this.prisma.recipe.findMany({
+      where: { OR: [{ userId: null }, { userId }] },
+      include: {
+        ingredients: { include: { food: true } },
+        ...releaseMediaInclude,
+      },
+      orderBy: [{ verified: 'desc' }, { name: 'asc' }],
+    });
   }
 
   async getRecipe(userId: string, id: string) {
-    const recipe = await this.prisma.recipe.findFirst({ where: { id, OR: [{ userId: null }, { userId }] }, include: { ingredients: { include: { food: true } } } });
+    const recipe = await this.prisma.recipe.findFirst({ where: { id, OR: [{ userId: null }, { userId }] }, include: recipeDetailInclude });
     if (!recipe) throw new NotFoundException('Recipe not found');
     return recipe;
   }
@@ -158,9 +178,9 @@ export class RecipesService {
         });
         const totals = ingredients.reduce((sum, item) => ({ calories: sum.calories + item.calories, protein: sum.protein + item.protein, carbs: sum.carbs + item.carbs, fat: sum.fat + item.fat }), { calories: 0, protein: 0, carbs: 0, fat: 0 });
         await tx.recipeIngredient.deleteMany({ where: { recipeId: id } });
-        return tx.recipe.update({ where: { id }, data: { name: data.name?.trim(), description: data.description?.trim() || undefined, imageUrl: data.imageUrl?.trim() || undefined, imageSource: data.imageSource?.trim() || undefined, servings: data.servings ?? existing.servings, ...totals, ingredients: { create: ingredients } }, include: { ingredients: { include: { food: true } } } });
+        return tx.recipe.update({ where: { id }, data: { name: data.name?.trim(), description: data.description?.trim() || undefined, imageUrl: data.imageUrl?.trim() || undefined, imageSource: data.imageSource?.trim() || undefined, servings: data.servings ?? existing.servings, ...totals, ingredients: { create: ingredients } }, include: recipeDetailInclude });
       }
-      return tx.recipe.update({ where: { id }, data: { name: data.name?.trim(), description: data.description?.trim() || undefined, imageUrl: data.imageUrl?.trim() || undefined, imageSource: data.imageSource?.trim() || undefined, servings: data.servings ?? existing.servings }, include: { ingredients: { include: { food: true } } } });
+      return tx.recipe.update({ where: { id }, data: { name: data.name?.trim(), description: data.description?.trim() || undefined, imageUrl: data.imageUrl?.trim() || undefined, imageSource: data.imageSource?.trim() || undefined, servings: data.servings ?? existing.servings }, include: recipeDetailInclude });
     });
   }
 
