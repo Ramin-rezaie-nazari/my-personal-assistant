@@ -18,7 +18,6 @@ const DATASET_ROOT_CANDIDATES = [
   path.resolve('./data/mypa-recipe-media-dataset'),
 ].filter(Boolean);
 
-const steps = [];
 const env = {
   RECIPE_LOCAL_ROOT: LOCAL_ROOT,
   RECIPE_LOCAL_CATALOG: CATALOG,
@@ -30,7 +29,6 @@ const env = {
 };
 
 const exists = (p) => { try { fsSync.accessSync(p); return true; } catch { return false; } };
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function findLocalDatasetRoot() {
   for (const candidate of DATASET_ROOT_CANDIDATES) if (exists(candidate)) return candidate;
@@ -117,13 +115,7 @@ async function mirrorKnownLocalDataset() {
   for (const recipe of recipes) {
     const existing = manifest.get(recipe.id);
     if (existing?.status === 'complete' && existing.resolver === 'exact-local-dataset') continue;
-    const candidates = [
-      recipe.id,
-      recipe.id.toLowerCase(),
-      recipe.name,
-      recipe.name.toLowerCase(),
-      recipe.name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
-    ];
+    const candidates = [recipe.id, recipe.id.toLowerCase(), recipe.name, recipe.name.toLowerCase(), recipe.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')];
     const file = candidates.map((x) => byStem.get(String(x).toLowerCase())).find(Boolean);
     if (!file) continue;
     const target = path.join(IMAGE_ROOT, recipe.id, 'hero.webp');
@@ -158,10 +150,11 @@ async function mirrorKnownLocalDataset() {
 }
 
 async function main() {
-  console.log(JSON.stringify({ pipeline:'recipe-images-local-guaranteed-v6', supabase:'DISABLED', strategy:['local audit','local exact dataset when available','strict verified web fallback','local final status'] }, null, 2));
+  console.log(JSON.stringify({ pipeline:'recipe-images-local-guaranteed-v6', supabase:'DISABLED', strategy:['local audit','local exact dataset when available','strict verified web fallback','verified 1-4 image gallery upgrade','local final status'] }, null, 2));
   await runNode('audit-existing-local', './scripts/recipe-images-local-audit-v4.mjs');
   await mirrorKnownLocalDataset();
   await runNode('strict-verified-web-resolution', './scripts/recipe-images-local-strict-v3.mjs', { RECIPE_LOCAL_AUDIT_EXISTING:'0' }, true);
+  await runNode('verified-1-to-4-gallery-upgrade', './scripts/recipe-images-local-gallery-upgrade-v1.mjs', {}, true);
   await runNode('final-status', './scripts/recipe-images-local-status.mjs');
   console.log('\nPIPELINE COMPLETE');
 }
