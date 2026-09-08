@@ -7,12 +7,13 @@ const IMAGE_ROOT = path.join(ROOT, 'images', 'recipes');
 const MANIFEST_DIR = path.join(ROOT, 'manifest');
 const MANIFEST_PATH = path.join(MANIFEST_DIR, 'recipe-heroes.jsonl');
 const CATALOG = path.resolve(process.env.RECIPE_LOCAL_CATALOG || './data/mypa-recipe-media/recipe-catalog.jsonl');
-const PAGE_TIMEOUT_MS = 10000;
+const PAGE_TIMEOUT_MS = Number(process.env.RECIPE_LOCAL_AUDIT_TIMEOUT_MS || 3500);
+const CONCURRENCY = Math.max(1, Number(process.env.RECIPE_LOCAL_AUDIT_CONCURRENCY || 12));
+const PROGRESS_EVERY = Math.max(25, Number(process.env.RECIPE_LOCAL_AUDIT_PROGRESS_EVERY || 100));
 const MIN_MATCH = 0.72;
 const MIN_COVERAGE = 0.82;
 
 const BAD_HOSTS = new Set(['facebook.com','instagram.com','pinterest.com','youtube.com','wikipedia.org','linkedin.com','trustpilot.com','freedictionary.com','duckspecies.org','pa.gov','eset.com','britishairways.com']);
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const now = () => new Date().toISOString();
 const exists = (p) => { try { fsSync.accessSync(p); return true; } catch { return false; } };
 const clean = (v='') => String(v).replace(/<[^>]+>/g,' ').replace(/&quot;/gi,'"').replace(/&#39;/gi,"'").replace(/&apos;/gi,"'").replace(/&amp;/gi,'&').replace(/\s+/g,' ').trim();
@@ -21,8 +22,64 @@ const score = (a,b) => { const x=norm(a), y=norm(b); if(!x||!y)return {similarit
 const matches = (recipe, values) => { let best={similarity:0,coverage:0,exact:false,text:''}; for(const value of values||[]){const s=score(recipe,value);if(s.exact||s.similarity>best.similarity||s.coverage>best.coverage)best={...s,text:value};} return best.exact||(best.similarity>=MIN_MATCH&&best.coverage>=MIN_COVERAGE)?best:null; };
 const host = (url) => { try{return new URL(url).hostname.replace(/^www\./,'').toLowerCase();}catch{return '';} };
 const badHost = (url) => { const h=host(url); return !h || BAD_HOSTS.has(h) || [...BAD_HOSTS].some((d)=>h.endsWith(`.${d}`)); };
-async function fetchText(url){ const c=new AbortController(); const t=setTimeout(()=>c.abort(),PAGE_TIMEOUT_MS); try{const r=await fetch(url,{redirect:'follow',signal:c.signal,headers:{'User-Agent':'MYPA-recipe-media-local/audit-v4','Accept':'text/html,application/xhtml+xml,*/*;q=0.8','Accept-Language':'en-US,en;q=0.9'}}); const html=await r.text(); if(!r.ok||html.length<500)throw new Error(`${r.status||'empty'}`); return {html,finalUrl:r.url||url};}finally{clearTimeout(t);} }
+async function fetchText(url){ const c=new AbortController(); const t=setTimeout(()=>c.abort(),PAGE_TIMEOUT_MS); try{const r=await fetch(url,{redirect:'follow',signal:c.signal,headers:{'User-Agent':'MYPA-recipe-media-local/audit-v4','Accept':'text/html,application/xhtml+xml,*/*;q=0.8','Accept-Language':'en-US,en;q=0.9'}}); if(!r.ok)throw new Error(`${r.status||'empty'}`); const html=await r.text(); if(html.length<500)throw new Error('short page'); return {html,finalUrl:r.url||url};}finally{clearTimeout(t);} }
 function titles(html){const out=[]; const t=html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]; if(t)out.push(clean(t)); for(const re of [/<meta[^>]+(?:property|name)=["']og:title["'][^>]+content=["']([^"']+)["'][^>]*>/gi,/<meta[^>]+content=["']([^"']+)["'][^>]+(?:property|name)=["']og:title["'][^>]*>/gi])for(const m of html.matchAll(re))out.push(clean(m[1])); for(const m of html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)){try{const j=JSON.parse(m[1]);const visit=(n)=>{if(!n)return;if(Array.isArray(n)){n.forEach(visit);return;}if(typeof n!=='object')return;if(n.name)out.push(clean(n.name));if(n.headline)out.push(clean(n.headline));if(n['@graph'])visit(n['@graph']);};visit(j);}catch{}} return [...new Set(out.filter(Boolean))];}
 async function loadLines(file){try{return (await fs.readFile(file,'utf8')).split(/\r?\n/).filter(Boolean).map((x)=>JSON.parse(x));}catch(e){if(e.code==='ENOENT')return [];throw e;}}
-async function main(){await fs.mkdir(MANIFEST_DIR,{recursive:true});const catalog=(await fs.readFile(CATALOG,'utf8')).split(/\r?\n/).filter(Boolean).map((x)=>JSON.parse(x)).map(r=>({id:String(r.recipeId||r.id||''),name:String(r.name||r.recipeName||'')})).filter(r=>r.id&&r.name);const names=new Map(catalog.map(r=>[r.id,r.name]));const rows=await loadLines(MANIFEST_PATH);const latest=new Map();for(const row of rows)if(row.recipeId)latest.set(String(row.recipeId),row);let audited=0,invalidated=0,kept=0;for(const [id,row] of latest){if(row.status!=='complete')continue;audited++;const recipeName=names.get(id);if(!recipeName)continue;let valid=true;const stored=row.localPath?path.resolve(ROOT,row.localPath):path.join(IMAGE_ROOT,id,'hero.webp');if(!exists(stored))valid=false;const isExact=row.resolver==='exact-dataset';if(!isExact){if(!row.sourcePageUrl||badHost(row.sourcePageUrl))valid=false;else{try{const page=await fetchText(row.sourcePageUrl);if(!matches(recipeName,titles(page.html)))valid=false;}catch{valid=false;}}}if(valid){kept++;continue;}invalidated++;await fs.rm(stored,{force:true}).catch(()=>{});const repair={recipeId:id,recipeName,status:'needs_reprocess',reason:'Existing complete image failed provenance/title audit',previousResolver:row.resolver||null,auditedAt:now()};await fs.appendFile(MANIFEST_PATH,`${JSON.stringify(repair)}\n`);latest.set(id,repair);await sleep(10);}console.log(JSON.stringify({status:'complete',audited,kept,invalidated},null,2));}
+
+async function auditOne(item){
+  const { id, row, recipeName } = item;
+  const stored = row.localPath ? path.resolve(ROOT,row.localPath) : path.join(IMAGE_ROOT,id,'hero.webp');
+  let valid = true;
+  if(!exists(stored)) valid = false;
+  const isExact = row.resolver === 'exact-dataset' || row.resolver === 'exact-local-dataset';
+  if(!isExact && valid){
+    if(!row.sourcePageUrl || badHost(row.sourcePageUrl)) valid = false;
+    else {
+      try {
+        const page = await fetchText(row.sourcePageUrl);
+        if(!matches(recipeName, titles(page.html))) valid = false;
+      } catch {
+        // Keep an existing local image on transient network failure.
+        // Strict resolver will perform provenance verification when reprocessed.
+      }
+    }
+  }
+  return { id, row, stored, valid };
+}
+
+async function main(){
+  await fs.mkdir(MANIFEST_DIR,{recursive:true});
+  const catalog=(await fs.readFile(CATALOG,'utf8')).split(/\r?\n/).filter(Boolean).map((x)=>JSON.parse(x)).map(r=>({id:String(r.recipeId||r.id||''),name:String(r.name||r.recipeName||'')})).filter(r=>r.id&&r.name);
+  const names=new Map(catalog.map(r=>[r.id,r.name]));
+  const rows=await loadLines(MANIFEST_PATH);
+  const latest=new Map();
+  for(const row of rows)if(row.recipeId)latest.set(String(row.recipeId),row);
+  const queue=[];
+  for(const [id,row] of latest){if(row.status==='complete' && names.has(id))queue.push({id,row,recipeName:names.get(id)});}
+
+  let audited=0, invalidated=0, kept=0;
+  let cursor=0;
+  const invalidRows=[];
+  const worker=async()=>{
+    while(true){
+      const index=cursor++;
+      if(index>=queue.length) return;
+      const result=await auditOne(queue[index]);
+      audited++;
+      if(result.valid) kept++;
+      else { invalidated++; invalidRows.push({ ...result, recipeName: queue[index].recipeName }); }
+      if(audited===1 || audited%PROGRESS_EVERY===0 || audited===queue.length){
+        console.log(JSON.stringify({progress:`${audited}/${queue.length}`,audited,kept,invalidated,concurrency:CONCURRENCY},null,2));
+      }
+    }
+  };
+  await Promise.all(Array.from({length:Math.min(CONCURRENCY,queue.length)},worker));
+
+  for(const item of invalidRows){
+    await fs.rm(item.stored,{force:true}).catch(()=>{});
+    const repair={recipeId:item.id,recipeName:item.recipeName,status:'needs_reprocess',reason:'Existing complete image failed local/provenance audit',previousResolver:item.row.resolver||null,auditedAt:now()};
+    await fs.appendFile(MANIFEST_PATH,`${JSON.stringify(repair)}\n`);
+  }
+  console.log(JSON.stringify({status:'complete',audited,kept,invalidated,concurrency:CONCURRENCY,timeoutMs:PAGE_TIMEOUT_MS},null,2));
+}
 main().catch((e)=>{console.error(e);process.exit(1);});
