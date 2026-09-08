@@ -9,7 +9,7 @@ const CATALOG = path.resolve(process.env.RECIPE_LOCAL_CATALOG || './data/mypa-re
 const IMAGE_ROOT = path.join(ROOT, 'images', 'recipes');
 const MANIFEST = path.join(ROOT, 'manifest', 'recipe-heroes-google-first.jsonl');
 const FAILURE = path.join(ROOT, 'manifest', 'google-first-failures.jsonl');
-const MIN_SIDE = Math.max(Number(process.env.RECIPE_GOOGLE_LOCAL_MIN_SIDE || '480'), 240);
+const MIN_SIDE = Math.max(Number(process.env.RECIPE_GOOGLE_LOCAL_MIN_SIDE || '240'), 120);
 const TARGET_BYTES = Math.max(Number(process.env.RECIPE_GOOGLE_LOCAL_TARGET_BYTES || '150000'), 30000);
 const CONCURRENCY = Math.min(Math.max(Number(process.env.RECIPE_GOOGLE_LOCAL_CONCURRENCY || '3'), 1), 6);
 const DELAY_MS = Math.max(Number(process.env.RECIPE_GOOGLE_LOCAL_DELAY_MS || '1400'), 0);
@@ -21,10 +21,10 @@ const USER_AGENT = process.env.RECIPE_GOOGLE_LOCAL_USER_AGENT || 'Mozilla/5.0 (M
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const exists = (file) => { try { fsSync.accessSync(file); return true; } catch { return false; } };
-const host = (url) => { try { return new URL(url).hostname.replace(/^www\./, '').toLowerCase(); } catch { return ''; } };
 const normalizeUrl = (value) => {
   if (!value) return null;
-  let v = String(value).trim().replaceAll('\\u003d', '=').replaceAll('\\u0026', '&').replaceAll('\\/', '/');
+  let v = String(value).trim().replaceAll('\\/', '/').replaceAll('\\u003d', '=').replaceAll('\\u0026', '&');
+  try { v = JSON.parse(`"${v.replaceAll('"', '\\"')}"`); } catch {}
   try { v = decodeURIComponent(v); } catch {}
   if (v.startsWith('//')) v = `https:${v}`;
   return /^https?:\/\//i.test(v) ? v : null;
@@ -43,13 +43,6 @@ async function loadCatalog() {
     .filter((row) => row.recipeId && row.name);
 }
 
-function decodeGoogleUrl(raw) {
-  let value = String(raw).replaceAll('\\/', '/').replaceAll('\\u003d', '=').replaceAll('\\u0026', '&');
-  try { value = JSON.parse(`"${value.replaceAll('"', '\\"')}"`); } catch {}
-  try { value = decodeURIComponent(value); } catch {}
-  return normalizeUrl(value);
-}
-
 function extractFirstGoogleImage(html) {
   const patterns = [
     /"ou"\s*:\s*"((?:\\.|[^"\\])+)"/,
@@ -61,10 +54,11 @@ function extractFirstGoogleImage(html) {
   for (const pattern of patterns) {
     const match = pattern.exec(html);
     if (!match) continue;
-    const url = decodeGoogleUrl(match[1]);
-    if (url && !/gstatic\.com\/images\/branding|googleusercontent\.com\/static|sprite|logo|icon|avatar|favicon|pixel|tracking|placeholder/i.test(url.toLowerCase())) {
-      return url;
-    }
+    const url = normalizeUrl(match[1]);
+    if (!url) continue;
+    const lower = url.toLowerCase();
+    if (/gstatic\.com\/images\/branding|googleusercontent\.com\/static|sprite|logo|icon|avatar|favicon|pixel|tracking|placeholder/i.test(lower)) continue;
+    return url;
   }
   return null;
 }
@@ -102,10 +96,7 @@ async function downloadImage(url) {
     const response = await fetch(url, {
       redirect: 'follow',
       signal: controller.signal,
-      headers: {
-        'User-Agent': USER_AGENT,
-        Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.7',
-      },
+      headers: { 'User-Agent': USER_AGENT, Accept: 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.7' },
     });
     if (!response.ok) throw new Error(`image ${response.status}`);
     const body = Buffer.from(await response.arrayBuffer());
@@ -119,55 +110,29 @@ async function downloadImage(url) {
 async function prepareImage(body) {
   const input = sharp(body, { failOn: 'none' }).rotate();
   const meta = await input.metadata();
-  const sw = Number(meta.width || 0), sh = Number(meta.height || 0);
+  const sw = Number(meta.width || 0);
+  const sh = Number(meta.height || 0);
   if (Math.min(sw, sh) < MIN_SIDE) throw new Error(`source too small (${sw}x${sh})`);
 
-  let best = null;
-  const widths = [1600, 1400, 1280, 1200, 1080, 960, 880, 800, 720, 640, 576, 512, 480];
-  const qualities = [92, 88, 84, 80, 76, 72, 68, 64, 60, 56, 52, 48, 44, 40, 36, 32, 28, 24, 20, 16, 12, 8];
-  for (const width of widths) {
-    for (const quality of qualities) {
-      const out = await input.clone()
-        .resize({ width, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality, effort: 6 })
-        .toBuffer();
-      const outMeta = await sharp(out, { failOn: 'none' }).metadata();
-      const item = {
-        out,
-        width: Number(outMeta.width || width),
-        height: Number(outMeta.height || 0),
-        bytes: out.byteLength,
-        quality,
-      };
-      if (Math.min(item.width, item.height) < MIN_SIDE) continue;
-      if (!best || Math.abs(item.bytes - TARGET_BYTES) < Math.abs(best.bytes - TARGET_BYTES)) best = item;
-      if (item.bytes <= TARGET_BYTES) {
-        // Keep searching briefly through the remaining quality/size combinations,
-        // then select the closest variant that does not exceed the target.
-      }
-    }
-  }
-  if (!best) throw new Error('no acceptable WebP variant');
+  let bestBelowTarget = null;
+  let closestAny = null;
+  const widths = [1600, 1400, 1280, 1200, 1080, 960, 880, 800, 720, 640, 576, 512, 480, 384, 320, 240];
+  const qualities = [90, 82, 74, 66, 58, 50, 42, 34, 26, 18];
 
-  // Prefer the largest file at or below the target. This keeps visual quality high
-  // while naturally landing near the requested ~150KB size.
-  const underTarget = [];
   for (const width of widths) {
     for (const quality of qualities) {
-      const out = await input.clone()
-        .resize({ width, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality, effort: 6 })
-        .toBuffer();
-      const m = await sharp(out, { failOn: 'none' }).metadata();
-      if (Math.min(Number(m.width || width), Number(m.height || 0)) < MIN_SIDE) continue;
-      if (out.byteLength <= TARGET_BYTES) underTarget.push({ out, width: Number(m.width || width), height: Number(m.height || 0), bytes: out.byteLength, quality });
+      const out = await input.clone().resize({ width, fit: 'inside', withoutEnlargement: true }).webp({ quality, effort: 5 }).toBuffer();
+      const outMeta = await sharp(out, { failOn: 'none' }).metadata();
+      const item = { out, width: Number(outMeta.width || width), height: Number(outMeta.height || 0), bytes: out.byteLength, quality };
+      if (Math.min(item.width, item.height) < MIN_SIDE) continue;
+      const distance = Math.abs(item.bytes - TARGET_BYTES);
+      if (!closestAny || distance < Math.abs(closestAny.bytes - TARGET_BYTES)) closestAny = item;
+      if (item.bytes <= TARGET_BYTES && (!bestBelowTarget || item.bytes > bestBelowTarget.bytes)) bestBelowTarget = item;
+      if (bestBelowTarget && bestBelowTarget.bytes >= TARGET_BYTES * 0.96) return bestBelowTarget;
     }
   }
-  if (underTarget.length) {
-    underTarget.sort((a, b) => b.bytes - a.bytes);
-    return underTarget[0];
-  }
-  return best;
+
+  return bestBelowTarget || closestAny;
 }
 
 async function hasLocalHero(recipeId) {
@@ -206,6 +171,7 @@ async function processRecipe(recipe) {
   const found = await googleFirstImage(recipe.name);
   const body = await downloadImage(found.imageUrl);
   const prepared = await prepareImage(body);
+  if (!prepared) throw new Error('unable to encode first Google image to WebP');
   await saveHero(recipe, found, prepared);
   return 'complete';
 }
@@ -216,7 +182,7 @@ async function main() {
   for (const recipe of catalog) if (FORCE || !(await hasLocalHero(recipe.recipeId))) candidates.push(recipe);
   const selected = LIMIT > 0 ? candidates.slice(0, LIMIT) : candidates;
   const stats = { totalCatalog: catalog.length, selected: selected.length, complete: 0, failed: 0, skipped: catalog.length - candidates.length };
-  console.log(JSON.stringify({ engine: 'local-google-first-v2', localOnly: true, policy: 'Google Images result #1 only', targetBytes: TARGET_BYTES, ...stats }, null, 2));
+  console.log(JSON.stringify({ engine: 'local-google-first-v3', localOnly: true, policy: 'Google Images result #1 only', targetBytes: TARGET_BYTES, ...stats }, null, 2));
 
   let cursor = 0;
   async function worker() {
@@ -226,10 +192,8 @@ async function main() {
       const recipe = selected[index];
       try {
         const status = await processRecipe(recipe);
-        if (status === 'skip') {
-          stats.skipped += 1;
-          console.log(`[SKIP] ${recipe.name}`);
-        } else {
+        if (status === 'skip') console.log(`[SKIP] ${recipe.name}`);
+        else {
           stats.complete += 1;
           console.log(`[COMPLETE ${stats.complete}] ${recipe.name} -> 1 image [Google result #1]`);
         }
