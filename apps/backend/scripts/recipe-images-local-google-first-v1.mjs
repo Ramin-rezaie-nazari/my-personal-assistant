@@ -208,45 +208,39 @@ async function processRecipe(recipe) {
 
 async function main() {
   const catalog = await loadCatalog();
-  const state = await readJson(STATE, { complete: 0, failed: 0, skipped: 0, lastIndex: 0 });
-  const startIndex = FORCE ? 0 : Number(state.lastIndex || 0);
-  const work = catalog.slice(startIndex);
-  const selected = LIMIT > 0 ? work.slice(0, LIMIT) : work;
-  const stats = { totalCatalog: catalog.length, selected: selected.length, complete: 0, failed: 0, skipped: 0, existingAtStart: 0 };
-  console.log(JSON.stringify({ engine: 'local-google-first-v1', localOnly: true, warning: 'Google-first images are not recipe-verified', concurrency: CONCURRENCY, delayMs: DELAY_MS, ...stats }, null, 2));
+  const candidates = [];
+  for (const recipe of catalog) {
+    if (FORCE || !(await hasLocalHero(recipe.recipeId))) candidates.push(recipe);
+  }
+  const selected = LIMIT > 0 ? candidates.slice(0, LIMIT) : candidates;
+  const stats = { totalCatalog: catalog.length, selected: selected.length, complete: 0, failed: 0, skipped: catalog.length - candidates.length };
+  console.log(JSON.stringify({ engine: 'local-google-first-v1', localOnly: true, warning: 'Google-first images are not recipe-verified', retryPolicy: 'every run retries only recipes still missing a local hero', concurrency: CONCURRENCY, delayMs: DELAY_MS, ...stats }, null, 2));
 
   let cursor = 0;
   async function worker() {
     while (true) {
-      const localIndex = cursor++;
-      if (localIndex >= selected.length) return;
-      const recipe = selected[localIndex];
-      const absoluteIndex = startIndex + localIndex;
+      const index = cursor++;
+      if (index >= selected.length) return;
+      const recipe = selected[index];
       try {
         const result = await processRecipe(recipe);
-        if (result.status === 'skip-existing') {
-          stats.skipped += 1;
-          stats.existingAtStart += 1;
-          console.log(`[SKIP ${stats.skipped}] ${recipe.name}`);
-        } else {
-          stats.complete += 1;
-          console.log(`[COMPLETE ${stats.complete}] ${recipe.name} -> hero [Google first downloadable, unverified]`);
-        }
-        await writeJson(STATE, { ...stats, lastIndex: absoluteIndex + 1, updatedAt: new Date().toISOString() });
+        stats.complete += 1;
+        console.log(`[COMPLETE ${stats.complete}] ${recipe.name} -> hero [Google first downloadable, unverified]`);
       } catch (error) {
         stats.failed += 1;
         const reason = error instanceof Error ? error.message : String(error);
-        await appendJsonl(FAILURE, { recipeId: recipe.recipeId, recipeName: recipe.name, status: 'pending-retry', reason, index: absoluteIndex, updatedAt: new Date().toISOString() });
+        await appendJsonl(FAILURE, { recipeId: recipe.recipeId, recipeName: recipe.name, status: 'pending-retry', reason, updatedAt: new Date().toISOString() });
         console.error(`[FAILED/PENDING] ${recipe.name}: ${reason}`);
-        await writeJson(STATE, { ...stats, lastIndex: absoluteIndex + 1, updatedAt: new Date().toISOString() });
       }
+      await writeJson(STATE, { ...stats, updatedAt: new Date().toISOString() });
       await sleep(DELAY_MS);
     }
   }
 
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, selected.length) }, () => worker()));
-  console.log(JSON.stringify({ status: stats.failed ? 'partial' : 'complete', ...stats }, null, 2));
-  process.exitCode = stats.failed ? 2 : 0;
+  const missingAfterRun = catalog.length - stats.skipped - stats.complete;
+  console.log(JSON.stringify({ status: missingAfterRun === 0 ? 'complete' : 'partial', ...stats, missingAfterRun }, null, 2));
+  process.exitCode = missingAfterRun ? 2 : 0;
 }
 
 main().catch((error) => { console.error(error); process.exit(1); });
