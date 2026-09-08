@@ -9,12 +9,14 @@ const ROOT = path.resolve(process.env.RECIPE_LOCAL_ROOT || './data/mypa-recipe-m
 const CATALOG = path.resolve(process.env.RECIPE_LOCAL_CATALOG || './data/mypa-recipe-media/recipe-catalog.jsonl');
 const DATASET_ROOT = path.join(ROOT, 'dataset', 'epicurious-image-dataset');
 const ZIP_PATH = path.join(DATASET_ROOT, 'dataset.zip');
+const MIRROR_ZIP_PATH = path.join(DATASET_ROOT, 'github-mirror.zip');
 const MANIFEST_DIR = path.join(ROOT, 'manifest');
 const MANIFEST = path.join(MANIFEST_DIR, 'recipe-heroes.jsonl');
 const DATASET_MANIFEST = path.join(MANIFEST_DIR, 'recipe-dataset-matches.jsonl');
 const IMAGE_ROOT = path.join(ROOT, 'images', 'recipes');
 
 const DATASET_URL = process.env.RECIPE_LOCAL_DATASET_URL || 'https://www.kaggle.com/api/v1/datasets/download/pes12017000148/food-ingredients-and-recipe-dataset-with-images';
+const GITHUB_MIRROR_URL = process.env.RECIPE_LOCAL_DATASET_MIRROR_URL || 'https://github.com/kaveesh-kadirvel/Fridge2Fork/archive/refs/heads/main.zip';
 const MIN_SIDE = 640;
 const MIN_BYTES = 20 * 1024;
 const MAX_BYTES = 150 * 1024;
@@ -94,6 +96,32 @@ async function locateDatasetFiles() {
   return csv ? { csv, images } : null;
 }
 
+async function cleanPartial(file) {
+  try { await fs.rm(file, { force: true }); } catch {}
+}
+
+async function downloadAndExtract({ name, url, archivePath }) {
+  await fs.mkdir(DATASET_ROOT, { recursive: true });
+  await cleanPartial(archivePath);
+  console.log(JSON.stringify({ dataset: name, action: 'download', url, localPath: archivePath }, null, 2));
+  await run('curl', [
+    '-L', '--fail', '--retry', '3',
+    '--retry-all-errors',
+    '--connect-timeout', '20',
+    '--max-time', '1800',
+    '-o', archivePath,
+    url,
+  ]);
+  console.log(JSON.stringify({ dataset: name, action: 'extract', zip: archivePath }, null, 2));
+  await run('unzip', ['-q', '-o', archivePath, '-d', DATASET_ROOT]);
+  const located = await locateDatasetFiles();
+  if (!located?.csv || !located.images.length) {
+    throw new Error(`Source ${name} extracted but required CSV/images were not found`);
+  }
+  console.log(JSON.stringify({ dataset: 'local', source: name, csv: located.csv, images: located.images.length, action: 'ready' }, null, 2));
+  return located;
+}
+
 async function ensureDataset() {
   const found = await locateDatasetFiles();
   if (found?.csv && found.images.length) {
@@ -102,16 +130,26 @@ async function ensureDataset() {
   }
 
   await fs.mkdir(DATASET_ROOT, { recursive: true });
-  if (!exists(ZIP_PATH)) {
-    console.log(JSON.stringify({ dataset: 'epicurious-kaggle-public', action: 'download', url: DATASET_URL, localPath: ZIP_PATH }, null, 2));
-    await run('curl', ['-L', '--fail', '--retry', '3', '--connect-timeout', '20', '--max-time', '1800', '-o', ZIP_PATH, DATASET_URL]);
+
+  const sources = [
+    { name: 'epicurious-kaggle-public', url: DATASET_URL, archivePath: ZIP_PATH },
+    { name: 'epicurious-github-mirror', url: GITHUB_MIRROR_URL, archivePath: MIRROR_ZIP_PATH },
+  ];
+  const failures = [];
+
+  for (const source of sources) {
+    try {
+      const located = await downloadAndExtract(source);
+      return located;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      failures.push({ source: source.name, error: message });
+      console.error(JSON.stringify({ dataset: source.name, action: 'failed', error: message, next: 'try-next-source' }, null, 2));
+      await cleanPartial(source.archivePath);
+    }
   }
-  console.log(JSON.stringify({ dataset: 'epicurious-kaggle-public', action: 'extract', zip: ZIP_PATH }, null, 2));
-  await run('unzip', ['-q', '-o', ZIP_PATH, '-d', DATASET_ROOT]);
-  const located = await locateDatasetFiles();
-  if (!located?.csv || !located.images.length) throw new Error('Dataset download/extract completed but CSV or Food Images were not found locally');
-  console.log(JSON.stringify({ dataset: 'local', csv: located.csv, images: located.images.length, action: 'ready' }, null, 2));
-  return located;
+
+  throw new Error(`All dataset sources failed: ${JSON.stringify(failures)}`);
 }
 
 async function loadCatalog() {
