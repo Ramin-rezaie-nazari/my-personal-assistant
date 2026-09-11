@@ -94,10 +94,14 @@ export class GoalsService {
     const dateKey = dto.dateKey ?? new Date().toISOString().slice(0, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey))
       throw new BadRequestException('dateKey must use YYYY-MM-DD format');
-    await this.prisma
-      .$executeRaw`INSERT INTO "GoalCheckin" ("id","goalId","dateKey","progressPercent","note") VALUES (${randomUUID()},${id},${dateKey},${dto.progressPercent},${dto.note?.trim() || null}) ON CONFLICT ("goalId","dateKey") DO UPDATE SET "progressPercent"=EXCLUDED."progressPercent", "note"=EXCLUDED."note", "createdAt"=CURRENT_TIMESTAMP`;
-    await this.prisma
-      .$executeRaw`UPDATE "Goal" SET "progressPercent"=${dto.progressPercent}, "status"=${dto.progressPercent >= 100 ? 'completed' : 'active'}, "updatedAt"=CURRENT_TIMESTAMP WHERE "id"=${id} AND "userId"=${userId}`;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx
+        .$executeRaw`INSERT INTO "GoalCheckin" ("id","goalId","dateKey","progressPercent","note") VALUES (${randomUUID()},${id},${dateKey},${dto.progressPercent},${dto.note?.trim() || null}) ON CONFLICT ("goalId","dateKey") DO UPDATE SET "progressPercent"=EXCLUDED."progressPercent", "note"=EXCLUDED."note", "createdAt"=CURRENT_TIMESTAMP`;
+      await tx
+        .$executeRaw`UPDATE "Goal" SET "progressPercent"=${dto.progressPercent}, "status"=${dto.progressPercent >= 100 ? 'completed' : 'active'}, "updatedAt"=CURRENT_TIMESTAMP WHERE "id"=${id} AND "userId"=${userId}`;
+    });
+
     return this.findOne(userId, id);
   }
 
