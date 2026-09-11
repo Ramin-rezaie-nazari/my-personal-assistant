@@ -14,12 +14,13 @@ export function getLocalHourWeekday(now: Date, timezone: string): { hour: number
     timeZone: timezone,
     hour: 'numeric',
     hourCycle: 'h23',
-    weekday: 'numeric',
+    weekday: 'long',
   }).formatToParts(now);
   const values = Object.fromEntries(
     parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]),
   ) as Record<string, string>;
-  return { hour: Number(values.hour), weekday: Number(values.weekday) };
+  const weekday = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].indexOf(values.weekday);
+  return { hour: Number(values.hour), weekday: weekday < 0 ? 0 : weekday };
 }
 
 export function zonedDateTimeToUtc(dateKey: string, time: string, timezone: string): Date {
