@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 Purpose: append-only register for findings discovered after the original issue catalog snapshot. This is supporting evidence; `12_OPEN_WORK.md` remains the intended authoritative issue catalog after consolidation.
-Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime and related wiring files.
+Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts and related wiring files.
 Scope not yet read: remaining repository-wide source/tests/consumers, full matrices, runtime execution, complete security/privacy reconciliation.
 Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/mobile/`, `.github/workflows/`.
 Confidence: HIGH for source-level findings below unless explicitly marked validation-needed.
@@ -11,21 +11,22 @@ Confidence: HIGH for source-level findings below unless explicitly marked valida
 ## Correction log
 
 ### PB-112 — NOT_APPLICABLE
-Earlier audit text said Mobile Brain `execute-next`/feedback routes were missing. That was disproven. `apps/backend/src/modules/personal-brain/controllers/decision-execution.controller.ts` exposes `POST /personal-brain/decision/execute-next` and `POST /personal-brain/decision/confirm`, both JWT guarded. `apps/backend/src/modules/personal-brain/controllers/decision-feedback.controller.ts` exposes `POST /personal-brain/decision/feedback`, also JWT guarded. No repair is required for the original PB-112 route-existence claim; the catalog must retain it only as NOT_APPLICABLE/corrected false finding.
+Earlier audit text said Mobile Brain `execute-next`/feedback routes were missing. That was disproven. `apps/backend/src/modules/personal-brain/controllers/decision-execution.controller.ts` exposes `POST /personal-brain/decision/execute-next` and `POST /personal-brain/decision/confirm`, both JWT guarded. `apps/backend/src/modules/personal-brain/controllers/decision-feedback.controller.ts` exposes `POST /personal-brain/decision/feedback`, also JWT guarded. No repair is required for the original PB-112 route-existence claim; the catalog retains it only as NOT_APPLICABLE/corrected false finding.
+
+### PB-167 — NOT_APPLICABLE
+Earlier appendix text said `ContentModule` was orphaned. That was disproven by direct inspection of `apps/backend/src/app.module.ts`, which imports `ContentModule` in the active Nest `imports` array. The old PB-167 statement is not an open issue and must not be counted.
 
 ## New findings
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
 Locations: `apps/backend/src/modules/life-tasks/life-tasks.module.ts`, `apps/backend/src/app.module.ts`.
-Evidence: `LifeTasksModule` exists with `LifeTasksController`/`LifeTasksService`, but `AppModule` does not import it; search for `LifeTasksModule` found only its own module declaration. No external consumer was found.
-Impact: `/tasks` source/API is not active in the audited Nest application even though the feature exists in source.
+Evidence: `LifeTasksModule` exists with controller/service, but `AppModule` does not import it; search found no external consumer. Impact: `/tasks` source/API is not active in the audited Nest application.
 
 ### PB-157 — LifeTasks and LifeExecution are parallel task-domain implementations
 Status: OPEN — ARCHITECTURE/CONTRACT DRIFT
-Locations: `apps/backend/src/modules/life-tasks/*`, `apps/backend/src/modules/life-execution/*`, migrations for `LifeTask*`/legacy task tables.
-Evidence: both domains implement task CRUD/dependencies/events/next-best semantics over overlapping task concepts; LifeTasks uses `LifeTaskDependency`/`LifeTaskEvent`, while LifeExecution uses legacy `TaskDependency`/`TaskEvent`.
-Impact: parallel semantics can diverge and the inactive module can become stale or be wired accidentally later.
+Locations: `apps/backend/src/modules/life-tasks/*`, `apps/backend/src/modules/life-execution/*`, related migrations.
+Evidence: both domains implement overlapping task CRUD/dependency/event semantics; LifeTasks uses `LifeTaskDependency`/`LifeTaskEvent`, while LifeExecution uses legacy `TaskDependency`/`TaskEvent`. Impact: parallel semantics can diverge and the inactive module can become stale or be wired accidentally later.
 
 ### PB-158 — LifeTasks DTOs lack runtime validation decorators
 Status: OPEN — API CONTRACT
@@ -43,39 +44,29 @@ Evidence: `completedAt` calculation contains a duplicate/unreachable `status ===
 ### PB-161 — RecommendationIntelligenceModule is orphaned from runtime wiring
 Status: OPEN — ARCHITECTURE/FEATURE HIGH
 Location: `apps/backend/src/modules/recommendation-intelligence/recommendation-intelligence.module.ts`, AppModule/module import graph.
-Evidence: repository search for `RecommendationIntelligenceModule` found only its own declaration. No active module imports it.
-Impact: Recommendation Intelligence services are not part of the audited runtime dependency graph.
+Evidence: search for `RecommendationIntelligenceModule` found only its own declaration. No active module imports it. Impact: Recommendation Intelligence services are not part of the audited runtime dependency graph.
 
 ### PB-162 — RecommendationIntelligenceController is an empty shell; documented food endpoint is not exposed
 Status: OPEN — API CONTRACT HIGH
 Location: `apps/backend/src/modules/recommendation-intelligence/controllers/recommendation-intelligence.controller.ts`.
-Evidence: controller contains only `@Controller('recommendation-intelligence')` and no methods.
-Impact: documented `POST /recommendation-intelligence/food` is not provided by this controller in the audited commit.
+Evidence: controller contains only the route prefix and no methods. Impact: documented `POST /recommendation-intelligence/food` is not provided by this controller in the audited commit.
 
 ### PB-163 — Current State documentation falsely describes Recommendation Intelligence food endpoint as implemented
 Status: OPEN — DOCUMENTATION/ARCHITECTURE
-Locations: `apps/backend/docs/05_CURRENT_STATE.md`, `recommendation-intelligence/controllers/recommendation-intelligence.controller.ts`, module wiring.
+Locations: `apps/backend/docs/05_CURRENT_STATE.md`, recommendation-intelligence controller, module wiring.
 Impact: engineering docs give a stronger runtime-completeness claim than the actual controller/wiring supports.
 
 ### PB-164 — GoalIntelligenceModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
-Location: `apps/backend/src/modules/goal-intelligence/goal-intelligence.module.ts` and module import graph.
-Evidence: search for `GoalIntelligenceModule` found only its own declaration; no active importer was found.
+Location: `apps/backend/src/modules/goal-intelligence/goal-intelligence.module.ts` and module import graph. Evidence: search found only its own declaration; no active importer was found.
 
 ### PB-165 — Goal Intelligence service cluster is placeholder-level and disconnected
 Status: OPEN — ARCHITECTURE/DESIGN
-Locations: `goal-intelligence/services/goal-analysis.service.ts`, `goal-planning.service.ts`, `goal-progress.service.ts`.
-Evidence: each service performs a resolved no-op and returns fixed `{ analyzed: true }`, `{ planCreated: true }`, or `{ progressTracked: true }` responses; no real domain inputs/outputs are modeled and no external consumer was found.
+Locations: `goal-intelligence/services/goal-analysis.service.ts`, `goal-planning.service.ts`, `goal-progress.service.ts`. Evidence: fixed no-op style responses and no external consumer found.
 
 ### PB-166 — Goal Intelligence has no direct service tests in inspected tree
 Status: OPEN — TEST GAP
 Locations: Goal Intelligence service files/module.
-
-### PB-167 — ContentModule is orphaned from runtime wiring
-Status: OPEN — ARCHITECTURE/FEATURE
-Location: `apps/backend/src/modules/content/content.module.ts` and AppModule/module import graph.
-Evidence: search for `ContentModule` found no active importer.
-Impact: content recommendation source code is outside the active runtime graph.
 
 ### PB-168 — Dashboard default date/weekly boundary is UTC-based
 Status: OPEN — TIMEZONE HIGH
@@ -137,5 +128,20 @@ Location: `apps/mobile/lib/voice.ts`.
 Status: OPEN — SECURITY HIGH
 Location: `apps/mobile/lib/api.ts`.
 
+### PB-183 — Mobile component layer contains duplicate/orphaned animation wrappers
+Status: OPEN — ARCHITECTURE/INTEGRATION
+Locations: `apps/mobile/components/AnimatedPressable.tsx`, `apps/mobile/components/AnimatedSection.tsx`, `apps/mobile/lib/motion.tsx`.
+Evidence: `lib/motion.tsx` already exports `AnimatedPressable` and `AnimatedSection`; the component directory redefines wrappers with the same exported names. Repository search found no observed external consumer of the component-directory wrappers. Impact: two competing import surfaces can diverge in behavior/types.
+
+### PB-184 — Mobile command-center visual components use hardcoded English/visual semantics outside the localization layer
+Status: OPEN — LOCALIZATION
+Locations: `apps/mobile/components/decision-trace-card.tsx`, `apps/mobile/components/plan-status-card.tsx`.
+Evidence: `DecisionTraceCard` renders `Waiting`, `Stopped`, `Completed`, `Brain trace`, and `toLocaleString()` directly; `PlanStatusCard` contains its own fa/en switch rather than consuming the app i18n dictionary. Both are consumed by `apps/mobile/app/command-center-v2.tsx`. Impact: Brain command-center UI can remain partially untranslated and formatting can vary from the global locale policy.
+
+### PB-185 — Mobile TTS preparation script downloads executable model assets without checksum verification
+Status: OPEN — SUPPLY CHAIN
+Location: `apps/mobile/scripts/prepare-khadijah-tts-model.cjs`.
+Evidence: the script downloads `model.onnx`, `tokens.txt`, and a vocoder over remote URLs using curl and validates existence plus selected directory entries; no cryptographic hash/signature verification is performed. Impact: a compromised/replaced upstream asset could be accepted into the local native asset bundle. This is a more specific supply-chain surface of PB-129 and must not be double-counted.
+
 ## Reconciliation note
-Several IDs above consolidate findings already present under PB-134, PB-135, PB-137, PB-138, PB-139, PB-140, PB-143, PB-144, PB-147, PB-148, PB-149, PB-150, PB-151, PB-152, PB-154 and PB-155 in the main catalog. During final consolidation, preserve the oldest canonical ID where the same issue is identical and use these appendix IDs only for genuinely new or more precise findings. Do not double-count consolidated duplicates.
+Several IDs above consolidate findings already present under PB-129, PB-134, PB-135, PB-137, PB-138, PB-139, PB-140, PB-143, PB-144, PB-147, PB-148, PB-149, PB-150, PB-151, PB-152, PB-154 and PB-155. During final consolidation, preserve the oldest canonical ID where the same issue is identical. PB-112 and PB-167 are correction-trail IDs only and are not open issues. Do not double-count consolidated duplicates.
