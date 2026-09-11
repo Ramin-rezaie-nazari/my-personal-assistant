@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-238
+## Findings PB-156 through PB-239
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -387,6 +387,11 @@ Evidence: active `POST /user-intelligence/events` accepts `@Body() body: { actio
 Status: OPEN — TIMEZONE/BEHAVIOR
 Location: `apps/backend/src/modules/user-intelligence/services/learning.service.ts`, `buildProfile()`.
 Evidence: when stored behavior metadata lacks numeric `hour` or `weekday`, the service derives them with `event.createdAt.getHours()` and `event.createdAt.getDay()`, i.e. the backend process's local timezone. There is no lookup of the user's persisted `UserSettings.timezone` in this path. Impact: behavior patterns such as best hours and weekday completion can be assigned to the server's timezone instead of the user's actual local timezone, causing cross-timezone users to receive shifted learning signals. This is distinct from PB-221 because PB-238 is the User Intelligence event-level fallback rather than Adaptive Learning's current-day/weekly window.
+
+### PB-239 — User Intelligence UserProfileService is a registered placeholder provider with no active consumer
+Status: OPEN — ARCHITECTURE/FEATURE
+Locations: `apps/backend/src/modules/user-intelligence/services/user-profile.service.ts`, `apps/backend/src/modules/user-intelligence/user-intelligence.module.ts`, `apps/backend/src/modules/user-intelligence/controllers/user-intelligence.controller.ts`.
+Evidence: `UserProfileService.buildProfile()` and `updateProfile()` accept no user/profile input, perform only `await Promise.resolve()`, and return placeholder messages (`User profile built` / `User profile updated`). `UserIntelligenceModule` registers and exports `UserProfileService`, but `UserIntelligenceController` injects only `UserIntelligenceService` and `LearningService`; repository search found no other consumer of `UserProfileService`. The active `GET /user-intelligence` path instead calls `UserIntelligenceService.getProfile()`, which reads `UserFact`, `UserInsight`, and behavioral learning. Impact: the named user-profile intelligence capability is non-functional and disconnected from the active route, creating a stale provider/API architecture and false confidence about profile synthesis. No runtime behavior is claimed beyond the source-level wiring evidence.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
