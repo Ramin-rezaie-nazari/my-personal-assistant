@@ -3,9 +3,9 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 Purpose: append-only register for findings discovered after the original issue catalog snapshot. This is supporting evidence; `12_OPEN_WORK.md` remains the intended authoritative issue catalog after consolidation.
-Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts and related wiring files.
+Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory and related cross-layer consumers.
 Scope not yet read: remaining repository-wide source/tests/consumers, full matrices, runtime execution, complete security/privacy reconciliation.
-Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/mobile/`, `.github/workflows/`.
+Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
 Confidence: HIGH for source-level findings below unless explicitly marked validation-needed.
 
 ## Correction log
@@ -143,5 +143,15 @@ Status: OPEN — SUPPLY CHAIN
 Location: `apps/mobile/scripts/prepare-khadijah-tts-model.cjs`.
 Evidence: the script downloads `model.onnx`, `tokens.txt`, and a vocoder over remote URLs using curl and validates existence plus selected directory entries; no cryptographic hash/signature verification is performed. Impact: a compromised/replaced upstream asset could be accepted into the local native asset bundle. This is a more specific supply-chain surface of PB-129 and must not be double-counted.
 
+### PB-186 — Mobile Brain Context consumer targets a backend route that is not exposed
+Status: OPEN — BACKEND↔MOBILE INTEGRATION HIGH
+Locations: `apps/mobile/lib/api.ts` `getBrainContext()`, `apps/backend/src/modules/brain-integration/controllers/brain-integration.controller.ts`.
+Evidence: mobile defines `getBrainContext(dateKey?)` and requests `/brain-integration/context`; the backend `BrainIntegrationController` contains only `@Controller('brain-integration')` and no route methods. `BrainIntegrationModule` is transitively wired through `PersonalBrainModule`, but that does not create the missing `/context` HTTP endpoint. Impact: any mobile screen using `getBrainContext` will receive a route-not-found response from this backend snapshot.
+
+### PB-187 — Auth session expiry is hard-coded to 30 days instead of following configured refresh-token expiry
+Status: OPEN — AUTH/CONFIG CONTRACT
+Location: `apps/backend/src/modules/auth/auth.service.ts`, `createAuthResponse()`.
+Evidence: refresh JWT lifetime is sourced from `AppConfigService.jwtRefreshExpiresIn` in `token.utils.ts`, while persisted session `expiresAt` is always set with `+ 30 * 24 * 60 * 60 * 1000`. If configured JWT refresh expiry differs from 30 days, the JWT/session lifetimes diverge. Impact: valid JWTs can outlive database sessions or database sessions can outlive JWTs, depending on configuration, creating inconsistent refresh/revocation behavior.
+
 ## Reconciliation note
-Several IDs above consolidate findings already present under PB-129, PB-134, PB-135, PB-137, PB-138, PB-139, PB-140, PB-143, PB-144, PB-147, PB-148, PB-149, PB-150, PB-151, PB-152, PB-154 and PB-155. During final consolidation, preserve the oldest canonical ID where the same issue is identical. PB-112 and PB-167 are correction-trail IDs only and are not open issues. Do not double-count consolidated duplicates.
+Several IDs above consolidate findings already present under PB-129, PB-134, PB-135, PB-137, PB-138, PB-139, PB-140, PB-143, PB-144, PB-147, PB-148, PB-149, PB-150, PB-151, PB-152, PB-154 and PB-155. During final consolidation, preserve the oldest canonical ID where the same issue is identical. PB-112 and PB-167 are correction-trail IDs only and are not open issues. PB-185 is a specific surface of PB-129 and must not be double-counted.
