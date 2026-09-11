@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline; Core; Prisma schema + all 39 migrations; Assistant; complete Brain file-level scope; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence; substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and Personal Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile route/client/component scope; selected Content, Dashboard, Daily Command Center and Auth/JWT cross-contract files.
+Scope actually read: baseline; Core; Prisma schema + all 39 migrations; Assistant; complete Brain file-level scope; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence; substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and Personal Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile route/client/component scope; selected Content, Dashboard, Daily Command Center and Auth/JWT cross-contract files; Mobile notification/voice/runtime/native files.
 Scope not yet read: remaining Fitness-adjacent source; remaining Mobile route/component/library files; exhaustive platform/common/test inventory; repository-wide route/consumer/database matrices; runtime/device validation; full security/privacy closure; historical docs/branches.
 Evidence roots: `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`.
 Confidence level: HIGH for exact issues below; MEDIUM for cross-module impact until all consumers/runtime are reconciled.
@@ -300,11 +300,12 @@ Location: `price-intelligence/services/automatic-price-scheduler.service.ts`.
 
 ### PB-073 — Goals use raw SQL tables outside final Prisma model contract
 Status: OPEN — DATA/SCHEMA HIGH
-Locations: GoalsService, `Goal`/`GoalCheckin`, final `schema.prisma`.
+Locations: `apps/backend/src/modules/goals/services/goals.service.ts`, tables `Goal` and `GoalCheckin`, final `apps/backend/prisma/schema.prisma`.
+Problem: goal create/find/update/checkin/delete all use raw SQL; Goal/GoalCheckin are not represented as final Prisma models.
 
 ### PB-074 — Goal check-in dateKey uses UTC without user timezone
 Status: OPEN — TIMEZONE HIGH
-Location: GoalsService `checkin()`.
+Location: `goals.service.ts` `checkin()`.
 
 ### PB-075 — Goal DTOs have no runtime validation decorators
 Status: OPEN
@@ -312,7 +313,7 @@ Locations: Goals create/update/checkin DTOs.
 
 ### PB-076 — Habit today/streak/weekly window is UTC-based rather than user-local
 Status: OPEN — TIMEZONE HIGH
-Location: HabitsService date/streak/weekly helpers.
+Location: `habits.service.ts`.
 
 ### PB-077 — Habit DTOs have no validation decorators
 Status: OPEN
@@ -320,9 +321,9 @@ Location: `habits/dto/habit.dto.ts`.
 
 ### PB-078 — Habit weekly summary possible-count semantics are simplistic
 Status: OPEN / DESIGN REVIEW
-Location: HabitsService `getWeeklySummary()`.
+Location: `habits.service.ts` `getWeeklySummary()`.
 
-### PB-079 — Calendar update endpoint uses inline unvalidated patch body and time update has explicit UTC semantics
+### PB-079 — Calendar update endpoint uses inline unvalidated patch body and explicit UTC semantics
 Status: OPEN
 Locations: CalendarController/Service.
 
@@ -372,7 +373,7 @@ Locations: Fitness module/persistence/service/spec.
 
 ### PB-091 — Fitness profile normalization lacks semantic ranges/enums
 Status: OPEN — DATA INTEGRITY
-Location: `fitness-profile-persistence.service.ts` `normalize()`.
+Location: `fitness-profile-persistence.service.ts`.
 
 ### PB-092 — Active/inactive Fitness natural-goal parsing diverges
 Status: OPEN — CONTRACT DRIFT
@@ -384,7 +385,7 @@ Locations: Workout controller/service/DTO.
 
 ### PB-094 — Workout weekly summary uses UTC calendar boundaries without explicit user-local conversion
 Status: OPEN — TIMEZONE
-Location: `workout/services/workout.service.ts`.
+Location: WorkoutService weekly/date helpers.
 
 ### PB-095 — Calisthenics session generator can exceed requested duration and has no input validation
 Status: OPEN — LOGIC
@@ -404,7 +405,7 @@ Location: `yoga-motion-analysis.service.ts`.
 
 ### PB-099 — Backend PoseProvider contract differs from Mobile PoseProvider contract
 Status: OPEN — CROSS-PLATFORM CONTRACT
-Locations: backend PoseProvider model; Mobile pose pipeline/bridge.
+Locations: backend pose-provider model; Mobile pose pipeline/bridge.
 
 ### PB-100 — YogaCoachService consumes hold duration during enter phase, effectively skipping hold timing
 Status: OPEN — LOGIC HIGH
@@ -592,15 +593,57 @@ Locations: `auth.service.ts`, `services/session.service.ts`.
 
 ### PB-147 — Mobile Price History hardcodes تومان and ignores snapshot currency
 Status: OPEN — DATA/UX HIGH
-Location: `apps/mobile/app/price-history.tsx` `money()` helper and all calls rendering current/history/stat prices.
-Problem: `PriceSnapshot` from `apps/mobile/lib/price-api.ts` explicitly carries `currency`, but `price-history.tsx` formats every amount as Persian تومان without reading currency. The same formatter is used for analysis values and per-store history.
-Impact: if a snapshot is not in IRR-equivalent units, the displayed monetary unit is false; users can misread magnitude/value. This is a frontend manifestation of the broader Price Intelligence currency-contract problem (PB-058/PB-059).
+Location: `apps/mobile/app/price-history.tsx` `money()` helper and price render calls.
+Problem: Mobile `PriceSnapshot` includes `currency`, but the formatter always appends تومان.
+Impact: non-IRR/non-toman observations can be displayed with a false unit; this compounds PB-058/PB-059.
 
 ### PB-148 — Mobile Price History chart legend forces a fabricated zero minimum
 Status: OPEN — UI/DATA PRESENTATION
-Location: `apps/mobile/app/price-history.tsx` `const min=Math.min(...history.map(x=>x.amount),0)` and chart legend.
-Problem: adding `0` to `Math.min()` makes the displayed minimum 0 whenever all observed prices are positive; the chart legend therefore claims a zero price that was never observed. The computed range/point positions are also scaled against this artificial zero.
-Impact: price-range visualization and trend shape can be misleading, especially when the observed price range is narrow relative to zero.
+Location: `apps/mobile/app/price-history.tsx` `Math.min(...history.map(x=>x.amount),0)` and legend.
+Problem: positive histories are displayed with a minimum of zero even when no zero-price observation exists.
+Impact: the chart's range and legend can materially misrepresent observed market prices.
+
+### PB-149 — Mobile push-registration helpers have no active application consumer
+Status: OPEN — FEATURE/INTEGRATION HIGH
+Location: `apps/mobile/lib/notifications/push-registration.ts`; repository-wide search for `registerForPushNotifications()` and `listenForPushTokenRefresh()` found only their definitions.
+Problem: the app contains device registration logic and permission/token handling, but no inspected screen, root layout, hook or bootstrap path invokes it.
+Impact: push token registration may never occur, so the backend can have no device token to deliver notifications even though the notification UI/runtime code exists.
+
+### PB-150 — Mobile notification runtime bootstrap is not invoked by the app
+Status: OPEN — FEATURE/INTEGRATION HIGH
+Location: `apps/mobile/lib/notifications/push-runtime.ts`; repository-wide search for `startNotificationRuntime()` / `consumeLastNotificationResponse()` found only definitions inside that file.
+Problem: foreground notification handler and notification-response listeners are implemented but not wired into app startup/navigation.
+Impact: foreground receipt behavior and deep-link/action response handling may never activate; tapped-notification routing can be lost.
+
+### PB-151 — Mobile notification action feedback has no active consumer or API transport
+Status: OPEN — FEATURE/INTEGRATION
+Locations: `apps/mobile/lib/notifications/notification-actions.ts`, backend `personal-brain/services/notification-feedback-adapter.service.ts`, `notification-feedback.service.ts`.
+Problem: Mobile builds `{eventType,dedupeKey,action,snoozeUntil}` through `buildNotificationFeedback()`, but search found no caller. Backend has an adapter/service but no matching controller endpoint was found in inspected controller search.
+Impact: `complete/snooze/dismiss/open` feedback cannot currently travel from notification interaction to the learning/feedback backend path.
+
+### PB-152 — Mobile TypeScript typecheck excludes all test files
+Status: OPEN — TEST/STATIC COVERAGE
+Location: `apps/mobile/tsconfig.json` `exclude` array.
+Problem: `**/*.spec.ts`, `**/*.spec.tsx`, `**/*.test.ts`, and `**/*.test.tsx` are excluded from the compiler input.
+Impact: the already-small set of Mobile unit/contract tests is not even covered by the standard Mobile typecheck gate, allowing test-only type errors to remain hidden.
+
+### PB-153 — Mobile retains duplicate legacy brand source alongside active branding source
+Status: OPEN — ARCHITECTURE
+Locations: `apps/mobile/lib/brand.ts`, `apps/mobile/lib/branding.ts`.
+Problem: both export a `BRAND` object with overlapping identity/color/radius/typography values, but they have different values and shapes. The active inspected UI uses `branding.ts`; `brand.ts` has no observed consumer.
+Impact: future components can import the legacy source and silently diverge from canonical product branding/design tokens.
+
+### PB-154 — Mobile voice/TTS module imports undeclared expo-speech dependency
+Status: OPEN — BUILD/DEPENDENCY
+Locations: `apps/mobile/lib/voice.ts`, `apps/mobile/package.json`.
+Problem: `voice.ts` imports `expo-speech`, but Mobile manifest does not declare `expo-speech`.
+Impact: voice functionality depends on an undeclared runtime package and is not represented in the reproducible Mobile dependency graph.
+
+### PB-155 — Mobile voice/TTS feature has no observed active consumer
+Status: OPEN — FEATURE/INTEGRATION
+Location: `apps/mobile/lib/voice.ts`.
+Problem: repository search for `speakAssistantText`, `stopAssistantSpeech`, `getStoredVoiceProfile`, and `setStoredVoiceProfile` found only definitions in `voice.ts`.
+Impact: voice profile persistence and assistant speech may not be activated by the current app, despite the implementation existing.
 
 ## Next deterministic work
 
