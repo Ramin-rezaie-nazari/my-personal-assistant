@@ -343,6 +343,11 @@ Status: OPEN — ARCHITECTURE/FEATURE
 Locations: `apps/backend/src/modules/assistant/services/memory.service.ts`, `apps/backend/src/modules/assistant/assistant.module.ts`, `apps/backend/docs/04_ARCHITECTURE_ATLAS.md`.
 Evidence: `MemoryService.storeMemory()` accepts no memory payload and returns only `{ message: 'Memory engine ready' }`; `getMemories()` accepts no user/context and always returns `[]`. `AssistantModule` registers the provider, and the architecture atlas lists it as an Assistant component, but repository search found no active controller/service consumer of `MemoryService`. The active Assistant/Brain stack uses separate context, Brain-memory, and conversation-history services. Impact: the registered Memory capability is non-functional and disconnected from the live Assistant flow, creating stale architecture and false confidence about memory behavior. This is separate from PB-226 because PB-229 covers the dedicated memory provider and its empty storage/read implementation.
 
+### PB-230 — Audit Findings Appendix is incomplete relative to the canonical Open Work catalog
+Status: OPEN — PROJECT-BRAIN INTEGRITY HIGH
+Locations: `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`, `docs/project-brain/12_OPEN_WORK.md`.
+Evidence: the current Appendix blob explicitly begins with `## Findings PB-156 through PB-229`, while the current `12_OPEN_WORK.md` contains canonical entries beginning at PB-001 and continues through later findings. Historical audit checkpoint records also refer to the earlier findings catalog, but the current Appendix version does not contain PB-001 through PB-155. Therefore the Project Brain has two incompatible issue catalogs: one retains the older IDs and the other omits them. Impact: the repository cannot currently serve as a complete, lossless audit source-of-truth; remediation planning or final closure based only on Appendix would silently lose 155 previously identified findings. This finding was not closed by reconstructing or inventing missing entries; exact historical Appendix text must be recovered from repository history before the catalog is considered frozen.
+
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
 - PB-167: NOT_APPLICABLE; ContentModule is imported by active AppModule.
