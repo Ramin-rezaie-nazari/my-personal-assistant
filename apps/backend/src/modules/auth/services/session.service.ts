@@ -15,11 +15,36 @@ export class SessionService {
     });
   }
 
-  async findByRefreshToken(refreshToken: string) {
+  async findByRefreshToken(refreshToken: string, now = new Date()) {
     return this.prisma.session.findFirst({
       where: {
         refreshToken,
+        expiresAt: { gt: now },
       },
+    });
+  }
+
+  async rotate(
+    currentRefreshToken: string,
+    data: {
+      userId: string;
+      refreshToken: string;
+      expiresAt: Date;
+    },
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const deleted = await tx.session.deleteMany({
+        where: {
+          refreshToken: currentRefreshToken,
+          userId: data.userId,
+        },
+      });
+
+      if (deleted.count !== 1) {
+        return null;
+      }
+
+      return tx.session.create({ data });
     });
   }
 
