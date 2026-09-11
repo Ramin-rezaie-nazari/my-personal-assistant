@@ -2,23 +2,25 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: Initial repository governance, operational documentation, package manifests, AuthService/session flow and AuthService tests.
-Scope not yet read: Remaining backend/mobile source, all migrations, all CI workflow internals, and complete data/script inventory.
-Evidence roots: AGENTS.md; MYPA_START_HERE.md; apps/backend/docs/05_CURRENT_STATE.md; apps/backend/docs/03_PROJECT_BRAIN_BOOK.md; apps/backend/docs/04_ARCHITECTURE_ATLAS.md; apps/backend/docs/06_VALIDATION_LEDGER.md; apps/backend/docs/08_AUTONOMOUS_PROGRESS_LOG.md; package.json; apps/backend/prisma/schema.prisma; apps/backend/src/modules/auth/*; apps/mobile/package.json.
-Confidence level: MEDIUM.
-Open questions: local Mac dirty status/process state cannot be inspected from this runtime; exact full-file counts still pending.
+Scope actually read: Governance/navigation, operational docs, package manifests, authentication implementation/tests, and substantial source coverage across users/profile/preferences/onboarding/settings/context-engine/device-intelligence/user-intelligence.
+Scope not yet read: Remaining files in core scopes, all migrations/schema reconciliation, remaining backend/mobile source, complete CI/test internals, and complete scripts/data inventory.
+Evidence roots: `AGENTS.md`; `MYPA_START_HERE.md`; backend operational docs; package manifests; `apps/backend/src/modules/auth/`; `users/`; `profile/`; `preferences/`; `onboarding/`; `settings/`; `context-engine/`; `device-intelligence/`; `user-intelligence/`.
+Confidence level: MEDIUM for retrieved implementation, LOW for completeness.
+Open questions: exact total source-file count, remaining nested files in core scopes, full schema/migration mapping, route-to-mobile mapping, local Mac dirty/process state.
 
 ## Open gaps
 
-1. Complete deterministic inventory and per-source-file line counts.
-2. Finish `01-core.md` deep read across auth/users/profile/preferences/onboarding/settings/context-engine/device-intelligence/user-intelligence.
+1. Complete deterministic repository inventory and per-source-file line counts.
+2. Finish `01-core.md` by enumerating and reading every remaining file under auth/users/profile/preferences/onboarding/settings/context-engine/device-intelligence/user-intelligence.
 3. Reconcile every Prisma model against migrations and database-facing readers/writers.
 4. Build complete backend route catalog and mobile consumer mapping.
 5. Complete Brain, food, shopping, life/health and fitness deep reads.
 6. Complete mobile source deep read.
-7. Verify tests/CI with actual runs rather than source-only evidence.
+7. Verify tests and CI with actual runs where executable; distinguish device-only gates.
 8. Reconcile documentation claims against current code where older docs may be stale.
-9. Complete security/privacy contract review including auth/session, authorization, secrets, rate limiting and data retention.
-10. Reassess current recipe/media pipeline separately from historical Supabase-backed media claims; the user's current workflow is local Mac media acquisition and must not be treated as runtime storage evidence.
+9. Complete security/privacy contract review including auth/session, authorization, secrets, rate limiting and retention.
+10. Reassess current recipe/media pipeline separately from historical Supabase-backed media claims; current workflow is local Mac media acquisition and must not be treated as runtime storage evidence.
+11. Investigate duplicate users controller paths and duplicated onboarding responsibilities before treating the user/account architecture as coherent.
+12. Review currently weak/placeholder core implementations: context snapshot builder, empty context controller, native health bridge placeholders, activity tracker placeholder, user profile intelligence placeholder, and device-sync DTO without validation decorators.
 
-No gap is marked resolved merely because an implementation or documentation entry exists; evidence must be added by subsequent batches.
+No gap is marked resolved without direct source evidence or executed validation evidence.
