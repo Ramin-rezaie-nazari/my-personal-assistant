@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-234
+## Findings PB-156 through PB-235
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -367,6 +367,11 @@ Evidence: `GoalsController` uses `@Body() CreateGoalDto`, `UpdateGoalDto`, and `
 Status: OPEN — API/RUNTIME HIGH
 Locations: `apps/backend/src/modules/calendar/controllers/calendar.controller.ts`, `apps/backend/src/modules/calendar/dto/create-calendar-event.dto.ts`, `apps/backend/src/bootstrap.ts`.
 Evidence: `CalendarController.createEvent()` binds `@Body() dto: CreateCalendarEventDto`, and the active `PATCH /calendar/:id` binds an inline body type directly. `CreateCalendarEventDto` contains only plain `title`, `type`, `startsAt`, and optional `endsAt` property declarations without `class-validator` metadata; the update body has no class DTO/validation metadata at all. The global `ValidationPipe` uses `whitelist: true` and `forbidNonWhitelisted: true`. Therefore normal calendar create/update body fields are expected to be rejected as non-whitelisted before the service receives them. Impact: active Calendar create/update routes are likely unusable under the project's own validation configuration until both write contracts are represented by validated DTOs (or the global policy is intentionally changed). Runtime HTTP execution is unverified in this session, so the finding is source-level with strong framework-contract evidence.
+
+### PB-235 — Goal check-in performs two related database writes without a transaction
+Status: OPEN — DATA INTEGRITY HIGH
+Locations: `apps/backend/src/modules/goals/services/goals.service.ts`, `checkin()`, and migration `apps/backend/prisma/migrations/20260812112000_add_goals/migration.sql`.
+Evidence: `GoalsService.checkin()` first inserts/updates a `GoalCheckin` row and then separately updates the parent `Goal` row; neither operation is enclosed in `prisma.$transaction()`. The migration shows `GoalCheckin.goalId` has a foreign key with `ON DELETE CASCADE` and a unique `(goalId,dateKey)` key, so the child and parent represent one logical check-in state. A failure between the two independent operations can leave the persisted check-in history and the parent goal's `progressPercent`/`status` out of sync. Impact: retrying or auditing goal progress can observe a check-in record that was accepted while the parent aggregate was not updated (or vice versa if future ordering changes), violating aggregate consistency. Runtime failure injection was not executed in this audit.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
