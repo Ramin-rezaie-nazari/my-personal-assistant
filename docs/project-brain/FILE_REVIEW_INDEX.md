@@ -4,10 +4,10 @@ Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
 ## Scope actually read
-Current-main baseline/Core; complete Prisma schema + all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain file-level scope; complete Food/Recipe/Nutrition/Meals/Recommendation/Budget file-level scope; relevant recipe nutrition/scoring scripts; complete enumerated Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; complete enumerated Life/Health; complete enumerated Fitness/Workout/Calisthenics/Gym/Yoga and related Personal Brain consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/components; remaining identified Mobile library contracts/scripts; BATCH-0012 backend controller inventory and selected mobile consumer reconciliation; BATCH-0013 operational recipe scripts; BATCH-0018 active DTO validation sweep, Project Brain inventory and CI run evidence; BATCH-0022 CI/package/workflow runtime-evidence continuation; BATCH-0023 Content + Conversation Engine consumer reconciliation; BATCH-0026 direct current-main recipe-intelligence/operational-script revalidation and Prisma User cascade/account-erasure schema review; historical Git-history lookup for the Audit Findings Appendix path.
+Current-main baseline/Core; complete Prisma schema + all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain file-level scope; complete Food/Recipe/Nutrition/Meals/Recommendation/Budget file-level scope; relevant recipe nutrition/scoring scripts; complete enumerated Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; complete enumerated Life/Health; complete enumerated Fitness/Workout/Calisthenics/Gym/Yoga and related Personal Brain consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/components; remaining identified Mobile library contracts/scripts; BATCH-0012 backend controller inventory and selected mobile consumer reconciliation; BATCH-0013 operational recipe scripts; BATCH-0018 active DTO validation sweep, Project Brain inventory and CI run evidence; BATCH-0022 CI/package/workflow runtime-evidence continuation; BATCH-0023 Content + Conversation Engine consumer reconciliation; BATCH-0026 direct current-main recipe-intelligence/operational-script revalidation and Prisma User cascade/account-erasure schema review; BATCH-0027 final Prisma index/query cross-check for Workout and UserBehavior, controller guard recheck, account-erasure source searches; historical Git-history lookup for the Audit Findings Appendix path.
 
 ## Scope not yet fully closed
-Exhaustive repository-wide route↔DTO↔test↔mobile mapping; exhaustive backend operational-script closure; exhaustive database reader/writer/relation/index/transaction map; remaining common/platform/test/legacy source closure; runtime/device execution; complete security/privacy/retention/deletion reconciliation; canonical Appendix final merge/freeze.
+Exhaustive repository-wide route↔DTO↔test↔mobile mapping; exhaustive backend operational-script closure; exhaustive database reader/writer/relation/index/transaction map including all migration-only tables; remaining common/platform/test/legacy source closure; runtime/device execution; complete security/privacy/retention/deletion reconciliation; canonical Appendix final merge/freeze.
 
 Evidence roots: target `main` commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`; audit branch `audit/project-brain-2026-09-11`; `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`.
 Confidence level: HIGH for closed file-read/direct-revalidation scopes; MEDIUM for cross-module semantics; LOW for whole-repository completion until remaining gates close.
@@ -39,16 +39,17 @@ Confidence level: HIGH for closed file-read/direct-revalidation scopes; MEDIUM f
 | BATCH-0024 | DB/ownership/operational lineage | SUPERSEDED | Intermediate missing-script claims superseded by direct current-main checks. |
 | BATCH-0025 | Revalidation/control reconciliation | COMPLETE | PB-250→PB-160; PB-251 withdrawal; PB-255→PB-203; PB-256 withdrawal; PB-253 withdrawal; PB-252/PB-254 provisional decisions. |
 | BATCH-0026 | Current-main recipe intelligence + account-erasure schema revalidation | COMPLETE | PB-199/PB-200/PB-204 reconfirmed; withdrawn script findings revalidated; User cascade surface inspected. |
+| BATCH-0027 | DB index/query + lifecycle/security closure continuation | IN_PROGRESS | Workout/UserBehavior chronological query/index cross-check; controller guard recheck; account-erasure delete/search recheck; PB-257 recorded as source-level missing composite-index risk. |
 
 ## Database
 
 | Scope | Status | Notes |
 |---|---|---|
-| `apps/backend/prisma/schema.prisma` | READ_COMPLETELY | Current final Prisma model set inspected; User cascade relations directly revalidated. |
+| `apps/backend/prisma/schema.prisma` | READ_COMPLETELY | Current final Prisma model set inspected; User cascade relations directly revalidated; Workout/UserBehavior index/query surfaces cross-checked. |
 | `apps/backend/prisma/migrations/` | READ_COMPLETELY | All 39 migration SQL files previously inspected. |
 | `migration_lock.toml` | READ_COMPLETELY / identified | Provider lock recorded. |
 
-Known migration-only/raw-SQL contracts remain open findings. The final Prisma `User` model has broad modeled-record cascades, but this does not prove complete account erasure across migration-only tables, Supabase Auth, or Storage.
+Known migration-only/raw-SQL contracts remain open findings. The final Prisma `User` model has broad modeled-record cascades, but this does not prove complete account erasure across migration-only tables, Supabase Auth, or Storage. PB-257 records the missing composite-index risk for two inspected chronological user-scoped query families and requires runtime plan/row-count validation before remediation sizing.
 
 ## Historical recovery
 
