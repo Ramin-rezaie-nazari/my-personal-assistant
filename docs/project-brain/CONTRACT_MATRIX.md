@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: current-main Core, complete Brain file-level scope, complete enumerated Food/Recipe/Nutrition/Meals/Recommendation/Budget backend contracts; substantial Shopping/Life/Health/Fitness; substantial Mobile API and screen consumers; backend common/config/auth/fitness cross-contracts; selected operational scripts and historical PRs.
+Scope actually read: current-main Core, complete Brain file-level scope, complete enumerated Food/Recipe/Nutrition/Meals/Recommendation/Budget backend contracts; substantial Shopping/Life/Health/Fitness; substantial Mobile API and screen consumers; backend common/config/auth/fitness cross-contracts; selected operational scripts and historical PRs; current-main direct revalidation of mobile route aliases and recipe-intelligence scripts.
 Scope not yet read: exhaustive repository-wide route↔DTO↔test↔mobile mapping, complete database readers/writers/transactions, runtime HTTP validation, physical-device validation, remaining source/legacy scripts.
 Evidence roots: backend controllers/services/DTOs/modules; mobile `app/` and `lib/`; Project Brain deep-reads; Prisma schema/migrations; CI workflows.
 Confidence level: HIGH for directly read source contracts and confirmed consumers; MEDIUM for end-to-end correctness until runtime tests and exhaustive mappings are closed.
@@ -21,7 +21,7 @@ Open questions: global prefixes/middleware, deployed DB drift, remaining mobile 
 | `/onboarding/status` GET | JWT | onboarding row | JWT | read/create | Mobile onboarding flow |
 | `/onboarding/complete` POST | JWT + CompleteOnboardingDto | onboarding row | JWT | update | Mobile onboarding flow |
 | `/settings` GET/PATCH | JWT + UpdateSettingsDto | settings row | JWT | read/create/upsert | Mobile global settings flow |
-| `/device-intelligence` GET | none | placeholder health | no controller guard | none observed | Source-level endpoint; consumer reconciliation remains open |
+| `/device-intelligence` GET | none | placeholder health | no controller guard | none observed | Source-level endpoint; PB-170/139 |
 | `/user-intelligence` GET | JWT | facts/insights/adaptive profile | JWT | UserFact/UserInsight/UserBehavior reads | Mobile insights path uses `getPersonalInsights()` via adaptive-learning, not this route directly |
 | `/user-intelligence/events` POST | JWT + body | adaptive event/profile | JWT | UserBehavior create | Consumer mapping still open |
 | `/user-intelligence/analyze` POST | JWT | refreshed intelligence profile | JWT | UserInsight writes | Consumer mapping still open |
@@ -65,18 +65,29 @@ Open questions: global prefixes/middleware, deployed DB drift, remaining mobile 
 | `/personal-brain/trace` GET | none | decision trace | JWT | DecisionAuditEntry read | Mobile `command-center-v2.tsx` via `getDecisionTrace()` |
 | `/personal-brain/plan/history` GET | limit | plan execution history | JWT | PlanExecutionState read | Mobile `command-center-v2.tsx` via `getPlanHistory()` |
 
+## Mobile route alias / entrypoint reconciliation
+
+- `apps/mobile/app/index.tsx` is a pure route alias that re-exports `./command-center`.
+- `apps/mobile/app/command-center.tsx` is a pure alias that re-exports `./command-center-v2`.
+- Therefore the effective root route implementation is `command-center-v2.tsx`; `index.tsx` and `command-center.tsx` are not separate feature implementations and should not be counted as duplicate runtime screens.
+- This alias chain was directly revalidated against audited main and introduces no new finding.
+
 ## Confirmed mobile-consumer evidence
 
 Direct repository searches confirm the following active consumers:
 
-- `apps/mobile/app/meals.tsx` and `apps/mobile/app/meal/[id].tsx` call `getMeals()`; `meals.tsx` also calls `getNutritionSummary()`. fileciteturn159file0
-- `apps/mobile/app/smart-meals.tsx` calls `getNutritionSummary()` and `getFoods()` and reads inventory in the same load path. fileciteturn158file0 fileciteturn161file1
-- `apps/mobile/app/meal-builder.tsx` calls `getFoods()` for food search/building. fileciteturn158file2
-- `apps/mobile/app/calendar.tsx` calls `getCalendarEvents()` and builds the date range sent to the API. fileciteturn162file2
-- `apps/mobile/app/reminders.tsx` calls `getReminders()`; backend service/controller expose the corresponding authenticated list contract. fileciteturn160file3 fileciteturn160file0
-- `apps/mobile/app/notifications.tsx` calls `getNotifications()`; backend controller/service expose the corresponding authenticated list contract. fileciteturn163file3 fileciteturn163file0
-- `apps/mobile/app/habits.tsx` calls `getHabits()` and `getHabitSummary()`; backend `HabitsController` and `HabitsService` expose matching list/summary contracts. fileciteturn172file0 fileciteturn172file2
-- `apps/mobile/app/insights.tsx` calls `getPersonalInsights()` against the adaptive-learning endpoint. fileciteturn164file0
-- `apps/mobile/app/command-center-v2.tsx` calls `getDailyCommandCenter()`, `getPlanHistory(1)`, `getDecisionTrace()`, and `getNutritionSummary()`. fileciteturn161file2
+- `apps/mobile/app/meals.tsx` and `apps/mobile/app/meal/[id].tsx` call `getMeals()`; `meals.tsx` also calls `getNutritionSummary()`.
+- `apps/mobile/app/smart-meals.tsx` calls `getNutritionSummary()` and `getFoods()` and reads inventory in the same load path.
+- `apps/mobile/app/meal-builder.tsx` calls `getFoods()` for food search/building.
+- `apps/mobile/app/calendar.tsx` calls `getCalendarEvents()` and builds the date range sent to the API.
+- `apps/mobile/app/reminders.tsx` calls `getReminders()`; backend service/controller expose the corresponding authenticated list contract.
+- `apps/mobile/app/notifications.tsx` calls `getNotifications()`; backend controller/service expose the corresponding authenticated list contract.
+- `apps/mobile/app/habits.tsx` calls `getHabits()` and `getHabitSummary()`; backend `HabitsController` and `HabitsService` expose matching list/summary contracts.
+- `apps/mobile/app/insights.tsx` calls `getPersonalInsights()` against the adaptive-learning endpoint.
+- `apps/mobile/app/command-center-v2.tsx` calls `getDailyCommandCenter()`, `getPlanHistory(1)`, `getDecisionTrace()`, and `getNutritionSummary()`.
+
+## Validation-contract corrections
+
+Inline `@Body()` object/interface types are not treated as equivalent to class DTOs for the global Nest ValidationPipe whitelist analysis. PB-232 and PB-237 therefore do not retain their earlier claim of a guaranteed whitelist runtime collision; PB-234 is narrowed to the concrete class DTO (`CreateCalendarEventDto`) unless independent runtime evidence establishes another defect. PB-243 remains a grouped active-class-DTO validation finding pending historical overlap reconciliation with PB-077/PB-083/PB-085/PB-089/PB-093.
 
 The matrix remains intentionally incomplete until every backend route has a direct DTO/error/test/mobile consumer mapping and runtime validation. No endpoint is marked green solely from matching names.
