@@ -65,5 +65,13 @@ This historical catalog is an index/cross-check, not a substitute for recovering
 
 `apps/backend/package.json` currently exposes recipe-image and recipe-intelligence scripts, but `.github/workflows/recipe-content-release.yml` invokes `pnpm recipe:content:import` and `pnpm recipe:content:audit`. Those commands are not present in the current backend package manifest. This confirms PB-206 from a fresh package/workflow comparison; it is not a new duplicate finding.
 
+## BATCH-0020 — DB transaction + ownership/security continuation
+Status: IN_PROGRESS
+Scope completed: repository-wide searches for Prisma transactions, destructive `deleteMany` paths, JWT guard placement, request-user ownership accessors, and date/time serialization. Active transactional patterns were compared against known non-transactional findings rather than treating every multi-write-looking method as defective. Examples confirmed as already transactional include recipe ingredient writes, meal creation, nutrition logging, and fitness content batch updates. Ownership checks are consistently visible in the inspected active Shopping, Inventory, Meals, Users, Dashboard, Goals, Habits, Health, Recipes, Profile, Workout and Settings controller surfaces; no new canonical IDOR finding was created from this sweep. `req.user.sub` remains present in the known Users/Fitness paths and was not reclassified from existing findings without strategy/guard evidence. The broad `toISOString()` sweep also surfaced known timezone-sensitive date-key consumers (Dashboard, Daily, Habits, Workout, Daily Command Center, Personal Brain, Mobile Calendar), but these overlap existing timezone findings and were not duplicated.
+
+Important DB observations for next pass: raw SQL readers/writers remain concentrated in Goals, LifeTasks, LifeExecution, Recipe Presentation, Personal Brain, Price Intelligence and operational Fitness scripts; those surfaces still require relation/index/schema reconciliation before freeze. Destructive paths include expected user-scoped deletes in Workout, Calendar, Reminders, Decision Audit and persistent plan state, while recipe content import performs multiple child deletes and remains part of the operational atomicity/restartability review.
+
+No new canonical finding was created in BATCH-0020. No production code changed.
+
 ## Audit control
 No production code changed. PB-244, PB-245, PB-246, PB-247, PB-248 and PB-249 are new audit evidence and must be merged into the canonical Appendix during the next safe full-file Appendix update. PB-232/PB-234/PB-237 remain reclassified/narrowed as above; PB-243 remains provisional and must not be treated as a final unique issue until merged against historical IDs. Runtime/build/device validation remains unverified.
