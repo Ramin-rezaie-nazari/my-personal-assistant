@@ -10,6 +10,12 @@ describe('API e2e', () => {
     app = await createTestApp();
   });
 
+  it('exposes the public health liveness endpoint', async () => {
+    const response = await request(app.getHttpServer()).get('/health').expect(200);
+    expect(response.body.status).toBe('ok');
+    expect(response.body.service).toBe('My Personal Assistant API');
+  });
+
   it('does not expose the obsolete public root Hello World endpoint', async () => {
     await request(app.getHttpServer()).get('/').expect(404);
   });
@@ -25,43 +31,23 @@ describe('API e2e', () => {
     const food = await request(app.getHttpServer())
       .post('/foods')
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        name: 'Test Oats',
-        category: 'grain',
-        calories: 100,
-        protein: 5,
-        carbs: 15,
-        fat: 2,
-      })
+      .send({ name: 'Test Oats', category: 'grain', calories: 100, protein: 5, carbs: 15, fat: 2 })
       .expect(201);
 
     const recipe = await request(app.getHttpServer())
       .post('/recipes')
       .set('Authorization', `Bearer ${token}`)
-      .send({
-        name: 'Test Breakfast',
-        ingredients: [{ foodId: food.body.id, quantity: 2, unit: 'g' }],
-      })
+      .send({ name: 'Test Breakfast', ingredients: [{ foodId: food.body.id, quantity: 2, unit: 'g' }] })
       .expect(201);
 
     expect(recipe.body.name).toBe('Test Breakfast');
     expect(recipe.body.calories).toBe(200);
     expect(recipe.body.protein).toBe(10);
 
-    await request(app.getHttpServer())
-      .get(`/recipes/${recipe.body.id}`)
-      .set('Authorization', `Bearer ${token}`)
-      .expect(200);
-    const list = await request(app.getHttpServer())
-      .get('/recipes')
-      .set('Authorization', `Bearer ${token}`)
-      .expect(200);
-    expect(
-      list.body.some((item: { id: string }) => item.id === recipe.body.id),
-    ).toBe(true);
+    await request(app.getHttpServer()).get(`/recipes/${recipe.body.id}`).set('Authorization', `Bearer ${token}`).expect(200);
+    const list = await request(app.getHttpServer()).get('/recipes').set('Authorization', `Bearer ${token}`).expect(200);
+    expect(list.body.some((item: { id: string }) => item.id === recipe.body.id)).toBe(true);
   });
 
-  afterAll(async () => {
-    await app.close();
-  });
+  afterAll(async () => { await app.close(); });
 });
