@@ -2,8 +2,8 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline + Core + complete Prisma schema and all 39 migrations + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts + residual Mobile library contracts/tests + continued BATCH-0013 operational recipe/food scripts + backend common/config/auth/fitness cross-contract review + historical branch/PR reconciliation + extended Mobile app/lib screen and domain-client consumer mapping.
-Scope not yet read: any repository source outside current audited trees; remaining Fitness-adjacent source; exhaustive common/platform/test inventory; exhaustive repository-wide route/consumer/database matrices; full automated validation; full security/privacy closure; historical docs/branches beyond inspected high-value branches/PRs; remaining legacy/duplicate operational scripts.
+Scope actually read: baseline + Core + complete Prisma schema and all 39 migrations + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts + residual Mobile library contracts/tests + continued BATCH-0013 operational recipe/food scripts + backend common/config/auth/fitness cross-contract review + historical branch/PR reconciliation + extended Mobile app/lib screen/domain-client consumer mapping + CI/release workflow and database raw-SQL ownership sweep.
+Scope not yet read: remaining repository source outside current audited trees; remaining Fitness-adjacent source; exhaustive common/platform/test inventory; exhaustive repository-wide route/consumer/database matrices; full automated validation; full security/privacy closure; historical docs/branches beyond inspected high-value branches/PRs; remaining legacy/duplicate operational scripts.
 Evidence roots: Project Brain documents; `apps/backend/src/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`.
 Confidence level: HIGH for completed file-level reads; MEDIUM for cross-module conclusions; no repository runtime execution claim.
 Open questions: exact repository-wide inventory/line counts, live DB drift, complete model/table consumer graph, transaction boundaries, complete route/mobile mappings, full CI validation and device behavior, operational ownership of remaining legacy variants.
@@ -54,7 +54,7 @@ Open questions: exact repository-wide inventory/line counts, live DB drift, comp
 - Updated `FILE_REVIEW_INDEX.md`, `READING_CHECKPOINTS.md`, `REVIEW_GAPS.md`, `12_OPEN_WORK.md`, `deep-read/08-mobile-deep-read.md`, and this changelog. No production code changes made.
 
 ## 2026-09-11 — BATCH-0012 continuation checkpoint
-- Re-opened the canonical audit Project Brain state and continued the backend route/API and operational-script reconciliation from the existing checkpoint rather than rebuilding already-read green work.
+- Re-opened the canonical Project Brain state and continued the backend route/API and operational-script reconciliation from the existing checkpoint rather than rebuilding already-read green work.
 - Confirmed PB-186..PB-190 are present in the canonical `15_AUDIT_FINDINGS_APPENDIX.md`.
 - Created the required root-level `docs/05_CURRENT_STATE.md` because the protocol-mandated path was absent while a legacy/operational `apps/backend/docs/05_CURRENT_STATE.md` existed. The two documents still require deliberate reconciliation; this is tracked as PB-191.
 
@@ -79,9 +79,12 @@ Open questions: exact repository-wide inventory/line counts, live DB drift, comp
 - Extended the route↔mobile consumer pass across Brain, Meals/Nutrition, Calendar, Notifications, Habits, Supplements, Inventory, Shopping and Recipe Match screens; direct consumers were added to `CONTRACT_MATRIX.md` rather than inferred from helper names.
 - Compared Mobile transport clients and found a concrete shared-contract defect: `recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `inventory-api.ts`, and `assistant-api.ts` bypass the canonical 401→refresh→retry behavior implemented by `api.ts`, `calendar-api.ts`, `price-api.ts`, and `brain-execution.ts`. Recorded as PB-205 and kept as one cross-client root cause.
 - Rechecked `apps/mobile/app/index.tsx` and `command-center.tsx`: both are deliberate re-export shims to the active `command-center-v2` screen; they are not treated as orphan features.
+- Inspected `.github/workflows/recipe-content-release.yml` against `apps/backend/package.json`; workflow steps call `pnpm recipe:content:import` and `pnpm recipe:content:audit`, but those package scripts are not defined in the audited backend manifest. Recorded as PB-206, distinct from PB-188 because it is the workflow-to-package entrypoint contract itself.
+- Swept raw-SQL consumers including GoalCheckin, TaskDependency, ConversationTurn, WorkoutPerformance and PriceTrackedProduct paths; existing PB-004..PB-007/PB-056..PB-061 remain canonical data-model/ownership findings, and no additional distinct root cause was added from the sampled consumers.
+- Inspected remaining high-use Mobile domain screens (`auth.tsx`, `assistant.tsx`, `onboarding.tsx`, `daily.tsx`, `price-history.tsx`) and found no new independent correctness defect beyond existing localization, transport, price-history and auth findings.
 
 ## Next
-- Continue the Master Prompt with exhaustive database reader/writer/transaction/relation/index reconciliation and remaining backend↔mobile consumer/DTO/test mapping.
+- Continue Master Prompt with exhaustive database reader/writer/transaction/relation/index reconciliation and remaining backend↔mobile DTO/test mapping.
 - Continue remaining common/platform/test and legacy operational source closure, plus security/privacy retention/deletion reconciliation.
 - Close historical reconciliation only after remaining production-affecting divergence has been mapped against `main`.
 - Only after the Master Prompt audit scope is fully closed begin the separate correction/remediation phase using the final canonical findings catalog.
