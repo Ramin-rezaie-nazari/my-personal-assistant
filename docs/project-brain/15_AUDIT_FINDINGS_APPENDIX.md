@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-232
+## Findings PB-156 through PB-233
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -357,6 +357,11 @@ Evidence: `YogaPosePipeline` subscribes to camera frames and calls `void this.pr
 Status: OPEN — API/RUNTIME HIGH
 Locations: `apps/backend/src/modules/memory-intelligence/controllers/memory-intelligence.controller.ts`, `apps/backend/src/bootstrap.ts`.
 Evidence: the active global `ValidationPipe` is configured with `whitelist: true` and `forbidNonWhitelisted: true`. The `MemoryIntelligenceController.remember()` endpoint accepts an inline `RememberMemoryBody` TypeScript interface rather than a decorated DTO; its `type`, `key`, `value`, and optional `importance` properties have no `class-validator` metadata. With `forbidNonWhitelisted`, request properties without validation metadata are treated as non-whitelisted. Consequently a normal `POST /memory-intelligence` body containing the documented memory fields is expected to be rejected by the global pipe before the controller handler can construct and persist the memory. Impact: the primary authenticated memory-write endpoint is effectively unusable until its body is represented by a validated DTO (or the validation policy is intentionally changed). This is distinct from PB-158 because it is a concrete runtime contract collision in the active Memory Intelligence endpoint, not merely a missing decorator audit on an inactive module.
+
+### PB-233 — Active Goals write/check-in DTOs are incompatible with the global ValidationPipe
+Status: OPEN — API/RUNTIME HIGH
+Locations: `apps/backend/src/modules/goals/controllers/goals.controller.ts`, `apps/backend/src/modules/goals/dto/create-goal.dto.ts`, `update-goal.dto.ts`, `checkin-goal.dto.ts`, `apps/backend/src/bootstrap.ts`.
+Evidence: `GoalsController` uses `@Body() CreateGoalDto`, `UpdateGoalDto`, and `CheckinGoalDto` for the active `POST /goals`, `PATCH /goals/:id`, and `POST /goals/:id/checkin` endpoints. All three DTO classes are plain TypeScript property declarations and contain no `class-validator` decorators. The global `ValidationPipe` enables `whitelist: true` and `forbidNonWhitelisted: true`, so ordinary request properties are not represented as allowed validation metadata and are expected to be rejected before reaching `GoalsService`. Impact: the primary Goals create/update/check-in write paths are effectively blocked by the project's own runtime validation policy until the DTOs are decorated/validated or the global policy is intentionally changed. This is grouped separately from PB-232 because the affected active domain and contracts are distinct.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
