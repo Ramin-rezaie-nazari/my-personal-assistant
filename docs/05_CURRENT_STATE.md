@@ -11,7 +11,7 @@ This root-level file is the canonical location required by the MYPA audit protoc
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Audit branch: `audit/project-brain-2026-09-11`
-- Latest audit checkpoint: BATCH-0017 active Shopping batch-write transaction continuation; current documentation remains audit-only.
+- Latest audit checkpoint: BATCH-0018 validation sweep + CI evidence + Project Brain inventory continuation; current documentation remains audit-only.
 - Audit is IN_PROGRESS.
 - No production-code modification has been made by this audit branch work; changes remain documentation/audit-only.
 
@@ -24,6 +24,9 @@ This root-level file is the canonical location required by the MYPA audit protoc
 - CI/release workflows and package-script entrypoints were reconciled.
 - Memory Intelligence, Goals, Calendar, Preferences, Settings, Onboarding, Health DTOs, Yoga pose pipeline and notification contracts were directly inspected.
 - Active Shopping `addRecipeMissing()` and its Recipe Food Operating Loop consumer were inspected for batch-write consistency.
+- Active Habits/Workout/Supplements/LifeExecution DTO/controller contracts were rechecked against the global ValidationPipe.
+- Project Brain inventories, current Open Work catalog, deep-read directory, and full current Appendix blob were re-read; the historical Appendix gap remains unresolved and no missing historical finding IDs were invented.
+- GitHub Actions run/job evidence for the Recipe image import workflow was checked; run `34613481370` failed during frozen-lockfile dependency installation before the import step.
 - Historical high-value PRs/branches remain branch-only unless explicit merge evidence exists.
 
 ## Important current findings
@@ -49,6 +52,8 @@ This root-level file is the canonical location required by the MYPA audit protoc
 - PB-235: Goal check-in performs logically coupled parent/child writes without a transaction.
 - PB-240: Price Intelligence controller exposes collection/mutation surfaces without authentication or user scoping.
 - PB-241: Shopping recipe-missing batch can partially persist basket changes on mid-batch failure because sequential `addToBasket()` writes are not transactionally grouped.
+- PB-242: Recipe image CI is currently blocked by package/lockfile drift under `pnpm install --frozen-lockfile`, with evidence from real run `34613481370`.
+- PB-243: provisional validation-sweep finding groups active undecorated class DTOs, but it must be reconciled against historical PB-077/PB-085/PB-089 before final catalog freeze to avoid duplicate root-cause IDs.
 
 ## Validation state
 
@@ -60,8 +65,8 @@ High-value open feature lines are not equivalent to merged production state. PR 
 
 ## Progress accounting
 
-A trustworthy repo-wide completion percentage is not recalculated in this continuation. The Master Prompt remains open until the remaining repository-wide source/test/consumer, database/transaction, security/privacy, runtime, and historical closure gates are reconciled.
+The audit remains approximately in the high-70% range by the prior working estimate, but this is not a file-count metric and is not treated as a completion claim. The Master Prompt remains open until the remaining repository-wide source/test/consumer, database/transaction, security/privacy, runtime, and historical closure gates are reconciled.
 
 ## Next audit step
 
-Continue the Master Prompt with exhaustive database reader/writer/transaction/relation/index reconciliation, remaining backend↔mobile DTO/test mapping, security/privacy retention/deletion closure, remaining common/platform/test and legacy-source inventory, and final historical reconciliation. Only after that audit scope is fully closed should the separate correction/remediation phase begin.
+Continue the Master Prompt without interruption: exhaustively reconcile database readers/writers/transactions/relations/indexes, finish backend↔mobile DTO/test/consumer mapping, close security/privacy/retention/deletion gaps, finish common/platform/test and legacy operational source inventory, and complete historical Project Brain restoration/reconciliation. Only after that audit scope is fully closed should the separate correction/remediation phase begin.
