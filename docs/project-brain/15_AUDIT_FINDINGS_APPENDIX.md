@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-241
+## Findings PB-156 through PB-242
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -165,7 +165,7 @@ Evidence: recipe create/update, child deletes, `recipeIngredient` inserts and la
 
 ### PB-194 — Recipe image operational scripts hard-limit assets to 60KB, diverging from the MYPA image-processing target
 Status: OPEN — PRODUCT/ASSET CONTRACT
-Locations: `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `apps/backend/scripts/recipe-image-import.mjs`, `apps/backend/scripts/recipe-image-import-all-safe.mjs` (`MAX_BYTES = 60 * 1024`), plus `docs/recipe-image-data-architecture.md` processing contract.
+Locations: `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `recipe-image-import.mjs`, `recipe-image-import-all-safe.mjs` (`MAX_BYTES = 60 * 1024`), plus `docs/recipe-image-data-architecture.md` processing contract.
 Evidence: the inspected operational image import paths explicitly target WebP output at or below 60KB, and the root image-data architecture document also defines a hard maximum of 60KB, while the Master Prompt image-processing contract sets a target of approximately 100–150KB for mobile-friendly quality. Impact: the current operational/documented image cap is materially below the higher-level target and may force unnecessary quality/dimension degradation; the canonical image pipeline policy is not aligned across implementation documentation and project requirements.
 
 ### PB-195 — Multiple versioned country-intelligence implementations remain executable and only one is package-wired
@@ -402,6 +402,11 @@ Evidence: `PriceIntelligenceController` declares `@Controller('price-intelligenc
 Status: OPEN — DATA INTEGRITY HIGH
 Location: `apps/backend/src/modules/shopping/shopping.service.ts`, `addRecipeMissing()` and `addToBasket()`.
 Evidence: `addRecipeMissing()` validates the recipe and filters the requested items, then iterates `for (const item of valid) await this.addToBasket(...)`. `addToBasket()` performs independent `findUnique`/`findFirst`/`update` or `create` operations with no enclosing `prisma.$transaction()`. If a later item fails after earlier items have already been added/updated, the earlier basket mutations remain committed and the method returns an error rather than an all-or-nothing result. The active controller exposes this operation through the authenticated Shopping route, and the Recipe Food Operating Loop also consumes the same service method, so this is an active cross-domain write path rather than an orphan helper. Impact: a recipe's missing-ingredient batch can leave a partially populated shopping basket, making retries non-idempotent from the user's perspective and potentially producing duplicate quantity increments on repeated attempts. This is distinct from PB-235 because it concerns the Shopping aggregate and batch write path, not Goal check-in parent/child consistency.
+
+### PB-242 — Recipe image CI cannot install the repository dependencies with the committed lockfile
+Status: OPEN — CI/BUILD HIGH
+Locations: `.github/workflows/recipe-image-import.yml`, root `pnpm-lock.yaml`, `apps/backend/package.json`; CI run `34613481370` on `main` at `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`.
+Evidence: the `Recipe image import` workflow uses `pnpm install --frozen-lockfile`. The observed GitHub Actions run `34613481370` failed in its `Install dependencies` step before the image-import step, so the workflow could not reach the intended job. The failure log reported `ERR_PNPM_OUTDATED_LOCKFILE` and specifically identified `sharp@^0.34.2` as missing from the lockfile, while also reporting lockfile entries for `prisma`, `supertest`, and `typescript` that are absent from the current package manifest and additional specifier/version mismatches. The workflow's toolchain setup itself completed successfully before this install failure. Impact: the committed dependency graph is not reproducible under the repository's own frozen-lockfile CI policy, and the recipe-image automation is currently blocked before execution. This is distinct from feature-script defects such as PB-203/194 because it prevents dependency installation at the workflow level.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
