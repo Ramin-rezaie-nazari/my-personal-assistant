@@ -2,9 +2,9 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: current-main baseline/Core; complete Prisma schema + all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain file-level scope; complete Food/Recipe/Nutrition/Meals/Recommendation/Budget file-level scope; relevant recipe nutrition script; complete enumerated Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; complete enumerated Life/Health; complete enumerated Fitness/Workout/Calisthenics/Gym/Yoga and related Personal Brain consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/components; remaining identified Mobile library contracts/scripts; BATCH-0012 backend controller inventory and selected mobile consumer reconciliation; initial BATCH-0013 operational recipe scripts.
-Scope not yet read: exhaustive backend operational scripts; any Mobile source outside current audited trees if present; exhaustive platform/common/test inventory; repository-wide route/consumer/DB transaction map; runtime validation; full security/privacy; historical docs/branches.
-Evidence roots: target `main` commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`; audit branch `audit/project-brain-2026-09-11`; `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`.
+Scope actually read: current-main baseline/Core; complete Prisma schema + all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain file-level scope; complete Food/Recipe/Nutrition/Meals/Recommendation/Budget file-level scope; relevant recipe nutrition script; complete enumerated Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; complete enumerated Life/Health; complete enumerated Fitness/Workout/Calisthenics/Gym/Yoga and related Personal Brain consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/components; remaining identified Mobile library contracts/scripts; BATCH-0012 backend controller inventory and selected mobile consumer reconciliation; initial BATCH-0013 operational recipe scripts; BATCH-0018 active DTO validation sweep, Project Brain inventory and CI run evidence.
+Scope not yet read: exhaustive backend operational scripts; any Mobile source outside current audited trees if present; exhaustive platform/common/test inventory; repository-wide route/consumer/DB transaction map; runtime validation; full security/privacy; historical docs/branches; complete route↔DTO↔test↔mobile mapping; complete DB reader/writer/relation/index matrix.
+Evidence roots: target `main` commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`; audit branch `audit/project-brain-2026-09-11`; `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`.
 Confidence level: HIGH for closed file-read scopes; MEDIUM for cross-module semantics; LOW for whole-repository completion.
 Open questions: exact repo-wide source/line inventory; native/generated-media boundaries; live DB drift; route/mobile/database consumers; runtime tests/build/device validation; historical reconciliation; script canonicality/deprecation policy.
 
@@ -25,42 +25,11 @@ Open questions: exact repo-wide source/line inventory; native/generated-media bo
 | BATCH-0011 | Mobile residual library contract scope | READ_COMPLETELY | `design-system.ts`, `motion-components.tsx`, `branding.ts`, `branding.spec.ts`, notification contract/spec read; active consumers checked where relevant |
 | BATCH-0012 | Backend route/API/controller inventory + selected consumers | IN_PROGRESS | Controller/path/guard inventory largely read; DTO/test/mobile consumer reconciliation remains open. PB-186/PB-187 added. |
 | BATCH-0013 | Backend operational scripts | IN_PROGRESS | Began with `recipe-content-import.mjs`, `recipe-image-import.mjs`, `recipe-image-dataset-import-v2.mjs`, `recipe-image-import-all-safe.mjs`, `recipe-country-intelligence-final.mjs`; PB-188..PB-190 added. |
-
-## BATCH-0011 exact files
-
-- `apps/mobile/lib/design-system.ts`
-- `apps/mobile/lib/motion-components.tsx`
-- `apps/mobile/lib/branding.ts`
-- `apps/mobile/lib/branding.spec.ts`
-- `apps/mobile/lib/notifications/notification-contract.ts`
-- `apps/mobile/lib/notifications/notification-contract.spec.ts`
-
-## BATCH-0012 exact read highlights
-
-- `apps/backend/src/app.module.ts`
-- `apps/backend/src/app.controller.ts`
-- `apps/backend/src/main.ts`
-- `apps/backend/src/app.service.ts`
-- backend auth controller/service/session/token files
-- active backend controller inventory across Core, Brain, Food, Commerce, Life/Health, Fitness, Dashboard and intelligence modules
-- `apps/mobile/lib/api.ts` route consumers searched for cross-layer reconciliation
-
-## BATCH-0013 initial exact files
-
-- `apps/backend/scripts/recipe-content-import.mjs`
-- `apps/backend/scripts/recipe-image-import.mjs`
-- `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`
-- `apps/backend/scripts/recipe-image-import-all-safe.mjs`
-- `apps/backend/scripts/recipe-country-intelligence-final.mjs`
-- `apps/backend/package.json` operational script wiring
-
-## Mobile inventory notes
-
-- `apps/mobile/components/` contains exactly seven source files in the inspected Git tree; all seven were read in BATCH-0010.
-- `apps/mobile/scripts/` contains exactly two current `.cjs` files in the inspected Git tree; both were read in BATCH-0010.
-- `apps/mobile/app/` top-level tree snapshot was enumerated; BATCH-0009 read the listed routes, with nested `meal/[id].tsx` accounted for.
-- `apps/mobile/lib/` tree snapshot was enumerated; BATCH-0011 closed the remaining identified root/notification contract files after the prior client/runtime reads.
-- Assets under `apps/mobile/assets/` are treated as imported/generated media rather than ordinary source code, while branding/media contracts remain part of cross-contract review.
+| BATCH-0014 | Mobile library + backend startup/config continuation | IN_PROGRESS | Domain clients, startup/config, branding, operational script continuation; PB-218..PB-220. |
+| BATCH-0015 | CI/workflow + Adaptive Learning continuation | IN_PROGRESS | CI workflows, package manifests, Adaptive Learning services; PB-221..PB-223. |
+| BATCH-0016 | Backend validation/Goals/Calendar/Memory continuation | IN_PROGRESS | ValidationPipe, active write DTOs, Goals/Calendar/Memory, Yoga/notifications; PB-231..PB-235. |
+| BATCH-0017 | Shopping transaction continuation | IN_PROGRESS | Shopping `addRecipeMissing()` and Recipe Food Operating Loop consumer; PB-241. |
+| BATCH-0018 | Validation sweep + CI evidence + Project Brain inventory | IN_PROGRESS | Active Habits/Workout/Supplements/LifeExecution DTO/controller surfaces; current Open Work/Appendix/Project Brain inventories; Recipe image CI failed run evidence; PB-242 plus provisional PB-243 pending duplicate reconciliation. |
 
 ## Database
 
