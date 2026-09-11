@@ -2,23 +2,8 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, continued operational-script/legacy-variant review including recipe image reprocessors, food entity resolvers, recipe intelligence classify/profile/nutrition/score, relevant recipe migrations, local recipe-image pipeline variants, backend common/config/bootstrap/i18n/image boundary, historical high-value PR/branch reconciliation, continued Mobile domain-client review, CI/release/onboarding/session lifecycle review, raw-SQL destructive-operation sweep, Brain history/retention implementation and conversation persistence/deletion paths, account-erasure surface; backend CI/E2E database lifecycle; duplicate UsersController and HealthController reconciliation; root repository docs/roadmap; Mobile app/package/config/runtime entrypoints and selected route screens including assistant, auth, brain overview, calendar, command center v2, daily, plus mobile notification registration/runtime and local Persian TTS; additional Mobile routes habits, inventory, insights, language, meals, meal-builder, meal detail, notifications, reminders, onboarding, price-history, recipe-match, shopping, smart-meals, supplements, yoga; Mobile i18n contract; additional Mobile library/domain clients, branding components/assets, backend common startup/config/database/i18n/images, and continuation of operational scripts including food resolvers, content audit/import, ingredient intelligence and guaranteed media mirror.
-Scope not yet read: remaining repository source outside current audited trees, full matrices, exhaustive operational scripts, runtime execution, complete security/privacy reconciliation.
-Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/backend/prisma/`, `apps/backend/scripts/`, `apps/backend/`, `apps/mobile/`, `.github/workflows/`, `docs/`, `docs/project-brain/`.
-Confidence: HIGH for source-level findings below unless explicitly marked validation-needed.
 
-## Correction log
-
-### PB-112 — NOT_APPLICABLE
-Earlier audit text said Mobile Brain `execute-next`/feedback routes were missing. That was disproven. `apps/backend/src/modules/personal-brain/controllers/decision-execution.controller.ts` exposes `POST /personal-brain/decision/execute-next` and `POST /personal-brain/decision/confirm`, both JWT guarded. `apps/backend/src/modules/personal-brain/controllers/decision-feedback.controller.ts` exposes `POST /personal-brain/decision/feedback`, also JWT guarded. No repair is required for the original PB-112 route-existence claim.
-
-### PB-167 — NOT_APPLICABLE
-Earlier appendix text said `ContentModule` was orphaned. That was disproven by direct inspection of `apps/backend/src/app.module.ts`, which imports `ContentModule` in the active Nest `imports` array. The old PB-167 statement is not an open issue and must not be counted.
-
-### PB-171 — CORRECTED SCOPE
-The earlier PB-171 wording incorrectly included `apps/backend/src/modules/users/users.controller.ts` as an active affected controller. The active `UsersModule` imports `apps/backend/src/modules/users/controllers/users.controller.ts`, whose methods correctly read `req.user.id` under the current `JwtStrategy` return shape. The root-level `users.controller.ts` is a duplicate/orphan source file and is not the active controller. PB-171 therefore remains OPEN for `apps/backend/src/modules/fitness/controllers/fitness.controller.ts` only.
-
-## New findings
+## Findings PB-156 through PB-229
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -348,5 +333,20 @@ Status: OPEN — ARCHITECTURE/API CONTRACT/TEST GAP
 Locations: `apps/backend/src/modules/decision-engine/services/decision-engine.service.ts`, `apps/backend/src/modules/decision-engine/dto/create-decision.dto.ts`, `apps/backend/src/modules/decision-engine/decision-engine.module.ts`, `apps/backend/src/modules/decision-engine/controllers/decision-engine.controller.ts`.
 Evidence: `DecisionEngineController.evaluate()` injects and calls `ActionDecisionService.generate()`, not `DecisionEngineService.makeDecision()`. The latter accepts no input and returns only `{ message: 'Decision generated', actions: [] }`; repository search finds `DecisionEngineService` references only in its own file, module registration, and architecture documentation. `CreateDecisionDto` contains `context` and `priority` fields but has no validation decorators and is not used by the active controller, which accepts only `dateKey`. There is also no direct `ActionDecisionService` spec or `RuleEvaluationService` spec in the inspected tree; only `DecisionScoringService` has a focused spec. Impact: the decision domain exposes stale placeholder service/DTO artifacts while the active controller uses a different service path, increasing maintenance ambiguity and leaving the active decision path with incomplete direct test coverage. This is not being treated as an active runtime failure of `GET /decision-engine`; it is an architecture/contract/test-quality finding.
 
-## Reconciliation note
-Preserve oldest canonical IDs when the same root cause already exists elsewhere. Correction-only IDs remain NOT_APPLICABLE/COVERED_BY notes and must not be double-counted.
+### PB-228 — Personal Brain response planning ignores persisted user language and forces Persian
+Status: OPEN — CROSS-LAYER LOCALIZATION/BEHAVIOR HIGH
+Locations: `apps/backend/src/modules/conversation-engine/services/conversation-style.service.ts`, `apps/backend/src/modules/personal-brain/services/response-planning.service.ts`, `apps/backend/src/modules/personal-brain/types/response-planning-input.types.ts`, `apps/backend/src/modules/personal-brain/services/brain-orchestrator.service.ts`, `apps/backend/src/modules/personal-brain/services/brain-orchestrator.service.spec.ts`, persisted `UserSettings.language` contract.
+Evidence: `ConversationStyleService.getDefaultStyle()` always returns `language: 'fa'`. `ResponsePlanningService.createPlan()` only receives `ResponsePlanningInput`, calls `getDefaultStyle()`, and writes `style.language` into the response plan. The active orchestrator path does not inject or pass the authenticated user's persisted `UserSettings.language` into response planning. The planner also contains English fallback strings, so the response can combine Persian language metadata with English message text. The `BrainOrchestratorService` spec mocks the response-planning service rather than asserting locale behavior. Impact: the active Personal Brain response layer is not aligned with the user's selected backend language preference and lacks a regression test for that contract. This is distinct from the Mobile route localization findings because it occurs in the active backend Brain response-generation path.
+
+### PB-229 — Assistant MemoryService is registered as a non-functional orphan provider
+Status: OPEN — ARCHITECTURE/FEATURE
+Locations: `apps/backend/src/modules/assistant/services/memory.service.ts`, `apps/backend/src/modules/assistant/assistant.module.ts`, `apps/backend/docs/04_ARCHITECTURE_ATLAS.md`.
+Evidence: `MemoryService.storeMemory()` accepts no memory payload and returns only `{ message: 'Memory engine ready' }`; `getMemories()` accepts no user/context and always returns `[]`. `AssistantModule` registers the provider, and the architecture atlas lists it as an Assistant component, but repository search found no active controller/service consumer of `MemoryService`. The active Assistant/Brain stack uses separate context, Brain-memory, and conversation-history services. Impact: the registered Memory capability is non-functional and disconnected from the live Assistant flow, creating stale architecture and false confidence about memory behavior. This is separate from PB-226 because PB-229 covers the dedicated memory provider and its empty storage/read implementation.
+
+## Correction log
+- PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
+- PB-167: NOT_APPLICABLE; ContentModule is imported by active AppModule.
+- PB-171 scope corrected: Users controller is not affected; active Fitness controller only.
+
+## Audit control note
+Do not start remediation until the Master Prompt audit closure is genuinely complete. Preserve all existing finding IDs and never invent historical IDs. Runtime/build/device validation is still unverified because the repository could not be executed locally in this session.
