@@ -240,102 +240,43 @@ export class PersonalBrainController {
       req.user.id,
     );
     return this.fitnessSessionOrchestratorService.generate(context, {
-      durationMin: Math.min(
-        120,
-        Math.max(5, Math.round(body.durationMin ?? 30)),
-      ),
+      durationMin: body.durationMin,
       level: body.level,
       focus: body.focus,
     });
   }
-  @Post('fitness/performance')
-  @UseGuards(JwtAuthGuard)
-  async recordFitnessPerformance(
-    @Body()
-    body: {
-      discipline: string;
-      exerciseId?: string;
-      exerciseName?: string;
-      sessionId?: string;
-      workoutId?: string;
-      formScore?: number;
-      completionRate?: number;
-      perceivedDifficulty?: number;
-      recoveryScore?: number;
-      reps?: number;
-      sets?: number;
-      durationSeconds?: number;
-      loadKg?: number;
-      metadata?: Record<string, unknown>;
-      performedAt?: string;
-    },
+  @Get('fitness/unlocks') @UseGuards(JwtAuthGuard) async getFitnessUnlocks(
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.workoutPerformanceMemoryService.record({
-      ...body,
+    return this.fitnessSkillUnlockService.list(req.user.id);
+  }
+  @Get('fitness/performance') @UseGuards(JwtAuthGuard) async getFitnessPerformance(
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.workoutPerformanceMemoryService.recent(req.user.id, 20);
+  }
+  @Post('fitness/performance') @UseGuards(JwtAuthGuard) async recordFitnessPerformance(
+    @Body() body: Record<string, unknown>,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.workoutPerformanceMemoryService.record(req.user.id, body);
+  }
+  @Post('coach/message') @UseGuards(JwtAuthGuard) async coachMessage(
+    @Body() body: { message?: string; language?: SupportedLanguage },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.coachMessageService.build({
       userId: req.user.id,
-      performedAt: body.performedAt ? new Date(body.performedAt) : undefined,
+      message: body.message?.trim() ?? '',
+      language: body.language,
     });
   }
-  @Get('fitness/performance')
-  @UseGuards(JwtAuthGuard)
-  async getFitnessPerformance(@Req() req: AuthenticatedRequest) {
-    return this.workoutPerformanceMemoryService.get(req.user.id, 28);
-  }
-  @Get('fitness/skills') @UseGuards(JwtAuthGuard) async getFitnessSkills(
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.fitnessSkillUnlockService.evaluateCalisthenicsSkills(
-      req.user.id,
-    );
-  }
-  @Get('schedule/today') @UseGuards(JwtAuthGuard) async getTodaySchedule(
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.fullDaySchedulerService.buildDay(req.user.id);
-  }
-  @Get('schedule/replan') @UseGuards(JwtAuthGuard) async replan(
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.dynamicReplanningService.replanRemainingDay(req.user.id);
-  }
-  @Get('schedule/insights') @UseGuards(JwtAuthGuard) async getScheduleInsights(
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.scheduleInsightsService.getInsights(req.user.id);
-  }
-  @Get('schedule/health') @UseGuards(JwtAuthGuard) async getScheduleHealth(
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.scheduleHealthService.evaluate(req.user.id);
-  }
-  @Get('schedule/replan-decision')
-  @UseGuards(JwtAuthGuard)
-  async getReplanDecision(@Req() req: AuthenticatedRequest) {
-    return this.replanPolicyService.decide(req.user.id);
-  }
-  @Get('schedule/recovery') @UseGuards(JwtAuthGuard) async getScheduleRecovery(
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.scheduleRecoveryService.analyze(req.user.id);
-  }
-  @Get('next-action') @UseGuards(JwtAuthGuard) async getNextAction(
-    @Req() req: AuthenticatedRequest,
-  ) {
-    return this.nextBestActionService.get(req.user.id);
-  }
-  @Get('coach/next') @UseGuards(JwtAuthGuard) async getCoachNext(
+  @Get('coach/proactive') @UseGuards(JwtAuthGuard) async proactiveCoach(
     @Req() req: AuthenticatedRequest,
   ) {
     return this.proactiveCoachService.getNextCoach(req.user.id);
   }
-  @Get('coach/message') @UseGuards(JwtAuthGuard) async getCoachMessage(
-    @Req() req: AuthenticatedRequest,
-  ) {
-    const language = req.query.language === 'fa' ? 'fa' : 'en';
-    return this.coachMessageService.getMessage(req.user.id, language);
-  }
-  @Get('coach/events') @UseGuards(JwtAuthGuard) async getCoachEvents(
+  @Get('coach/events') @UseGuards(JwtAuthGuard) async coachEvents(
     @Req() req: AuthenticatedRequest,
   ) {
     return this.proactiveEventEngineService.buildEvents(req.user.id);
@@ -414,7 +355,10 @@ export class PersonalBrainController {
     @Body() body: { deviceId: string },
     @Req() req: AuthenticatedRequest,
   ) {
-    return this.notificationDeviceRegistryService.disable(body.deviceId);
+    return this.notificationDeviceRegistryService.disableForUser(
+      body.deviceId,
+      req.user.id,
+    );
   }
   @Post('scenario/compare') @UseGuards(JwtAuthGuard) async compareScenarios(
     @Body()
