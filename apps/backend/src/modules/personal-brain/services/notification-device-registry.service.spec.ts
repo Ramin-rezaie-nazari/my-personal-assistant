@@ -32,4 +32,18 @@ describe('NotificationDeviceRegistryService', () => {
     service.enable(device.id);
     expect(service.listEnabled('u1')).toHaveLength(1);
   });
+
+  it('does not allow one user to disable another user\'s device', () => {
+    const service = new NotificationDeviceRegistryService();
+    const device = service.register({
+      userId: 'u1',
+      platform: 'android',
+      pushToken: 'token-owner',
+    });
+
+    expect(service.disableForUser(device.id, 'u2')).toBeNull();
+    expect(service.listEnabled('u1')).toHaveLength(1);
+    expect(service.disableForUser(device.id, 'u1')?.enabled).toBe(false);
+    expect(service.listEnabled('u1')).toHaveLength(0);
+  });
 });
