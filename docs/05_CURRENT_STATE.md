@@ -11,35 +11,35 @@ This root-level file is the canonical location required by the MYPA audit protoc
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Audit branch: `audit/project-brain-2026-09-11`
-- Latest audit checkpoint commit in this continuation: `f1c5e2dc1b8f7064c65e06275564050ffb5f041d`
+- Latest audit checkpoint: continuing BATCH-0013 / Master Prompt closure; current documentation remains audit-only.
 - Audit is IN_PROGRESS.
 - No production-code modification has been made by this audit branch work; changes remain documentation/audit-only.
-- BATCH-0013 remains focused on operational recipe/food/image scripts and the remaining cross-module reconciliation needed by the Master Prompt.
 
 ## Verified scope in this continuation
 
-- Project Brain changelog and canonical findings appendix were re-read to resume from the existing audit checkpoint.
-- Backend common config/bootstrap/database/i18n/image-pipeline boundaries were inspected.
-- Backend Auth↔Fitness identity flow was re-checked.
-- Mobile API/auth/session contract was re-checked.
-- Historical high-value PRs/branches were reconciled at metadata/patch level: PR #48 (open, unmergeable), PR #49 (open, mergeable), and PR #66 (draft autonomous-control-plane/local-media workstream).
-- Current audit-branch commit status was inspected; no status checks are attached to the latest audit commit, so no new CI-green claim is made.
-- Findings through PB-204 remain canonical in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`.
+- Backend route↔mobile consumer reconciliation was extended across Meals/Nutrition, Calendar, Reminders, Notifications, Habits, Supplements, Inventory, Shopping, Recipe Match, Assistant, Onboarding and Daily Command Center.
+- Mobile domain transport clients were compared against the canonical refresh/retry behavior.
+- Backend common config/bootstrap/database/i18n/image-pipeline boundaries were rechecked.
+- Raw-SQL ownership/destructive-operation paths were rechecked for Goals, ConversationTurn, LifeTask, TaskDependency, WorkoutPerformance and Price Intelligence.
+- CI/release workflows and package-script entrypoints were reconciled.
+- Historical high-value PRs/branches remain branch-only unless explicit merge evidence exists.
 
-## Important verified findings
+## Important current findings
 
-- PB-188: `recipe-content-import.mjs` references Prisma delegates not present in the final Prisma schema.
-- PB-192/PB-193: recipe content import is not restartable by exposed batch position and related writes are not transactionally grouped.
-- PB-194/PB-197: recipe image operational variants disagree on image-size and `hero`/`primary` contracts.
-- PB-195: multiple country-intelligence executables remain alongside the package-wired final implementation.
-- PB-196: quality reprocessing LIMIT is positional and not checkpointed.
-- PB-198: final food-intelligence self-test exists but is not exposed by the observed package/CI path.
-- PB-199: recipe quality score producer/consumer scales disagree (fraction versus percent), effectively nullifying the quality contribution in the scorer.
-- PB-200: nutrition estimates lack source/version provenance for hard-coded nutrient constants and household conversions.
-- PB-201/PB-202: image reset/import pagination is asymmetric and can produce orphaned storage or repeated work on datasets beyond 1000 rows.
-- PB-203: local guaranteed-v8 image orchestration references missing executable scripts.
-- PB-204: country/region preference scoring expects fields that its own relation query does not select.
-- PR #66 confirms that the newer local-media workstream is branch-scoped and not merged into `main`; its declared 20–150KB, 1–4-image target reinforces PB-194 rather than replacing current-main behavior.
+- PB-188: recipe content importer calls `prisma.recipeStep`/`prisma.recipeMedia` delegates absent from final `schema.prisma`.
+- PB-192/PB-193: recipe content import is first-batch-only and not transactionally grouped.
+- PB-194/PB-197: image size and hero/primary contracts disagree across operational variants.
+- PB-198: final food-intelligence self-test exists but is not package/CI wired.
+- PB-199: recipe quality score is written as a fraction but divided by 100 in ranking.
+- PB-200: nutrition estimator hard-coded constants lack source/version provenance.
+- PB-201/PB-202: image reset/import pagination can orphan storage or repeat work beyond 1000 rows.
+- PB-203: local guaranteed-v8 image orchestration references missing scripts.
+- PB-204: country preference scoring expects relation fields that its query does not select.
+- PB-205: several Mobile domain API clients bypass canonical 401 refresh/retry handling.
+- PB-206: recipe content release workflow references undefined backend package scripts.
+- PB-207: Mobile onboarding completion is local-only and does not synchronize backend onboarding/profile state.
+- PB-208: refresh tokens are stored in plaintext in the Session persistence model.
+- PB-209: persisted Session `expiresAt` is not enforced in refresh-token lookup.
 
 ## Validation state
 
@@ -47,7 +47,7 @@ Source-level inspection has been performed for the listed files. Runtime executi
 
 ## Historical reconciliation state
 
-High-value open feature lines are not equivalent to merged production state. PR #48 is open and currently unmergeable; PR #49 is open and mergeable against `feature/global-settings-mobile`; PR #66 is a draft against `main`. They require selective integration review rather than force-merging historical work.
+High-value open feature lines are not equivalent to merged production state. PR #48 is open/unmergeable, PR #49 is open/mergeable only against its feature base, and PR #66 remains a draft branch-only workstream. No historical line is treated as current-main production behavior without explicit merge evidence.
 
 ## Progress accounting
 
@@ -55,4 +55,4 @@ A trustworthy repo-wide completion percentage is not recalculated in this contin
 
 ## Next audit step
 
-Continue the Master Prompt with exhaustive route↔DTO↔test↔mobile reconciliation, remaining common/platform/test/legacy source closure, repository-wide database reader/writer/transaction mapping, security/privacy closure, and final historical branch reconciliation. Only after that audit scope is fully closed should the separate correction/remediation phase begin.
+Continue the Master Prompt with exhaustive database reader/writer/transaction/relation/index reconciliation, remaining backend↔mobile DTO/test mapping, security/privacy retention/deletion closure, remaining common/platform/test and legacy-source inventory, and final historical reconciliation. Only after that audit scope is fully closed should the separate correction/remediation phase begin.
