@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -61,7 +62,7 @@ model AuthAccount {
 model Session {
   id String @id @default(uuid())
   userId String
-  refreshToken String
+  refreshTokenHash String @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -247,9 +248,9 @@ model RecipeIngredient {
   batchSize Float?
   maxLinearMultiplier Float?
   calories Int @default(0)
-  protein Float @default(0)
-  carbs Float @default(0)
-  fat Float @default(0)
+  protein Int @default(0)
+  carbs Int @default(0)
+  fat Int @default(0)
   createdAt DateTime @default(now())
   recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   food FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
