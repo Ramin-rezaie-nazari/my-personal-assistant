@@ -11,7 +11,7 @@ This root-level file is the canonical location required by the MYPA audit protoc
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Audit branch: `audit/project-brain-2026-09-11`
-- Latest audit checkpoint: continuing BATCH-0013 / Master Prompt closure; current documentation remains audit-only.
+- Latest audit checkpoint: BATCH-0016 validation-contract + Goals/Calendar/Memory continuation; current documentation remains audit-only.
 - Audit is IN_PROGRESS.
 - No production-code modification has been made by this audit branch work; changes remain documentation/audit-only.
 
@@ -22,6 +22,7 @@ This root-level file is the canonical location required by the MYPA audit protoc
 - Backend common config/bootstrap/database/i18n/image-pipeline boundaries were rechecked.
 - Raw-SQL ownership/destructive-operation paths were rechecked for Goals, ConversationTurn, LifeTask, TaskDependency, WorkoutPerformance and Price Intelligence.
 - CI/release workflows and package-script entrypoints were reconciled.
+- Memory Intelligence, Goals, Calendar, Preferences, Settings, Onboarding, Health DTOs, Yoga pose pipeline and notification contracts were directly inspected.
 - Historical high-value PRs/branches remain branch-only unless explicit merge evidence exists.
 
 ## Important current findings
@@ -40,6 +41,11 @@ This root-level file is the canonical location required by the MYPA audit protoc
 - PB-207: Mobile onboarding completion is local-only and does not synchronize backend onboarding/profile state.
 - PB-208: refresh tokens are stored in plaintext in the Session persistence model.
 - PB-209: persisted Session `expiresAt` is not enforced in refresh-token lookup.
+- PB-231: Yoga pose analysis has an uncancelled async stop race.
+- PB-232: active Memory Intelligence write body conflicts with the global `ValidationPipe` whitelist/forbid policy.
+- PB-233: active Goals write/check-in DTOs conflict with the global `ValidationPipe` whitelist/forbid policy.
+- PB-234: active Calendar create/update write contracts conflict with the global `ValidationPipe` whitelist/forbid policy.
+- PB-235: Goal check-in performs logically coupled parent/child writes without a transaction.
 
 ## Validation state
 
