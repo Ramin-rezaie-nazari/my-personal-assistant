@@ -60,6 +60,15 @@ export class NotificationDeviceRegistryService {
     device.updatedAt = now.toISOString();
     return device;
   }
+
+  disableForUser(id: string, userId: string, now = new Date()) {
+    const device = this.devices.get(id);
+    if (!device || device.userId !== userId) return null;
+    device.enabled = false;
+    device.updatedAt = now.toISOString();
+    return device;
+  }
+
   enable(id: string, now = new Date()) {
     const device = this.devices.get(id);
     if (!device) return null;
