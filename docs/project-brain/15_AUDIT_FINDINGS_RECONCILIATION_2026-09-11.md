@@ -18,6 +18,10 @@ This produces two observable defects from the same code:
 
 Therefore PB-250 must be **merged into PB-160's evidence/impact**, not retained as a separate ID.
 
+## PB-199 reconciliation
+
+`PB-199` requires **withdrawal/reclassification before canonical freeze** as a current-main runtime finding. Its evidence describes a producer/consumer normalization mismatch between `recipe-ingest.mjs` and `recipe-recommendation-score.mjs`. Current main still contains the producer and writes fractional `quality_score` values, but the referenced `recipe-recommendation-score.mjs` executable is absent from current main; the executable exists on `agent/mypa-autonomous-control-plane`. Therefore the scorer-side normalization defect is not currently executable from the audited main tree. The current-main package/source contract defect is already captured by **PB-256**. The normalization observation should be retained as lineage evidence attached to PB-256 or a future remediation note, not retained as a separate active PB-199 finding unless the scorer is restored to main and the defect is re-verified there.
+
 ## PB-251 reconciliation status
 
 PB-251 remains **provisional and distinct from PB-250**. The package entry `recipe-images:retry-quality` points to an executable absent from current main, while the same path exists on `agent/mypa-autonomous-control-plane`. This establishes a branch-lineage discrepancy but not the intent of the merge state. Keep distinct from PB-196 (bounded reprocess restartability) and reconcile whether the package entry is stale or the source was accidentally omitted before final freeze.
@@ -70,6 +74,7 @@ Evidence result:
 - `apps/backend/package.json` currently advertises executable targets that are absent from main for retry-quality, nutrition estimation, and recommendation scoring.
 - The missing nutrition/scoring files and retry-quality file exist on the autonomous-control-plane branch, so these findings are not safely classifiable as simple filename typos.
 - v8's missing v7/strict-v3/status helpers likewise exist on the autonomous-control-plane branch.
+- `PB-199` is therefore not treated as an independently active current-main scorer defect; its scorer-side normalization observation is retained as lineage evidence under PB-256 pending restoration/reverification.
 - No new finding was created solely from the branch discrepancy; the existing provisional IDs remain the minimal distinct set.
 
 ## BATCH-0025 — Raw-SQL / ownership / delete-surface revalidation
