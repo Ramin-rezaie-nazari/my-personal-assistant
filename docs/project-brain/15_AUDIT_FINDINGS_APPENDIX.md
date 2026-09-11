@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-239
+## Findings PB-156 through PB-240
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -392,6 +392,11 @@ Evidence: when stored behavior metadata lacks numeric `hour` or `weekday`, the s
 Status: OPEN — ARCHITECTURE/FEATURE
 Locations: `apps/backend/src/modules/user-intelligence/services/user-profile.service.ts`, `apps/backend/src/modules/user-intelligence/user-intelligence.module.ts`, `apps/backend/src/modules/user-intelligence/controllers/user-intelligence.controller.ts`.
 Evidence: `UserProfileService.buildProfile()` and `updateProfile()` accept no user/profile input, perform only `await Promise.resolve()`, and return placeholder messages (`User profile built` / `User profile updated`). `UserIntelligenceModule` registers and exports `UserProfileService`, but `UserIntelligenceController` injects only `UserIntelligenceService` and `LearningService`; repository search found no other consumer of `UserProfileService`. The active `GET /user-intelligence` path instead calls `UserIntelligenceService.getProfile()`, which reads `UserFact`, `UserInsight`, and behavioral learning. Impact: the named user-profile intelligence capability is non-functional and disconnected from the active route, creating a stale provider/API architecture and false confidence about profile synthesis. No runtime behavior is claimed beyond the source-level wiring evidence.
+
+### PB-240 — Price Intelligence controller exposes collection/mutation surfaces without authentication or user scoping
+Status: OPEN — SECURITY HIGH
+Location: `apps/backend/src/modules/price-intelligence/controllers/price-intelligence.controller.ts`.
+Evidence: `PriceIntelligenceController` declares `@Controller('price-intelligence')` but does not apply `JwtAuthGuard` at the controller or method level. In addition to read endpoints, it exposes `POST /price-intelligence/nightly/run`, which invokes the scheduler's collection path, and `POST /price-intelligence/nightly/preview`, plus `POST /price-intelligence/match`; no authorization check is present at the controller boundary and the nightly collection route accepts caller-supplied `productKeys`/`sourceIds`. Impact: an unauthenticated caller can invoke operational price-collection work and influence scheduler input, while the other intelligence surfaces are likewise publicly reachable. This is distinct from PB-170 and PB-224 because it concerns the Price Intelligence controller's missing auth boundary and includes an operational POST action.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
