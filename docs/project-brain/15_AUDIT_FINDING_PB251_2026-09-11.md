@@ -1,19 +1,11 @@
-# PB-251 — Backend package script references a missing executable
+# PB-251 — WITHDRAWN / FALSE POSITIVE RECONCILIATION
 
-Status: PROVISIONAL — OPERATIONAL/BUILD HIGH
+Status: WITHDRAWN — current-main target exists.
 
-Location: `apps/backend/package.json`, script `recipe-images:retry-quality`, target `apps/backend/scripts/recipe-image-reprocess-retry.mjs`.
+The earlier provisional finding claimed that `apps/backend/package.json` script `recipe-images:retry-quality` referenced a missing `apps/backend/scripts/recipe-image-reprocess-retry.mjs` executable.
 
-Evidence:
-- The audited main `apps/backend/package.json` defines `recipe-images:retry-quality` as `node ./scripts/recipe-image-reprocess-retry.mjs`.
-- An exact repository search for `recipe-image-reprocess-retry.mjs` returned only the package-manifest reference and no source file on audited main.
-- Direct repository-content lookup of the target returned `Not Found` on audited main commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`.
-- Historical/parallel branch `agent/mypa-autonomous-control-plane` does contain `apps/backend/scripts/recipe-image-reprocess-retry.mjs`, proving this is a repository-state/lineage discrepancy rather than evidence that the filename is intrinsically invalid.
+Final direct verification against audited main commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b` shows that the target file **does exist** at that exact path. Therefore PB-251 is not a current-main package/source contract defect.
 
-Impact:
-Invoking the advertised `pnpm recipe-images:retry-quality` command cannot execute the intended retry-quality workflow from the audited main repository state because its declared target executable is absent.
+The earlier absence result was a stale/incomplete repository-search signal and must not be treated as authoritative when direct content lookup succeeds.
 
-Reconciliation:
-Keep distinct from PB-196, which concerns the bounded reprocess-quality operation being non-restartable. Keep distinct from PB-255, which concerns missing internal dependencies of the v8 local image pipeline. Final catalog status must determine whether the branch copy is an intentionally unmerged artifact or stale configuration; the audit does not infer intent from branch presence alone.
-
-Audit-only note: no production code changed.
+Do not retain PB-251 in the canonical findings catalog. PB-196 remains the separate restartability concern for the bounded reprocess-quality operation.
