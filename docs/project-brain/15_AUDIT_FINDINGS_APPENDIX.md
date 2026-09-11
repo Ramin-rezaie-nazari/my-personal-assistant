@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, and continued operational-script/legacy-variant review including recipe image reprocessors, food entity resolvers, recipe intelligence classify/profile/nutrition/score, and relevant recipe migrations.
+Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, and continued operational-script/legacy-variant review including recipe image reprocessors, food entity resolvers, recipe intelligence classify/profile/nutrition/score, relevant recipe migrations, and local recipe-image pipeline variants.
 Scope not yet read: remaining repository-wide source/tests/consumers, full matrices, exhaustive operational scripts, runtime execution, complete security/privacy reconciliation.
 Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/backend/prisma/`, `apps/backend/scripts/`, `apps/backend/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
 Confidence: HIGH for source-level findings below unless explicitly marked validation-needed.
@@ -218,6 +218,11 @@ Evidence: reset lists bucket objects once with `prefix: 'recipes'`, `limit: 1000
 Status: OPEN — DATA/OPERATIONAL HIGH
 Location: `apps/backend/scripts/recipe-image-import.mjs`, `getMissingRecipes()`.
 Evidence: `imageRows` is fetched from `recipe_images?select=recipe_id&image_type=eq.primary&limit=1000` and skipped attempts from `recipe_image_import_attempts?...&limit=1000`; neither query paginates, while the recipe scan itself paginates through `recipes`. Impact: once more than 1000 primary-image rows or skipped attempts exist, recipes represented only in later pages are treated as missing/unattempted and can be reprocessed; depending on unique constraints this can cause duplicate/failed writes and unnecessary external downloads. Root cause: asymmetric pagination between the source recipe list and existing-state sets.
+
+### PB-203 — Local guaranteed-v8 recipe image pipeline references missing executable scripts
+Status: OPEN — OPERATIONAL/BUILD HIGH
+Location: `apps/backend/scripts/recipe-images-local-guaranteed-v8.mjs`, `main()` calls to `./scripts/recipe-images-local-strict-v3.mjs`, `./scripts/recipe-images-local-gallery-upgrade-v1.mjs`, and `./scripts/recipe-images-local-status.mjs`.
+Evidence: the v8 orchestrator invokes these three relative script paths. Direct branch reads for all three exact paths returned `Not Found`, while `recipe-images-local-guaranteed-v7.mjs` does exist. Because `run()` rejects on the child `error` event and `allowFailure=true` only handles non-zero child exit codes, a missing script path produces a rejected promise and stops the pipeline before completion. Impact: the v8 pipeline is not executable to completion from the audited repository state; this is a concrete broken operational entrypoint, not merely documentation drift.
 
 ## Reconciliation note
 Preserve oldest canonical IDs when the same root cause already exists elsewhere. PB-112 and PB-167 are correction-trail IDs only. PB-185 is a specific surface of PB-129 and must not be double-counted.
