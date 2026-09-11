@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-229
+## Findings PB-156 through PB-231
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -74,7 +74,7 @@ Locations: `auth/auth.service.ts`, `auth/services/session.service.ts`.
 
 ### PB-173 — Application-level auth rate limiting/security headers are not observed
 Status: OPEN — SECURITY DESIGN REVIEW
-Locations: `bootstrap.ts`, `main.ts`, backend package manifest. External reverse-proxy controls remain unknown.
+Locations: `bootstrap.ts`, `main.ts`, backend package manifest.
 
 ### PB-174 — Mobile Price History ignores explicit snapshot currency and always renders تومان
 Status: OPEN — DATA/UX HIGH
@@ -347,6 +347,11 @@ Evidence: `MemoryService.storeMemory()` accepts no memory payload and returns on
 Status: OPEN — PROJECT-BRAIN INTEGRITY HIGH
 Locations: `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`, `docs/project-brain/12_OPEN_WORK.md`.
 Evidence: the current Appendix blob explicitly begins with `## Findings PB-156 through PB-229`, while the current `12_OPEN_WORK.md` contains canonical entries beginning at PB-001 and continues through later findings. Historical audit checkpoint records also refer to the earlier findings catalog, but the current Appendix version does not contain PB-001 through PB-155. Therefore the Project Brain has two incompatible issue catalogs: one retains the older IDs and the other omits them. Impact: the repository cannot currently serve as a complete, lossless audit source-of-truth; remediation planning or final closure based only on Appendix would silently lose 155 previously identified findings. This finding was not closed by reconstructing or inventing missing entries; exact historical Appendix text must be recovered from repository history before the catalog is considered frozen.
+
+### PB-231 — Yoga pose pipeline can emit stale pose results after stop due to an uncancelled async analysis race
+Status: OPEN — RUNTIME/CONCURRENCY MEDIUM-HIGH
+Locations: `apps/mobile/lib/yoga-pose-pipeline.ts`, `apps/mobile/lib/yoga-pose-pipeline.spec.ts`.
+Evidence: `YogaPosePipeline` subscribes to camera frames and calls `void this.process(frame, onPose)` for each frame. `process()` checks `this.stateValue.active` before `await this.provider.detect(frame)`, but it performs no active/session-token check after the await. `stop()` unsubscribes and marks `active:false`, but cannot cancel an already-running `detect()`. Therefore an analysis that was in flight before `stop()` can resolve afterward, mutate `analyzedFrames`, `lastConfidence`, and `lastCapturedAt`, and invoke `onPose` after the pipeline has been stopped. The existing `yoga-pose-pipeline.spec.ts` only verifies the unconfigured provider path and contains no stop/in-flight completion regression test. Impact: a stopped camera-analysis session can receive stale post-stop callbacks/state mutations, causing UI/session state to reflect frames that should no longer be accepted. Runtime execution was not available in this audit.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
