@@ -8,6 +8,12 @@ Location: `apps/backend/.env.example`, compared with `apps/backend/src/common/co
 Evidence: `env.validation.ts` marks `APP_NAME`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` as required. The committed `.env.example` contains only `NODE_ENV`, `PORT`, and `APP_NAME`; it provides no `DATABASE_URL` or JWT secret placeholders.
 Impact: a developer/operator following the repository's example environment file cannot construct a complete valid backend environment from that file alone; startup configuration will fail validation unless the missing required variables are supplied through undocumented/external setup. This is a repository onboarding/configuration contract gap, not a claim about production secret management.
 
+## PB-245 — Backend README remains a stock NestJS starter document and omits MYPA operational setup
+Status: OPEN — DOCUMENTATION/ONBOARDING MEDIUM
+Location: `apps/backend/README.md`.
+Evidence: the README still identifies the project as a generic NestJS starter repository, gives only generic `pnpm install/start/test` instructions, and contains no MYPA-specific environment setup, Prisma migration/generation workflow, required runtime variables, module architecture, or repository-specific operational scripts. The actual backend has project-specific required environment validation and a large set of Prisma/recipe-intelligence operational commands.
+Impact: a new engineer can follow the README and still fail to obtain a runnable MYPA backend or misunderstand the canonical setup/operational workflow. This is documentation/onboarding debt rather than a runtime defect; canonical project documentation exists elsewhere but is not surfaced by the backend README.
+
 ## Validation correction/reconciliation notes
 
 ### PB-232 — REQUIRES RECLASSIFICATION
@@ -23,4 +29,4 @@ The earlier claim that the inline `@Body() body: { action: BehaviorAction; conte
 The grouped validation finding overlaps materially with historical findings: PB-077 covers Habit DTO validation, PB-085 covers Life Execution DTO validation, PB-089 covers Fitness controller write validation, PB-093 covers Workout write-contract validation, and PB-083 covers Supplements DTO contract drift. Do not treat PB-243 as a clean unique finding until each module's scope is mapped against those historical entries. If it adds distinct evidence for Supplements or another active class-DTO surface not covered historically, merge that evidence into the appropriate existing ID rather than retaining a duplicate umbrella ID.
 
 ## Audit control
-No production code changed. PB-244 is new audit evidence and must be merged into the canonical Appendix during the next safe full-file Appendix update. Runtime/build/device validation remains unverified.
+No production code changed. PB-244 and PB-245 are new audit evidence and must be merged into the canonical Appendix during the next safe full-file Appendix update. Runtime/build/device validation remains unverified.
