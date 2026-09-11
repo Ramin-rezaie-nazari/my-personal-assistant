@@ -76,7 +76,7 @@ export class AuthService {
       data.refreshToken,
     );
 
-    if (!session) {
+    if (!session || session.userId !== payload.sub) {
       throw new UnauthorizedException('Session not found');
     }
 
@@ -86,7 +86,43 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    return this.createAuthResponse(user);
+    const accessToken = createAccessToken(
+      this.jwtService,
+      this.appConfigService,
+      user.id,
+    );
+    const refreshToken = createRefreshToken(
+      this.jwtService,
+      this.appConfigService,
+      user.id,
+    );
+    const expiresAt = new Date();
+    expiresAt.setTime(expiresAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const rotatedSession = await this.sessionService.rotate(
+      data.refreshToken,
+      {
+        userId: user.id,
+        refreshToken,
+        expiresAt,
+      },
+    );
+
+    if (!rotatedSession) {
+      throw new UnauthorizedException('Session already rotated');
+    }
+
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarUrl: user.avatarUrl,
+      },
+    };
   }
 
   async logout(refreshToken: string) {
