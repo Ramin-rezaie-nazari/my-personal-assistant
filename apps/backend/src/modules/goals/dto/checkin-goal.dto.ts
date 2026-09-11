@@ -1,5 +1,7 @@
+import { IsInt, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+
 export class CheckinGoalDto {
-  progressPercent!: number;
-  note?: string;
-  dateKey?: string;
+  @IsInt() @Min(0) @Max(100) progressPercent!: number;
+  @IsOptional() @IsString() @MaxLength(2000) note?: string;
+  @IsOptional() @IsString() @Matches(/^\d{4}-\d{2}-\d{2}$/) dateKey?: string;
 }
