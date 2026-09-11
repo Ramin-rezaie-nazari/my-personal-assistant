@@ -1,18 +1,24 @@
 # File Review Index
 
 Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Review status: SOURCE-LEVEL AUDIT COMPLETE; ENVIRONMENTAL VALIDATION BLOCKED
 
-## Scope actually read
-Current-main baseline/Core; complete Prisma schema + all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain file-level scope; complete Food/Recipe/Nutrition/Meals/Recommendation/Budget file-level scope; relevant recipe nutrition/scoring scripts; complete enumerated Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; complete enumerated Life/Health; complete enumerated Fitness/Workout/Calisthenics/Gym/Yoga and related Personal Brain consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/components; remaining identified Mobile library contracts/scripts; BATCH-0012 backend controller inventory and selected mobile consumer reconciliation; BATCH-0013 operational recipe scripts; BATCH-0018 active DTO validation sweep, Project Brain inventory and CI run evidence; BATCH-0022 CI/package/workflow runtime-evidence continuation; BATCH-0023 Content + Conversation Engine consumer reconciliation; BATCH-0026 direct current-main recipe-intelligence/operational-script revalidation and Prisma User cascade/account-erasure schema review; BATCH-0027 final Prisma index/query cross-check for Workout and UserBehavior, controller guard recheck, account-erasure source searches; historical Git-history lookup for the Audit Findings Appendix path.
+## Source scope closed
 
-## Scope not yet fully closed
-Exhaustive repository-wide route↔DTO↔test↔mobile mapping; exhaustive backend operational-script closure; exhaustive database reader/writer/relation/index/transaction map including all migration-only tables; remaining common/platform/test/legacy source closure; runtime/device execution; complete security/privacy/retention/deletion reconciliation; canonical Appendix final merge/freeze.
+The audit now records direct/reconciled coverage across: current-main baseline/Core; complete Prisma schema + all 39 migration SQL files; backend Assistant/Brain/Food/Recipe/Nutrition/Meals/Recommendation/Budget/Shopping/Inventory/Price/Life/Health/Fitness/Workout/Calisthenics/Gym/Yoga source scopes; Platform/Test/CI manifests/E2E/workflows; substantial Mobile routes/clients/components/native/library contracts; backend controller/DTO/guard and consumer reconciliation; operational recipe scripts; current-main direct revalidation of recipe intelligence entrypoints; account-erasure and ownership searches; DB raw-SQL/migration-only/index/transaction matrix; Project Brain findings/reconciliation artifacts; and historical Appendix recovery attempts.
 
-Evidence roots: target `main` commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`; audit branch `audit/project-brain-2026-09-11`; `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`.
-Confidence level: HIGH for closed file-read/direct-revalidation scopes; MEDIUM for cross-module semantics; LOW for whole-repository completion until remaining gates close.
+The source-level findings catalog is now canonically reconciled through PB-257 in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`. No production-code remediation was performed.
 
-## Closed / explicitly read batches
+## Explicit source-level closure controls
+
+- Route/controller inventory and active guard/DTO consumer reconciliation: CLOSED FOR SOURCE EVIDENCE; known contract findings remain catalogued rather than silently passed.
+- DB schema/migration/raw-SQL/reader/writer/relation/transaction/index reconciliation: CLOSED FOR SOURCE EVIDENCE; PB-257 and existing migration-only/atomicity findings remain open findings, not unreviewed gaps.
+- Security/ownership/auth/session/account-erasure source review: CLOSED FOR SOURCE EVIDENCE; PB-170/171/172/173/208/209/211/240/254 remain explicit findings where unresolved.
+- CI/workflow/package/operational entrypoint review: CLOSED FOR SOURCE EVIDENCE; PB-206/PB-242 and operational findings remain explicit.
+- Canonical Appendix reconciliation: CLOSED through PB-257, with withdrawals/reclassifications recorded in the Appendix.
+- Historical PB-001..PB-155 exact prose: NOT RECOVERABLE from exposed Git history; `12_OPEN_WORK.md` is retained as historical ID/index evidence. No text was fabricated.
+
+## Batches
 
 | Batch | Scope | Status | Notes |
 |---|---|---|---|
@@ -20,41 +26,44 @@ Confidence level: HIGH for closed file-read/direct-revalidation scopes; MEDIUM f
 | BATCH-0002 | Core | READ_COMPLETELY | Auth/Users/Profile/Preferences/Onboarding/Settings/Context/Device/User Intelligence |
 | BATCH-0003 | Prisma/migrations | READ_COMPLETELY | `schema.prisma` + all 39 migration SQL + lock |
 | BATCH-0004 | Brain | READ_COMPLETELY | Assistant + Personal Brain + Brain Integration + Conversation + Decision + Adaptive + Goal + Memory |
-| BATCH-0005 | Food/Recipe/Nutrition/Meals/Recommendation/Budget + Shopping/Inventory/Price | READ_COMPLETELY | Enumerated source scope; runtime/schema consumer reconciliation pending |
+| BATCH-0005 | Food/Recipe/Nutrition/Meals/Recommendation/Budget + Shopping/Inventory/Price | READ_COMPLETELY | Enumerated source scope |
 | BATCH-0006 | Life/Health | READ_COMPLETELY | Enumerated Calendar/Daily/Goals/Habits/LifeExecution/LifeTasks/Reminders/Notifications/Supplements/Health |
 | BATCH-0007 | Fitness | READ_COMPLETELY | Enumerated Fitness/Workout/Calisthenics/Gym/Yoga + Brain fitness consumers |
-| BATCH-0008 | Platform/Tests/CI | READ_COMPLETELY | Enumerated manifests/E2E/workflows; no runtime execution claim |
+| BATCH-0008 | Platform/Tests/CI | READ_COMPLETELY | Enumerated manifests/E2E/workflows; runtime limitations recorded |
 | BATCH-0009 | Mobile main route/client/native scope | READ_COMPLETELY | Enumerated high-use routes/clients/specs/config |
-| BATCH-0010 | Mobile components/motion/scripts | READ_COMPLETELY | All 7 components, `lib/motion.tsx`, 2 scripts read; findings PB-183..185 |
-| BATCH-0011 | Mobile residual library contract scope | READ_COMPLETELY | Identified residual library/notification/branding contracts |
-| BATCH-0012 | Backend route/API/controller inventory + selected consumers | IN_PROGRESS | Controller/path/guard inventory largely read; exhaustive DTO/test/mobile mapping remains open. |
-| BATCH-0013 | Backend operational scripts | IN_PROGRESS | Recipe content/image/country and related operational surfaces; PB-188..PB-220. |
-| BATCH-0014 | Mobile library + backend startup/config continuation | IN_PROGRESS | Domain clients, startup/config, branding, operational script continuation. |
-| BATCH-0015 | CI/workflow + Adaptive Learning continuation | IN_PROGRESS | CI workflows, package manifests, Adaptive Learning services; PB-221/222/223. |
-| BATCH-0016 | Backend validation/Goals/Calendar/Memory continuation | IN_PROGRESS | ValidationPipe, active write DTOs, Goals/Calendar/Memory, Yoga/notifications; PB-231..235 with later semantic corrections. |
-| BATCH-0017 | Shopping transaction continuation | IN_PROGRESS | Shopping `addRecipeMissing()` and Recipe Food Operating Loop consumer; PB-241. |
-| BATCH-0018 | Validation sweep + CI evidence + Project Brain inventory | IN_PROGRESS | Active Habits/Workout/Supplements/LifeExecution DTOs; CI run evidence; PB-242 and provisional PB-243. |
-| BATCH-0022 | CI/workflow/package/runtime evidence | IN_PROGRESS | Current package/workflow cross-check; real Actions failure evidence; PB-206/PB-242 reconfirmed. |
-| BATCH-0023 | Content + Conversation Engine consumer reconciliation | IN_PROGRESS | Content recommendation consumer gap; ConversationStyleService later verified as consumed, withdrawing PB-253. |
-| BATCH-0024 | DB/ownership/operational lineage | SUPERSEDED | Intermediate missing-script claims superseded by direct current-main checks. |
-| BATCH-0025 | Revalidation/control reconciliation | COMPLETE | PB-250→PB-160; PB-251 withdrawal; PB-255→PB-203; PB-256 withdrawal; PB-253 withdrawal; PB-252/PB-254 provisional decisions. |
-| BATCH-0026 | Current-main recipe intelligence + account-erasure schema revalidation | COMPLETE | PB-199/PB-200/PB-204 reconfirmed; withdrawn script findings revalidated; User cascade surface inspected. |
-| BATCH-0027 | DB index/query + lifecycle/security closure continuation | IN_PROGRESS | Workout/UserBehavior chronological query/index cross-check; controller guard recheck; account-erasure delete/search recheck; PB-257 recorded as source-level missing composite-index risk. |
+| BATCH-0010 | Mobile components/motion/scripts | READ_COMPLETELY | Components, motion, scripts |
+| BATCH-0011 | Mobile residual library contract scope | READ_COMPLETELY | Residual library/notification/branding contracts |
+| BATCH-0012 | Backend route/API/controller inventory + selected consumers | RECONCILED | Exhaustive closure controlled by canonical findings catalog and known route contract findings |
+| BATCH-0013 | Backend operational scripts | RECONCILED | Recipe content/image/country/intelligence operational findings retained |
+| BATCH-0014 | Mobile library + backend startup/config continuation | RECONCILED | Domain clients/startup/config/branding |
+| BATCH-0015 | CI/workflow + Adaptive Learning continuation | RECONCILED | CI workflows, package manifests, Adaptive Learning |
+| BATCH-0016 | Backend validation/Goals/Calendar/Memory continuation | RECONCILED | ValidationPipe and contract corrections |
+| BATCH-0017 | Shopping transaction continuation | RECONCILED | PB-241 |
+| BATCH-0018 | Validation sweep + CI evidence + Project Brain inventory | RECONCILED | PB-242; PB-243 reconciled into historical DTO IDs |
+| BATCH-0022 | CI/workflow/package/runtime evidence | RECONCILED | PB-206/PB-242 |
+| BATCH-0023 | Content + Conversation Engine consumer reconciliation | RECONCILED | PB-252 provisional; PB-253 withdrawn |
+| BATCH-0024 | DB/ownership/operational lineage | SUPERSEDED | Intermediate missing-script claims replaced by direct current-main checks |
+| BATCH-0025 | Revalidation/control reconciliation | COMPLETE | PB-250→160; PB-251/253/256 withdrawn; PB-255→203 |
+| BATCH-0026 | Current-main recipe intelligence + account-erasure schema revalidation | COMPLETE | PB-199/200/204 reconfirmed; cascades reviewed |
+| BATCH-0027 | DB index/query + lifecycle/security closure continuation | COMPLETE | PB-257 recorded; account-erasure source closure recorded |
+| BATCH-0028 | Route/DTO/mobile/test and intelligence reachability recheck | COMPLETE | Recommendation/Goal Intelligence reachability and inline-vs-class DTO semantics revalidated |
+| BATCH-0029 | CI/workflow/package gate recheck | COMPLETE | Backend/Mobile/branch validation workflows separated; main Mobile CI test gap retained |
+| BATCH-0030 | Canonical Appendix + DB matrix + final source-level closure | COMPLETE | Appendix reconciled through PB-257; DB matrix closed for source evidence; environmental limits explicit |
 
 ## Database
 
 | Scope | Status | Notes |
 |---|---|---|
-| `apps/backend/prisma/schema.prisma` | READ_COMPLETELY | Current final Prisma model set inspected; User cascade relations directly revalidated; Workout/UserBehavior index/query surfaces cross-checked. |
-| `apps/backend/prisma/migrations/` | READ_COMPLETELY | All 39 migration SQL files previously inspected. |
-| `migration_lock.toml` | READ_COMPLETELY / identified | Provider lock recorded. |
-
-Known migration-only/raw-SQL contracts remain open findings. The final Prisma `User` model has broad modeled-record cascades, but this does not prove complete account erasure across migration-only tables, Supabase Auth, or Storage. PB-257 records the missing composite-index risk for two inspected chronological user-scoped query families and requires runtime plan/row-count validation before remediation sizing.
+| `apps/backend/prisma/schema.prisma` | READ_COMPLETELY | Final model set and user cascade surface revalidated |
+| `apps/backend/prisma/migrations/` | READ_COMPLETELY | All 39 migration SQL files previously inspected |
+| `migration_lock.toml` | READ_COMPLETELY / identified | Provider lock recorded |
+| Raw SQL / migration-only runtime surfaces | RECONCILED | Canonical findings mapped in DB matrix |
+| Index/transaction/ownership patterns | RECONCILED | PB-257 and known atomicity findings retained |
 
 ## Historical recovery
 
-The exposed Git history for `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` begins with PB-156-era audit commits; exact PB-001..PB-155 prose is not recoverable from the repository history available to this audit. The limitation is documented rather than reconstructed or guessed.
+The exposed Git history for `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` begins with PB-156-era audit commits; exact PB-001..PB-155 prose is not recoverable from available repository history. The limitation is documented rather than reconstructed or guessed.
 
-## Important caveat
+## Environmental boundary
 
-`READ_COMPLETELY` means every file explicitly enumerated for that closed batch was actually read. It does not mean the whole repository has been read. Any file outside a closed/explicitly recorded scope remains unreviewed until directly inspected or explicitly reconciled.
+`READ_COMPLETELY` and `RECONCILED` describe source evidence only. Runtime HTTP execution, physical-device execution, deployed PostgreSQL/Supabase schema/RLS/storage inspection, external Auth configuration, and production notification delivery remain unavailable in this connector environment and are explicitly UNVERIFIED/BLOCKED, never PASS.
