@@ -2,17 +2,17 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline + Core + complete Prisma schema + all 39 migration SQL files + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts + residual Mobile library contracts/tests + continued BATCH-0013 operational recipe/food scripts and relevant recipe migrations/local image pipeline variants.
-Scope not yet read: any Mobile source outside current audited trees if present; remaining Fitness-adjacent source; exhaustive common/platform/test inventory; repository-wide route/consumer/database matrices; full automated validation; full security/privacy closure; historical docs/branches; remaining legacy/duplicate operational scripts.
-Evidence roots: Project Brain documents; `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`.
+Scope actually read: baseline + Core + complete Prisma schema + all 39 migration SQL files + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts + residual Mobile library contracts/tests + continued BATCH-0013 operational recipe/food scripts and relevant recipe migrations/local image pipeline variants + historical branch/PR reconciliation + backend common/config/auth/fitness cross-contract review.
+Scope not yet read: any Mobile source outside current audited trees if present; remaining Fitness-adjacent source; exhaustive common/platform/test inventory; repository-wide route/consumer/database matrices; full automated validation; full security/privacy closure; historical docs/branches beyond inspected high-value branches/PRs; remaining legacy/duplicate operational scripts.
+Evidence roots: Project Brain documents; `apps/backend/src/modules/`; `apps/backend/src/common/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`.
 Confidence level: HIGH for completed file-level reads; MEDIUM for cross-module conclusions; no repository runtime execution claim.
-Open questions: exact repository-wide inventory/line counts, live DB drift, complete model/table consumer graph, transaction boundaries, route/mobile mappings, full CI validation and device behavior, operational ownership of remaining legacy variants.
+Open questions: exact repository-wide inventory/line counts, live DB drift, complete model/table consumer graph, transaction boundaries, complete route/mobile mappings, full CI validation and device behavior, operational ownership of remaining legacy variants.
 
 ## 2026-09-11 — BATCH-0001
 - Initialized durable Project Brain on `audit/project-brain-2026-09-11` without modifying `main`.
 
 ## 2026-09-11 — BATCH-0002
-- Completed identified current-main Core source reads across Auth, Users, Profile, Preferences, Onboarding, Settings, Context, Device and User Intelligence.
+- Completed identified current-main Core source reads across Auth, Users, Profile, Preferences, Onboarding, Settings, Context and User Intelligence.
 
 ## 2026-09-11 — BATCH-0003
 - Read the complete Prisma schema and all 39 migration SQL files plus `migration_lock.toml`.
@@ -68,9 +68,16 @@ Open questions: exact repository-wide inventory/line counts, live DB drift, comp
 - Inspected nutrition estimation; recorded PB-200 for missing source/version provenance on hard-coded nutrient constants and household-unit conversions. The estimator is explicitly marked as `estimated`, so this is a provenance/traceability issue rather than a claim of hidden verified data.
 - Found two additional image-state issues: PB-201 (RESET only enumerates first 1000 Storage objects but globally deletes DB rows) and PB-202 (wired image importer only paginates recipe rows, not existing image/skip sets).
 - Inspected local guaranteed image pipeline v7/v8 and verified PB-203: v8 references three script files that do not exist in the audited branch, causing a concrete broken orchestration path.
-- Updated the canonical audit findings appendix through PB-203. No production-code or `main` changes made by this audit session.
+- Recorded PB-204 for country preference scoring reading fields that its own relation query does not select.
+- Reviewed `apps/backend/src/common/` config/bootstrap/database boundaries and confirmed the environment validator requires `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`; getter defaults are therefore development fallbacks rather than an observed production secret-bypass.
+- Re-checked Fitness↔Auth contract and confirmed `JwtStrategy.validate()` returns the loaded user object while the active Fitness controller reads `req.user.sub`; PB-171 remains a valid cross-contract finding.
+- Reconciled high-value historical branches/PRs: PR #48 remains open/unmergeable, PR #49 is open/mergeable from the same Global Market workstream, and PR #66 is a draft autonomous control-plane/local-media workstream. None should be treated as merged into `main` without explicit merge evidence.
+- Inspected PR #66 and confirmed its declared local media target (1–4 verified images per recipe, 20–150KB) is a branch-scoped design, not current `main` behavior; this reinforces the existing PB-194 contract-drift finding rather than creating a duplicate.
+- Inspected `apps/mobile/lib/api.ts` again and confirmed the currently observed mobile auth/session implementation still stores access and refresh tokens in AsyncStorage and refreshes through the unauthenticated `/auth/refresh` path; existing PB-182 and PB-187 remain the canonical related findings.
+- Reviewed current audit-branch CI status for the latest audit commit; no commit status checks are attached, so this session makes no new CI-green claim.
+- Inspected `.github/workflows/mypa-mobile-typecheck-repair-once.yml`; it is an old self-mutating one-time workflow that can write/commit `apps/mobile/app/reminders-localized.tsx` and delete its own workflow file. It is not treated as a production defect yet because it targets `agent/mypa-autonomous-control-plane`, but it remains part of the historical/CI control-plane reconciliation scope.
 
 ## Next
-- Continue BATCH-0013 through the remaining legacy/duplicate operational script families and any not-yet-read wired scripts.
-- Then complete the remaining route↔DTO↔test↔mobile consumer reconciliation and repository-wide database/transaction/security/privacy matrices.
+- Continue the Master Prompt with the remaining repository-wide consumer/route/DTO/database transaction reconciliation and exhaustive legacy/common/platform/test closure.
+- Close historical reconciliation only after the high-value open PR/feature branches have been mapped against `main` and no unreviewed production-affecting divergence remains.
 - Only after the Master Prompt audit scope is fully closed begin the separate correction/remediation phase using the final canonical findings catalog.
