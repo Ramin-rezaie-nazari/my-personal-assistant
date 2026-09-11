@@ -111,12 +111,51 @@ export class ShoppingService {
     if (!recipe) throw new NotFoundException('Recipe not found');
     const allowed = new Set(recipe.ingredients.map((i) => i.foodId));
     const valid = items.filter((i) => allowed.has(i.foodId) && i.quantity > 0);
-    for (const item of valid)
-      await this.addToBasket(userId, {
-        ...item,
-        source: 'recipe',
-        priority: 'high',
-      });
+
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of valid) {
+        const food = await tx.foodItem.findUnique({
+          where: { id: item.foodId },
+          select: { name: true },
+        });
+        if (!food) throw new NotFoundException('Food item not found');
+
+        const existing = await tx.shoppingItem.findUnique({
+          where: {
+            userId_foodId_completed: {
+              userId,
+              foodId: item.foodId,
+              completed: false,
+            },
+          },
+        });
+
+        if (existing) {
+          await tx.shoppingItem.update({
+            where: { id: existing.id },
+            data: {
+              quantity: { increment: item.quantity },
+              source: 'recipe',
+              priority: 'high',
+            },
+          });
+        } else {
+          await tx.shoppingItem.create({
+            data: {
+              userId,
+              foodId: item.foodId,
+              name: food.name,
+              quantity: item.quantity,
+              unit: item.unit,
+              source: 'recipe',
+              sourceRecipeId: recipeId,
+              priority: 'high',
+            },
+          });
+        }
+      }
+    });
+
     return { recipeId, added: valid.length };
   }
   async complete(userId: string, id: string) {
