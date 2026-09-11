@@ -1,37 +1,60 @@
 # Audit Validation Ledger — 2026-09-11
 
-Status: IN_PROGRESS — audit evidence only.
+Status: SOURCE-LEVEL AUDIT COMPLETE; ENVIRONMENTAL VALIDATION BLOCKED.
+
+Audited main: `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`.
+Audit branch: `audit/project-brain-2026-09-11`.
 
 ## Evidence classes
 
 | Gate | Evidence | Result | Boundary |
 |---|---|---|---|
-| Current-main source baseline | `main` commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b` | CONFIRMED | Source snapshot only |
-| Prisma schema/migration inventory | final `schema.prisma` + all 39 migrations previously read | CONFIRMED | Does not prove deployed DB parity |
-| Backend controller inventory | current-main `@Controller`/`JwtAuthGuard` searches + direct controller reads | EXPANDED/PARTIAL | Batch 0028 expanded inline/class DTO and mobile-consumer reconciliation; exhaustive endpoint ledger still open |
-| Route↔DTO↔test↔mobile mapping | controller searches + mobile client consumer searches + test inventory | PARTIAL | Broad coverage confirmed; exact every-route ledger and runtime HTTP validation remain open |
-| DB ownership/cascade | current `User` model and delete-path searches | PARTIAL | Migration-only tables/external Auth/Storage still open |
-| DB index matrix | schema + active Workout/UserBehavior chronological consumers | PARTIAL | PB-257 added; real row counts/query plans unavailable |
-| Account erasure | no `prisma.user.delete`, `deleteUser`, or Supabase Auth admin-delete source found | OPEN | Policy/workflow still needs closure |
-| CI dependency reproducibility | GitHub Actions run `34613481370` | FAILING | Real evidence; frozen-lockfile failure |
-| Current-main CI status checks | combined status query for `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b` | NO ATTACHED STATUSES | Must not be interpreted as green |
-| Mobile tests | committed specs + package/workflow inspection | NOT CI-GATED | No normal mobile test script/step |
-| Runtime HTTP validation | local execution unavailable in connector | UNVERIFIED | Requires runnable environment |
-| Physical-device validation | no device execution in connector | UNVERIFIED | Requires user/device environment |
-| Deployed DB/RLS/Storage | no production access in connector | UNVERIFIED | Requires deployment credentials/environment |
-| Historical PB-001..PB-155 exact prose | Git history query | NOT RECOVERABLE | Do not fabricate missing historical text |
-| Canonical Appendix | PB-156..PB-243 present; later findings/corrections staged separately | OPEN | Safe full-file reconciliation/freeze still required |
+| Current-main source baseline | audited main commit | CLOSED | Source snapshot only |
+| Backend/mobile/common source coverage | recorded batches 0001–0030 + direct revalidation | CLOSED FOR SOURCE EVIDENCE | Runtime execution unavailable |
+| Route/controller/guard/DTO/consumer reconciliation | controller inventory + DTO corrections + mobile consumer rechecks + canonical findings | CLOSED FOR SOURCE EVIDENCE | HTTP runtime unavailable |
+| DB schema/migration/reader/writer/relation/index/transaction matrix | final Prisma schema + all 39 migrations previously read + raw SQL/transaction/index reconciliation | CLOSED FOR SOURCE EVIDENCE | Deployed DB/query plans unavailable |
+| Security/ownership/auth/session source review | guard/delete/ownership/session/JWT searches + canonical findings | CLOSED FOR SOURCE EVIDENCE | External Auth/RLS not inspectable |
+| Account erasure | canonical PB-211/PB-254 retained after source-level inventory | OPEN FINDING / SOURCE GAP | External Auth/Storage + policy unavailable |
+| CI dependency reproducibility | real GitHub Actions run `34613481370` | FAILING FINDING | Frozen-lockfile install failed |
+| CI workflow/package contract | backend/mobile/recipe workflows vs package manifests | CLOSED FOR SOURCE EVIDENCE | No remediation performed |
+| Mobile behavioral test gate | mobile specs exist but main Mobile CI does not execute them | OPEN FINDING PB-246 | Runtime test execution unavailable |
+| Canonical findings Appendix | reconciled through PB-257 with withdrawal/reclassification log | CLOSED FOR SOURCE EVIDENCE | Historical PB-001..PB-155 exact prose unavailable |
+| Historical PB-001..PB-155 exact prose | Git-history lookup | NOT RECOVERABLE | Never fabricate missing text |
+| Project Brain checkpoint/index synchronization | File Review Index + Reading Checkpoints + Appendix + DB matrix + reconciliation ledger updated | CLOSED FOR SOURCE EVIDENCE | None |
+| Runtime HTTP validation | connector has no local/deployed runtime | BLOCKED | Requires runnable environment |
+| Physical-device validation | no device execution | BLOCKED | Requires user/device environment |
+| Deployed DB/RLS/Storage | no production credentials/access | BLOCKED | Requires deployment environment |
+| External Auth configuration | no production Auth admin/config access | BLOCKED | Requires deployment environment |
+| Production notification delivery | no device/push-provider runtime | BLOCKED | Requires deployment environment |
 
-## Batch 0028 controls
+## Canonical finding control
 
-- Inline `@Body()` object/interface contracts were re-reviewed without repeating the withdrawn PB-232/PB-237 whitelist-collision claims.
-- Class DTO surfaces remain governed by the existing concrete findings (including PB-233/PB-234/PB-243 and historical DTO IDs); no duplicate generic validation finding was created.
-- Recommendation Intelligence and Goal Intelligence remain source-present but not runtime-wired; existing PB-161/PB-162 and PB-164/PB-165/PB-166 remain canonical.
-- Mobile domain clients with independent request helpers reconfirm PB-205; no duplicate auth-transport finding was created.
-- Content Recommendation remains provisional PB-252; ConversationStyleService remains withdrawn PB-253.
+Unique canonical findings are preserved; duplicates/false positives are reconciled:
+- PB-250 → PB-160.
+- PB-251 withdrawn after direct current-main file verification.
+- PB-253 withdrawn after direct consumer verification.
+- PB-255 → PB-203.
+- PB-256 withdrawn after direct current-main file verification.
+- PB-232/PB-237 runtime whitelist-collision claims withdrawn/reclassified because inline `Object` metatypes are skipped by Nest ValidationPipe validation.
+- PB-234 narrowed to the class DTO validation contract.
+- PB-243 reconciled into historical PB-077/PB-083/PB-085/PB-093 rather than retained as a duplicate umbrella finding.
+- PB-199/PB-200/PB-204 remain active and were not withdrawn merely because their referenced files exist.
+- PB-252 remains provisional pending architectural intent.
+- PB-254 remains provisional pending complete account-erasure policy/workflow closure.
+- PB-257 remains active as a source-level index finding requiring runtime plan/row-count validation for sizing.
 
-## Current audit conclusion
+## Runtime/build evidence boundary
 
-The repository audit is not yet eligible for a 100% closure claim. Source-level coverage is high, but the Master Prompt explicitly requires exhaustive route/DTO/test/mobile reconciliation, exhaustive DB reader/writer/relation/index/transaction closure, security/privacy closure, canonical Appendix freeze, duplicate-free finding reconciliation, and explicit runtime/environment limitations.
+The audit has one concrete current-main runtime/build observation available through GitHub Actions: run `34613481370` failed during `pnpm install --frozen-lockfile` with an outdated-lockfile error. This is evidence of a real CI failure, not evidence that every runtime path fails. Conversely, absence of attached current-main status checks or workflow-run results is not interpreted as green.
 
-The audit must continue until those gates are either directly closed or explicitly recorded as environmental blockers with evidence. Environmental blockers must never be represented as PASS.
+## Historical evidence boundary
+
+The current Appendix is complete for the findings that can be recovered/verified in the exposed 2026-09-11 audit lineage through PB-257. Exact historical PB-001..PB-155 Appendix prose is not recoverable from available Git history; the historical ID/index is retained in `12_OPEN_WORK.md` and the limitation is explicitly recorded.
+
+## Final audit conclusion
+
+**SOURCE-LEVEL AUDIT: CLOSED.**
+
+The Master Prompt source-audit gates have been reconciled and the canonical findings catalog is frozen for the current source evidence. This does **not** mean the repository is production-ready or that runtime/deployed validation passed. Open findings remain findings to be remediated later; environmental blockers remain UNVERIFIED/BLOCKED.
+
+No production source code was changed during this audit phase. Remediation must remain a separate phase.
