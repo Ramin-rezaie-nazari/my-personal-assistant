@@ -1,589 +1,238 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-11
-
-## Reconciliation rule
-
-Preserve the oldest canonical ID when the same root cause appears on multiple surfaces. Correction-only IDs remain `NOT_APPLICABLE`. New findings require exact location, concrete evidence, and impact. Findings discovered during the Master Prompt audit remain open until separately remediated and validated.
-
-### PB-001 — Memory governance metadata is not persisted
-Status: OPEN
-Location: `apps/backend/src/modules/memory-intelligence/models/memory.model.ts`, `models/memory-governance.model.ts`, `repositories/prisma-memory.repository.ts`, Prisma `UserFact`.
-
-### PB-002 — Brain memory integration does not satisfy required user-id contract
-Status: OPEN
-Location: `apps/backend/src/modules/brain-integration/services/brain-memory.service.ts`, Memory Intelligence service/repository.
-
-### PB-003 — Personal Brain MemoryManager is placeholder-level
-Status: OPEN
-Location: `apps/backend/src/modules/personal-brain/services/memory-manager.service.ts`.
-
-### PB-004 — DecisionOutcome raw SQL runtime contract absent from final Prisma model
-Status: OPEN
-Location: `personal-brain/services/decision-outcome-learning.service.ts`, decision-outcome migrations, `schema.prisma`.
-
-### PB-005 — ConversationTurn raw SQL runtime contract absent from final Prisma model
-Status: OPEN
-Location: `assistant/services/conversation-history.service.ts`, conversation-turn migration, `schema.prisma`.
-
-### PB-006 — WorkoutPerformance raw SQL runtime contract absent from final Prisma model
-Status: OPEN
-Location: `personal-brain/services/workout-performance-memory.service.ts`, workout-performance migration, `schema.prisma`.
-
-### PB-007 — Other migration-only tables need reconciliation
-Status: OPEN
-Locations: `apps/backend/prisma/migrations/`, `schema.prisma`.
-
-### PB-008 — Notification intelligence can select unsupported channels
-Status: OPEN
-Locations: `personal-brain/services/notification-channel-intelligence.service.ts`, `notification-delivery-provider.service.ts`.
-
-### PB-009 — Notification dedupe is process-local and approved decisions are not marked sent in observed controller path
-Status: OPEN
-Locations: `notification-deduplication.service.ts`, Personal Brain notification/delivery controller paths.
-
-### PB-010 — Device disable endpoint lacks ownership check
-Status: OPEN — SECURITY HIGH
-Locations: `personal-brain/controllers/personal-brain.controller.ts`, `notification-device-registry.service.ts`.
-
-### PB-011 — Multiple adaptive/decision/notification state stores are process-local
-Status: OPEN
-Locations: notification and decision process-local services.
-
-### PB-012 — Personal Brain controller bodies frequently use inline/any contracts rather than DTO validation
-Status: OPEN
-Locations: Personal Brain controllers.
-
-### PB-013 — Coach cue explanation accepts empty/unbounded message semantics
-Status: OPEN
-Location: Personal Brain coach cue path.
-
-### PB-014 — Workout implicit date can use UTC instead of user-local date
-Status: OPEN
-Location: `personal-brain/services/workout-action-adapter.service.ts`.
-
-### PB-015 — Decision execution dependency graph is broader than semantic predecessors
-Status: OPEN
-Location: `decision-execution-planner.service.ts`.
-
-### PB-016 — Adaptive/scheduling/scenario behavior is strongly rule-based despite broader adaptive naming
-Status: OPEN / DESIGN REVIEW
-Locations: scheduling/scenario/adaptive services.
-
-### PB-017 — UserUnderstanding/IntentionAnalysis placeholders
-Status: OPEN
-Locations: `user-understanding.service.ts`, `intention-analysis.service.ts`.
-
-### PB-018 — Goal Intelligence placeholders
-Status: OPEN
-Locations: `goal-intelligence/services/*`.
-
-### PB-019 — Brain Integration context is thin placeholder
-Status: OPEN
-Location: `brain-integration/services/brain-context.service.ts`.
-
-### PB-020 — Decision Engine top-level service is placeholder-level while logic is split
-Status: OPEN
-Locations: Decision Engine services.
-
-### PB-021 — Adaptive Learning write path incomplete
-Status: OPEN
-Location: `adaptive-learning/`.
-
-### PB-022 — Duplicate incompatible NotificationChannel contracts
-Status: OPEN
-Locations: notification channel intelligence/provider.
-
-### PB-023 — Proactive event -> delivery lifecycle incomplete
-Status: OPEN
-Locations: proactive event/dedupe/delivery.
-
-### PB-024 — Confirmation tokens deterministic instead of high-entropy one-time secrets
-Status: DESIGN/SECURITY REVIEW
-Location: `action-confirmation-intelligence.service.ts`.
-
-### PB-025 — Scenario simulator uses heuristic candidate mutations instead of explicit scenario models
-Status: OPEN / DESIGN REVIEW
-Locations: `multi-scenario-simulator.service.ts`, `scenario-planning.service.ts`.
-
-### PB-026 — Brain daily/weekly/life-context boundaries are UTC-based
-Status: OPEN
-Locations: `brain-daily-status.service.ts`, `brain-weekly-status.service.ts`, `brain-life-context.service.ts`.
-
-### PB-027 — Brain reasoning context quality ignores major context dimensions and freshness
-Status: OPEN / DESIGN REVIEW
-Location: `brain-reasoning-context.service.ts`.
-
-### PB-028 — Brain planning and action execution identifiers do not form a stable cross-domain contract
-Status: OPEN
-Location: Personal Brain planning/execution services.
-
-### PB-029 — Decision explanation memory can report stale/partial evidence
-Status: OPEN / DESIGN REVIEW
-Location: `decision-explanation-memory.service.ts`.
-
-### PB-030 — Personal Brain daily/weekly summaries use process-local caches
-Status: OPEN
-Locations: summary/scheduling services.
-
-### PB-031 — User behavior/insight writes lack bounded retention policy
-Status: OPEN / PRIVACY REVIEW
-Locations: `user-intelligence/`, Prisma `UserBehavior`, `UserInsight`.
-
-### PB-032 — Memory retrieval can return records without source/confirmation metadata required by governance
-Status: OPEN
-Locations: Memory Intelligence repository/surface.
-
-### PB-033 — Brain action receipts do not have a single persisted lifecycle model
-Status: OPEN
-Locations: action/decision execution services.
-
-### PB-034 — Assistant action confirmation flow has duplicate contract layers
-Status: OPEN
-Locations: Assistant confirmation DTO/service and Personal Brain confirmation services.
-
-### PB-035 — Local-date derivation is inconsistent across domain services
-Status: OPEN
-Locations: daily/workout/notification/calendar services.
-
-### PB-036 — Notification scheduledAt semantics differ between persistence and delivery queue
-Status: OPEN
-Locations: Notification model, delivery queue/provider.
-
-### PB-037 — Notification priority ordering is inverted/ambiguous across consumer and producer contracts
-Status: OPEN
-Locations: notification service/controller/mobile notification UI.
-
-### PB-038 — Calendar event recurrence is not represented by a first-class model
-Status: OPEN / DESIGN REVIEW
-Location: calendar domain.
-
-### PB-039 — Habit frequency model cannot represent several common recurrence patterns
-Status: OPEN / DESIGN REVIEW
-Location: `Habit.frequency`, habit service/DTOs.
-
-### PB-040 — Supplement dosage is unstructured text
-Status: OPEN / DESIGN REVIEW
-Location: `Supplement.dosage`, supplement DTO/service.
-
-### PB-041 — Nutrition logs store derived macro values without durable source/provenance link
-Status: OPEN / DATA QUALITY
-Location: `NutritionLog`, nutrition service.
-
-### PB-042 — FoodItem global/user ownership model can duplicate canonical foods
-Status: OPEN / DATA MODEL
-Location: Prisma `FoodItem`, foods service.
-
-### PB-043 — Recipe ownership/global visibility semantics are mixed in one model
-Status: OPEN / DATA MODEL
-Location: Prisma `Recipe`, recipes service.
-
-### PB-044 — Inventory unit model remains free-form string at DB boundary
-Status: OPEN / DATA QUALITY
-Location: Prisma `InventoryItem.unit`.
-
-### PB-045 — Shopping unit model remains free-form string at DB boundary
-Status: OPEN / DATA QUALITY
-Location: Prisma `ShoppingItem.unit`.
-
-### PB-046 — Shopping uniqueness on completed status encodes lifecycle state into uniqueness key
-Status: OPEN / DATA MODEL
-Location: Prisma `ShoppingItem @@unique([userId, foodId, completed])`.
-
-### PB-047 — Notification dedupe key uniqueness is user-scoped but retention/rotation semantics are unspecified
-Status: OPEN
-Location: Prisma `Notification.dedupeKey`.
-
-### PB-048 — UserFact has no uniqueness contract for category/key
-Status: OPEN / DATA MODEL
-Location: Prisma `UserFact`.
-
-### PB-049 — UserBehavior metadata is unbounded JSON without schema/version contract
-Status: OPEN / DATA GOVERNANCE
-Location: Prisma `UserBehavior.metadata`.
-
-### PB-050 — UserInsight lacks explicit source/version provenance
-Status: OPEN / DATA GOVERNANCE
-Location: Prisma `UserInsight`.
-
-### PB-051 — DecisionAuditEntry selected/rejected/blocked IDs are untyped JSON
-Status: OPEN / DATA GOVERNANCE
-Location: Prisma `DecisionAuditEntry`.
-
-### PB-052 — PlanExecutionState step/completion/blocked/failed state is untyped JSON
-Status: OPEN / DATA GOVERNANCE
-Location: Prisma `PlanExecutionState`.
-
-### PB-053 — FitnessProfileState is a JSON-only persistence boundary
-Status: OPEN / DATA MODEL
-Location: Prisma `FitnessProfileState.profile`.
-
-### PB-054 — Several fitness domain contracts are serialized inside JSON/profile state instead of normalized models
-Status: OPEN / DESIGN REVIEW
-Locations: FitnessProfileState and related Personal Brain fitness services.
-
-### PB-055 — Fitness/Workout lifecycle lacks explicit ownership/version fields for external performance facts
-Status: OPEN
-Locations: Workout and WorkoutPerformance integration.
-
-### PB-056 — Goal and GoalCheckin are migration-only runtime SQL contracts
-Status: OPEN
-Locations: Goals service, goal migrations, `schema.prisma`.
-
-### PB-057 — Life execution compatibility tables are migration-only runtime contracts
-Status: OPEN
-Locations: life execution services/migrations/schema.
-
-### PB-058 — Raw SQL tables do not share Prisma-generated referential/type contracts
-Status: OPEN
-Locations: all migration-only tables and raw SQL consumers.
-
-### PB-059 — Runtime raw SQL contract versioning is implicit rather than centrally registered
-Status: OPEN
-Locations: raw SQL services/migrations.
-
-### PB-060 — Database reader/writer ownership for migration-only tables is fragmented
-Status: OPEN
-Locations: assistant, Personal Brain, fitness, goals, life execution.
-
-### PB-061 — Transaction boundaries differ between equivalent CRUD paths
-Status: OPEN
-Locations: multiple domain services.
-
-### PB-062 — API DTO validation coverage is inconsistent across source-only and active controllers
-Status: OPEN
-Locations: affected DTO/controller paths.
-
-### PB-063 — Controller request user typing is inconsistent with actual Passport strategy result
-Status: OPEN
-Locations: Fitness and related controllers.
-
-### PB-064 — Service-layer methods accept raw strings where domain IDs/UUIDs should be typed
-Status: OPEN
-Locations: multiple services.
-
-### PB-065 — Error payload shapes are inconsistent across controller families
-Status: OPEN
-Locations: backend controllers/services.
-
-### PB-066 — Mobile error handling often reduces structured API errors to generic strings
-Status: OPEN
-Locations: multiple Mobile screens/API clients.
-
-### PB-067 — Mobile API clients duplicate transport concerns
-Status: OPEN / DESIGN REVIEW
-Locations: `apps/mobile/lib/api.ts`, `recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `calendar-api.ts`, `inventory-api.ts` and related clients.
-
-### PB-068 — Mobile transport clients are not uniformly aligned on refresh/retry semantics
-Status: OPEN — API CONTRACT HIGH
-Locations: `apps/mobile/lib/recipe-api.ts`, `apps/mobile/lib/shopping-api.ts`, `apps/mobile/lib/shopping-basket-api.ts`, compared with `apps/mobile/lib/api.ts` and `apps/mobile/lib/calendar-api.ts`.
-Evidence: `recipe-api.ts` obtains only `getStoredAccessToken()` and calls `fetch()` directly for `/recipes/match` and `/shopping/from-recipe`; it has no 401→refresh→retry path. `shopping-api.ts` and `shopping-basket-api.ts` use local request helpers that similarly attach only the stored access token and throw on non-2xx. By contrast, central `apps/mobile/lib/api.ts` and `calendar-api.ts` implement refresh on 401 and clear the session when refresh fails. Impact: after access-token expiry, recipe matching and shopping/basket actions can fail while calendar/central API calls recover automatically, producing inconsistent user-session behavior. Root cause is transport logic duplicated outside the canonical API client without shared refresh middleware/interceptor.
-
-### PB-069 — Mobile API base URL defaults to HTTP localhost
-Status: OPEN / RELEASE RISK
-Location: `apps/mobile/lib/api.ts` and several custom API clients.
-
-### PB-070 — Mobile offline behavior is not uniform across domain clients
-Status: OPEN
-Locations: Mobile API/domain clients.
-
-### PB-071 — Mobile local persistence has no centralized sensitive-data policy
-Status: OPEN / PRIVACY REVIEW
-Locations: AsyncStorage usages across Mobile.
-
-### PB-072 — Mobile notification action transport is incomplete
-Status: OPEN
-Locations: notification contract/action feedback.
-
-### PB-073 — Mobile push registration lifecycle is not centrally wired
-Status: OPEN
-Locations: push token registration helpers/bootstrap.
-
-### PB-074 — Mobile voice/TTS stack has native/runtime lifecycle risk
-Status: OPEN — RELEASE BLOCKER
-Locations: voice/TTS provider and native integrations.
-
-### PB-075 — Mobile voice assets lack integrity verification
-Status: OPEN — SUPPLY CHAIN
-Location: voice/TTS model preparation.
-
-### PB-076 — Mobile image/asset caching policy is fragmented
-Status: OPEN
-Locations: media/image clients and screens.
-
-### PB-077 — Mobile accessibility coverage is incomplete
-Status: OPEN
-Locations: multiple screens/components.
-
-### PB-078 — Mobile RTL/layout semantics are not centrally enforced for all surfaces
-Status: OPEN
-Locations: Mobile i18n/design-system/screens.
-
-### PB-079 — Mobile localization dictionary coverage is incomplete
-Status: OPEN
-Locations: `apps/mobile/lib/i18n.ts` and screens with hardcoded strings.
-
-### PB-080 — Backend locale support is narrower than broader product globalization intent
-Status: OPEN / ROADMAP
-Location: `apps/backend/src/common/i18n/locale.ts`.
-
-### PB-081 — DeviceIntelligence public endpoint has no explicit auth boundary
-Status: OPEN — SECURITY
-Location: `apps/backend/src/modules/device-intelligence/controllers/device-intelligence.controller.ts`.
-
-### PB-082 — Device sync DTO lacks runtime validators
-Status: OPEN — SECURITY
-Location: `apps/backend/src/modules/device-intelligence/dto/create-device-sync.dto.ts`.
-
-### PB-083 — App bootstrap has no explicit security-header middleware
-Status: OPEN / DEPLOYMENT REVIEW
-Location: `apps/backend/src/bootstrap.ts`.
-
-### PB-084 — Application-level rate-limit policy is not visible in bootstrap
-Status: OPEN / DEPLOYMENT REVIEW
-Location: `apps/backend/src/bootstrap.ts`, public auth endpoints.
-
-### PB-085 — Refresh session lifetime is hard-coded independently of JWT config
-Status: OPEN — AUTH
-Location: `apps/backend/src/modules/auth/auth.service.ts`, `createAuthResponse()`.
-
-### PB-086 — Refresh token rotation does not revoke the presented token/session
-Status: OPEN — SECURITY HIGH
-Location: `apps/backend/src/modules/auth/auth.service.ts`, `SessionService`.
-
-### PB-087 — Session lookup does not enforce persisted `expiresAt`
-Status: OPEN — AUTH LIFECYCLE
-Location: `apps/backend/src/modules/auth/services/session.service.ts`, `findByRefreshToken()`.
-
-### PB-088 — Refresh/logout controller methods are intentionally public but abuse controls are external/unknown
-Status: OPEN / SECURITY REVIEW
-Location: `apps/backend/src/modules/auth/controllers/auth.controller.ts`.
-
-### PB-089 — Fitness controller request identity contract mismatches JWT strategy shape
-Status: OPEN
-Location: `apps/backend/src/modules/fitness/controllers/fitness.controller.ts`, `auth/strategies/jwt.strategy.ts`.
-
-### PB-090 — Daily/weekly domain boundaries are not uniformly user-timezone aware
-Status: OPEN
-Locations: Dashboard/Daily/Brain domain services.
-
-### PB-091 — Dashboard workout latest query lacks explicit upper date bound in observed path
-Status: OPEN
-Location: `dashboard/dashboard.service.ts`.
-
-### PB-092 — LifeTasksModule is source-present but not runtime-wired
-Status: OPEN
-Location: `apps/backend/src/modules/life-tasks/`, `app.module.ts`.
-
-### PB-093 — LifeTasks and LifeExecution maintain overlapping task-domain contracts
-Status: OPEN
-Locations: life-tasks/life-execution modules.
-
-### PB-094 — LifeTasks DTOs lack runtime validation decorators
-Status: OPEN
-Locations: life-tasks DTOs.
-
-### PB-095 — LifeTasksService lacks direct service tests
-Status: OPEN
-Location: `life-tasks/services/life-tasks.service.ts`.
-
-### PB-096 — LifeTasksService metadata-only updates can alter completedAt
-Status: OPEN
-Location: `life-tasks/services/life-tasks.service.ts`.
-
-### PB-097 — RecommendationIntelligenceModule is not wired
-Status: OPEN
-Location: `recommendation-intelligence/`, `app.module.ts`.
-
-### PB-098 — RecommendationIntelligenceController is empty
-Status: OPEN
-Location: `recommendation-intelligence/controllers/recommendation-intelligence.controller.ts`.
-
-### PB-099 — Current State overstates Recommendation Intelligence implementation
-Status: OPEN
-Location: current-state documentation vs active module wiring.
-
-### PB-100 — GoalIntelligenceModule is not wired
-Status: OPEN
-Location: `goal-intelligence/`, `app.module.ts`.
-
-### PB-101 — Goal Intelligence service layer is placeholder-level/disconnected
-Status: OPEN
-Location: `goal-intelligence/services/*`.
-
-### PB-102 — Goal Intelligence has no direct tests in identified scope
-Status: OPEN
-Location: `goal-intelligence/`.
-
-### PB-103 — Dashboard uses UTC-derived date boundary in at least one path
-Status: OPEN
-Location: dashboard date handling.
-
-### PB-104 — Daily Command Center workout query lacks upper bound
-Status: OPEN
-Location: `daily-command-center.service.ts`.
-
-### PB-105 — DeviceIntelligenceController is public/source-level health-like endpoint
-Status: OPEN — SECURITY
-Location: `device-intelligence/controllers/device-intelligence.controller.ts`.
-
-### PB-106 — Fitness↔Auth user object mismatch can break `req.user.sub`
-Status: OPEN
-Location: Fitness controller/JWT strategy.
-
-### PB-107 — Refresh-token rotation leaves old session valid
-Status: OPEN — SECURITY HIGH
-Location: AuthService/SessionService.
-
-### PB-108 — No visible application rate limiting/security headers
-Status: OPEN / DEPLOYMENT REVIEW
-Location: bootstrap/application.
-
-### PB-109 — Mobile Price History hardcodes تومان
-Status: OPEN
-Location: `apps/mobile/app/price-history.tsx`.
-
-### PB-110 — Mobile Price History represents missing low as zero
-Status: OPEN / DATA QUALITY
-Location: `apps/mobile/app/price-history.tsx`.
-
-### PB-111 — Mobile push registration helper has no observed lifecycle consumer
-Status: OPEN
-Location: notification registration helper.
-
-### PB-112 — Earlier false positive: Personal Brain execution endpoints absent
-Status: NOT_APPLICABLE
-Reason: later verification confirmed `/personal-brain/decision/execute-next`, `/confirm`, and `/feedback` exist with JWT guards.
-
-### PB-113 — Notification runtime bootstrap has no lifecycle consumer
-Status: OPEN
-Location: Mobile notification runtime bootstrap.
-
-### PB-114 — Notification action feedback builder has no consumer/transport
-Status: OPEN
-Location: Mobile notification action feedback.
-
-### PB-115 — Mobile TypeScript typecheck excludes test files
-Status: OPEN
-Location: `apps/mobile/tsconfig.json` / package typecheck.
-
-### PB-116 — Mobile Voice/TTS imports undeclared `expo-speech`
-Status: OPEN
-Location: Mobile TTS source/package manifest.
-
-### PB-117 — Mobile Voice/TTS has no active screen consumer
-Status: OPEN
-Location: Mobile voice/TTS module.
-
-### PB-118 — Mobile auth/session storage uses AsyncStorage for bearer credentials
-Status: OPEN — SECURITY/PRIVACY
-Location: `apps/mobile/lib/api.ts`.
-
-### PB-119 — Duplicate/orphan Mobile animation wrappers
-Status: OPEN
-Locations: `apps/mobile/components/AnimatedPressable.tsx`, `AnimatedSection.tsx`, `apps/mobile/lib/motion.tsx`.
-
-### PB-120 — Command-center decision cards contain hardcoded English
-Status: OPEN
-Locations: `apps/mobile/components/DecisionTraceCard.tsx`, `PlanStatusCard.tsx`.
-
-### PB-121 — Mobile TTS preparation downloads model assets without checksum verification
-Status: OPEN — SUPPLY CHAIN
-Location: `apps/mobile/lib/tts-model-preparation.ts` / related script.
-
-### PB-122 — Mobile `getBrainContext()` targets a backend route not exposed by active controller
-Status: OPEN — API CONTRACT
-Location: `apps/mobile/lib/api.ts`, `apps/backend/src/modules/brain-integration/controllers/brain-integration.controller.ts`.
-
-### PB-123 — Auth persisted refresh-session expiry is hard-coded 30 days while JWT expiry is configurable
-Status: OPEN — AUTH
-Location: `apps/backend/src/modules/auth/auth.service.ts`.
-
-### PB-124 — Root current-state source-of-truth file was missing
-Status: OPEN — DOCUMENTATION
-Location: `docs/05_CURRENT_STATE.md` vs `apps/backend/docs/05_CURRENT_STATE.md`.
-
-### PB-125 — Recipe content importer is not aligned with final Prisma model contract
-Status: OPEN — DATA/DB
-Location: `apps/backend/scripts/recipe-content-import.mjs`, `apps/backend/prisma/schema.prisma`, recipe-step/media migrations.
-
-### PB-126 — Recipe content importer has no offset/checkpoint input
-Status: OPEN — OPERATIONAL
-Location: `apps/backend/scripts/recipe-content-import.mjs`.
-
-### PB-127 — Recipe content importer is not transactionally grouped across recipe/ingredient/step/media writes
-Status: OPEN — DATA INTEGRITY
-Location: `apps/backend/scripts/recipe-content-import.mjs`.
-
-### PB-128 — Recipe image pipeline enforces <=60KB despite later 20–150KB local-media target
-Status: OPEN — CONTRACT DRIFT
-Locations: `apps/backend/src/common/images/recipe-image-pipeline.ts`, recipe image scripts, local-media design.
-
-### PB-129 — Multiple executable country-intelligence variants have no canonical/deprecated policy
-Status: OPEN — OPERATIONAL
-Location: `apps/backend/scripts/recipe-country-intelligence*.mjs`.
-
-### PB-130 — Recipe image reprocess LIMIT is positional, not checkpointed
-Status: OPEN — OPERATIONAL
-Location: `apps/backend/scripts/recipe-image-reprocess-quality.mjs`.
-
-### PB-131 — Recipe image importer variants disagree on `hero` vs `primary` image contract
-Status: OPEN — DATA CONTRACT
-Locations: `recipe-image-import*.mjs`, `recipe_images` consumers.
-
-### PB-132 — Final food-intelligence self-test exists but is not package/CI-wired
-Status: OPEN — QA
-Location: `apps/backend/scripts/food-intelligence-final-self-test.mjs`, `apps/backend/package.json`, CI.
-
-### PB-133 — Recipe ingest quality-score unit mismatch
-Status: OPEN — RANKING CORRECTNESS
-Location: `apps/backend/scripts/recipe-ingest.mjs`, `recipe-recommendation-score.mjs`.
-Evidence: ingest persists `quality_score: quality.score` where `score` is constructed as a 0..1 fraction; recommendation scorer later computes `clamp(Number(recipe.quality_score) / 100)`. A value such as 0.82 therefore becomes 0.0082 before weighting. Impact: quality ranking signal is effectively suppressed by ~100x. The scorer and producer must share one canonical unit.
-
-### PB-134 — Nutrition estimator lacks source/version provenance for hard-coded constants
-Status: OPEN — DATA PROVENANCE
-Location: `apps/backend/scripts/recipe-nutrition-estimate.mjs`.
-Evidence: `FOOD` embeds fixed kcal/protein/carbs/fat values and `gramsFromLine()` embeds fixed household-unit conversions such as cup→150g, tbsp→14g and tsp→4.2g; output only records matched names/grams plus estimator version/confidence, not the data source/version of these constants. Impact: estimated nutrition cannot be independently reproduced/audited when constants change. The output is explicitly `estimated:true`, so this is not classified as hidden verified data.
-
-### PB-135 — Dataset image RESET deletes global DB state but enumerates only first 1000 Storage objects
-Status: OPEN — OPERATIONAL/DATA INTEGRITY HIGH
-Location: `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `resetState()`.
-Evidence: Storage listing uses `prefix:'recipes'`, `limit:1000`, `offset:0` once, then the script globally deletes all hero `recipe_images` and all import attempts. Impact: with >1000 recipe objects, DB rows can be removed while Storage objects beyond the first page remain orphaned. No destructive reset was executed during the audit.
-
-### PB-136 — Wired recipe image importer only reads first 1000 existing images/skip attempts
-Status: OPEN — DATA/OPERATIONAL HIGH
-Location: `apps/backend/scripts/recipe-image-import.mjs`, `getMissingRecipes()`.
-Evidence: existing primary-image rows and skipped-attempt rows are each fetched with `limit=1000` and no pagination while the recipe list is paginated. Impact: later rows can be treated as missing/unattempted and reprocessed, creating duplicate/failed writes or unnecessary external downloads.
-
-### PB-137 — Local guaranteed-v8 image pipeline references missing scripts
-Status: OPEN — EXECUTION BLOCKER
-Location: `apps/backend/scripts/recipe-images-local-guaranteed-v8.mjs`.
-Evidence: orchestration invokes `./scripts/recipe-images-local-strict-v3.mjs`, `./scripts/recipe-images-local-gallery-upgrade-v1.mjs`, and `./scripts/recipe-images-local-status.mjs`, but exact file lookups in the audited branch return 404/not-found. Impact: the v8 pipeline cannot complete in its declared form.
-
-### PB-138 — Country preference scoring query does not select fields consumed by the scorer
-Status: OPEN — RANKING CORRECTNESS
-Location: `apps/backend/scripts/recipe-recommendation-score.mjs`, relation query in `main()` and `globalCultureFit()`.
-Evidence: scorer requests `recipe_country_relations?select=recipe_id,country_id,relation_type,confidence,evidence`; `globalCultureFit()` then tests `r.iso2`, `r.country` and `r.region`. Those fields are absent from the query result. Impact: preferred-country/region signals cannot hit through this path even when relation rows exist.
-
-### PB-139 — Mobile recipe/shopping API clients bypass canonical 401 refresh/retry policy
-Status: OPEN — API CONTRACT HIGH
-Location: `apps/mobile/lib/recipe-api.ts`, `apps/mobile/lib/shopping-api.ts`, `apps/mobile/lib/shopping-basket-api.ts`; comparison baseline `apps/mobile/lib/api.ts` and `apps/mobile/lib/calendar-api.ts`.
-Evidence: `recipe-api.ts` calls `getStoredAccessToken()` then performs direct `fetch()` for `/recipes/match` and `/shopping/from-recipe`; `shopping-api.ts` and `shopping-basket-api.ts` also build local request helpers that attach only the stored access token and immediately throw on non-2xx. `api.ts` central request logic and `calendar-api.ts` instead retry once after a 401 by refreshing the persisted refresh token and clear the auth session when refresh fails. Impact: an expired access token can break recipe matching and shopping/basket actions while other app areas silently recover, creating inconsistent auth/session behavior and UX. Root cause: duplicated transport clients lack shared refresh middleware.
+Review status: IN_PROGRESS
+Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, and continued operational-script/legacy-variant review including recipe image reprocessors, food entity resolvers, recipe intelligence classify/profile/nutrition/score, relevant recipe migrations, local recipe-image pipeline variants, backend common/config/database/i18n/image boundary, and historical high-value branch/PR reconciliation.
+Scope not yet read: remaining repository-wide source/tests/consumers, full matrices, exhaustive operational scripts, runtime execution, complete security/privacy reconciliation.
+Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/backend/prisma/`, `apps/backend/scripts/`, `apps/backend/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
+Confidence: HIGH for source-level findings below unless explicitly marked validation-needed.
 
 ## Correction log
 
-### PB-112
-Status: NOT_APPLICABLE
-Reason: verified endpoint exists with JWT guards.
+### PB-112 — NOT_APPLICABLE
+Earlier audit text said Mobile Brain `execute-next`/feedback routes were missing. That was disproven. `apps/backend/src/modules/personal-brain/controllers/decision-execution.controller.ts` exposes `POST /personal-brain/decision/execute-next` and `POST /personal-brain/decision/confirm`, both JWT guarded. `apps/backend/src/modules/personal-brain/controllers/decision-feedback.controller.ts` exposes `POST /personal-brain/decision/feedback`, also JWT guarded. No repair is required for the original PB-112 route-existence claim.
 
-### PB-167
-Status: NOT_APPLICABLE
-Reason: `ContentModule` is active in `AppModule`.
+### PB-167 — NOT_APPLICABLE
+Earlier appendix text said `ContentModule` was orphaned. That was disproven by direct inspection of `apps/backend/src/app.module.ts`, which imports `ContentModule` in the active Nest `imports` array. The old PB-167 statement is not an open issue and must not be counted.
 
-### PB-185
-Status: COVERED_BY_PB-121/PB-075
-Reason: exact Mobile TTS asset-integrity surface; retain canonical root cause only.
+## New findings
 
-## Audit note
+### PB-156 — LifeTasksModule is source-present but not runtime-wired
+Status: OPEN — ARCHITECTURE/FEATURE
+Locations: `apps/backend/src/modules/life-tasks/life-tasks.module.ts`, `apps/backend/src/app.module.ts`.
+Evidence: `LifeTasksModule` exists with controller/service, but `AppModule` does not import it; search found no external consumer. Impact: its source/API is not active in the audited Nest application.
 
-All findings above are audit observations, not remediation claims. Production fixes are intentionally deferred until the Master Prompt audit scope is fully closed, except for any immediate containment that would be required by a newly established safety-critical issue.
+### PB-157 — LifeTasks and LifeExecution are parallel task-domain implementations
+Status: OPEN — ARCHITECTURE/CONTRACT DRIFT
+Locations: `apps/backend/src/modules/life-tasks/*`, `apps/backend/src/modules/life-execution/*`, related migrations.
+Evidence: both domains implement overlapping task CRUD/dependency/event semantics; LifeTasks uses `LifeTaskDependency`/`LifeTaskEvent`, while LifeExecution uses legacy `TaskDependency`/`TaskEvent`. Impact: parallel semantics can diverge.
+
+### PB-158 — LifeTasks DTOs lack runtime validation decorators
+Status: OPEN — API CONTRACT
+Locations: `apps/backend/src/modules/life-tasks/dto/create-life-task.dto.ts`, `update-life-task.dto.ts`, `task-event.dto.ts`.
+
+### PB-159 — LifeTasksService has no direct automated service spec in inspected repository
+Status: OPEN — TEST GAP
+Location: `apps/backend/src/modules/life-tasks/services/life-tasks.service.ts`.
+
+### PB-160 — LifeTasksService.update() resets completedAt on metadata-only edits to completed tasks
+Status: OPEN — DATA/LOGIC HIGH
+Location: `apps/backend/src/modules/life-tasks/services/life-tasks.service.ts`, `update()`.
+Evidence: duplicate/unreachable `status === 'completed'` branch plus `status = dto.status ?? task.status` causes a completed task edited without a status change to receive a new completion timestamp.
+
+### PB-161 — RecommendationIntelligenceModule is orphaned from runtime wiring
+Status: OPEN — ARCHITECTURE/FEATURE HIGH
+Location: `apps/backend/src/modules/recommendation-intelligence/recommendation-intelligence.module.ts` and import graph.
+
+### PB-162 — RecommendationIntelligenceController is empty; documented food endpoint is not exposed
+Status: OPEN — API CONTRACT HIGH
+Location: `apps/backend/src/modules/recommendation-intelligence/controllers/recommendation-intelligence.controller.ts`.
+
+### PB-163 — Current State documentation overstates Recommendation Intelligence implementation/wiring
+Status: OPEN — DOCUMENTATION/ARCHITECTURE
+Location: `apps/backend/docs/05_CURRENT_STATE.md` versus current source/module wiring.
+
+### PB-164 — GoalIntelligenceModule is source-present but not runtime-wired
+Status: OPEN — ARCHITECTURE/FEATURE
+Location: `apps/backend/src/modules/goal-intelligence/goal-intelligence.module.ts` and import graph.
+
+### PB-165 — Goal Intelligence service cluster is placeholder-level and disconnected
+Status: OPEN — ARCHITECTURE/DESIGN
+Locations: Goal Intelligence service cluster.
+
+### PB-166 — Goal Intelligence has no direct service tests in inspected tree
+Status: OPEN — TEST GAP
+
+### PB-168 — Dashboard default date/weekly boundary is UTC-based
+Status: OPEN — TIMEZONE HIGH
+Location: `apps/backend/src/modules/dashboard/dashboard.service.ts` date normalization/range helpers.
+
+### PB-169 — Daily Command Center current-day workout query has no upper date bound
+Status: OPEN — TIME/LOGIC HIGH
+Location: `apps/backend/src/modules/daily-command-center/daily-command-center.service.ts` workout query.
+
+### PB-170 — Device Intelligence endpoint is publicly reachable without auth guard
+Status: OPEN — SECURITY HIGH
+Location: `apps/backend/src/modules/device-intelligence/controllers/device-intelligence.controller.ts`.
+
+### PB-171 — Active FitnessController reads req.user.sub although JWT strategy exposes User.id
+Status: OPEN — AUTH/SECURITY HIGH
+Locations: `auth/strategies/jwt.strategy.ts`, active `fitness/controllers/fitness.controller.ts`.
+
+### PB-172 — Refresh-token rotation leaves old refresh session valid after successful refresh
+Status: OPEN — SECURITY HIGH
+Locations: `auth/auth.service.ts`, `auth/services/session.service.ts`.
+
+### PB-173 — Application-level auth rate limiting/security headers are not observed
+Status: OPEN — SECURITY DESIGN REVIEW
+Locations: `bootstrap.ts`, `main.ts`, backend package manifest. External reverse-proxy controls remain unknown.
+
+### PB-174 — Mobile Price History ignores explicit snapshot currency and always renders تومان
+Status: OPEN — DATA/UX HIGH
+Location: `apps/mobile/app/price-history.tsx`.
+
+### PB-175 — Mobile Price History chart fabricates zero as observed minimum
+Status: OPEN — DATA PRESENTATION
+Location: `apps/mobile/app/price-history.tsx`.
+
+### PB-176 — Push registration helpers have no application lifecycle consumer
+Status: OPEN — FEATURE/INTEGRATION HIGH
+Location: `apps/mobile/lib/notifications/push-registration.ts`.
+
+### PB-177 — Notification runtime bootstrap has no application lifecycle consumer
+Status: OPEN — FEATURE/INTEGRATION HIGH
+Location: `apps/mobile/lib/notifications/push-runtime.ts`.
+
+### PB-178 — Notification action feedback builder has no active consumer/transport
+Status: OPEN — FEATURE/INTEGRATION
+Location: `apps/mobile/lib/notifications/notification-actions.ts`.
+
+### PB-179 — Mobile TypeScript typecheck excludes test files
+Status: OPEN — TEST/STATIC
+Location: `apps/mobile/tsconfig.json`.
+
+### PB-180 — Mobile voice/TTS imports undeclared expo-speech dependency
+Status: OPEN — BUILD/DEPENDENCY
+Locations: `apps/mobile/lib/voice.ts`, `apps/mobile/package.json`.
+
+### PB-181 — Mobile Voice/TTS feature has no active app consumer
+Status: OPEN — FEATURE/INTEGRATION
+Location: `apps/mobile/lib/voice.ts`.
+
+### PB-182 — Mobile auth tokens stored in AsyncStorage instead of secure credential storage
+Status: OPEN — SECURITY HIGH
+Location: `apps/mobile/lib/api.ts`.
+
+### PB-183 — Mobile component layer contains duplicate/orphaned animation wrappers
+Status: OPEN — ARCHITECTURE/INTEGRATION
+Locations: `apps/mobile/components/AnimatedPressable.tsx`, `AnimatedSection.tsx`, `apps/mobile/lib/motion.tsx`.
+
+### PB-184 — Mobile command-center visual components use hardcoded English outside global localization policy
+Status: OPEN — LOCALIZATION
+Locations: `apps/mobile/components/decision-trace-card.tsx`, `plan-status-card.tsx`.
+
+### PB-185 — Mobile TTS preparation script downloads executable model assets without checksum verification
+Status: OPEN — SUPPLY CHAIN
+Location: `apps/mobile/scripts/prepare-khadijah-tts-model.cjs`. This is a specific surface of PB-129 and must not be double-counted.
+
+### PB-186 — Mobile Brain Context helper targets an unexposed backend route
+Status: OPEN — BACKEND↔MOBILE CONTRACT MEDIUM
+Locations: `apps/mobile/lib/api.ts` `getBrainContext()`, `apps/backend/src/modules/brain-integration/controllers/brain-integration.controller.ts`.
+Evidence: helper requests `/brain-integration/context`; controller has no route methods; repository search found no screen/component consumer beyond the helper. This is stale/unusable contract debt, not a proven currently user-triggered failure.
+
+### PB-187 — Auth persisted refresh-session expiry is hard-coded to 30 days while refresh JWT lifetime is configurable
+Status: OPEN — AUTH/CONFIG CONTRACT
+Location: `apps/backend/src/modules/auth/auth.service.ts` versus `token.utils.ts`/`AppConfigService`.
+
+### PB-188 — Recipe content importer uses Prisma models absent from final Prisma schema
+Status: OPEN — DATA/BUILD/RUNTIME HIGH
+Location: `apps/backend/scripts/recipe-content-import.mjs`, calls to `prisma.recipeStep.*` and `prisma.recipeMedia.*`.
+Evidence: importer uses generated `PrismaClient`, while the audited final `schema.prisma` does not declare `RecipeStep` or `RecipeMedia`; those tables exist only in migration SQL. Impact: current generated client will not expose these delegates, so execution is expected to fail at these calls. Root cause: operational importer/schema drift.
+
+### PB-189 — Recipe image dataset importer has a destructive global RESET path
+Status: OPEN — OPERATIONAL SAFETY HIGH
+Location: `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `RESET`/`resetState()`.
+Evidence: setting `RECIPE_IMAGE_RESET=1` causes the script to enumerate/delete Storage objects under `recipes`, then execute DELETE against all `recipe_images` rows with `image_type=eq.hero` and all `recipe_image_import_attempts` rows where `recipe_id` is not null. There is no interactive confirmation or environment safety gate. Impact: an operator can accidentally erase the complete hero-image dataset/attempt history before re-importing; this is especially dangerous because the script is operational and uses a Supabase service-role credential. Audit did not execute the reset path.
+
+### PB-190 — Recipe country-intelligence LIMIT mode deletes prior global classification state before processing only the limited subset
+Status: OPEN — DATA/OPERATIONAL HIGH
+Location: `apps/backend/scripts/recipe-country-intelligence-final.mjs`, `LIMIT`, `DELETE FROM recipe_country_relations`, `DELETE FROM recipe_intelligence_profiles`.
+Evidence: `LIMIT > 0` restricts `base`/temporary recipe selection, but the script deletes all rows whose `source` matches the final version and all matching intelligence profiles without applying the same LIMIT. It then re-inserts/updates only the selected subset. Impact: running the script with a bounded LIMIT as a batch/test can erase previously classified recipes outside that batch, leaving partial classification state. Root cause: global cleanup is not scoped to the limited work set.
+
+### PB-191 — Canonical root Current State file was missing; active state document lives under backend subtree
+Status: OPEN — DOCUMENTATION/SOURCE-OF-TRUTH
+Locations: required `docs/05_CURRENT_STATE.md`; existing `apps/backend/docs/05_CURRENT_STATE.md`.
+Evidence: direct read of the audit branch showed `docs/05_CURRENT_STATE.md` was absent while `apps/backend/docs/05_CURRENT_STATE.md` exists. Impact: the session protocol's canonical state path was not available and project state can split between root and backend documentation. Root file has now been created as a canonical audit location, but the two documents still require deliberate reconciliation and ownership cleanup; this finding is not considered closed.
+
+### PB-192 — Recipe content importer has no dataset offset/checkpoint; each invocation reprocesses only the first batch
+Status: OPEN — OPERATIONAL/RESTARTABILITY
+Location: `apps/backend/scripts/recipe-content-import.mjs`, `main()` and `const batch = dataset.slice(0, BATCH_SIZE)`.
+Evidence: the importer always loads the full dataset and selects only indexes `0..BATCH_SIZE-1`; there is no offset, cursor, checkpoint file, persisted import-progress state, or environment variable that changes the starting index. Impact: a dataset larger than the batch cannot be advanced through repeat invocations using the wired command alone, and reruns repeatedly revisit the same first batch. This violates the MYPA background/batch restartability requirement.
+
+### PB-193 — Recipe content importer performs related writes outside a transaction, allowing partial persistence on late failure
+Status: OPEN — DATA INTEGRITY HIGH
+Location: `apps/backend/scripts/recipe-content-import.mjs`, `importRecipe()`.
+Evidence: recipe create/update, child deletes, `recipeIngredient` inserts and later `recipeStep`/`recipeMedia` operations are separate Prisma calls with no surrounding `prisma.$transaction`. Because PB-188 causes the generated Prisma client to fail when `recipeStep`/`recipeMedia` delegates are reached, earlier recipe/ingredient mutations can remain persisted even when that recipe import returns `failed`. Impact: one broken late-stage dependency can leave a partially imported recipe and repeated reruns can further churn that state.
+
+### PB-194 — Recipe image operational scripts hard-limit assets to 60KB, diverging from the MYPA image-processing target
+Status: OPEN — PRODUCT/ASSET CONTRACT
+Locations: `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `apps/backend/scripts/recipe-image-import.mjs`, `apps/backend/scripts/recipe-image-import-all-safe.mjs` (`MAX_BYTES = 60 * 1024`).
+Evidence: the inspected operational image import paths explicitly target WebP output at or below 60KB, while the Master Prompt's image-processing contract sets a target of approximately 100–150KB for mobile-friendly quality. Impact: the current operational cap is materially below the defined target and may force unnecessary quality/dimension degradation; the canonical image pipeline policy is therefore not aligned across implementation and project requirements.
+
+### PB-195 — Multiple versioned country-intelligence implementations remain executable and only one is package-wired
+Status: OPEN — OPERATIONAL/ARCHITECTURE DRIFT
+Locations: `apps/backend/scripts/recipe-country-intelligence.mjs`, `recipe-country-intelligence-v2.mjs`, `recipe-country-intelligence-v3.mjs`, `recipe-country-intelligence-v4.mjs`, `recipe-country-intelligence-v5.mjs`, `recipe-country-intelligence-v6.mjs`, `recipe-country-intelligence-v7-source.mjs`, `recipe-country-intelligence-v8-source-evidence.mjs`, `recipe-country-intelligence-final.mjs`, and `apps/backend/package.json`.
+Evidence: the script directory contains a sequence of independently maintained country-intelligence implementations, while `apps/backend/package.json` exposes only `recipe-intelligence:country` mapped to `recipe-country-intelligence-final.mjs`. No canonical retirement/archive marker is encoded in the script directory itself. Impact: operators can manually execute legacy variants with behavior different from the wired command, making reproducibility and operational ownership ambiguous. This is an audit finding until the variants are reconciled, archived, or explicitly designated.
+
+### PB-196 — Reprocess-quality LIMIT is positional, not restartable
+Status: OPEN — OPERATIONAL/RESTARTABILITY
+Location: `apps/backend/scripts/recipe-image-reprocess-quality.mjs`, `existingRows()` and `main()`.
+Evidence: `existingRows()` fetches all hero-image rows ordered by `recipe_id.asc` and, when `RECIPE_IMAGE_REPROCESS_LIMIT > 0`, returns only `rows.slice(0, LIMIT)`. There is no offset, stable checkpoint, cursor, or processed-state marker. Impact: a bounded rerun always targets the first N rows again; an operator cannot safely advance through successive bounded passes using the exposed limit alone. This is inconsistent with the project requirement that long-running work be batchable and restartable.
+
+### PB-197 — Image importer family uses conflicting `image_type`/storage contracts across executable variants
+Status: OPEN — OPERATIONAL/ARCHITECTURE DRIFT
+Locations: `apps/backend/scripts/recipe-image-import.mjs`, `apps/backend/scripts/recipe-image-import-all.mjs`, `apps/backend/scripts/recipe-image-import-all-safe.mjs`, `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `apps/backend/package.json`.
+Evidence: the wired `recipe-images:import` script uses `image_type='primary'` and storage key `recipes/<recipeId>/primary.webp`; the wired dataset importer uses `image_type='hero'` and `recipes/<recipeId>/hero.webp`; legacy `recipe-image-import-all.mjs` also writes `primary`, while `recipe-image-import-all-safe.mjs` writes `hero`. They also use materially different candidate matching and pass semantics. Impact: manually running a different executable importer can create a second image contract for the same recipe and leave both primary/hero records, making downstream selection ambiguous. This is not yet shown to cause a live user failure because runtime DB state was not executed/inspected in this session.
+
+### PB-198 — Final food-intelligence self-test exists but is not package/CI-wired in the inspected operational scripts
+Status: OPEN — TEST/QA
+Locations: `apps/backend/scripts/food-intelligence-final-self-test.mjs`, `apps/backend/package.json`.
+Evidence: the final self-test directly imports `food-entity-resolver-final.mjs` and `localized-food-entity-resolver-final.mjs` and checks canonical IDs, localized aliases and quantity normalization. The inspected package manifest wires the production-facing intelligence scripts but does not expose a corresponding script command for this final self-test, and no CI invocation was observed during this scope. Impact: the strongest direct resolver regression suite exists but is not automatically exercised by the normal package/CI path, allowing final resolver regressions to escape routine validation.
+
+### PB-199 — Recommendation quality score normalization conflicts with the ingest score scale
+Status: OPEN — LOGIC HIGH
+Locations: `apps/backend/scripts/recipe-ingest.mjs`, `scoreRecipe()`/`quality_score` write, and `apps/backend/scripts/recipe-recommendation-score.mjs`, `scoreRecipe()` quality calculation.
+Evidence: `recipe-ingest.mjs` computes `quality.score` as a bounded fractional value (for example additions `0.12`, `0.06`, etc., with a maximum below 1) and writes that value directly to `recipes.quality_score`. The recommendation scorer later computes `const quality = Number(recipe.quality_score) > 0 ? clamp(Number(recipe.quality_score) / 100) : 0.6;`. A stored value such as `0.82` therefore becomes `0.0082`, effectively turning the 4% quality component into near-zero contribution. Root cause: producer/consumer disagree on the quality score unit (fraction versus percentage). Impact: verified recipe quality has almost no effect on deterministic ranking when a positive stored score exists.
+
+### PB-200 — Nutrition estimation uses hard-coded nutrient constants/conversions without ingredient-data provenance
+Status: OPEN — DATA QUALITY/PROVENANCE
+Location: `apps/backend/scripts/recipe-nutrition-estimate.mjs`, `FOOD` table, `gramsFromLine()`, and `estimate()`.
+Evidence: the script embeds fixed calories/protein/carbs/fat constants for named foods and fixed household-volume conversions such as `cup -> 150g`, `tbsp -> 14g`, `tsp -> 4.2g`; the resulting evidence records matched ingredient names and grams but does not retain a source identifier/version for those nutrient constants or conversion rules. The output is labeled `estimated:true` and has a confidence, so this is not being classified as a hidden verified-value issue. Impact: future recipe decisions cannot trace the numeric source/version used for an estimate, weakening the project's required nutrition provenance and making recalculation/audit difficult.
+
+### PB-201 — Dataset importer RESET deletes global DB rows but only enumerates first 1000 Storage objects
+Status: OPEN — OPERATIONAL/DATA INTEGRITY HIGH
+Location: `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `resetState()`.
+Evidence: reset lists bucket objects once with `prefix: 'recipes'`, `limit: 1000`, `offset: 0`, deletes every returned Storage object, then issues global DELETE requests for all hero `recipe_images` and all non-null `recipe_image_import_attempts`. There is no pagination through subsequent Storage objects. Impact: with more than 1000 recipe objects, RESET can remove all corresponding DB records while leaving Storage files beyond the first 1000 orphaned, causing storage leakage and an inconsistent DB/Storage state. No reset execution was performed during the audit.
+
+### PB-202 — Wired recipe image importer only inspects first 1000 existing images/skip attempts
+Status: OPEN — DATA/OPERATIONAL HIGH
+Location: `apps/backend/scripts/recipe-image-import.mjs`, `getMissingRecipes()`.
+Evidence: `imageRows` is fetched from `recipe_images?select=recipe_id&image_type=eq.primary&limit=1000` and skipped attempts from `recipe_image_import_attempts?...&limit=1000`; neither query paginates, while the recipe scan itself paginates through `recipes`. Impact: once more than 1000 primary-image rows or skipped attempts exist, recipes represented only in later pages are treated as missing/unattempted and can be reprocessed; depending on unique constraints this can cause duplicate/failed writes and unnecessary external downloads. Root cause: asymmetric pagination between the source recipe list and existing-state sets.
+
+### PB-203 — Local guaranteed-v8 recipe image pipeline references missing executable scripts
+Status: OPEN — OPERATIONAL/BUILD HIGH
+Location: `apps/backend/scripts/recipe-images-local-guaranteed-v8.mjs`, `main()` calls to `./scripts/recipe-images-local-strict-v3.mjs`, `./scripts/recipe-images-local-gallery-upgrade-v1.mjs`, and `./scripts/recipe-images-local-status.mjs`.
+Evidence: the v8 orchestrator invokes these three relative script paths. Direct branch reads for all three exact paths returned `Not Found`, while `recipe-images-local-guaranteed-v7.mjs` does exist. Because `run()` rejects on the child `error` event and `allowFailure=true` only handles non-zero child exit codes, a missing script path produces a rejected promise and stops the pipeline before completion. Impact: the v8 pipeline is not executable to completion from the audited repository state; this is a concrete broken operational entrypoint, not merely documentation drift.
+
+### PB-204 — Country preference scoring reads fields that its own relation query does not select
+Status: OPEN — LOGIC HIGH
+Locations: `apps/backend/scripts/recipe-intelligence-classify.mjs` `globalCultureFit()` and `main()`, `apps/backend/scripts/recipe-recommendation-score.mjs` `globalCultureFit()` and `main()`.
+Evidence: both scripts define `globalCultureFit()` to match user `preferred_countries` / `countries` against `r.iso2` or `r.country`, and user `preferred_regions` against `r.region`. However, their `recipe_country_relations` query selects only `recipe_id,country_id,relation_type,confidence,evidence`; no `iso2`, `country`, or `region` fields are present on the returned relation objects. Therefore the direct country/region preference branches cannot hit from this result shape, and culture fit falls back to `recipe.is_global` or the neutral fallback rather than the user's selected country/region. Root cause: consumer selection shape does not satisfy the helper's data contract. Impact: the documented deterministic cultural-preference signal is silently ineffective in these scripts until the relation data is joined/enriched or the helper is changed to use the selected `country_id` with an explicit country lookup.
+
+### PB-205 — Mobile recipe/shopping API clients bypass canonical 401 refresh/retry policy
+Status: OPEN — API CONTRACT HIGH
+Locations: `apps/mobile/lib/recipe-api.ts`, `apps/mobile/lib/shopping-api.ts`, `apps/mobile/lib/shopping-basket-api.ts`; comparison baseline `apps/mobile/lib/api.ts` and `apps/mobile/lib/calendar-api.ts`.
+Evidence: `recipe-api.ts` obtains only `getStoredAccessToken()` and performs direct `fetch()` calls for `/recipes/match` and `/shopping/from-recipe`; `shopping-api.ts` and `shopping-basket-api.ts` use local request helpers that attach only the stored access token and immediately throw on non-2xx. Central `apps/mobile/lib/api.ts` and `calendar-api.ts` instead implement 401→refresh→retry and clear the auth session when refresh fails. Impact: once the access token expires, recipe matching and shopping/basket actions can fail while other app areas recover automatically, creating inconsistent session behavior and forcing avoidable user re-authentication. Root cause: duplicated transport clients are outside the canonical refresh middleware/interceptor policy.
+
+## Reconciliation note
+Preserve oldest canonical IDs when the same root cause already exists elsewhere. PB-112 and PB-167 are correction-trail IDs only. PB-185 is a specific surface of PB-129 and must not be double-counted.
