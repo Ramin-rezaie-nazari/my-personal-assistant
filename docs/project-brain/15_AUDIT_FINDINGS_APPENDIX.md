@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-231
+## Findings PB-156 through PB-232
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -352,6 +352,11 @@ Evidence: the current Appendix blob explicitly begins with `## Findings PB-156 t
 Status: OPEN — RUNTIME/CONCURRENCY MEDIUM-HIGH
 Locations: `apps/mobile/lib/yoga-pose-pipeline.ts`, `apps/mobile/lib/yoga-pose-pipeline.spec.ts`.
 Evidence: `YogaPosePipeline` subscribes to camera frames and calls `void this.process(frame, onPose)` for each frame. `process()` checks `this.stateValue.active` before `await this.provider.detect(frame)`, but it performs no active/session-token check after the await. `stop()` unsubscribes and marks `active:false`, but cannot cancel an already-running `detect()`. Therefore an analysis that was in flight before `stop()` can resolve afterward, mutate `analyzedFrames`, `lastConfidence`, and `lastCapturedAt`, and invoke `onPose` after the pipeline has been stopped. The existing `yoga-pose-pipeline.spec.ts` only verifies the unconfigured provider path and contains no stop/in-flight completion regression test. Impact: a stopped camera-analysis session can receive stale post-stop callbacks/state mutations, causing UI/session state to reflect frames that should no longer be accepted. Runtime execution was not available in this audit.
+
+### PB-232 — Memory Intelligence POST contract is incompatible with the global ValidationPipe
+Status: OPEN — API/RUNTIME HIGH
+Locations: `apps/backend/src/modules/memory-intelligence/controllers/memory-intelligence.controller.ts`, `apps/backend/src/bootstrap.ts`.
+Evidence: the active global `ValidationPipe` is configured with `whitelist: true` and `forbidNonWhitelisted: true`. The `MemoryIntelligenceController.remember()` endpoint accepts an inline `RememberMemoryBody` TypeScript interface rather than a decorated DTO; its `type`, `key`, `value`, and optional `importance` properties have no `class-validator` metadata. With `forbidNonWhitelisted`, request properties without validation metadata are treated as non-whitelisted. Consequently a normal `POST /memory-intelligence` body containing the documented memory fields is expected to be rejected by the global pipe before the controller handler can construct and persist the memory. Impact: the primary authenticated memory-write endpoint is effectively unusable until its body is represented by a validated DTO (or the validation policy is intentionally changed). This is distinct from PB-158 because it is a concrete runtime contract collision in the active Memory Intelligence endpoint, not merely a missing decorator audit on an inactive module.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
