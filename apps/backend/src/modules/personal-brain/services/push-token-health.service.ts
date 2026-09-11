@@ -11,28 +11,17 @@ export type PushTokenHealthResult = {
 export class PushTokenHealthService {
   constructor(private readonly devices: NotificationDeviceRegistryService) {}
 
-  handleProviderError(
-    deviceId: string,
-    errorCode: string,
-  ): PushTokenHealthResult {
-    const permanent = [
-      'DeviceNotRegistered',
-      'InvalidRegistration',
-      'Unregistered',
-      'TokenNotFound',
-    ].includes(errorCode);
+  handleProviderError(deviceId: string, errorCode: string): PushTokenHealthResult {
+    const permanent = ['DeviceNotRegistered', 'InvalidRegistration', 'Unregistered', 'TokenNotFound'].includes(errorCode);
     if (permanent) {
-      const device = this.devices.disable(deviceId);
+      const device = this.devices.get(deviceId);
+      const disabled = device ? this.devices.disableForUser(deviceId, device.userId) : null;
       return {
         valid: false,
-        action: device ? 'disable_device' : 'retry',
+        action: disabled ? 'disable_device' : 'retry',
         reason: `Provider reported permanent token error: ${errorCode}`,
       };
     }
-    return {
-      valid: true,
-      action: 'retry',
-      reason: `Provider error may be temporary: ${errorCode}`,
-    };
+    return { valid: true, action: 'retry', reason: `Provider error may be temporary: ${errorCode}` };
   }
 }
