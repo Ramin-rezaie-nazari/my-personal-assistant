@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/database/prisma.service';
+import { getDateKeyInTimezone, zonedDateTimeToUtc } from '../../common/utils/user-time';
 import { NotificationsService } from '../notifications/services/notifications.service';
 
 @Injectable()
@@ -10,9 +11,18 @@ export class DailyCommandCenterService {
   ) {}
 
   async getToday(userId: string) {
-    const dateKey = new Date().toISOString().slice(0, 10);
-    const todayStart = new Date(`${dateKey}T00:00:00.000Z`);
-    const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId },
+      select: { timezone: true },
+    });
+    const timezone = settings?.timezone || 'UTC';
+    const now = new Date();
+    const dateKey = getDateKeyInTimezone(now, timezone);
+    const tomorrowDate = new Date(`${dateKey}T12:00:00.000Z`);
+    tomorrowDate.setUTCDate(tomorrowDate.getUTCDate() + 1);
+    const tomorrowDateKey = tomorrowDate.toISOString().slice(0, 10);
+    const todayStart = zonedDateTimeToUtc(dateKey, '00:00:00', timezone);
+    const tomorrowStart = zonedDateTimeToUtc(tomorrowDateKey, '00:00:00', timezone);
     const [
       profile,
       daily,
@@ -41,7 +51,7 @@ export class DailyCommandCenterService {
         },
       }),
       this.prisma.reminder.findFirst({
-        where: { userId, completed: false, scheduledAt: { gte: new Date() } },
+        where: { userId, completed: false, scheduledAt: { gte: now } },
         orderBy: { scheduledAt: 'asc' },
       }),
       this.prisma.reminder.count({ where: { userId, completed: false } }),
@@ -66,7 +76,7 @@ export class DailyCommandCenterService {
         orderBy: { scheduledTime: 'asc' },
       }),
       this.prisma.workout.findMany({
-        where: { userId, performedAt: { gte: todayStart } },
+        where: { userId, performedAt: { gte: todayStart, lt: tomorrowStart } },
         orderBy: { performedAt: 'desc' },
         take: 3,
       }),
