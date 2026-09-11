@@ -1,9 +1,11 @@
-# PB-256 — Recipe intelligence package scripts reference missing executables
+# PB-256 — WITHDRAWN / FALSE POSITIVE RECONCILIATION
 
-- Status: PROVISIONAL — operational-script contract finding.
-- Location: `apps/backend/package.json`
-- Problem: The package manifest defines `recipe-intelligence:nutrition` → `node ./scripts/recipe-nutrition-estimate.mjs` and `recipe-intelligence:score` → `node ./scripts/recipe-recommendation-score.mjs`, but current-main repository search finds no source file for either target.
-- Evidence: exact search on audited main found only the package-manifest entries for both filenames. The nutrition executable is present on `agent/mypa-autonomous-control-plane`, and the score executable is also present on that branch. The branch copies therefore establish a lineage discrepancy, not an invalid filename.
-- Impact: Both advertised package commands are non-executable on current main and can fail immediately when invoked.
-- Reconciliation: This is distinct from PB-206 (workflow commands absent from package scripts), PB-251 (retry-quality target missing on main), and PB-255 (internal dependencies of the v8 local image pipeline missing on main). Final catalog status must determine whether these scripts were intentionally left unmerged or the package entries are stale; branch presence alone does not establish intent.
-- Audit-only note: no production code changed.
+Status: WITHDRAWN — current-main targets exist.
+
+The earlier provisional finding claimed that `apps/backend/package.json` referenced missing `recipe-nutrition-estimate.mjs` and `recipe-recommendation-score.mjs` executables.
+
+Direct verification against audited main commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b` shows that **both files exist at the exact declared paths**. Therefore PB-256 is not a current-main package/source contract defect.
+
+The earlier absence result was a stale/incomplete repository-search signal. Direct content lookup is authoritative for this audit decision.
+
+Related logic findings must be evaluated independently against the now-confirmed current-main scripts; PB-199/PB-200 should not be withdrawn solely because of the earlier false absence signal.
