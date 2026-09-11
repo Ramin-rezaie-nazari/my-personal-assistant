@@ -2,69 +2,55 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: complete Assistant TypeScript source/test scope; substantial Personal Brain production source; complete Brain Integration, Conversation Engine, Decision Engine and Adaptive Learning source scopes; complete Goal Intelligence source scope (module/controller/DTO/services); complete Memory Intelligence source and test scope as enumerated; selected Personal Brain tests.
-Scope not yet read: remaining Personal Brain source/test files; repository-wide cross-consumers; full automated test execution; later platform/mobile/food/shopping/life-health/fitness scopes beyond the Brain integrations already observed.
+Scope actually read: complete Assistant TypeScript source/test scope; substantial Personal Brain production source; complete Brain Integration, Conversation Engine, Decision Engine, Adaptive Learning and Goal Intelligence source scopes; complete Memory Intelligence source/test scope as enumerated; additional Personal Brain notification/proactive/scheduling/action support services and selected specs.
+Scope not yet read: remaining Personal Brain source/test files; repository-wide cross-consumers; full automated test execution; later non-Brain scopes.
 Evidence roots: `apps/backend/src/modules/assistant/`; `apps/backend/src/modules/personal-brain/`; `apps/backend/src/modules/brain-integration/`; `apps/backend/src/modules/conversation-engine/`; `apps/backend/src/modules/decision-engine/`; `apps/backend/src/modules/adaptive-learning/`; `apps/backend/src/modules/goal-intelligence/`; `apps/backend/src/modules/memory-intelligence/`; `apps/backend/prisma/`.
-Confidence level: HIGH for modules marked complete at file-level; MEDIUM for end-to-end behavior because tests are read but not executed; LOW for repository-wide integration until remaining audit scopes are read.
-Open questions: finish Personal Brain residual files/tests; verify all module imports/providers; reconcile runtime contracts; execute tests; route/mobile/database consumer map.
+Confidence level: HIGH for completed file-level reads; MEDIUM for end-to-end behavior because tests are read but not executed; LOW for repository-wide integration.
+Open questions: finish Personal Brain residual files/tests; prove provider/adapter registration coverage; reconcile runtime persistence; execute validation; route/mobile/database consumer map.
 
 ## Assistant orchestration
-`AssistantModule` imports Prisma + Personal Brain and wires deterministic language understanding, contextual follow-up, planning, conversation persistence, provider routing and action execution. `AssistantController` exposes public status and guarded history/process/confirm endpoints. `AssistantService` uses local deterministic interpretation first, Brain fallback second, then action execution and persisted turns. Evidence: `apps/backend/src/modules/assistant/assistant.module.ts`, `controllers/assistant.controller.ts`, `services/assistant.service.ts`.
+Assistant uses deterministic local interpretation, contextual references, planning, Brain fallback, execution and persisted conversation turns. `/assistant` status is public while history/process/confirm are JWT guarded. Raw SQL persists `ConversationTurn`, which is migration-created but absent from final Prisma schema.
 
-The local parser normalizes Persian/Arabic characters/digits, extracts common entities and maps a fixed local intent set. `ContextualCommandService` adds previous-resource references, clause splitting, conflict detection and confidence. Local basket action uses hard-coded food aliases and direct `FoodItem`/`ShoppingItem` access. Evidence: corresponding Assistant services/adapter/specs.
+## Decision, execution and memory architecture
+Personal Brain combines deterministic brain state/reasoning, unified decision ranking, hard constraints/conflict resolution, confirmation/guardrails/idempotency/rate limits, bounded retry/timeout policy, plan persistence and asynchronous audit/outcome learning. `DecisionOutcome` is another active raw-SQL dependency absent from final Prisma schema. Persistent plan state uses Prisma `PlanExecutionState`; execution state/history/idempotency/rate-limit/personalization/confirmation are largely process-local.
 
-## Personal Brain orchestration
-`PersonalBrainModule` wires a large graph spanning state, decisions, scheduling, fitness, goals, memory, execution, adapters and learning. `BrainOrchestratorService` builds reasoning context, runs a decision pipeline and can compare scenarios. `BrainStateService` loads context, memory, goals, daily/weekly state, nutrition, workout and life context concurrently. Evidence: `personal-brain.module.ts`, `brain-orchestrator.service.ts`, `brain-state.service.ts`.
+`Memory Intelligence` is file-level complete. Rich Memory governance metadata is not fully represented in durable `UserFact` persistence. Retrieval/ranking/governance/surface/consolidation exist, but several classification/scoring/consolidation primitives are minimal. Personal Brain's `MemoryManagerService` is a placeholder despite the separate durable Memory Intelligence path.
 
-`BrainDecisionService` uses deterministic pattern/rule logic for daily/weekly/workout/habit/reminder/supplement/nutrition status. `BrainDecisionPipelineService` adds historical explanation and outcome-learning adjustment before producing a decision explanation. Evidence: the corresponding service files.
+`BrainIntegration` is file-level complete. `BrainContextService` is a thin timestamp/source placeholder; `BrainGoalService` reads `UserProfile.primaryGoal`; `BrainMemoryService` delegates to Memory Intelligence and needs runtime call-path verification against required `userId` semantics. `ConversationEngine` is style-only. `DecisionEngine` has a guarded read endpoint plus rule/scoring services but its top-level `DecisionEngineService` is minimal. `AdaptiveLearning` provides deterministic seven-day insight analysis while feedback/memory subservices are placeholders. `GoalIntelligence` currently contains service placeholders and unvalidated DTO/controller surfaces.
 
-## Unified decision / execution
-`UnifiedDecisionEngineService` filters unsafe/expired candidates, gives hard constraints priority, resolves conflicts and ranks candidates with priority/confidence/score plus goal alignment/downside. `DecisionConflictResolutionService` handles time/budget/capacity/health/goal conflicts, but its final pairwise preference recomputes utility with an empty context, dropping urgency from that comparison. Evidence: `unified-decision-engine.service.ts`, `decision-conflict-resolution.service.ts`.
+## Personal Brain detailed findings
 
-`DecisionSafetyGuardService`, `DecisionGuardrailService`, `DecisionIdempotencyService` and `DecisionRateLimiterService` provide action caps, blocked domains, idempotency and per-user/domain rate limiting. Idempotency/rate state is process-local with a 24-hour default for idempotency. Evidence: those service files.
+`DecisionReadinessService` produces a simple readiness score from context/memory/goals presence. `IntentionAnalysisService` always returns `unknown`, confirming another placeholder. `DecisionActionAdapterService` uses dynamic registration and can advertise supported actions through an optional `actions` property, but an empty registry means every candidate is unsupported.
 
-`DecisionExecutionCoordinatorService` applies policy/confirmation, guardrails, adapter execution, history/feedback and asynchronous audit/outcome-learning. `DecisionExecutionPolicyService` bounds timeout/retries. `DecisionExecutionStateService` and `DecisionExecutionHistoryService` are in-memory, while `PersistentPlanStateService` persists plan state through Prisma `PlanExecutionState`. Evidence: corresponding services and Prisma schema.
+`ActionConfirmationIntelligenceService` distinguishes destructive, financial, sensitive and external-impact actions and assigns five-minute confirmation expiry, but pending confirmations are in-memory only. Confirmation tokens are deterministic per user/candidate/action.
 
-`PlanExecutionService` serializes selected candidates into dependent steps, resumes persisted state, stops on failed/blocked/pending-confirmation steps and returns `nextStep`. `DecisionExecutionPlannerService` currently makes each later step depend on all earlier steps, not only semantically required predecessors. Evidence: those files.
+`DailyCapacityService` is a pure calculator. `PreferenceConflictResolverService` prioritizes hard constraints and otherwise ranks preference candidates using priority/confidence/score.
 
-## Audit / learning / adaptation
-`DecisionAuditService` uses Prisma `DecisionAuditEntry` when available and an in-memory fallback otherwise. `DecisionExplanationMemoryService` derives recent/trend signals from audit history. `DecisionFeedbackLoopService` writes personalization signals and `DecisionOutcomeLearningService` records outcome data and confidence adjustments.
+`SmartPlanningService`/`FullDaySchedulerService`/`ScheduleHealthService`/`ScheduleRecoveryService` form the proactive schedule stack. `NextBestActionService` exposes a selected life-task candidate plus alternatives/signals. `ProactiveCoachService` generates prioritized start/recovery/capacity/review actions with explanations. `ProactiveDecisionQualityService` suppresses low-value interruptions using relevance/urgency/benefit/interruption cost.
 
-`DecisionOutcomeLearningService` uses parameterized raw SQL against migration-created `DecisionOutcome`, confirming an active runtime dependency on a table absent from final Prisma schema. Evidence: `personal-brain/services/decision-outcome-learning.service.ts`, migration history and final schema.
+`ProactiveEventEngineService` turns the primary coaching result into dedupable scheduled events and currently emits only the primary action event, recovery event or capacity-warning event. Event dedupe keys use the current ISO date, so timezone alignment remains an open review item.
 
-`PersonalizationEngineService` is process-local and blends scores by confidence. `AdaptiveReplanningService` uses `DynamicReplanningService` + full-day schedule validation to decide whether execution requires replanning. `SmartPlanningService` and `FullDaySchedulerService` combine LifeTask/Goal/Reminder/Supplement/Habit state with user learning signals; Smart Planning also calls outcome adjustments. Evidence: corresponding services.
+Notification decisioning has multiple layers: preference/quiet-hours policy, adaptive resistance/engagement adaptation, deduplication, channel ranking, queueing, dispatch and feedback. `NotificationChannelIntelligenceService` ranks `push`, `in_app`, `email`, `web_push`, but `NotificationDeliveryProviderRegistry` currently implements only `in_app`; the other ranked channels therefore have no provider and dispatcher returns `No provider configured`. `NotificationDeliveryQueueService` is process-local with max three attempts and can return to queued before eventual failure. `NotificationDeduplicationService`, `NotificationFeedbackService`, `NotificationExperimentService`, and `NotificationDeviceRegistryService` are also process-local despite the database containing durable Notification/dedupe infrastructure. This is a significant runtime-vs-persistence gap to reconcile.
 
-A timezone review finding remains: `WorkoutActionAdapter` derives a date from UTC `toISOString().slice(0,10)` when only a time is given, which may disagree with user-local calendar date. Evidence: `workout-action-adapter.ts`.
+`NotificationOrchestratorService` applies preferences, minimum priority and quiet-hours rules, then proactive policy. Critical events bypass lead-window suppression. `AdaptiveNotificationDecisionService` can reduce frequency/shift timing, while critical events are protected from suppression.
 
-## Fitness decisioning
-`FitnessDecisionPolicyService` deterministically selects yoga/calisthenics/gym using user goal, equipment, constraints and stable decision history. `FitnessSessionOrchestratorService` generates a discipline-specific session and applies `FitnessProgressionService`. `FitnessProgressionService` moves between progress/stay/regress/deload based on form, completion, perceived difficulty and recovery. `FitnessSkillUnlockService` uses exercise trends/recovery/form to gate calisthenics skill unlocks. Evidence: corresponding Personal Brain services.
+`NotificationFeedbackService` computes resistance/engagement signals from recent in-memory client actions, which feed notification adaptation and channel intelligence. There is no durable store in the read scope for these feedback observations.
 
-## Action adapters
-Reminder, Calendar, Workout, Habit and Supplement adapters all require `userId` and use contextual target resource IDs. LifeTask adapter uses raw SQL with both task ID and user ID. Evidence: corresponding adapter files.
+`NotificationDeviceRegistryService` stores user/device/push token/locale/timezone data only in memory. Because `NotificationDeliveryProviderRegistry` only supports in-app, the push-token lifecycle currently does not connect to a concrete delivery provider in this scope.
 
-## Memory Intelligence — file-level complete
-`MemoryIntelligenceModule` binds both in-memory and Prisma repositories, but the active providers point to `PrismaMemoryRepository`. `Memory` contains rich governance metadata, while persistence only stores id/userId/category/key/value/importance/source/timestamps in `UserFact`; layer/visibility/confidence/retention/relationship/topic/confirmation/expiry fields are not persisted. Evidence: `memory-intelligence.module.ts`, `models/memory.model.ts`, `models/memory-governance.model.ts`, `repositories/prisma-memory.repository.ts`, final Prisma `UserFact` schema.
+`NotificationExperimentService` performs simple multi-arm exploration/exploitation using in-memory success counts and random exploration. It has no durable experiment/observation store in the inspected service.
 
-Retrieval is user-scoped substring search over key/value and ranking uses token/phrase/key bonuses plus importance. Governance handles retention/expiry/reinforcement/confirmation. Surfacing filters on visibility, confidence and importance. Consolidation intelligence chooses the highest importance×confidence representative and records absorbed IDs, while the base classification/scoring/consolidation services remain minimal. Evidence: all respective Memory Intelligence service files and tests.
+`CoachCueEngineService` generates Persian/English exercise-start/countdown/transition/safety/explanation cues. Cue IDs combine time and randomness, so they are not stable identifiers across calls.
 
-`MemoryIntelligenceController` is JWT guarded and uses authenticated user ID for create/read/key/delete; the controller spec explicitly tests ownership scoping. Evidence: controller and controller spec.
+`MultiScenarioSimulatorService` compares best/conservative/balanced candidate variations and returns up to five scenario plans. The conservative plan modifies candidate score/downside; balanced modifies confidence/alignment. This is simulation, not model-based probabilistic forecasting.
 
-`MemoryManagerService` in Personal Brain is still a placeholder despite real Memory Intelligence persistence existing, creating an architectural split between intended Brain memory orchestration and actual CRUD persistence. Evidence: `personal-brain/services/memory-manager.service.ts`.
+`LongTermDecisionImpactService` evaluates candidate impact against ranked goal hierarchy. Alignment inference is lexical over action/domain vs goal title/category, defaulting to 0.75 or 0.35, so it is deterministic keyword matching rather than semantic understanding.
 
-## Brain Integration — file-level complete
-`BrainIntegrationModule` imports Memory Intelligence and exports three services. `BrainContextService` returns only timestamp/source, so it is a thin placeholder. `BrainGoalService` reads only `UserProfile.primaryGoal` and returns one general goal. `BrainMemoryService` delegates to Memory Intelligence but does not pass a user ID, so its `getMemories()` call can resolve through the repository's required-user-id guard and potentially fail at runtime. This is a concrete cross-module contract mismatch to investigate. Evidence: `brain-integration/services/brain-context.service.ts`, `brain-goal.service.ts`, `brain-memory.service.ts`, `memory-intelligence/services/memory-intelligence.service.ts`, `repositories/prisma-memory.repository.ts`.
+`DynamicReplanningService`, `AdaptivePlanExecutionService` and `DecisionReplanPolicyService` form the replanning path; triggers include changed constraints, expired candidates, feedback, higher-priority action and context change. `AdaptivePlanExecutionService` executes persisted plan state and then evaluates whether replanning is required.
 
-## Conversation Engine — file-level complete
-The module contains a single `ConversationStyleService`, with default style `{tone:'friendly', language:'fa', formality:'informal'}`. There is no conversation endpoint or persistence logic in this module itself. Evidence: `conversation-engine.module.ts`, `conversation-style.service.ts`, `types`.
+`BrainDailyStatusService` uses UTC-derived date keys. `BrainStateAnalyzerService` passes an empty query to `BrainStateService`. These are concrete indicators that user-local time and request context are not uniformly threaded through Brain APIs.
 
-## Decision Engine — file-level complete
-`DecisionEngineModule` imports Personal Brain and exposes a guarded `GET /decision-engine` that calls `ActionDecisionService`. `ActionDecisionService` obtains `BrainLifeContext`, evaluates deterministic rules and ranks candidates. `DecisionEngineService` itself remains a placeholder. `RuleEvaluationService` creates goal/reminder/supplement/habit candidates and `DecisionScoringService` sorts by score. Evidence: module/controller/services/spec.
-
-## Adaptive Learning — file-level complete
-`AdaptiveLearningController` is JWT guarded and exposes `GET /adaptive-learning` and `GET /adaptive-learning/insights?dateKey=...`. `AdaptiveLearningService` reads seven days of date-aware DailyLog data plus workouts/meals and user profiles, and emits ranked rule-based insights. The service validates `YYYY-MM-DD` date keys. Auxiliary `FeedbackAnalysisService` and `LearningMemoryService` are placeholders; `CreateLearningEventDto` is a plain unvalidated shape and is not wired to a write endpoint in the current controller. Evidence: Adaptive Learning module/controller/DTO/services/spec.
-
-## Goal Intelligence — file-level complete
-The module contains a guardedness-free empty controller and three service placeholders: `GoalAnalysisService`, `GoalPlanningService`, `GoalProgressService`; `CreateGoalDto` is also an unvalidated data shape. Evidence: module/controller/DTO/services.
+`CoachMessageService`, `UserUnderstandingService` and similar lightweight classes provide thin wrappers/placeholders; `PersonalBrainAdaptersRegistration` is a static documentation constant and runtime wiring remains in the module.
 
 ## Batch status
 
@@ -74,8 +60,8 @@ COMPLETE for the exact files read.
 ### BATCH-0004B — Assistant complete
 COMPLETE for all enumerated TypeScript source/test files under Assistant; non-source temp note is N/A.
 
-### BATCH-0004C — Brain foundation
-IN_PROGRESS. Assistant, Brain Integration, Conversation Engine, Decision Engine, Adaptive Learning and Goal Intelligence are now file-level complete based on their enumerated trees; Memory Intelligence is file-level complete; Personal Brain remains partially read because its large service graph still has unread files/tests.
+### BATCH-0004C — Personal Brain / auxiliary Brain
+IN_PROGRESS. Assistant, Brain Integration, Conversation Engine, Decision Engine, Adaptive Learning, Goal Intelligence and Memory Intelligence are file-level complete based on enumerated module trees. Personal Brain remains open until every service/source/test file in its directory has been fetched/read and recorded.
 
 ### Next
-Finish remaining Personal Brain files/tests, then close Brain support matrices. Proceed to Food/Shopping/Life-Health/Fitness/Platform/Tests/Mobile scopes and only then perform final repository-wide validation and completion checks.
+Finish every remaining Personal Brain file/test from the deterministic services listing, then finalize the Brain deep-read and support matrices. Proceed to Food, Shopping, Life/Health, Fitness, Platform/Tests and Mobile scopes. No production code changes are being made during the audit.
