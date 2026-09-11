@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, and active country-intelligence script.
+Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, and continued operational-script/legacy-variant review.
 Scope not yet read: remaining repository-wide source/tests/consumers, full matrices, exhaustive operational scripts, runtime execution, complete security/privacy reconciliation.
 Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/backend/prisma/`, `apps/backend/scripts/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
 Confidence: HIGH for source-level findings below unless explicitly marked validation-needed.
@@ -158,6 +158,31 @@ Evidence: setting `RECIPE_IMAGE_RESET=1` causes the script to enumerate/delete S
 Status: OPEN — DATA/OPERATIONAL HIGH
 Location: `apps/backend/scripts/recipe-country-intelligence-final.mjs`, `LIMIT`, `DELETE FROM recipe_country_relations`, `DELETE FROM recipe_intelligence_profiles`.
 Evidence: `LIMIT > 0` restricts `base`/temporary recipe selection, but the script deletes all rows whose `source` matches the final version and all matching intelligence profiles without applying the same LIMIT. It then re-inserts/updates only the selected subset. Impact: running the script with a bounded LIMIT as a batch/test can erase previously classified recipes outside that batch, leaving partial classification state. Root cause: global cleanup is not scoped to the limited work set.
+
+### PB-191 — Canonical root Current State file was missing; active state document lives under backend subtree
+Status: OPEN — DOCUMENTATION/SOURCE-OF-TRUTH
+Locations: required `docs/05_CURRENT_STATE.md`; existing `apps/backend/docs/05_CURRENT_STATE.md`.
+Evidence: direct read of the audit branch showed `docs/05_CURRENT_STATE.md` was absent while `apps/backend/docs/05_CURRENT_STATE.md` exists. Impact: the session protocol's canonical state path was not available and project state can split between root and backend documentation. Root file has now been created as a canonical audit location, but the two documents still require deliberate reconciliation and ownership cleanup; this finding is not considered closed.
+
+### PB-192 — Recipe content importer has no dataset offset/checkpoint; each invocation reprocesses only the first batch
+Status: OPEN — OPERATIONAL/RESTARTABILITY
+Location: `apps/backend/scripts/recipe-content-import.mjs`, `main()` and `const batch = dataset.slice(0, BATCH_SIZE)`.
+Evidence: the importer always loads the full dataset and selects only indexes `0..BATCH_SIZE-1`; there is no offset, cursor, checkpoint file, persisted import-progress state, or environment variable that changes the starting index. Impact: a dataset larger than the batch cannot be advanced through repeat invocations using the wired command alone, and reruns repeatedly revisit the same first batch. This violates the MYPA background/batch restartability requirement.
+
+### PB-193 — Recipe content importer performs related writes outside a transaction, allowing partial persistence on late failure
+Status: OPEN — DATA INTEGRITY HIGH
+Location: `apps/backend/scripts/recipe-content-import.mjs`, `importRecipe()`.
+Evidence: recipe create/update, child deletes, `recipeIngredient` inserts and later `recipeStep`/`recipeMedia` operations are separate Prisma calls with no surrounding `prisma.$transaction`. Because PB-188 causes the generated Prisma client to fail when `recipeStep`/`recipeMedia` delegates are reached, earlier recipe/ingredient mutations can remain persisted even when that recipe import returns `failed`. Impact: one broken late-stage dependency can leave a partially imported recipe and repeated reruns can further churn that state.
+
+### PB-194 — Recipe image operational scripts hard-limit assets to 60KB, diverging from the MYPA image-processing target
+Status: OPEN — PRODUCT/ASSET CONTRACT
+Locations: `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `apps/backend/scripts/recipe-image-import.mjs`, `apps/backend/scripts/recipe-image-import-all-safe.mjs` (`MAX_BYTES = 60 * 1024`).
+Evidence: the inspected operational image import paths explicitly target WebP output at or below 60KB, while the Master Prompt's image-processing contract sets a target of approximately 100–150KB for mobile-friendly quality. Impact: the current operational cap is materially below the defined target and may force unnecessary quality/dimension degradation; the canonical image pipeline policy is therefore not aligned across implementation and project requirements.
+
+### PB-195 — Multiple versioned country-intelligence implementations remain executable and only one is package-wired
+Status: OPEN — OPERATIONAL/ARCHITECTURE DRIFT
+Locations: `apps/backend/scripts/recipe-country-intelligence.mjs`, `recipe-country-intelligence-v2.mjs`, `recipe-country-intelligence-v3.mjs`, `recipe-country-intelligence-v4.mjs`, `recipe-country-intelligence-v5.mjs`, `recipe-country-intelligence-v6.mjs`, `recipe-country-intelligence-v7-source.mjs`, `recipe-country-intelligence-v8-source-evidence.mjs`, `recipe-country-intelligence-final.mjs`, and `apps/backend/package.json`.
+Evidence: the script directory contains a sequence of independently maintained country-intelligence implementations, while `apps/backend/package.json` exposes only `recipe-intelligence:country` mapped to `recipe-country-intelligence-final.mjs`. No canonical retirement/archive marker is encoded in the script directory itself. Impact: operators can manually execute legacy variants with behavior different from the wired command, making reproducibility and operational ownership ambiguous. This is an audit finding until the variants are reconciled, archived, or explicitly designated.
 
 ## Reconciliation note
 Preserve oldest canonical IDs when the same root cause already exists elsewhere. PB-112 and PB-167 are correction-trail IDs only. PB-185 is a specific surface of PB-129 and must not be double-counted.
