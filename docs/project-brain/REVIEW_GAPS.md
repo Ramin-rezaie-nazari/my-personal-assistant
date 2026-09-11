@@ -2,27 +2,26 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: current-`main` baseline + Auth batch.
-Scope not yet read: remaining repository source, tests, CI, Prisma, mobile and generated/imported data.
-Evidence roots: `docs/project-brain/`; `apps/backend/src/modules/auth/`; current manifests.
-Confidence level: HIGH that the listed gaps remain open.
-Open questions: all completion criteria of the master prompt except the completed Auth file batch.
+Scope actually read: current-`main` baseline + Core deep read.
+Scope not yet read: non-Core backend/mobile source, deterministic full inventory, Prisma/migrations, CI/runtime tests.
+Evidence roots: current-`main` source and audit branch Project Brain.
+Confidence level: HIGH that these gaps remain open.
+Open questions: none beyond the listed work items.
 
 ## Open gaps
 
-1. Deterministic full repository inventory and exact source-file line counts.
-2. Complete current-`main` core deep read.
-3. Full Prisma schema/migration/read-write reconciliation.
-4. Complete route catalog with mobile/no-consumer mapping.
-5. Brain/AI deep read.
-6. Food/recipe deep read and media/data pipeline review.
-7. Shopping/price/budget deep read.
-8. Life/health/reminder/notification deep read.
-9. Fitness deep read.
-10. Platform/common/config/database/shared/content/dashboard/test/CI deep read.
-11. Full mobile deep read.
-12. Actual test/validation execution and device-only gates.
-13. Security/privacy contract review across the whole system.
-14. Current-source verification of historical claims from divergent branches/docs.
+1. Deterministic full repository inventory and exact line counts.
+2. Complete current-`main` Prisma schema/migration reconciliation.
+3. Complete route catalog beyond Core and map every route to a mobile consumer or explicit no-consumer reason.
+4. Read Brain/AI/decision modules and classify deterministic vs AI behavior.
+5. Read food/recipe/nutrition/media/data pipeline.
+6. Read shopping/inventory/price/budget intelligence.
+7. Read calendar/daily/goals/habits/reminders/notifications/supplements/health/life execution.
+8. Read fitness/gym/calisthenics/yoga/workout modules.
+9. Read platform/common/config/database/shared/content/dashboard and all backend tests/CI.
+10. Read all mobile source with route/API/state/offline/localization/accessibility coverage.
+11. Execute available validation commands and record real outcomes.
+12. Complete security/privacy review including global guards/rate limits/secrets/logging/retention.
+13. Reconcile historical docs/branches against current `main`.
 
-No gap is marked resolved without direct current-source evidence or actual validation output.
+No gap is resolved until direct source evidence or executed validation supports closure.

@@ -2,18 +2,26 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: Auth routes.
-Scope not yet read: all non-Auth API/database/mobile contracts.
-Evidence roots: `apps/backend/src/modules/auth/controllers/auth.controller.ts`; `apps/backend/src/modules/auth/dto/`; `apps/backend/src/modules/auth/auth.service.ts`.
-Confidence level: MEDIUM for Auth.
-Open questions: global validation/error behavior; persistence schema; mobile consumers.
+Scope actually read: current-`main` Core routes and service contracts.
+Scope not yet read: non-Core routes, DB schema, mobile consumers, global middleware.
+Evidence roots: Core controllers/services/DTOs.
+Confidence level: MEDIUM.
+Open questions: response/error DTOs; global prefixes; mobile mappings; persistence details.
 
-| Contract | Input | Output | Auth | DB effect | Test evidence | Consumer |
-|---|---|---|---|---|---|---|
-| POST `/auth/register` | `RegisterDto` | auth token pair + user summary | Public | User create + Session create | Not found on current main at expected service-test path | Mobile consumer not yet read |
-| POST `/auth/login` | `LoginDto` | auth token pair + user summary | Public | Session create | Not found on current main at expected service-test path | Mobile consumer not yet read |
-| GET `/auth/me` | bearer access token | `req.user` from JWT strategy | JWT | User lookup | No route test read | Mobile consumer not yet read |
-| POST `/auth/refresh` | `RefreshTokenDto` | new auth token pair + user summary | Refresh JWT/session | Session lookup + new Session create | No route test read | Mobile consumer not yet read |
-| POST `/auth/logout` | `LogoutDto` | success message | No controller guard | Session deleteMany | No route test read | Mobile consumer not yet read |
-
-Evidence: `apps/backend/src/modules/auth/controllers/auth.controller.ts:14-42`; `apps/backend/src/modules/auth/auth.service.ts:21-112`.
+| Contract | Input | Output/Effect | Auth | Persistence | Consumer |
+|---|---|---|---|---|---|
+| `/auth/register` | RegisterDto | token pair + user summary | public | User create + Session create | mobile not yet read |
+| `/auth/login` | LoginDto | token pair + user summary | public | Session create | mobile not yet read |
+| `/auth/me` | bearer JWT | request user | JWT | User lookup | mobile not yet read |
+| `/auth/refresh` | RefreshTokenDto | new token pair + new session | service-level refresh validation | Session lookup + Session create | mobile not yet read |
+| `/auth/logout` | LogoutDto | success message | no controller guard | Session deleteMany | mobile not yet read |
+| `/users/profile` GET/PATCH | JWT + UpdateProfileDto | user profile summary | JWT | User lookup/update | mobile not yet read |
+| `/profile` GET/PATCH | JWT + UpdateProfileDto | UserProfile row | JWT | UserProfile read/upsert | mobile not yet read |
+| `/preferences` GET/PATCH | JWT + UpdatePreferencesDto | UserPreference row | JWT | read/create/upsert | mobile not yet read |
+| `/onboarding/status` GET | JWT | UserOnboarding row | JWT | read/create | mobile not yet read |
+| `/onboarding/complete` POST | JWT + CompleteOnboardingDto | UserOnboarding row | JWT | update | mobile not yet read |
+| `/settings` GET/PATCH | JWT + UpdateSettingsDto | UserSettings row | JWT | read/create/upsert | mobile not yet read |
+| `/device-intelligence` GET | none | placeholder health object | no controller guard | none observed | mobile not yet read |
+| `/user-intelligence` GET | JWT | facts + insights + adaptive behavior | JWT | reads UserFact/UserInsight/UserBehavior | mobile not yet read |
+| `/user-intelligence/events` POST | JWT + body type | adaptive profile | JWT | UserBehavior create | mobile not yet read |
+| `/user-intelligence/analyze` POST | JWT | refreshed intelligence profile | JWT | UserInsight create on conditions | mobile not yet read |

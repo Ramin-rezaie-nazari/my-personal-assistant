@@ -2,36 +2,25 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: current-main manifests, AppModule, complete Auth source tree.
-Scope not yet read: all other source and validation scope in the master prompt.
-Evidence roots: `package.json`; `apps/backend/package.json`; `apps/mobile/package.json`; `apps/backend/src/app.module.ts`; `apps/backend/src/modules/auth/`.
-Confidence level: MEDIUM for Batch 0001; LOW globally.
-Open questions: deterministic source inventory and next core reads.
+Scope actually read: current-`main` manifests, AppModule, and 47 identified Core source files.
+Scope not yet read: any additional Core files not deterministically surfaced, all other backend/mobile source, Prisma/migrations, CI and runtime validation.
+Evidence roots: manifests; `apps/backend/src/app.module.ts`; Core paths.
+Confidence level: MEDIUM for Core implementation; LOW for completeness.
+Open questions: exact full inventory/line counts; remaining scopes.
 
-## BATCH-0001
-Status: IN_PROGRESS
-Start: 2026-09-11
+## BATCH-0001 — baseline
+Status: COMPLETE
 Target ref: `main`
 Target commit: `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`
+Result: created the Project Brain set on `audit/project-brain-2026-09-11` and read the complete current-`main` Auth source tree plus root/backend/mobile manifests and AppModule.
 
-### Files read successfully
-All 11 current-`main` Auth source files were retrieved and read completely: module, service, controller, four DTOs, guard, session service, JWT strategy and token utilities.
+## BATCH-0002 — Core deep read continuation
+Status: IN_PROGRESS
+Start: 2026-09-11
+Files read successfully in this continuation: current-`main` Users (5), Profile (4), Preferences (4), Onboarding (4), Settings (4), Context Engine (7), Device Intelligence (6), User Intelligence (6).
 
-### Findings
-- Registration rejects an existing email, hashes passwords with Argon2 and creates an auth response.
-- Login verifies Argon2 passwords and returns the same auth response shape.
-- `/auth/me` is protected by `JwtAuthGuard` and returns `req.user`.
-- Refresh verifies the refresh secret and `type === 'refresh'`, checks the persisted session, resolves the user, then issues a new token pair and new persisted session.
-- Logout calls session revocation by refresh token.
-- SessionService uses Prisma create/findFirst/deleteMany patterns.
+Key findings: duplicate inactive Users controller path; minimal/placeholder Context Builder and empty Context Controller; placeholder Device Intelligence services; unvalidated device-sync DTO; deterministic User Intelligence profile over the latest 1000 events; placeholder UserProfileService; thin CRUD-style Profile/Preferences/Onboarding/Settings modules.
 
-Evidence: `apps/backend/src/modules/auth/auth.service.ts:21-112`; `apps/backend/src/modules/auth/controllers/auth.controller.ts:14-42`; `apps/backend/src/modules/auth/services/session.service.ts:8-45`; `apps/backend/src/modules/auth/utils/token.utils.ts:4-28`.
+Unresolved: deterministic repository-wide enumeration, exact line counts, global validation/middleware and tests, DB schema/migrations, mobile consumers and all non-Core domains.
 
-### Not yet resolved
-- Whether old refresh sessions are removed/rotated when a refresh succeeds.
-- Whether the hard-coded 30-day session `expiresAt` should mirror configured JWT refresh expiry.
-- Whether logout should require JWT authentication at the controller layer.
-- Full user/database/mobile contracts.
-
-### Next batch
-`BATCH-0002`: deterministic enumeration + complete current-`main` read of the remaining Core deep-read scope.
+Next batch: `BATCH-0003` — deterministic enumeration of the current-`main` backend tree and complete Prisma schema/migration baseline, then resume remaining deep-read scopes.

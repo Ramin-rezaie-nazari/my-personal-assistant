@@ -2,28 +2,35 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline manifests, AppModule and complete current-`main` Auth source tree.
-Scope not yet read: repository-wide deterministic source inventory and all remaining audit scopes.
-Evidence roots: current `main` commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`.
-Confidence level: MEDIUM for listed files; LOW for completeness.
-Open questions: exact automated line counts for the full repository; all remaining files.
+Scope actually read: current-`main` root/backend/mobile manifests, `apps/backend/src/app.module.ts`, and 47 identified Core source files.
+Scope not yet read: complete repository source inventory; non-Core source; schema/migrations; CI; mobile source/tests.
+Evidence roots: current-`main` commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b` and Core source paths.
+Confidence level: MEDIUM for listed Core files; LOW for repository completeness.
+Open questions: automated line counts; hidden/additional files; exact total source count.
 
-## BATCH-0001 — Auth baseline
+## Current known source inventory — Core
 
-| Path | Language | Line count | Module/package | Purpose | Status |
+| Path / scope | Language | Line count | Module | Purpose | Status |
 |---|---|---:|---|---|---|
-| `apps/backend/src/modules/auth/auth.module.ts` | TypeScript | unknown* | auth | Nest module wiring | READ_COMPLETELY |
-| `apps/backend/src/modules/auth/auth.service.ts` | TypeScript | unknown* | auth | register/login/refresh/logout | READ_COMPLETELY |
-| `apps/backend/src/modules/auth/controllers/auth.controller.ts` | TypeScript | unknown* | auth | HTTP routes | READ_COMPLETELY |
-| `apps/backend/src/modules/auth/dto/register.dto.ts` | TypeScript | unknown* | auth | registration validation | READ_COMPLETELY |
-| `apps/backend/src/modules/auth/dto/login.dto.ts` | TypeScript | unknown* | auth | login validation | READ_COMPLETELY |
-| `apps/backend/src/modules/auth/dto/logout.dto.ts` | TypeScript | unknown* | auth | logout input validation | READ_COMPLETELY |
-| `apps/backend/src/modules/auth/dto/refresh-token.dto.ts` | TypeScript | unknown* | auth | refresh input validation | READ_COMPLETELY |
-| `apps/backend/src/modules/auth/guards/jwt-auth.guard.ts` | TypeScript | unknown* | auth | JWT guard adapter | READ_COMPLETELY |
-| `apps/backend/src/modules/auth/services/session.service.ts` | TypeScript | unknown* | auth | session persistence/revocation | READ_COMPLETELY |
-| `apps/backend/src/modules/auth/strategies/jwt.strategy.ts` | TypeScript | unknown* | auth | bearer JWT validation | READ_COMPLETELY |
-| `apps/backend/src/modules/auth/utils/token.utils.ts` | TypeScript | unknown* | auth | access/refresh token creation | READ_COMPLETELY |
+| `apps/backend/src/modules/auth/**` (11 identified files) | TypeScript | unknown* | auth | auth/session/token flow | READ_COMPLETELY |
+| `apps/backend/src/modules/users/**` (5 identified files) | TypeScript | unknown* | users | account/profile routes | READ_COMPLETELY |
+| `apps/backend/src/modules/profile/**` (4 identified files) | TypeScript | unknown* | profile | extended profile | READ_COMPLETELY |
+| `apps/backend/src/modules/preferences/**` (4 identified files) | TypeScript | unknown* | preferences | user preferences | READ_COMPLETELY |
+| `apps/backend/src/modules/onboarding/**` (4 identified files) | TypeScript | unknown* | onboarding | onboarding state | READ_COMPLETELY |
+| `apps/backend/src/modules/settings/**` (4 identified files) | TypeScript | unknown* | settings | language/timezone settings | READ_COMPLETELY |
+| `apps/backend/src/modules/context-engine/**` (7 identified files) | TypeScript | unknown* | context-engine | context fusion/priority | READ_COMPLETELY |
+| `apps/backend/src/modules/device-intelligence/**` (6 identified files) | TypeScript | unknown* | device-intelligence | device data bridge | READ_COMPLETELY |
+| `apps/backend/src/modules/user-intelligence/**` (6 identified files) | TypeScript | unknown* | user-intelligence | behavior learning/insights | READ_COMPLETELY |
 
-\* Exact line counts remain pending because the runtime has no local clone and the GitHub connector returns source as structured text rather than a filesystem line-countable tree.
+## Baseline non-source files actually read
 
-No other source file is marked READ_COMPLETELY by this baseline solely from directory names.
+| Path | Status | Purpose |
+|---|---|---|
+| `package.json` | READ_COMPLETELY | root manifest |
+| `apps/backend/package.json` | READ_COMPLETELY | backend commands/dependencies |
+| `apps/mobile/package.json` | READ_COMPLETELY | mobile commands/dependencies |
+| `apps/backend/src/app.module.ts` | READ_COMPLETELY | backend module wiring |
+
+\* Exact line counts are intentionally unknown until a local filesystem inventory is available; no fabricated counts are used.
+
+No source scope outside these paths is marked complete.
