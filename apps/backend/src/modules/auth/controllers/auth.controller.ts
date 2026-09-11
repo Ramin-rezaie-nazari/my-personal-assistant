@@ -28,6 +28,6 @@ export class AuthController {
   refresh(@Body() dto: RefreshTokenDto) { return this.authService.refreshToken(dto); }
 
   @Post('logout')
-  @UseGuards(JwtAuthGuard)
-  logout(@Request() req: { user: { id: string } }, @Body() dto: LogoutDto) { return this.authService.logoutForUser(req.user.id, dto.refreshToken); }
+  @UseGuards(AuthRateLimitGuard)
+  logout(@Body() dto: LogoutDto) { return this.authService.logout(dto.refreshToken); }
 }
