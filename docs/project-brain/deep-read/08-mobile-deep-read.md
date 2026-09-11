@@ -2,9 +2,9 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: `apps/mobile/package.json`, `app.json`, Expo Router root/auth/language/index/command-center aliases, command-center-v2, daily, assistant, brain-overview, onboarding, calendar, reminders, habits, inventory, meals, meal-builder, `meal/[id].tsx`, recipe-match, shopping, smart-meals, supplements, notifications, yoga, insights, price-history; core clients `lib/api.ts`, `assistant-api.ts`, `brain-execution.ts`, `calendar-api.ts`, `inventory-api.ts`, `recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `price-api.ts`, `command-actions.ts`, `onboarding.ts`, `i18n.ts`, `yoga-camera-bridge.ts`, `yoga-pose-pipeline.ts`, `local-persian-tts.ts`, `meal-intelligence.ts`, `voice.ts`, notifications push-registration/push-runtime/notification-actions and selected specs/components. Runtime/device/build execution not performed.
+Scope actually read: `apps/mobile/package.json`, `app.json`, Expo Router root/auth/language/index/command-center aliases, command-center-v2, daily, assistant, brain-overview, onboarding, calendar, reminders, habits, inventory, meals, meal-builder, `meal/[id].tsx`, recipe-match, shopping, smart-meals, supplements, notifications, yoga, insights, price-history; core clients `lib/api.ts`, `assistant-api.ts`, `brain-execution.ts`, `calendar-api.ts`, `inventory-api.ts`, `recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `price-api.ts`, `command-actions.ts`, `onboarding.ts`, `i18n.ts`, `yoga-camera-bridge.ts`, `yoga-pose-pipeline.ts`, `local-persian-tts.ts`, `meal-intelligence.ts`, `voice.ts`, notifications push-registration/push-runtime/notification-actions; all seven files under `components/`; `lib/motion.tsx`; both current `scripts/*.cjs`; selected specs/components. Runtime/device/build execution not performed.
 Scope not yet read: remaining Mobile route/component/library files; full component tree reconciliation; remaining native configuration; physical-device behavior; full accessibility/responsive review; every mobile test file; full backend-to-mobile contract matrix; offline implementation outside inspected clients; production build execution.
-Evidence roots: `apps/mobile/app/`; `apps/mobile/lib/`; `apps/mobile/components/`; `apps/mobile/package.json`; `apps/mobile/app.json`; `.github/workflows/mobile-ci.yml`, Android/EAS workflows; backend controllers/services used by clients.
+Evidence roots: `apps/mobile/app/`; `apps/mobile/lib/`; `apps/mobile/components/`; `apps/mobile/scripts/`; `apps/mobile/package.json`; `apps/mobile/app.json`; `.github/workflows/mobile-ci.yml`, Android/EAS workflows; backend controllers/services used by clients.
 Confidence level: HIGH for file-level findings below; MEDIUM for app-wide completeness because full library/component inventory and physical-device/runtime checks remain pending.
 Open questions: remaining library/component files; full backend/mobile contract matrix; exact runtime navigation/device behavior; native permission/restart semantics for RTL; actual typecheck/build/test results on target commit; offline policy; full accessibility coverage; SVG asset build behavior.
 
@@ -46,11 +46,14 @@ Open questions: remaining library/component files; full backend/mobile contract 
 - `apps/mobile/lib/brand.ts` and `lib/branding.ts` define overlapping but different BRAND contracts; `branding.ts` is active in inspected UI while `brand.ts` has no observed consumer.
 - All inspected domain clients default `EXPO_PUBLIC_API_URL` to `http://localhost:3000`; `.env.example` instructs physical-device users to use the computer LAN IP.
 - `.github/workflows/mypa-branch-validation.yml` validates Mobile only with typecheck, while `mobile-ci.yml` performs broader Expo config and Android bundle checks.
+- `apps/mobile/components/AnimatedPressable.tsx` and `AnimatedSection.tsx` re-export wrapper components with the same public names already implemented by `apps/mobile/lib/motion.tsx`; repository search found no observed external consumer of the component-directory wrappers. This creates competing import surfaces and type/behavior drift risk.
+- `apps/mobile/components/decision-trace-card.tsx` renders English status/title text and uses raw `toLocaleString()` instead of the app i18n layer. `apps/mobile/components/plan-status-card.tsx` contains a local fa/en switch rather than using the shared dictionary. Both are actively consumed by `apps/mobile/app/command-center-v2.tsx`.
+- `apps/mobile/scripts/prepare-khadijah-tts-model.cjs` downloads the ONNX acoustic model, token file and vocoder using remote URLs and checks existence but not cryptographic hashes/signatures. This is a concrete supply-chain surface of the broader TTS integrity gap.
 
 ## Mobile issue IDs
 
 - PB-111: Local-only onboarding.
-- PB-112: NOT_APPLICABLE — earlier route mismatch finding was disproven; execute-next and feedback routes exist and are guarded.
+- PB-112: NOT_APPLICABLE — earlier route mismatch finding was disproven; execute-next, confirm and feedback routes exist and are guarded.
 - PB-113: Brain Overview localization gap.
 - PB-114: Onboarding state lacks runtime validation.
 - PB-115: Partial localization/RTL.
@@ -63,16 +66,16 @@ Open questions: remaining library/component files; full backend/mobile contract 
 - PB-123: Duplicate EAS workflows.
 - PB-124: Hard-coded Command Center quick actions.
 - PB-125: Limited Mobile test coverage/no E2E setup.
-- PB-126: Duplicated Mobile API auth clients.
+- PB-126: Duplicated API auth clients.
 - PB-127: typedRoutes disabled.
 - PB-128: Local TTS undeclared dependencies.
-- PB-129: TTS model integrity not verified.
+- PB-129: TTS model integrity not verified; concrete preparation-script evidence added in BATCH-0010.
 - PB-130: Push token refresh listener lacks shared token refresh.
 - PB-131: localhost API default on physical device.
-- PB-132: Branch-validation Mobile gate weaker than normal Mobile CI.
+- PB-132: Branch-validation weaker than normal Mobile CI.
 - PB-133: SVG asset requires build validation.
 - PB-134: Mobile auth tokens stored in AsyncStorage.
-- PB-135: Content recommendation orphan.
+- PB-135: Content recommendation consumer gap.
 - PB-136: Content media/license schema drift.
 - PB-137: Dashboard UTC day/week.
 - PB-138: Daily Command Center future workout boundary.
@@ -81,7 +84,7 @@ Open questions: remaining library/component files; full backend/mobile contract 
 - PB-141: Content recommendation test gap.
 - PB-142: Dashboard/Daily Command Center future-activity test gap.
 - PB-147: Price History hardcodes تومان despite currency field.
-- PB-148: Price History chart fabricated zero minimum.
+- PB-148: Price History fabricated zero minimum.
 - PB-149: Push registration helpers have no active application consumer.
 - PB-150: Notification runtime bootstrap has no active application consumer.
 - PB-151: Notification action feedback has no active transport/consumer.
@@ -89,6 +92,9 @@ Open questions: remaining library/component files; full backend/mobile contract 
 - PB-153: Duplicate legacy/active brand contracts.
 - PB-154: Voice/TTS `expo-speech` dependency undeclared.
 - PB-155: Voice/TTS feature has no observed active app consumer.
+- PB-183: Duplicate/orphaned animation wrapper layer.
+- PB-184: Command-center component localization/locale formatting gap.
+- PB-185: TTS preparation-script supply-chain checksum gap; consolidate with PB-129 rather than double-count.
 
 ## Remaining Mobile work
 
