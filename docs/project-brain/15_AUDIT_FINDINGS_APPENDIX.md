@@ -298,5 +298,10 @@ Location: `apps/mobile/app/meals.tsx`, `MealsScreen()`.
 Evidence: `useCallback`, `useEffect`, and `useState` are declared at the top of the component, but `useMemo(() => meals.filter(...), [meals, query])` is declared only after `if (loading) return <View ... />`. On the initial render `loading` is `true`, so the `useMemo` hook is skipped; after `load()` sets `loading` to `false`, the same component instance reaches `useMemo`. This changes the number/order of hooks between renders, violating React's Rules of Hooks and potentially producing a hooks-order runtime error or unstable state behavior.
 Impact: the Meals screen can fail or behave unpredictably exactly when transitioning from its loading state to its loaded state. This is independent of the existing PB-216 localization finding and is a concrete runtime correctness issue. Runtime execution was not possible in this audit because the repository could not be run locally.
 
+### PB-218 — Mobile command action helper returns hardcoded English user-facing messages
+Status: OPEN — LOCALIZATION/UX
+Location: `apps/mobile/lib/command-actions.ts`, `runQuickCommand()`; consumer `apps/mobile/app/command-center-v2.tsx`.
+Evidence: `runQuickCommand()` returns literal English user-facing messages for every action (`500 ml water logged.`, `20 min walk logged.`, `45 min strength workout logged.`, `Reminder created for 20:00.`). `command-center-v2.tsx` directly assigns `result.message` into `setActionMessage()`, so these strings bypass the shared `apps/mobile/lib/i18n.ts` translation layer even though the screen itself loads locale state. Impact: Persian users can see English action feedback inside an otherwise locale-aware command-center route, creating a second localization boundary violation outside PB-184's reusable visual components. This is distinct from PB-215 and PB-216 because it is rooted in the command-action domain helper/returned payload rather than the route's static UI copy.
+
 ## Reconciliation note
 Preserve oldest canonical IDs when the same root cause already exists elsewhere. Correction-only IDs remain NOT_APPLICABLE/COVERED_BY notes and must not be double-counted.
