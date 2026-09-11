@@ -206,6 +206,13 @@ Problem: `hasMemories` and `hasGoals` are derived from `Array.isArray(...)`, so 
 Impact: readiness can report that memory/goals are available even when there are zero records, contradicting the semantics used elsewhere where counts/length determine availability.
 Action later: derive readiness from meaningful counts rather than container type.
 
+### PB-029 — Full-day scheduler uses legacy dependency table and server-local time semantics
+Status: OPEN — DATA INTEGRITY / TIMEZONE PRIORITY: HIGH
+Location: `apps/backend/src/modules/personal-brain/services/full-day-scheduler.service.ts`.
+Problem: the scheduler's raw SQL joins `TaskDependency` to derive dependency statuses, while migration history also contains the newer `LifeTaskDependency` structure. Separately, schedule-day normalization and supplement/habit slot construction use JavaScript `setHours`/`setDate` before emitting UTC ISO strings, making behavior depend on the server's local timezone rather than an explicit user timezone.
+Impact: dependency resolution may ignore the canonical Life Execution relation if both tables diverge; scheduled items can shift date/time for users in non-server timezones.
+Action later: identify the canonical dependency table, reconcile legacy compatibility usage, and centralize timezone-aware schedule calculations.
+
 ## Completed audit work still requiring runtime validation
 
 - Core source read: COMPLETE.
