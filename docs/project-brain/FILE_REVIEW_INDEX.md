@@ -2,35 +2,43 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: current-`main` root/backend/mobile manifests, `apps/backend/src/app.module.ts`, and 47 identified Core source files.
-Scope not yet read: complete repository source inventory; non-Core source; schema/migrations; CI; mobile source/tests.
-Evidence roots: current-`main` commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b` and Core source paths.
-Confidence level: MEDIUM for listed Core files; LOW for repository completeness.
-Open questions: automated line counts; hidden/additional files; exact total source count.
+Scope actually read: current-main package manifests/AppModule, 47 Core source files, full current Prisma schema, selected migration files.
+Scope not yet read: remaining source and migrations.
+Evidence roots: `main` at `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`; audit branch Project Brain.
+Confidence level: MEDIUM for listed read files, LOW for repository completeness.
+Open questions: exact repository-wide source count and line counts; remaining files.
 
-## Current known source inventory — Core
+## Core source index
 
-| Path / scope | Language | Line count | Module | Purpose | Status |
-|---|---|---:|---|---|---|
-| `apps/backend/src/modules/auth/**` (11 identified files) | TypeScript | unknown* | auth | auth/session/token flow | READ_COMPLETELY |
-| `apps/backend/src/modules/users/**` (5 identified files) | TypeScript | unknown* | users | account/profile routes | READ_COMPLETELY |
-| `apps/backend/src/modules/profile/**` (4 identified files) | TypeScript | unknown* | profile | extended profile | READ_COMPLETELY |
-| `apps/backend/src/modules/preferences/**` (4 identified files) | TypeScript | unknown* | preferences | user preferences | READ_COMPLETELY |
-| `apps/backend/src/modules/onboarding/**` (4 identified files) | TypeScript | unknown* | onboarding | onboarding state | READ_COMPLETELY |
-| `apps/backend/src/modules/settings/**` (4 identified files) | TypeScript | unknown* | settings | language/timezone settings | READ_COMPLETELY |
-| `apps/backend/src/modules/context-engine/**` (7 identified files) | TypeScript | unknown* | context-engine | context fusion/priority | READ_COMPLETELY |
-| `apps/backend/src/modules/device-intelligence/**` (6 identified files) | TypeScript | unknown* | device-intelligence | device data bridge | READ_COMPLETELY |
-| `apps/backend/src/modules/user-intelligence/**` (6 identified files) | TypeScript | unknown* | user-intelligence | behavior learning/insights | READ_COMPLETELY |
+| Scope | Identified files | Language | Status |
+|---|---:|---|---|
+| Auth | 11 | TypeScript | READ_COMPLETELY |
+| Users | 5 | TypeScript | READ_COMPLETELY |
+| Profile | 4 | TypeScript | READ_COMPLETELY |
+| Preferences | 4 | TypeScript | READ_COMPLETELY |
+| Onboarding | 4 | TypeScript | READ_COMPLETELY |
+| Settings | 4 | TypeScript | READ_COMPLETELY |
+| Context Engine | 7 | TypeScript | READ_COMPLETELY |
+| Device Intelligence | 6 | TypeScript | READ_COMPLETELY |
+| User Intelligence | 6 | TypeScript | READ_COMPLETELY |
+| **Core total** | **51** | mixed* | **READ_COMPLETELY for identified source files** |
 
-## Baseline non-source files actually read
+* 47 are TypeScript source files; 4 are package/module support files counted separately from source in detailed notes.
 
-| Path | Status | Purpose |
+## Database index
+
+| Path | Status | Notes |
 |---|---|---|
-| `package.json` | READ_COMPLETELY | root manifest |
-| `apps/backend/package.json` | READ_COMPLETELY | backend commands/dependencies |
-| `apps/mobile/package.json` | READ_COMPLETELY | mobile commands/dependencies |
-| `apps/backend/src/app.module.ts` | READ_COMPLETELY | backend module wiring |
+| `apps/backend/prisma/schema.prisma` | READ_COMPLETELY | Final model is `FitnessProfileState`; 32 models observed |
+| `apps/backend/prisma/migrations/20260804044934_init/migration.sql` | READ_COMPLETELY | initial auth/settings schema |
+| `.../20260805052906_add_user_preferences/migration.sql` | READ_COMPLETELY | UserPreference |
+| `.../20260805065044_add_user_profile/migration.sql` | READ_COMPLETELY | UserProfile |
+| `.../20260805065755_add_user_onboarding/migration.sql` | READ_COMPLETELY | UserOnboarding |
+| `.../20260805070346_add_assistant_profile/migration.sql` | READ_COMPLETELY | AssistantProfile |
+| `.../20260805070938_add_health_nutrition_profiles/migration.sql` | READ_COMPLETELY | HealthProfile/NutritionProfile |
+| `.../20260805072640_add_daily_tracking/migration.sql` | READ_COMPLETELY | initial DailyLog contract |
+| `.../20260805075011_add_nutrition_engine_foundation/migration.sql` | READ_COMPLETELY | NutritionLog |
+| `.../20260811122000_make_daily_logs_date_aware/migration.sql` | READ_COMPLETELY | final DailyLog key change |
+| `.../20260811123000_make_nutrition_logs_date_aware/migration.sql` | READ_COMPLETELY | final NutritionLog dateKey/index |
 
-\* Exact line counts are intentionally unknown until a local filesystem inventory is available; no fabricated counts are used.
-
-No source scope outside these paths is marked complete.
+Exact repository-wide line counts are not fabricated because the runtime has no local clone.
