@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, continued operational-script/legacy-variant review including recipe image reprocessors, food entity resolvers, recipe intelligence classify/profile/nutrition/score, relevant recipe migrations, local recipe-image pipeline variants, backend common/config/bootstrap/database/i18n/image boundary, historical high-value PR/branch reconciliation, continued Mobile domain-client review, CI/release/onboarding contract review, and session-lifecycle persistence review; Brain history/retention and account erasure surface review; backend CI/e2e database lifecycle review.
+Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, continued operational-script/legacy-variant review including recipe image reprocessors, food entity resolvers, recipe intelligence classify/profile/nutrition/score, relevant recipe migrations, local recipe-image pipeline variants, backend common/config/bootstrap/database/i18n/image boundary, historical high-value PR/branch reconciliation, continued Mobile domain-client review, CI/release/onboarding contract review, and session-lifecycle persistence review; Brain history/retention and account erasure surface review; backend CI/e2e database lifecycle review; duplicate user-controller reconciliation.
 Scope not yet read: remaining repository-wide source/tests/consumers, full matrices, exhaustive operational scripts, runtime execution, complete security/privacy reconciliation.
 Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/backend/prisma/`, `apps/backend/scripts/`, `apps/backend/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
 Confidence: HIGH for source-level findings below unless explicitly marked validation-needed.
@@ -14,6 +14,9 @@ Earlier audit text said Mobile Brain `execute-next`/feedback routes were missing
 
 ### PB-167 — NOT_APPLICABLE
 Earlier appendix text said `ContentModule` was orphaned. That was disproven by direct inspection of `apps/backend/src/app.module.ts`, which imports `ContentModule` in the active Nest `imports` array. The old PB-167 statement is not an open issue and must not be counted.
+
+### PB-171 — CORRECTED SCOPE
+The earlier PB-171 wording incorrectly included `apps/backend/src/modules/users/users.controller.ts` as an active affected controller. The active `UsersModule` imports `apps/backend/src/modules/users/controllers/users.controller.ts`, whose methods correctly read `req.user.id` under the current `JwtStrategy` return shape. The root-level `users.controller.ts` is a duplicate/orphan source file and is not the active controller. PB-171 therefore remains OPEN for `apps/backend/src/modules/fitness/controllers/fitness.controller.ts` only.
 
 ## New findings
 
@@ -75,10 +78,10 @@ Location: `apps/backend/src/modules/daily-command-center/daily-command-center.se
 Status: OPEN — SECURITY HIGH
 Location: `apps/backend/src/modules/device-intelligence/controllers/device-intelligence.controller.ts`.
 
-### PB-171 — Active authenticated controllers read req.user.sub although JWT strategy exposes User.id
+### PB-171 — Active FitnessController reads req.user.sub although JWT strategy exposes a loaded User object
 Status: OPEN — AUTH/SECURITY HIGH
-Locations: `apps/backend/src/modules/auth/strategies/jwt.strategy.ts`, active consumers including `apps/backend/src/modules/fitness/controllers/fitness.controller.ts` and `apps/backend/src/modules/users/users.controller.ts`.
-Evidence: `JwtStrategy.validate()` returns `UsersService.findById(payload.sub)`, i.e. the loaded User object; the affected controllers type/read `req.user.sub`. Impact: authenticated identity extraction is inconsistent across the active request contract and can yield undefined user IDs in those controllers until the strategy/request typing is unified. Exact runtime manifestation remains unvalidated because the repo could not be executed locally in this session.
+Location: `apps/backend/src/modules/fitness/controllers/fitness.controller.ts`, compared with `apps/backend/src/modules/auth/strategies/jwt.strategy.ts`.
+Evidence: `JwtStrategy.validate()` returns `UsersService.findById(payload.sub)`, i.e. the loaded User object; the active Fitness controller reads `req.user.sub`. Impact: the authenticated identity contract is inconsistent and can yield an undefined user ID in that controller until the strategy/request typing or controller access is unified. Exact runtime manifestation remains unvalidated because the repo could not be executed locally in this session.
 
 ### PB-172 — Refresh-token rotation leaves old refresh session valid after successful refresh
 Status: OPEN — SECURITY HIGH
@@ -231,7 +234,7 @@ Evidence: both scripts define `globalCultureFit()` to match user `preferred_coun
 
 ### PB-205 — Mobile domain API clients bypass canonical 401 refresh/retry policy
 Status: OPEN — API CONTRACT HIGH
-Locations: `apps/mobile/lib/recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `inventory-api.ts`, `assistant-api.ts`; comparison baseline `apps/mobile/lib/api.ts`, `apps/mobile/lib/calendar-api.ts`, `apps/mobile/lib/price-api.ts`, and `apps/mobile/lib/brain-execution.ts`.
+Locations: `apps/mobile/lib/recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `inventory-api.ts`, `assistant-api.ts`; comparison baseline `apps/mobile/lib/api.ts`, `calendar-api.ts`, `price-api.ts`, and `brain-execution.ts`.
 Evidence: the affected domain clients obtain the stored access token and issue their own `fetch()`/request helpers without a 401→refresh→retry path, while central/baseline clients implement refresh/retry behavior explicitly. Impact: after access-token expiry, recipe, shopping, inventory, or assistant actions can fail while other domain surfaces transparently recover, producing inconsistent session behavior. Root cause: multiple domain clients duplicated transport/auth logic instead of using one canonical request interceptor.
 
 ### PB-206 — Recipe content release workflow calls undefined backend package scripts
@@ -261,13 +264,18 @@ Evidence: `DecisionHistoryRetentionService` stores per-user policies in an in-me
 
 ### PB-211 — No authenticated user-account erasure orchestration is exposed
 Status: OPEN — SECURITY/PRIVACY HIGH
-Locations: `apps/backend/src/modules/users/users.controller.ts`, `apps/backend/src/modules/users/users.service.ts`, and the persisted user-data model set.
-Evidence: the active `UsersController` exposes only `GET /users/me` and `PATCH /users/me`, both behind `JwtAuthGuard`; there is no delete-account route. `UsersService` provides lookup/profile update/create methods only and no account-erasure method. Repository search for account deletion/erasure did not identify a user-facing deletion orchestration. Impact: there is no observed authenticated application path that can atomically or systematically erase a user's account and associated persisted personal data. This is distinct from PB-210: PB-210 is automatic history retention enforcement, while PB-211 is the absence of an end-user erasure workflow.
+Locations: `apps/backend/src/modules/users/controllers/users.controller.ts`, `apps/backend/src/modules/users/users.service.ts`, and the persisted user-data model set.
+Evidence: the active `UsersController` exposes only `GET /users/profile` and `PATCH /users/profile`, both behind `JwtAuthGuard`; there is no delete-account route. `UsersService` provides lookup/profile update/create methods only and no account-erasure method. Repository search for account deletion/erasure did not identify a user-facing deletion orchestration. Impact: there is no observed authenticated application path that can atomically or systematically erase a user's account and associated persisted personal data. This is distinct from PB-210: PB-210 is automatic history retention enforcement, while PB-211 is the absence of an end-user erasure workflow.
 
 ### PB-212 — Backend E2E preparation bypasses the CI migration path by using `prisma db push`
 Status: OPEN — CI/DATABASE INTEGRITY HIGH
 Locations: `.github/workflows/backend-ci.yml`, `apps/backend/test/prepare-e2e-db.cjs`.
 Evidence: the backend CI job first runs `pnpm exec prisma migrate deploy` and a second idempotence deploy check against its Postgres service, then the `test:e2e` script invokes `test/prepare-e2e-db.cjs`. That preparation script executes `pnpm prisma db push` against `process.env.DATABASE_URL`; the repository does not contain the referenced `apps/backend/test/.env.test`, so the existing CI `DATABASE_URL` remains in effect rather than being replaced by a committed test-only database URL. Impact: the CI E2E phase can mutate the same database after the migration verification step using Prisma's schema-push mechanism instead of the migration history that production is expected to follow. This can mask migration/schema drift and means the E2E job does not validate the database state strictly produced by `prisma migrate deploy`. The finding is about the CI/database lifecycle contract; it is distinct from PB-188, which concerns an operational recipe importer using missing Prisma delegates.
+
+### PB-213 — Duplicate orphan UsersController source exists beside the active UsersController
+Status: OPEN — ARCHITECTURE/LEGACY DRIFT
+Locations: `apps/backend/src/modules/users/users.controller.ts`, `apps/backend/src/modules/users/controllers/users.controller.ts`, `apps/backend/src/modules/users/users.module.ts`.
+Evidence: the active `UsersModule` imports `./controllers/users.controller`, so `apps/backend/src/modules/users/controllers/users.controller.ts` is the runtime controller. A second `apps/backend/src/modules/users/users.controller.ts` defines another `UsersController` and exposes a different `/users/me` and `PATCH /users/me` contract, but the module does not import it and repository inspection found no active import consumer. Impact: two source files represent the same controller class name and domain with different route contracts and request-user typing, creating maintenance ambiguity and making stale contract discovery likely. The orphan file is not counted as active runtime behavior.
 
 ## Reconciliation note
 Preserve oldest canonical IDs when the same root cause already exists elsewhere. Correction-only IDs remain NOT_APPLICABLE/COVERED_BY notes and must not be double-counted.
