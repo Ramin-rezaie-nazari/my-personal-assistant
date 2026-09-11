@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
+import { assertValidTimezone } from '../../../common/utils/user-time';
 
 @Injectable()
 export class SettingsService {
@@ -28,6 +29,14 @@ export class SettingsService {
       timezone?: string;
     },
   ) {
+    if (data.timezone !== undefined) {
+      try {
+        assertValidTimezone(data.timezone);
+      } catch {
+        throw new BadRequestException('timezone must be a valid IANA timezone');
+      }
+    }
+
     return this.prisma.userSettings.upsert({
       where: { userId },
       update: data,
