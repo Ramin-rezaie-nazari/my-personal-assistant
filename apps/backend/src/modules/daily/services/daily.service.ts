@@ -1,12 +1,13 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
+import { getDateKeyInTimezone } from '../../../common/utils/user-time';
 
 @Injectable()
 export class DailyService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getDailyLog(userId: string, dateKey?: string) {
-    const key = this.normalizeDateKey(dateKey);
+    const key = await this.resolveDateKey(userId, dateKey);
 
     return this.prisma.dailyLog.findUnique({
       where: { userId_dateKey: { userId, dateKey: key } },
@@ -39,7 +40,7 @@ export class DailyService {
       protein?: number;
     },
   ) {
-    const dateKey = this.normalizeDateKey(data.dateKey);
+    const dateKey = await this.resolveDateKey(userId, data.dateKey);
     const { dateKey: _dateKey, ...values } = data;
 
     return this.prisma.dailyLog.upsert({
@@ -54,7 +55,7 @@ export class DailyService {
       throw new BadRequestException('amountMl must be between 1 and 5000');
     }
 
-    const key = this.normalizeDateKey(dateKey);
+    const key = await this.resolveDateKey(userId, dateKey);
 
     return this.prisma.dailyLog.upsert({
       where: { userId_dateKey: { userId, dateKey: key } },
@@ -63,21 +64,29 @@ export class DailyService {
     });
   }
 
-  private normalizeDateKey(dateKey?: string): string {
-    const value = dateKey ?? new Date().toISOString().slice(0, 10);
+  private async resolveDateKey(userId: string, dateKey?: string): Promise<string> {
+    if (dateKey) return this.normalizeDateKey(dateKey);
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId },
+      select: { timezone: true },
+    });
+    return getDateKeyInTimezone(new Date(), settings?.timezone || 'UTC');
+  }
+
+  private normalizeDateKey(dateKey: string): string {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) {
       throw new BadRequestException('dateKey must use YYYY-MM-DD format');
     }
 
-    const parsed = new Date(`${value}T00:00:00.000Z`);
+    const parsed = new Date(`${dateKey}T00:00:00.000Z`);
     if (
       Number.isNaN(parsed.getTime()) ||
-      parsed.toISOString().slice(0, 10) !== value
+      parsed.toISOString().slice(0, 10) !== dateKey
     ) {
       throw new BadRequestException('dateKey must be a valid calendar date');
     }
 
-    return value;
+    return dateKey;
   }
 }
