@@ -1,7 +1,7 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Review status: SOURCE-LEVEL AUDIT RECONCILED; ENVIRONMENTAL VALIDATION BLOCKERS EXPLICIT
 
 ## Findings PB-156 through PB-243
 
@@ -26,7 +26,7 @@ Location: `apps/backend/src/modules/life-tasks/services/life-tasks.service.ts`.
 ### PB-160 — LifeTasksService.update() resets completedAt on metadata-only edits to completed tasks
 Status: OPEN — DATA/LOGIC HIGH
 Location: `apps/backend/src/modules/life-tasks/services/life-tasks.service.ts`, `update()`.
-Evidence: duplicate/unreachable `status === 'completed'` branch plus `status = dto.status ?? task.status` causes a completed task edited without a status change to receive a new completion timestamp.
+Evidence: duplicate/unreachable `status === 'completed'` branch plus `status = dto.status ?? task.status` causes a completed task edited without a status change to receive a new completion timestamp. The same expression also clears `completedAt` when a completed task is moved to a non-completed status; the former PB-250 observation is merged here and is not a separate canonical finding.
 
 ### PB-161 — RecommendationIntelligenceModule is orphaned from runtime wiring
 Status: OPEN — ARCHITECTURE/FEATURE HIGH
@@ -354,19 +354,19 @@ Locations: `apps/mobile/lib/yoga-pose-pipeline.ts`, `apps/mobile/lib/yoga-pose-p
 Evidence: `YogaPosePipeline` subscribes to camera frames and calls `void this.process(frame, onPose)` for each frame. `process()` checks `this.stateValue.active` before `await this.provider.detect(frame)`, but it performs no active/session-token check after the await. `stop()` unsubscribes and marks `active:false`, but cannot cancel an already-running `detect()`. Therefore an analysis that was in flight before `stop()` can resolve afterward, mutate `analyzedFrames`, `lastConfidence`, and `lastCapturedAt`, and invoke `onPose` after the pipeline has been stopped. The existing `yoga-pose-pipeline.spec.ts` only verifies the unconfigured provider path and contains no stop/in-flight completion regression test. Impact: a stopped camera-analysis session can receive stale post-stop callbacks/state mutations, causing UI/session state to reflect frames that should no longer be accepted. Runtime execution was not available in this audit.
 
 ### PB-232 — Memory Intelligence POST contract is incompatible with the global ValidationPipe
-Status: OPEN — API/RUNTIME HIGH
+Status: RECLASSIFIED / WITHDRAWN AS RUNTIME COLLISION
 Locations: `apps/backend/src/modules/memory-intelligence/controllers/memory-intelligence.controller.ts`, `apps/backend/src/bootstrap.ts`.
-Evidence: the active global `ValidationPipe` is configured with `whitelist: true` and `forbidNonWhitelisted: true`. The `MemoryIntelligenceController.remember()` endpoint accepts an inline `RememberMemoryBody` TypeScript interface rather than a decorated DTO; its `type`, `key`, `value`, and optional `importance` properties have no `class-validator` metadata. With `forbidNonWhitelisted`, request properties without validation metadata are treated as non-whitelisted. Consequently a normal `POST /memory-intelligence` body containing the documented memory fields is expected to be rejected by the global pipe before the controller handler can construct and persist the memory. Impact: the primary authenticated memory-write endpoint is effectively unusable until its body is represented by a validated DTO (or the validation policy is intentionally changed). This is distinct from PB-158 because it is a concrete runtime contract collision in the active Memory Intelligence endpoint, not merely a missing decorator audit on an inactive module.
+Evidence correction: the endpoint uses an inline interface/body type. Nest's ValidationPipe treats the resulting metatype as native `Object` and skips validation for that metatype; therefore the previous claim that the global whitelist/forbidNonWhitelisted policy necessarily rejects the documented body was too strong. Retain only as an API type-safety/design concern if separately justified; do not count the withdrawn runtime-blocking claim.
 
 ### PB-233 — Active Goals write/check-in DTOs are incompatible with the global ValidationPipe
 Status: OPEN — API/RUNTIME HIGH
 Locations: `apps/backend/src/modules/goals/controllers/goals.controller.ts`, `apps/backend/src/modules/goals/dto/create-goal.dto.ts`, `update-goal.dto.ts`, `checkin-goal.dto.ts`, `apps/backend/src/bootstrap.ts`.
 Evidence: `GoalsController` uses `@Body() CreateGoalDto`, `UpdateGoalDto`, and `CheckinGoalDto` for the active `POST /goals`, `PATCH /goals/:id`, and `POST /goals/:id/checkin` endpoints. All three DTO classes are plain TypeScript property declarations and contain no `class-validator` decorators. The global `ValidationPipe` enables `whitelist: true` and `forbidNonWhitelisted: true`, so ordinary request properties are not represented as allowed validation metadata and are expected to be rejected before reaching `GoalsService`. Impact: the primary Goals create/update/check-in write paths are effectively blocked by the project's own runtime validation policy until the DTOs are decorated/validated or the global policy is intentionally changed. This is grouped separately from PB-232 because the affected active domain and contracts are distinct.
 
-### PB-234 — Active Calendar write endpoints have the same global ValidationPipe contract collision
-Status: OPEN — API/RUNTIME HIGH
-Locations: `apps/backend/src/modules/calendar/controllers/calendar.controller.ts`, `apps/backend/src/modules/calendar/dto/create-calendar-event.dto.ts`, `apps/backend/src/bootstrap.ts`.
-Evidence: `CalendarController.createEvent()` binds `@Body() dto: CreateCalendarEventDto`, and the active `PATCH /calendar/:id` binds an inline body type directly. `CreateCalendarEventDto` contains only plain `title`, `type`, `startsAt`, and optional `endsAt` property declarations without `class-validator` metadata; the update body has no class DTO/validation metadata at all. The global `ValidationPipe` uses `whitelist: true` and `forbidNonWhitelisted: true`. Therefore normal calendar create/update body fields are expected to be rejected as non-whitelisted before the service receives them. Impact: active Calendar create/update routes are likely unusable under the project's own validation configuration until both write contracts are represented by validated DTOs (or the global policy is intentionally changed). Runtime HTTP execution is unverified in this session, so the finding is source-level with strong framework-contract evidence.
+### PB-234 — Active Calendar create DTO has a global ValidationPipe contract gap; inline PATCH body is not counted as a whitelist collision
+Status: NARROWED / OPEN — API CONTRACT
+Location: `apps/backend/src/modules/calendar/dto/create-calendar-event.dto.ts`, `apps/backend/src/modules/calendar/controllers/calendar.controller.ts`, `apps/backend/src/bootstrap.ts`.
+Evidence correction: `CreateCalendarEventDto` is a class metatype with plain properties and no validation decorators, so it is a real validation-contract gap under the global whitelist policy. The inline PATCH body is native `Object` metadata and is not itself counted as a whitelist collision. Runtime execution remains unverified.
 
 ### PB-235 — Goal check-in performs two related database writes without a transaction
 Status: OPEN — DATA INTEGRITY HIGH
@@ -378,10 +378,10 @@ Status: OPEN — LOGIC/DESIGN REVIEW
 Location: `apps/backend/src/modules/habits/services/habits.service.ts`, `stats()`; related `Habit.frequency`/`targetPerWeek` contract in `apps/backend/src/modules/habits/dto/habit.dto.ts`.
 Evidence: `stats()` computes `streak` by iterating the last 14 calendar days and incrementing only while every consecutive day has a log. The same helper is used for both `daily` and `weekly` habits. A weekly habit can legitimately have a target such as `targetPerWeek=1`, but two valid weekly completions on non-consecutive days will produce a streak of 1 rather than measuring consecutive successful weeks; conversely, the current algorithm treats daily consecutive logs as the universal streak unit regardless of `frequency`. Impact: the habit API can report a misleading streak for weekly habits and the shared helper does not encode the frequency-specific semantics implied by the domain model. The repository contains the separate PB-078 review of weekly summary possible-count semantics; PB-236 is specifically the streak-calculation unit/algorithm mismatch.
 
-### PB-237 — User Intelligence event-write body is inline/unvalidated under the global ValidationPipe
-Status: OPEN — API/RUNTIME HIGH
+### PB-237 — User Intelligence event-write body validation collision claim withdrawn; API type-safety concern retained only if separately justified
+Status: RECLASSIFIED / WITHDRAWN AS RUNTIME COLLISION
 Locations: `apps/backend/src/modules/user-intelligence/controllers/user-intelligence.controller.ts`, `apps/backend/src/bootstrap.ts`.
-Evidence: active `POST /user-intelligence/events` accepts `@Body() body: { action: BehaviorAction; context?: BehaviorContext }` as an inline TypeScript type, not a decorated DTO. The global `ValidationPipe` is configured with `whitelist: true` and `forbidNonWhitelisted: true`. The request properties `action` and `context` therefore have no validation metadata defining them as whitelisted fields and are expected to be rejected before `LearningService.learnFromAction()` executes. Impact: the active event-ingestion path used to feed User Intelligence learning can be blocked by the application's own validation contract. Runtime HTTP execution remains unverified in this audit.
+Evidence correction: the endpoint body is an inline object type and therefore has native `Object` metatype under Nest metadata; ValidationPipe skips that metatype. The prior claim that `forbidNonWhitelisted` necessarily blocks `action`/`context` is withdrawn. No runtime-blocking finding is counted from this evidence.
 
 ### PB-238 — User Intelligence learning falls back to server timezone when behavior event metadata lacks hour/weekday
 Status: OPEN — TIMEZONE/BEHAVIOR
@@ -409,14 +409,86 @@ Locations: `.github/workflows/recipe-image-import.yml`, root `pnpm-lock.yaml`, `
 Evidence: the `Recipe image import` workflow uses `pnpm install --frozen-lockfile`. The observed GitHub Actions run `34613481370` failed in its `Install dependencies` step before the image-import step, so the workflow could not reach the intended job. The failure log reported `ERR_PNPM_OUTDATED_LOCKFILE` and specifically identified `sharp@^0.34.2` as missing from the lockfile, while also reporting lockfile entries for `prisma`, `supertest`, and `typescript` that are absent from the current package manifest and additional specifier/version mismatches. The workflow's toolchain setup itself completed successfully before this install failure. Impact: the committed dependency graph is not reproducible under the repository's own frozen-lockfile CI policy, and the recipe-image automation is currently blocked before execution. This is distinct from feature-script defects such as PB-203/194 because it prevents dependency installation at the workflow level.
 
 ### PB-243 — Multiple active write DTOs lack class-validator metadata under the global whitelist/forbidNonWhitelisted policy
-Status: OPEN — API/RUNTIME HIGH
-Locations: `apps/backend/src/modules/habits/dto/habit.dto.ts`, `apps/backend/src/modules/workout/dto/create-workout.dto.ts`, `apps/backend/src/modules/supplements/dto/supplement.dto.ts`, `apps/backend/src/modules/life-execution/dto/task.dto.ts`, compared with `apps/backend/src/bootstrap.ts` and their active controllers.
-Evidence: `CreateHabitDto`/`UpdateHabitDto`, `CreateWorkoutDto`, `CreateSupplementDto`/`UpdateSupplementDto`, and all active Life Execution task DTOs (`CreateTaskDto`, `UpdateTaskDto`, `TaskEventDto`, `TaskDependencyDto`) are plain TypeScript classes with no `class-validator` decorators. These classes are used by active authenticated controllers; for example `LifeExecutionController` binds the DTOs on POST/PATCH/event/dependency routes, and Habits/Workout/Supplements modules are imported by the active application. The global `ValidationPipe` has `whitelist: true` and `forbidNonWhitelisted: true`. Unlike inline `@Body()` object types (which Nest treats as plain Object metadata), these are class DTO metatypes and therefore their ordinary request properties are not represented by validation metadata and are expected to be rejected as non-whitelisted. Impact: several active write surfaces can be blocked by the application's own validation configuration, and even if the global policy is relaxed, these contracts lack declarative input validation. This is grouped because the same concrete DTO defect repeats across four active domains; it is distinct from PB-233/234/232/237 because those findings cover separate active domain contracts already identified earlier.
+Status: RECONCILED / DO NOT COUNT AS UNIQUE UMBRELLA FINDING
+Locations: `apps/backend/src/modules/habits/dto/habit.dto.ts`, `apps/backend/src/modules/workout/dto/create-workout.dto.ts`, `apps/backend/src/modules/supplements/dto/supplement.dto.ts`, `apps/backend/src/modules/life-execution/dto/task.dto.ts`.
+Evidence correction: this umbrella finding overlaps historical canonical DTO findings PB-077 (Habits), PB-083 (Supplements), PB-085 (Life Execution), and PB-093 (Workout). The concrete class-DTO observations remain relevant evidence, but they must be merged/reconciled into those historical IDs rather than counted as a new umbrella defect. No duplicate PB-243 issue is counted in the final unique findings set.
 
-## Correction log
-- PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
-- PB-167: NOT_APPLICABLE; ContentModule is imported by active AppModule.
-- PB-171 scope corrected: Users controller is not affected; active Fitness controller only.
+## Findings PB-244 through PB-257 — continuation reconciled into canonical Appendix
+
+### PB-244 — Backend `.env.example` omits required runtime environment variables
+Status: OPEN — CONFIG/ONBOARDING HIGH
+Location: `apps/backend/.env.example`, compared with `apps/backend/src/common/config/env.validation.ts`.
+Evidence: `env.validation.ts` marks `APP_NAME`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` as required. The committed `.env.example` contains only `NODE_ENV`, `PORT`, and `APP_NAME`; it provides no `DATABASE_URL` or JWT secret placeholders.
+Impact: a developer/operator following the example environment file cannot construct a complete valid backend environment from that file alone; startup configuration will fail validation unless the missing required variables are supplied through undocumented/external setup. This is a repository onboarding/configuration contract gap, not a claim about production secret management.
+
+### PB-245 — Backend README remains a stock NestJS starter document and omits MYPA operational setup
+Status: OPEN — DOCUMENTATION/ONBOARDING MEDIUM
+Location: `apps/backend/README.md`.
+Evidence: the README still identifies the project as a generic NestJS starter repository, gives only generic `pnpm install/start/test` instructions, and contains no MYPA-specific environment setup, Prisma migration/generation workflow, required runtime variables, module architecture, or repository-specific operational scripts.
+Impact: a new engineer can follow the README and still fail to obtain a runnable MYPA backend or misunderstand the canonical setup/operational workflow.
+
+### PB-246 — Mobile CI has no automated test execution despite committed mobile spec files
+Status: OPEN — TEST/CI MEDIUM-HIGH
+Locations: `.github/workflows/mobile-ci.yml`, `apps/mobile/package.json`, mobile `*.spec.ts`/`*.test.ts` files.
+Evidence: the mobile package has no test script/test runner and the main Mobile CI runs frozen install, typecheck, Expo config validation, and Android JS export, but no mobile behavioral tests. Committed specs exist, including branding/notification/Yoga tests.
+Impact: the main mobile CI gate does not exercise the committed mobile behavioral tests.
+
+### PB-247 — Personal Brain Smart Planning uses server-local calendar time instead of persisted user timezone
+Status: OPEN — TIMEZONE/BEHAVIOR HIGH
+Locations: `apps/backend/src/modules/personal-brain/services/smart-planning.service.ts`, `getPlan()` and `replan()`.
+Evidence: the service uses `new Date()`, `getHours()`, `setHours()` and `setDate()` for user-facing day/schedule semantics without loading `UserSettings.timezone`.
+Impact: users whose timezone differs from the backend process timezone can receive plans/schedule decisions for the wrong local calendar day/hour.
+
+### PB-248 — Context Engine exposes an empty controller artifact while the service is used internally
+Status: OPEN — ARCHITECTURE/API SURFACE MEDIUM
+Locations: `apps/backend/src/modules/context-engine/controllers/context-engine.controller.ts`, `context-engine.module.ts`, Personal Brain internal consumer.
+Evidence: the module is active and `ContextEngineService` is consumed internally, but the registered controller defines no HTTP route methods.
+Impact: the mounted HTTP surface implies an API contract that does not exist; this is stale API-surface architecture, not an unused internal service.
+
+### PB-249 — Active root backend route is still the generic NestJS “Hello World” starter endpoint
+Status: OPEN — API/ARCHITECTURE MEDIUM
+Locations: `apps/backend/src/app.controller.ts`, `app.service.ts`, `app.module.ts`.
+Evidence: the active `AppController` exposes public `GET /` and returns literal `Hello World!`.
+Impact: a starter artifact remains in the public API surface and can be mistaken for the canonical readiness/health contract.
+
+### PB-252 — Content Recommendation service is runtime-registered but not runtime-consumed
+Status: PROVISIONAL — ARCHITECTURE/INTEGRATION
+Locations: `apps/backend/src/modules/content/content.module.ts`, `content-recommendation.service.ts`, application consumer graph.
+Evidence: `ContentModule` is runtime-mounted and exports the service, but repository-wide symbol search found no active production injection/use of `ContentRecommendationService` beyond its own module registration.
+Impact: the service may be intentional dormant infrastructure or stale source; architecture intent must be decided before remediation/freeze.
+
+### PB-254 — No composed authenticated account-erasure workflow was located
+Status: PROVISIONAL — SECURITY/PRIVACY HIGH
+Locations: active Users/Auth services, final Prisma `User` relation graph, migration-only persistence, Supabase Auth/Storage integration surface.
+Evidence: no `prisma.user.delete`, `deleteUser`, or Supabase Auth admin-delete implementation was found. Session deletion primitives exist, and the final Prisma `User` model has broad modeled cascades, but migration-only user-sensitive tables and external Auth/Storage are outside that cascade graph.
+Impact: the repository does not currently demonstrate a canonical end-to-end account-erasure workflow covering canonical User data, sessions, migration-only persistence, Supabase Auth identity, and Storage objects.
+
+### PB-257 — Workout and UserBehavior time-ordered user queries lack matching composite indexes in the final Prisma schema
+Status: OPEN — PERFORMANCE/DATA ACCESS
+Locations: `apps/backend/prisma/schema.prisma`, Workout/Dashboard/Daily Command Center/Adaptive Learning/Notifications/User Intelligence consumers.
+Evidence: `Workout` has `userId` and `performedAt` but no `@@index([userId, performedAt])`; active consumers issue user-scoped time-range/order queries. `UserBehavior` has `userId` and `createdAt` but no matching user/time composite index, while learning reads order by `createdAt` with `take: 1000`.
+Impact: these chronological per-user reads can require broader scans/sorts as history grows. This is a source-level performance finding; runtime query plans/row counts are unavailable and must be used for remediation sizing.
+
+## Canonical reconciliation / withdrawal log
+
+- **PB-250:** merged into PB-160; not a unique finding.
+- **PB-251:** WITHDRAWN. Direct current-main lookup confirmed `apps/backend/scripts/recipe-image-reprocess-retry.mjs` exists; prior missing-file evidence was stale/incomplete.
+- **PB-253:** WITHDRAWN. `ConversationStyleService` is actively consumed by `ResponsePlanningService`.
+- **PB-255:** WITHDRAWN / MERGED INTO PB-203. The missing v8 dependencies remain covered by PB-203; v7 itself exists.
+- **PB-256:** WITHDRAWN. Both package-declared nutrition and recommendation scorer files exist on current main; PB-199/PB-200/PB-204 remain independent logic/provenance findings.
+- **PB-232/PB-237:** runtime ValidationPipe collision claims withdrawn/reclassified because inline `Object` metatypes are skipped by Nest ValidationPipe validation; no runtime-blocking finding is counted from those claims.
+- **PB-234:** narrowed to the class DTO validation contract; inline PATCH body is not counted as a whitelist collision.
+- **PB-243:** reconciled into historical PB-077/PB-083/PB-085/PB-093; no unique umbrella finding counted.
+- **PB-112/PB-167:** NOT_APPLICABLE as previously recorded.
+
+## Historical catalog limitation
+
+PB-001 through PB-155 exact historical Appendix prose could not be recovered from the exposed repository history. `docs/project-brain/12_OPEN_WORK.md` preserves the historical ID/index and overlap information, but the audit will not fabricate missing historical prose. This limitation is explicit evidence boundary, not an invented PASS.
+
+## Environmental validation boundary
+
+The source audit is reconciled against audited main commit `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`. Runtime HTTP execution, physical-device execution, deployed PostgreSQL/Supabase schema/RLS/storage inspection, external Auth configuration, and production notification delivery are not available in this connector environment. Real GitHub Actions evidence remains: run `34613481370` failed at frozen-lockfile installation. These boundaries are recorded as UNVERIFIED/BLOCKED rather than PASS.
 
 ## Audit control note
-Do not start remediation until the Master Prompt audit closure is genuinely complete. Preserve all existing finding IDs and never invent historical IDs. Runtime/build/device validation is still unverified because the repository could not be executed locally in this session.
+
+This Appendix is now the canonical source-level findings catalog through PB-257. No production code was changed during the audit. Remediation remains a separate phase; environmental validation must be performed where access becomes available.
