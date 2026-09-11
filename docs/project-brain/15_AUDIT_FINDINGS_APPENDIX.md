@@ -170,7 +170,7 @@ Evidence: direct read of the audit branch showed `docs/05_CURRENT_STATE.md` was 
 
 ### PB-192 — Recipe content importer has no dataset offset/checkpoint; each invocation reprocesses only the first batch
 Status: OPEN — OPERATIONAL/RESTARTABILITY
-Location: `apps/backend/scripts/recipe-content-import.mjs`, `main()` and `const batch = dataset.slice(0, BATCH_SIZE)`.
+Location: `apps/backend/scripts/recipe-content-import.mjs`, main() and `const batch = dataset.slice(0, BATCH_SIZE)`.
 Evidence: the importer always loads the full dataset and selects only indexes `0..BATCH_SIZE-1`; there is no offset, cursor, checkpoint file, persisted import-progress state, or environment variable that changes the starting index. Impact: a dataset larger than the batch cannot be advanced through repeat invocations using the wired command alone, and reruns repeatedly revisit the same first batch. This violates the MYPA background/batch restartability requirement.
 
 ### PB-193 — Recipe content importer performs related writes outside a transaction, allowing partial persistence on late failure
@@ -190,10 +190,10 @@ Evidence: the script directory contains a sequence of independently maintained c
 
 ### PB-196 — Reprocess-quality LIMIT is positional, not restartable
 Status: OPEN — OPERATIONAL/RESTARTABILITY
-Location: `apps/backend/scripts/recipe-image-reprocess-quality.mjs`, `existingRows()` and `main()`.
+Location: `apps/backend/scripts/recipe-image-reprocess-quality.mjs`, existingRows() and main().
 Evidence: `existingRows()` fetches all hero-image rows ordered by `recipe_id.asc` and, when `RECIPE_IMAGE_REPROCESS_LIMIT > 0`, returns only `rows.slice(0, LIMIT)`. There is no offset, stable checkpoint, cursor, or processed-state marker. Impact: a bounded rerun always targets the first N rows again; an operator cannot safely advance through successive bounded passes using the exposed limit alone. This is inconsistent with the project requirement that long-running work be batchable and restartable.
 
-### PB-197 — Image importer family uses conflicting `image_type`/storage contracts across executable variants
+### PB-197 — Image importer family uses conflicting image_type/storage contracts across executable variants
 Status: OPEN — OPERATIONAL/ARCHITECTURE DRIFT
 Locations: `apps/backend/scripts/recipe-image-import.mjs`, `recipe-image-import-all.mjs`, `recipe-image-import-all-safe.mjs`, `recipe-image-dataset-import-v2.mjs`, `apps/backend/package.json`.
 Evidence: the wired `recipe-images:import` script uses `image_type='primary'` and storage key `recipes/<recipeId>/primary.webp`; the wired dataset importer uses `image_type='hero'` and `recipes/<recipeId>/hero.webp`; legacy `recipe-image-import-all.mjs` also writes `primary`, while `recipe-image-import-all-safe.mjs` writes `hero`. They also use materially different candidate matching and pass semantics. Impact: manually running a different executable importer can create a second image contract for the same recipe and leave both primary/hero records, making downstream selection ambiguous. This is not yet shown to cause a live user failure because runtime DB state was not executed/inspected in this session.
@@ -312,6 +312,16 @@ Evidence: `apps/mobile/lib/brand.ts` exports a complete `BRAND` object containin
 Status: OPEN — QA/LOGIC HIGH
 Location: `apps/backend/scripts/recipe-content-audit.mjs`, initial `Promise.all()` orphan counters and the final gate.
 Evidence: the script assigns `orphanMedia = await prisma.recipeMedia.count({ where: { recipeId: { not: undefined } } })`, which counts records having a defined/non-null recipeId rather than records whose referenced recipe is missing; it assigns `orphanSteps = await prisma.recipeStep.count()`, which counts all steps rather than orphan steps. The only subsequent validation is `if (orphanMedia < 0 || orphanSteps < 0) throw ...`, a condition that normal database counts cannot satisfy. Therefore the audit does not actually verify for orphaned recipe media/steps despite naming and printing those counters. Impact: even after PB-188's missing-model/schema issue is fixed, this audit gate could report success while real orphaned child rows remain, so the content-quality check is incomplete and can provide false assurance.
+
+### PB-221 — Adaptive Learning defaults and weekly window are UTC-based rather than user-local
+Status: OPEN — TIMEZONE/BEHAVIOR
+Location: `apps/backend/src/modules/adaptive-learning/services/adaptive-learning.service.ts`, `getInsights()`, `dateKey` default and date-range helpers.
+Evidence: when the caller omits `dateKey`, the service defaults to `new Date().toISOString().slice(0, 10)`, which uses UTC. The seven-day window then constructs `end` with `${dateKey}T23:59:59.999Z`, derives `start` with UTC calendar arithmetic, and converts it back through `toISOString().slice(0, 10)`. The service does not read the user's persisted timezone from `UserSettings` or another profile source before determining the current day/window. Impact: for users whose local date differs from UTC, Adaptive Learning can generate a seven-day insight window that is shifted across local midnight, causing daily-log/workout/meal records near the boundary to be attributed to the wrong day. This duplicates the broader timezone risk class seen in PB-168 but is a separate module-level implementation that needs its own correction.
+
+### PB-222 — One-time mobile typecheck repair workflow is self-mutating and lacks its own toolchain setup
+Status: OPEN — CI/SECURITY/OPERATIONS HIGH
+Locations: `.github/workflows/mypa-mobile-typecheck-repair-once.yml`.
+Evidence: the workflow grants `permissions: contents: write`, runs on pushes to `agent/mypa-autonomous-control-plane`, directly edits `apps/mobile/app/reminders-localized.tsx`, deletes itself, and pushes the resulting commit back to the branch. However, the job contains no `pnpm/action-setup`, `actions/setup-node`, dependency install, or Expo/Node toolchain setup before invoking `pnpm --filter @my-personal-assistant/mobile typecheck`. Its trigger is path-scoped only to changes in the workflow file itself. Impact: the workflow is not a normal validation job; it is an autonomous repository mutator that depends on an undeclared pre-existing runner environment for `pnpm`, and a malformed change to the repair script can automatically write code to the branch without a conventional review gate. This is distinct from the ordinary branch-validation workflow because that workflow has its own explicit toolchain setup and does not grant repository-write permission.
 
 ## Reconciliation note
 Preserve oldest canonical IDs when the same root cause already exists elsewhere. Correction-only IDs remain NOT_APPLICABLE/COVERED_BY notes and must not be double-counted.
