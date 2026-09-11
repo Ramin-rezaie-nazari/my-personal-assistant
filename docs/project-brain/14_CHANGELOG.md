@@ -2,8 +2,8 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline + Core + complete Prisma schema + all 39 migration SQL files + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts.
-Scope not yet read: remaining Mobile route/library/native files; remaining Fitness-adjacent source; exhaustive common/platform/test inventory; repository-wide route/consumer/database matrices; full automated validation; full security/privacy closure; historical docs/branches.
+Scope actually read: baseline + Core + complete Prisma schema + all 39 migration SQL files + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts + residual Mobile library contracts/tests.
+Scope not yet read: any Mobile source outside current audited trees if present; remaining Fitness-adjacent source; exhaustive common/platform/test inventory; repository-wide route/consumer/database matrices; full automated validation; full security/privacy closure; historical docs/branches.
 Evidence roots: Project Brain documents; `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/mobile/`; `.github/workflows/`.
 Confidence level: HIGH for completed file-level reads; MEDIUM for cross-module conclusions; no repository runtime execution claim.
 Open questions: exact repository-wide inventory/line counts, live DB drift, complete model/table consumer graph, transaction boundaries, route/mobile mappings, full CI validation and device behavior.
@@ -16,7 +16,7 @@ Open questions: exact repository-wide inventory/line counts, live DB drift, comp
 
 ## 2026-09-11 — BATCH-0003
 - Read the complete Prisma schema and all 39 migration SQL files plus `migration_lock.toml`.
-- Recorded migration-created/runtime raw-SQL tables that are absent from the final Prisma model contract.
+- Recorded migration-created/runtime raw-SQL tables absent from the final Prisma model contract.
 
 ## 2026-09-11 — BATCH-0004
 - Completed enumerated Assistant and Brain source/test reads and recorded evidence-backed Brain issues.
@@ -45,9 +45,15 @@ Open questions: exact repository-wide inventory/line counts, live DB drift, comp
 - Confirmed `DecisionTraceCard` and `PlanStatusCard` are active consumers in `command-center-v2`, while their text formatting contains localized/hardcoded English behavior outside the global i18n dictionary.
 - Recorded PB-183..PB-185; PB-185 is a more precise supply-chain surface of existing PB-129 and must not be double-counted.
 - Corrected PB-167: `ContentModule` is active because `apps/backend/src/app.module.ts` imports it; the earlier orphan claim is NOT_APPLICABLE.
-- Updated `FILE_REVIEW_INDEX.md`, `READING_CHECKPOINTS.md`, `REVIEW_GAPS.md`, `12_OPEN_WORK.md`, and this changelog.
+
+## 2026-09-11 — BATCH-0011
+- Read the remaining identified Mobile library contract files: `design-system.ts`, `motion-components.tsx`, `branding.ts`, `branding.spec.ts`, `notifications/notification-contract.ts`, and `notification-contract.spec.ts`.
+- Confirmed `design-system.ts` and `motion-components.tsx` are actively consumed by multiple screens; they are not orphan layers.
+- Confirmed the notification payload parser is versioned and has direct tests; producer/consumer parity with backend remains a repository-wide reconciliation task rather than a confirmed defect at this stage.
+- Completed the currently inventoried `app/`, `lib/`, `components/`, and `scripts/` Mobile source boundary to the extent exposed by the current Git tree snapshots. No native `apps/mobile/android` or `apps/mobile/ios` directory was present at those paths in the audited branch.
+- Updated `FILE_REVIEW_INDEX.md`, `READING_CHECKPOINTS.md`, `REVIEW_GAPS.md`, `12_OPEN_WORK.md`, `deep-read/08-mobile-deep-read.md`, and this changelog. No production code changes made.
 
 ## Next
-- Execute BATCH-0011: continue exhaustive Mobile `app/` and `lib/` inventory from remaining unreviewed files, then reconcile route/consumer/test/status matrices.
-- Continue remaining Platform/common/test/Fitness-adjacent source, followed by repository-wide route/API, database reader-writer/transaction, security/privacy and historical reconciliation.
+- BATCH-0012: exhaustive backend route/API inventory and consumer reconciliation, beginning with remaining Platform/Common/Test source that is not yet closed.
+- Then complete repository-wide database reader/writer/transaction, security/privacy and historical reconciliation, and final support-matrix consistency pass.
 - Only after Master Prompt closure begin the separate correction phase using the final canonical issue catalog.
