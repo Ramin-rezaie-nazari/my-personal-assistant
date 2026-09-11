@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline; Core; Prisma schema + all 39 migrations; Assistant; complete Brain file-level scope; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence; substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and Personal Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile route/client/component scope; selected Content, Dashboard, Daily Command Center and Auth/JWT cross-contract files; Mobile notification/voice/runtime/native files.
+Scope actually read: baseline; Core; Prisma schema + all 39 migrations; Assistant; complete Brain file-level scope; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence; substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and Personal Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile route/client/component scope; Mobile components/scripts; selected Content, Dashboard, Daily Command Center and Auth/JWT cross-contract files; Mobile notification/voice/runtime/native files.
 Scope not yet read: remaining Fitness-adjacent source; remaining Mobile route/component/library files; exhaustive platform/common/test inventory; repository-wide route/consumer/database matrices; runtime/device validation; full security/privacy closure; historical docs/branches.
 Evidence roots: `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`.
 Confidence level: HIGH for exact issues below; MEDIUM for cross-module impact until all consumers/runtime are reconciled.
@@ -451,9 +451,10 @@ Location: `apps/backend/eslint.config.mjs`.
 Status: OPEN — DATA CONSISTENCY HIGH
 Location: `apps/mobile/app/onboarding.tsx`, `lib/onboarding.ts`.
 
-### PB-112 — Mobile Brain execute-next endpoint is not exposed by the audited backend controller set, while feedback route exists
-Status: OPEN — MOBILE/BACKEND CONTRACT HIGH
-Locations: Mobile `lib/brain-execution.ts`; Personal Brain controllers.
+### PB-112 — NOT_APPLICABLE — earlier Mobile Brain execute-next route mismatch was disproven
+Status: NOT_APPLICABLE
+Locations: Mobile `lib/brain-execution.ts`; Personal Brain `controllers/decision-execution.controller.ts`, `controllers/decision-feedback.controller.ts`.
+Reason: audited backend exposes `POST /personal-brain/decision/execute-next`, `POST /personal-brain/decision/confirm`, and `POST /personal-brain/decision/feedback`, all JWT-protected. Keep this ID only as a correction trail; do not count it as an open contract break.
 
 ### PB-113 — Brain Overview ignores app locale and hardcodes English UI
 Status: OPEN — LOCALIZATION
@@ -518,7 +519,7 @@ Problem: imports `expo-av`, `expo-file-system/legacy`, `react-native-sherpa-onnx
 
 ### PB-129 — Local Persian TTS model download lacks cryptographic integrity verification
 Status: OPEN — SUPPLY CHAIN
-Location: `apps/mobile/lib/local-persian-tts.ts`.
+Locations: `apps/mobile/lib/local-persian-tts.ts`, `apps/mobile/scripts/prepare-khadijah-tts-model.cjs`.
 
 ### PB-130 — Push-token refresh listener can reuse an expired access token
 Status: OPEN — AUTH/ROBUSTNESS
@@ -526,7 +527,7 @@ Location: `apps/mobile/lib/notifications/push-registration.ts`.
 
 ### PB-131 — Mobile API default localhost:3000 is incompatible with physical-device access without env override
 Status: OPEN — DEVICE/RUNTIME
-Locations: Mobile API clients; `.env.example`.
+Locations: Mobile API clients; `.env.example`, `apps/mobile/scripts/start-lan.cjs`.
 
 ### PB-132 — MYPA branch-validation Mobile gate checks only typecheck and omits normal Mobile CI checks
 Status: OPEN — CI COVERAGE
@@ -645,10 +646,78 @@ Location: `apps/mobile/lib/voice.ts`.
 Problem: repository search for `speakAssistantText`, `stopAssistantSpeech`, `getStoredVoiceProfile`, and `setStoredVoiceProfile` found only definitions in `voice.ts`.
 Impact: voice profile persistence and assistant speech may not be activated by the current app, despite the implementation existing.
 
+### PB-156 — LifeTasksModule is source-present but not runtime-wired
+Status: OPEN — ARCHITECTURE/FEATURE
+Locations: `apps/backend/src/modules/life-tasks/life-tasks.module.ts`, `apps/backend/src/app.module.ts`.
+Evidence: `LifeTasksModule` exists with controller/service but AppModule does not import it; no external consumer was found.
+Impact: `/tasks` source/API is not active in the audited Nest application.
+
+### PB-157 — LifeTasks and LifeExecution are parallel task-domain implementations
+Status: OPEN — ARCHITECTURE/CONTRACT DRIFT
+Locations: `apps/backend/src/modules/life-tasks/*`, `apps/backend/src/modules/life-execution/*`, related migrations.
+Evidence: both domains implement overlapping task CRUD/dependency/event semantics; LifeTasks uses `LifeTaskDependency`/`LifeTaskEvent`, while LifeExecution uses legacy `TaskDependency`/`TaskEvent`.
+Impact: parallel semantics can diverge and an inactive module can become stale or be wired accidentally later.
+
+### PB-158 — LifeTasks DTOs lack runtime validation decorators
+Status: OPEN — API CONTRACT
+Locations: `apps/backend/src/modules/life-tasks/dto/create-life-task.dto.ts`, `update-life-task.dto.ts`, `task-event.dto.ts`.
+
+### PB-159 — LifeTasksService has no direct automated service spec in inspected repository
+Status: OPEN — TEST GAP
+Location: `apps/backend/src/modules/life-tasks/services/life-tasks.service.ts`.
+
+### PB-160 — LifeTasksService.update() resets completedAt on metadata-only edits to completed tasks
+Status: OPEN — DATA/LOGIC HIGH
+Location: `apps/backend/src/modules/life-tasks/services/life-tasks.service.ts`, `update()`.
+Evidence: `completedAt` calculation contains a duplicate/unreachable `status === 'completed'` branch. Because `status = dto.status ?? task.status`, editing an already-completed task without changing status assigns `new Date()` instead of preserving the previous completion timestamp.
+
+### PB-161 — RecommendationIntelligenceModule is orphaned from runtime wiring
+Status: OPEN — ARCHITECTURE/FEATURE HIGH
+Location: `apps/backend/src/modules/recommendation-intelligence/recommendation-intelligence.module.ts`, AppModule/module import graph.
+Evidence: search for `RecommendationIntelligenceModule` found only its own declaration. No active module imports it.
+Impact: Recommendation Intelligence services are not part of the audited runtime dependency graph.
+
+### PB-162 — RecommendationIntelligenceController is an empty shell; documented food endpoint is not exposed
+Status: OPEN — API CONTRACT HIGH
+Location: `apps/backend/src/modules/recommendation-intelligence/controllers/recommendation-intelligence.controller.ts`.
+Evidence: controller contains only the route prefix and no methods.
+Impact: documented `POST /recommendation-intelligence/food` is not provided by this controller in the audited commit.
+
+### PB-163 — Current State documentation falsely describes Recommendation Intelligence food endpoint as implemented
+Status: OPEN — DOCUMENTATION/ARCHITECTURE
+Locations: `apps/backend/docs/05_CURRENT_STATE.md`, recommendation-intelligence controller, module wiring.
+Impact: engineering docs give a stronger runtime-completeness claim than the actual controller/wiring supports.
+
+### PB-164 — GoalIntelligenceModule is source-present but not runtime-wired
+Status: OPEN — ARCHITECTURE/FEATURE
+Location: `apps/backend/src/modules/goal-intelligence/goal-intelligence.module.ts` and module import graph.
+Evidence: search for `GoalIntelligenceModule` found only its own declaration; no active importer was found.
+
+### PB-165 — Goal Intelligence service cluster is placeholder-level and disconnected
+Status: OPEN — ARCHITECTURE/DESIGN
+Locations: `goal-intelligence/services/goal-analysis.service.ts`, `goal-planning.service.ts`, `goal-progress.service.ts`.
+Evidence: each service resolves a fixed no-op style response (`{ analyzed: true }`, `{ planCreated: true }`, `{ progressTracked: true }`) and no external consumer was found.
+
+### PB-166 — Goal Intelligence has no direct service tests in inspected tree
+Status: OPEN — TEST GAP
+Locations: Goal Intelligence service files/module.
+
+### PB-183 — Mobile component layer contains duplicate/orphaned animation wrappers
+Status: OPEN — ARCHITECTURE/INTEGRATION
+Locations: `apps/mobile/components/AnimatedPressable.tsx`, `apps/mobile/components/AnimatedSection.tsx`, `apps/mobile/lib/motion.tsx`.
+Evidence: `lib/motion.tsx` already exports `AnimatedPressable` and `AnimatedSection`; the component directory redefines wrappers with the same exported names. Repository search found no observed external consumer of the component-directory `AnimatedPressable`/`AnimatedSection` files.
+Impact: two competing import surfaces can diverge in behavior/types, while the component wrappers add little contract value beyond the existing motion module.
+
+### PB-184 — Mobile command-center visual components use hardcoded English/visual semantics outside the localization layer
+Status: OPEN — LOCALIZATION
+Locations: `apps/mobile/components/decision-trace-card.tsx`, `apps/mobile/components/plan-status-card.tsx`.
+Evidence: `DecisionTraceCard` renders `Waiting`, `Stopped`, `Completed`, `Brain trace`, and `toLocaleString()` directly; `PlanStatusCard` contains its own small fa/en switch rather than consuming the app i18n dictionary.
+Impact: Brain command-center UI can remain partially untranslated and formatting can vary from the global locale policy. `PlanStatusCard` is consumed by `command-center-v2`, so this is active UI rather than an unused component-only concern.
+
 ## Next deterministic work
 
 1. Finish remaining Mobile route/component/library/native inventory and exhaustive backend-to-mobile consumer/route reconciliation.
 2. Finish remaining Fitness-adjacent and Platform/common/test source inventory; reconcile support matrices and review gaps.
 3. Complete repository-wide route/API, database reader/writer/transaction, security/privacy and historical reconciliation.
 4. Record actual runtime/test/build/device execution only when executed; otherwise keep statuses as file-read or blocked.
-5. Only after Master Prompt closure begin the separate correction phase using this issue catalog.
+5. Only after Master Prompt closure begin the separate correction phase using this issue catalog as the repair plan.
