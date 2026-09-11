@@ -2,11 +2,11 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline; Core; Prisma schema + all 39 migrations; Assistant; complete Brain file-level scope; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence; substantial Price Intelligence; Calendar; Daily; Goals; Habits file-level scopes reached so far.
-Scope not yet read: remaining Life/Health modules and tests; Fitness outside Brain integrations; Platform/Tests; Mobile; full repository-wide route/consumer/database matrices; runtime validation; full security/privacy; historical docs/branches.
+Scope actually read: baseline; Core; Prisma schema + all 39 migrations; Assistant; complete Brain file-level scope; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence; substantial Price Intelligence; Calendar; Daily; Goals; Habits; Life Execution; Reminders; Notifications; Supplements; active Health plus legacy Health surface.
+Scope not yet read: Fitness outside Brain integrations; Platform/Tests/CI; Mobile; full repository-wide route/consumer/database matrices; runtime validation; full security/privacy; historical docs/branches; any remaining life/health files outside the inspected module trees.
 Evidence roots: `apps/backend/src/modules/`; `apps/backend/prisma/`; `docs/project-brain/`.
 Confidence level: HIGH for exact issues below; MEDIUM for cross-module impact until all consumers/runtime are reconciled.
-Open questions: deployed schema drift; complete life-health inventory; mobile contracts; runtime execution.
+Open questions: deployed schema drift; any unenumerated life-health source files; mobile contracts; runtime execution; full repo route/reader-writer/transaction coverage.
 
 ## Issue catalog
 
@@ -64,7 +64,7 @@ Location: Personal Brain coach cue path.
 
 ### PB-014 — Workout implicit date can use UTC instead of user-local date
 Status: OPEN
-Location: `personal-brain/services/workout-action-adapter.ts`.
+Location: `personal-brain/services/workout-action-adapter.service.ts`.
 
 ### PB-015 — Decision execution dependency graph is broader than semantic predecessors
 Status: OPEN
@@ -348,10 +348,51 @@ Status: OPEN
 Location: `daily/dto/add-water.dto.ts`.
 Impact: service validates range, but API contract does not express the required positive finite amount.
 
+### PB-082 — Smart notification workout query has no end-of-day upper bound
+Status: OPEN — TIME/LOGIC HIGH
+Location: `apps/backend/src/modules/notifications/services/smart-notification.service.ts`, workout `findMany` query used for the daily rule.
+Problem: the filter applies only `performedAt >= <dateKey>T00:00:00.000Z` and does not apply `performedAt < <nextDateKey>T00:00:00.000Z`. A workout tomorrow or later can satisfy the current-day query.
+Impact: smart-notification daily rules may suppress/send the wrong notification because future workouts are treated as today's activity. The existing `smart-notification.service.spec.ts` does not cover the upper-bound case.
+
+### PB-083 — Supplements contain conflicting duplicate CreateSupplementDto definitions
+Status: OPEN — API CONTRACT
+Locations: `apps/backend/src/modules/supplements/dto/create-supplement.dto.ts`, `apps/backend/src/modules/supplements/dto/supplement.dto.ts`, `supplements.controller.ts`, `supplements.service.ts`.
+Problem: the standalone DTO requires `name`, `category`, `dosage`, while the active `supplement.dto.ts` defines `name`, optional `dosage`, optional `frequency`, optional `scheduledTime`; the active controller/service import the latter and the standalone DTO has no observed consumer.
+Impact: two incompatible schemas for the same type name can mislead future callers/refactors and allow the API contract to silently drift.
+
+### PB-084 — Life Execution dependency/event SQL uses legacy table contracts
+Status: OPEN — DATA/SCHEMA HIGH
+Location: `apps/backend/src/modules/life-execution/services/life-execution.service.ts` for dependency insertion, event writes and dependency reads.
+Problem: the service uses raw SQL against legacy `TaskDependency` and `TaskEvent`, while the migrations also define newer `LifeTaskDependency` and `LifeTaskEvent` structures. These are not represented consistently in the active Prisma model contract.
+Impact: writes/reads can diverge from newer lifecycle tables, causing duplicate graph/event histories, migrations that no longer describe runtime behavior, and difficult reconciliation of task state.
+
+### PB-085 — Life Execution DTOs lack runtime validation decorators
+Status: OPEN — API CONTRACT
+Location: `apps/backend/src/modules/life-execution/dto/task.dto.ts`.
+Problem: task and dependency request fields are plain TypeScript properties without class-validator decorators.
+Impact: malformed priorities, statuses, dates, dependency identifiers or state payloads can enter the service layer unless separately rejected.
+
+### PB-086 — Life Execution core service has no direct service spec in inspected tree
+Status: OPEN — TEST GAP
+Location: `apps/backend/src/modules/life-execution/services/life-execution.service.ts`; expected `life-execution.service.spec.ts` lookup returned 404.
+Impact: the central raw-SQL task/dependency/event behavior has no direct unit-level regression safety in the inspected scope.
+
+### PB-087 — Health module contains a duplicate legacy root controller/service/test surface
+Status: OPEN — ARCHITECTURE/CONTRACT
+Locations: `apps/backend/src/modules/health/health.controller.ts`, `health.service.ts`, `health.controller.spec.ts`, `health.service.spec.ts` versus active `health/controllers/health.controller.ts`, `health/services/health.service.ts`, `health/services/nutrition.service.ts`, `health/health.module.ts`.
+Problem: the module wires the nested implementation, while the root pair expose a separate simple `/health` controller and their tests cover only that legacy pair. Repository search showed the root imports only within that root test/controller pair in the audited target.
+Impact: maintenance can update or test the inactive contract while the actual profile/nutrition implementation remains unchanged, and route ownership becomes ambiguous.
+
+### PB-088 — Active Health profile DTOs do not enforce domain ranges or enumerated values
+Status: OPEN — DATA INTEGRITY
+Locations: `apps/backend/src/modules/health/dto/update-health-profile.dto.ts`, `update-nutrition-profile.dto.ts`, active Health services.
+Problem: numeric fields use `IsInt`/`IsNumber` only; there are no non-negative/maximum constraints and no enum/domain validation for fields such as `gender`, `activityLevel`, or `dietType`. Active services directly upsert the supplied values.
+Impact: semantically impossible or unsupported profile/goal values can be persisted even though the DTOs appear validated.
+
 ## Next deterministic work
 
-1. Finish remaining Life/Health modules and tests; update `docs/project-brain/deep-read/05-life-health.md`.
-2. Sync `FILE_REVIEW_INDEX`, `CONTRACT_MATRIX`, `FEATURE_COMPLETENESS_MATRIX`, checkpoints and changelog.
-3. Continue Fitness, Platform/Tests/Scripts/CI and Mobile.
-4. Complete repository-wide route/API/mobile/database reader-writer/transaction/security/runtime/historical reconciliation.
+1. Complete any remaining Life/Health inventory reconciliation, then sync file index, contract matrix, feature matrix, checkpoints, review gaps and changelog.
+2. Start Fitness source/deep-read and continue through Platform/Tests/CI and Mobile.
+3. Complete repository-wide route/API, mobile consumer, database reader/writer/transaction, security/privacy and historical reconciliation.
+4. Record actual runtime/test execution only when executed; otherwise keep status as file-read/blocked.
 5. Only after Master Prompt closure begin the separate correction phase using this issue catalog.
