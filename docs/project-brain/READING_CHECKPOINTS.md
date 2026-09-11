@@ -43,7 +43,7 @@ Status: COMPLETE — FILE-READ SCOPE.
 
 ## BATCH-0012 — Backend route/API inventory and consumer reconciliation
 Status: IN_PROGRESS
-Scope completed so far: backend root startup/config/database/i18n/images; Auth controller/service/token/session; broad active controller inventory across Core, Brain, Food/Commerce, Life/Health, Fitness, Dashboard and Intelligence; AppModule wiring checks; selected Mobile route/consumer searches; historical branch/PR status checks; active-vs-orphan UsersController reconciliation; HealthController/HealthService active-vs-orphan reconciliation.
+Scope completed so far: backend root startup/config/database/i18n/images; Auth controller/service/token/session; broad active controller inventory across Core, Brain, Food/Commerce, Life/Health, Fitness, Dashboard and Intelligence; AppModule wiring checks; selected Mobile route/consumer searches; historical PR/branch status checks; active-vs-orphan UsersController reconciliation; HealthController/HealthService active-vs-orphan reconciliation.
 Findings added/reconciled: PB-186, PB-187, PB-171 narrowed, PB-182 re-confirmed, PB-205, PB-211, PB-213, PB-214.
 Unresolved: full route DTO/output/error/test/mobile-consumer mapping; final duplicate-controller reconciliation beyond currently identified pairs; runtime HTTP validation.
 
@@ -72,6 +72,13 @@ Completed reads: main branch mobile/backend build and validation workflows (`and
 Findings added: PB-221 (Adaptive Learning default/current window uses UTC instead of user-local timezone); PB-222 (one-time mobile repair workflow has contents:write/self-mutation and no explicit pnpm/node toolchain setup before invoking typecheck).
 Important source observations: Adaptive Learning's public controller is JWT guarded and has a direct service spec; the feedback-analysis and learning-memory providers are placeholder-level stubs and are not consumed by the controller/service path inspected so far, pending broader cross-module consumer reconciliation. The one-time repair workflow is branch-scoped to `agent/mypa-autonomous-control-plane` and is not treated as current-main production automation, but remains an open audit finding because of its repository-write self-mutation behavior and implicit runner-toolchain dependency.
 Unresolved: exhaustive backend module-by-module source closure; complete workflow→script/package validation across all CI files; full Project Brain document reconciliation; runtime execution; complete route/database/security matrix closure.
+
+## BATCH-0016 — Backend validation-contract + Goals/Calendar + Memory continuation
+Status: IN_PROGRESS
+Completed reads: `apps/backend/src/bootstrap.ts`; active Memory Intelligence module/controller/model/repository/lifecycle files; Goals controller, create/update/check-in DTOs, service, service spec; Calendar controller/create DTO/service; Goals migration `20260812112000_add_goals/migration.sql`; Preferences and Settings controller/DTO/service; Onboarding controller/DTO; active Health profile DTO; Mobile Yoga pose pipeline and its spec; Mobile notification contract/action/runtime/registration files and related component sources were rechecked.
+Findings added/reconciled: PB-231 (Yoga async stop race), PB-232 (Memory Intelligence write body collides with global ValidationPipe), PB-233 (Goals write/check-in DTO collision with global ValidationPipe), PB-234 (Calendar write contracts collide with global ValidationPipe), PB-235 (Goals check-in performs logically coupled child/parent writes without a transaction).
+Important source observation: global backend validation uses `whitelist: true` and `forbidNonWhitelisted: true`; DTOs that are plain property declarations or inline interfaces are therefore a concrete cross-layer contract risk. Preferences, Settings, and Onboarding use decorated DTOs and were not incorrectly added to that finding family. Goal migration confirms `GoalCheckin` is a child of `Goal` via `ON DELETE CASCADE` with a unique `(goalId,dateKey)` constraint.
+Unresolved: complete route↔DTO↔test↔mobile matrix; remaining backend modules/source/tests; remaining operational scripts; full DB reader/writer/transaction/index matrix; complete security/privacy closure; runtime validation; Project Brain historical restoration/reconciliation.
 
 ## Repository documentation checkpoint
 Status: IN_PROGRESS
