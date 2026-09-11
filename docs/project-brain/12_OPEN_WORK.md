@@ -69,8 +69,8 @@ Action later: make channel capabilities authoritative and shared by intelligence
 ### PB-009 — Notification deduplication is process-local, not user-scoped, and markSent has no production caller
 Status: OPEN
 Locations: `apps/backend/src/modules/personal-brain/services/notification-deduplication.service.ts`; `apps/backend/src/modules/personal-brain/controllers/personal-brain.controller.ts` (`POST coach/notification-decision`).
-Problem: dedupe state is a process-local Map keyed only by `event.dedupeKey`; production controller calls `shouldSend()` but does not call `markSent()`. `markSent()` only appears in the service test in the currently searched code.
-Impact: duplicate prevention does not survive process restart, can collide across users when keys are not globally unique, and the controller's decision path does not actually mark an approved event as sent.
+Problem: dedupe state is a process-local Map keyed only by `event.dedupeKey`; production controller calls `shouldSend()` but does not call `markSent()`. `markSent()` only appears in the service test in the current search.
+Impact: duplicate prevention does not survive process restart, can collide across users when keys are not globally unique, and approved decisions are not recorded as sent in that controller path.
 Action later: define persisted/user-scoped dedupe semantics and call it at the actual delivery boundary.
 
 ### PB-010 — Device disable endpoint lacks owner scoping
@@ -184,6 +184,27 @@ Locations: `multi-scenario-simulator.service.ts`, `scenario-planning.service.ts`
 Problem: conservative/balanced scenarios mutate candidate score/confidence/goal alignment and reuse candidate IDs rather than constructing explicit scenario-specific action state.
 Impact: scenario labels can look more independent than the actual model; comparisons may be sensitive to arbitrary adjustment constants.
 Action later: define explicit scenario transformations and evidence for each transformation.
+
+### PB-026 — Brain daily/weekly status is UTC-based rather than explicitly user-timezone-based
+Status: OPEN
+Locations: `apps/backend/src/modules/personal-brain/services/brain-daily-status.service.ts`, `brain-weekly-status.service.ts`, `brain-life-context.service.ts`.
+Problem: date keys are derived with `toISOString().slice(0,10)` / UTC date arithmetic. The weekly and daily brain summaries therefore use server/UTC boundaries rather than a user-local timezone contract.
+Impact: users outside UTC can see the wrong "today"/week near midnight, and life-context streaks/daily queries can disagree with other timezone-aware features.
+Action later: make timezone an explicit Brain context input and use one shared date-key service.
+
+### PB-027 — Brain reasoning context quality score ignores major context dimensions
+Status: OPEN / DESIGN REVIEW
+Location: `apps/backend/src/modules/personal-brain/services/brain-reasoning-context.service.ts` (`calculateLifeContextQuality`).
+Problem: quality is calculated from only four binary-ish signals: active habits, next reminder, supplements presence and active goals. Fitness context, performance memory, decision memory, outcome memory and data freshness are not included.
+Impact: a numerically high quality score can coexist with weak/stale/missing high-value context, causing confidence to be overstated.
+Action later: define evidence-weighted quality dimensions and freshness/availability semantics.
+
+### PB-028 — BrainStateAnalyzer readiness treats empty arrays as available context
+Status: OPEN
+Location: `apps/backend/src/modules/personal-brain/services/brain-state-analyzer.service.ts`.
+Problem: `hasMemories` and `hasGoals` are derived from `Array.isArray(...)`, so empty arrays return `true`.
+Impact: readiness can report that memory/goals are available even when there are zero records, contradicting the semantics used elsewhere where counts/length determine availability.
+Action later: derive readiness from meaningful counts rather than container type.
 
 ## Completed audit work still requiring runtime validation
 
