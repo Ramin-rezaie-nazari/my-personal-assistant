@@ -73,11 +73,8 @@ Important DB observations for next pass: raw SQL readers/writers remain concentr
 
 No new canonical finding was created in BATCH-0020. No production code changed.
 
-## PB-250 — LifeTasks update clears `completedAt` on non-completed status changes and contains an unreachable branch
-Status: OPEN — DATA/BEHAVIOR MEDIUM
-Location: `apps/backend/src/modules/life-tasks/services/life-tasks.service.ts`, `LifeTasksService.update()`.
-Evidence: the service computes `completedAt` as `status === 'completed' ? new Date() : status === 'completed' ? task.completedAt : null`. The second `status === 'completed'` branch is unreachable because the same condition was already tested by the first branch. Therefore every update whose resulting status is anything other than `completed` writes `completedAt = null`, even when the task previously had a completion timestamp. The active update method then persists that value in the `UPDATE "LifeTask"` statement. This is distinct from the known Life Execution/DTO findings because it is a concrete active LifeTasks persistence behavior defect.
-Impact: editing or transitioning a previously completed LifeTask to another state erases its completion history; repeated updates can also prevent preservation of an existing completion timestamp. The unreachable branch is a code-level signal of the intended-but-unimplemented preservation logic.
+## PB-250 — RECONCILED INTO PB-160
+The former PB-250 observation is a second manifestation of the same defective `LifeTasksService.update()` `completedAt` ternary already recorded as PB-160. It must not remain a separate canonical ID. The defect has two observable consequences from one expression: a completed task edited without a status change receives a fresh completion timestamp, while a completed task moved to a non-completed status clears `completedAt`. The canonical PB-160 evidence/impact should be expanded to cover both consequences during Appendix reconciliation. No PB-251 is created for this LifeTasks defect.
 
 ## BATCH-0021 — Security/authorization + account-lifecycle continuation
 Status: IN PROGRESS
@@ -97,5 +94,31 @@ Account lifecycle / deletion observations:
 
 No new canonical finding was created in BATCH-0021. No production code changed.
 
+## PB-251 — Package-wired recipe quality retry script is absent from current main
+Status: PROVISIONAL — OPERATIONAL/BUILD
+Location: `apps/backend/package.json` and `apps/backend/scripts/recipe-image-reprocess-retry.mjs`.
+Evidence: current main package manifest exposes `recipe-images:retry-quality` pointing to `./scripts/recipe-image-reprocess-retry.mjs`, but the referenced file is absent from current main. Direct current-main repository lookup returned Not Found. A file with the same path exists on historical branch `agent/mypa-autonomous-control-plane`, demonstrating that this is not merely a fabricated path: the executable existed in another repository lineage but is not present in the audited main tree.
+Impact: invoking the package-wired retry-quality command on current main fails because its executable target is missing. This is a concrete package-to-source contract defect, but it remains provisional until reconciled with the existing recipe image operational findings and historical branch lineage. If the command is intentionally deprecated, the package entry is stale; if it is intended to remain supported, the source is missing from main.
+
+## BATCH-0022 — CI/workflow/package/runtime-evidence continuation
+Status: IN PROGRESS
+Scope checked: current backend/mobile package manifests against CI workflow commands; recipe-content-release workflow; recipe-image workflow surfaces; actual GitHub Actions run `34613481370`; current mobile route aliases; mobile voice/TTS dependency/import surfaces.
+Evidence result: backend workflow commands are compatible with the backend package scripts under the workflow working directory; mobile workflow commands are compatible with the existing typecheck path; `recipe-content-release.yml` still invokes missing `recipe:content:import` and `recipe:content:audit` commands (PB-206); run `34613481370` is real runtime evidence for PB-242, failing at frozen dependency installation because the committed lockfile is stale relative to `apps/backend/package.json`; no additional unique CI finding was created from this pass.
+
+## BATCH-0023 — Remaining module/source spot closure: Content + Conversation Engine
+Status: IN PROGRESS
+Scope checked: `apps/backend/src/modules/content/*` and `apps/backend/src/modules/conversation-engine/*`, including module/service/type surfaces and repository-wide consumer search.
+Evidence result: `ContentModule` provides and exports `ContentRecommendationService`, but no active import/consumer of `ContentModule` or `ContentRecommendationService` was found in the audited main tree. The service contains complete deterministic ranking logic for recipes/exercises but is not runtime-wired through the application module graph observed by repository search. `ConversationEngineModule` similarly provides/exports `ConversationStyleService`, while repository-wide search found no active consumer/import of the module or service. These are distinct source-present/orphan module findings and require reconciliation against the architecture documentation before deciding whether they are intentional library primitives or dead runtime artifacts.
+
+## PB-252 — Content Recommendation module is source-present but not runtime-consumed
+Status: PROVISIONAL — ARCHITECTURE/INTEGRATION
+Locations: `apps/backend/src/modules/content/content.module.ts`, `apps/backend/src/modules/content/content-recommendation.service.ts`, application import graph.
+Evidence: `ContentModule` registers and exports `ContentRecommendationService`, whose `rankRecipes()` and `rankExercises()` methods implement deterministic recommendation scoring. Repository-wide consumer search returned only the module/service definitions and no active application import/consumer. The service therefore appears source-present but not runtime-wired in the audited main tree. Impact: documented/content recommendation behavior may exist only as dormant library code; changes to it may not affect the running application. Before canonical freeze, reconcile this against Project Brain claims and historical branches to determine whether it is intentionally a reusable primitive or an orphaned feature.
+
+## PB-253 — Conversation Engine module is source-present but not runtime-consumed
+Status: PROVISIONAL — ARCHITECTURE/INTEGRATION
+Locations: `apps/backend/src/modules/conversation-engine/conversation-engine.module.ts`, `apps/backend/src/modules/conversation-engine/services/conversation-style.service.ts`, application import graph.
+Evidence: `ConversationEngineModule` registers and exports `ConversationStyleService`, whose only inspected behavior is a default friendly/Farsi/informal conversation style. Repository-wide consumer search returned only the module/service definition and no active application import/consumer. Impact: the conversation-style abstraction is currently dormant from the observed Nest application graph, so it cannot influence runtime conversation behavior unless wired elsewhere outside the inspected source. Before canonical freeze, reconcile against architecture documentation and historical branches to decide whether this is intentional foundational code or dead runtime artifact.
+
 ## Audit control
-No production code changed. PB-244, PB-245, PB-246, PB-247, PB-248, PB-249 and PB-250 are audit evidence and must be merged/reconciled into the canonical Appendix during the next safe full-file Appendix update. PB-232/PB-234/PB-237 remain reclassified/narrowed as above; PB-243 remains provisional and must not be treated as a final unique issue until merged against historical IDs. Runtime/build/device validation remains unverified.
+No production code changed. PB-244 through PB-253 are audit evidence/control records and must be merged/reconciled into the canonical Appendix during the next safe full-file Appendix update. PB-250 is reconciled into PB-160 and must not become a separate canonical ID. PB-251 through PB-253 remain provisional until duplicate/historical/intentional-library reconciliation is complete. PB-232/PB-234/PB-237 remain reclassified/narrowed; PB-243 remains provisional and must not be treated as a final unique issue until merged against historical IDs. Runtime/build/device validation remains partially unverified where local/device/deployed infrastructure is required.
