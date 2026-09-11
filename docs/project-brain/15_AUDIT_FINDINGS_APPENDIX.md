@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-240
+## Findings PB-156 through PB-241
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -397,6 +397,11 @@ Evidence: `UserProfileService.buildProfile()` and `updateProfile()` accept no us
 Status: OPEN — SECURITY HIGH
 Location: `apps/backend/src/modules/price-intelligence/controllers/price-intelligence.controller.ts`.
 Evidence: `PriceIntelligenceController` declares `@Controller('price-intelligence')` but does not apply `JwtAuthGuard` at the controller or method level. In addition to read endpoints, it exposes `POST /price-intelligence/nightly/run`, which invokes the scheduler's collection path, and `POST /price-intelligence/nightly/preview`, plus `POST /price-intelligence/match`; no authorization check is present at the controller boundary and the nightly collection route accepts caller-supplied `productKeys`/`sourceIds`. Impact: an unauthenticated caller can invoke operational price-collection work and influence scheduler input, while the other intelligence surfaces are likewise publicly reachable. This is distinct from PB-170 and PB-224 because it concerns the Price Intelligence controller's missing auth boundary and includes an operational POST action.
+
+### PB-241 — Shopping recipe-missing batch can partially persist basket changes on mid-batch failure
+Status: OPEN — DATA INTEGRITY HIGH
+Location: `apps/backend/src/modules/shopping/shopping.service.ts`, `addRecipeMissing()` and `addToBasket()`.
+Evidence: `addRecipeMissing()` validates the recipe and filters the requested items, then iterates `for (const item of valid) await this.addToBasket(...)`. `addToBasket()` performs independent `findUnique`/`findFirst`/`update` or `create` operations with no enclosing `prisma.$transaction()`. If a later item fails after earlier items have already been added/updated, the earlier basket mutations remain committed and the method returns an error rather than an all-or-nothing result. The active controller exposes this operation through the authenticated Shopping route, and the Recipe Food Operating Loop also consumes the same service method, so this is an active cross-domain write path rather than an orphan helper. Impact: a recipe's missing-ingredient batch can leave a partially populated shopping basket, making retries non-idempotent from the user's perspective and potentially producing duplicate quantity increments on repeated attempts. This is distinct from PB-235 because it concerns the Shopping aggregate and batch write path, not Goal check-in parent/child consistency.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
