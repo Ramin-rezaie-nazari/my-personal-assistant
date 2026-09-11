@@ -67,7 +67,7 @@ describe('Auth (e2e)', () => {
     expect(body.email).toBe(auth.user.email);
   });
 
-  it('refreshes access token with valid refresh token', async () => {
+  it('rotates the refresh token and rejects reuse of the previous token', async () => {
     const auth = await registerUser();
 
     const response = await request(app.getHttpServer())
@@ -77,10 +77,21 @@ describe('Auth (e2e)', () => {
       })
       .expect(201);
 
-    const body = response.body as AuthResponse;
+    const rotated = response.body as AuthResponse;
 
-    expect(body.accessToken).toBeDefined();
-    expect(body.refreshToken).toBeDefined();
+    expect(rotated.accessToken).toBeDefined();
+    expect(rotated.refreshToken).toBeDefined();
+    expect(rotated.refreshToken).not.toBe(auth.refreshToken);
+
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .send({ refreshToken: auth.refreshToken })
+      .expect(401);
+
+    await request(app.getHttpServer())
+      .post('/auth/refresh')
+      .send({ refreshToken: rotated.refreshToken })
+      .expect(201);
   });
 
   it('logs out user with refresh token', async () => {
