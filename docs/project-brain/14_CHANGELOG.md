@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline + Core + complete Prisma schema + all 39 migration SQL files + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts + residual Mobile library contracts/tests + continued BATCH-0013 operational recipe/food scripts and relevant recipe migrations.
+Scope actually read: baseline + Core + complete Prisma schema + all 39 migration SQL files + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts + residual Mobile library contracts/tests + continued BATCH-0013 operational recipe/food scripts and relevant recipe migrations/local image pipeline variants.
 Scope not yet read: any Mobile source outside current audited trees if present; remaining Fitness-adjacent source; exhaustive common/platform/test inventory; repository-wide route/consumer/database matrices; full automated validation; full security/privacy closure; historical docs/branches; remaining legacy/duplicate operational scripts.
 Evidence roots: Project Brain documents; `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`.
 Confidence level: HIGH for completed file-level reads; MEDIUM for cross-module conclusions; no repository runtime execution claim.
@@ -63,10 +63,12 @@ Open questions: exact repository-wide inventory/line counts, live DB drift, comp
 - Inspected `recipe-content-import.mjs` against the final Prisma schema and the `RecipeStep` / `RecipeMedia` migrations; PB-188 was confirmed and the importer restartability/transaction findings PB-192/PB-193 were recorded.
 - Inspected recipe image import, dataset import, reprocess-quality, retry, and legacy image variants; recorded PB-194, PB-196 and PB-197 around the 60KB asset contract, positional limit batching, and conflicting `primary`/`hero` image contracts.
 - Inspected country-intelligence version family and confirmed PB-195 operational drift between multiple executable historical variants and the package-wired final implementation.
-- Inspected Food Entity Resolver v1/v2/final and current self-test; recorded PB-198 for missing direct coverage of final-wrapper behavior.
+- Inspected Food Entity Resolver v1/v2/final and the available final self-test. Corrected the earlier assumption that the final self-test was absent; PB-198 now records the narrower issue that the final self-test is not exposed through package/CI automation observed in the inspected scope.
 - Inspected recipe recommendation scoring and recipe ingest together; recorded PB-199 because the producer stores quality as a 0..1 fraction while the consumer divides it by 100.
 - Inspected nutrition estimation; recorded PB-200 for missing source/version provenance on hard-coded nutrient constants and household-unit conversions. The estimator is explicitly marked as `estimated`, so this is a provenance/traceability issue rather than a claim of hidden verified data.
-- Updated the canonical audit findings appendix through PB-200 and added the required root Current State document. No production-code or `main` changes made by this audit session.
+- Found two additional image-state issues: PB-201 (RESET only enumerates first 1000 Storage objects but globally deletes DB rows) and PB-202 (wired image importer only paginates recipe rows, not existing image/skip sets).
+- Inspected local guaranteed image pipeline v7/v8 and verified PB-203: v8 references three script files that do not exist in the audited branch, causing a concrete broken orchestration path.
+- Updated the canonical audit findings appendix through PB-203. No production-code or `main` changes made by this audit session.
 
 ## Next
 - Continue BATCH-0013 through the remaining legacy/duplicate operational script families and any not-yet-read wired scripts.
