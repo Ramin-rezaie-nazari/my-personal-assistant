@@ -209,5 +209,15 @@ Status: OPEN — DATA QUALITY/PROVENANCE
 Location: `apps/backend/scripts/recipe-nutrition-estimate.mjs`, `FOOD` table, `gramsFromLine()`, and `estimate()`.
 Evidence: the script embeds fixed calories/protein/carbs/fat constants for named foods and fixed household-volume conversions such as `cup -> 150g`, `tbsp -> 14g`, `tsp -> 4.2g`; the resulting evidence records matched ingredient names and grams but does not retain a source identifier/version for those nutrient constants or conversion rules. The output is labeled `estimated:true` and has a confidence, so this is not being classified as a hidden verified-value issue. Impact: future recipe decisions cannot trace the numeric source/version used for an estimate, weakening the project's required nutrition provenance and making recalculation/audit difficult.
 
+### PB-201 — Dataset importer RESET deletes global DB rows but only enumerates first 1000 Storage objects
+Status: OPEN — OPERATIONAL/DATA INTEGRITY HIGH
+Location: `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `resetState()`.
+Evidence: reset lists bucket objects once with `prefix: 'recipes'`, `limit: 1000`, `offset: 0`, deletes every returned Storage object, then issues global DELETE requests for all hero `recipe_images` and all non-null `recipe_image_import_attempts`. There is no pagination through subsequent Storage objects. Impact: with more than 1000 recipe objects, RESET can remove all corresponding DB records while leaving Storage files beyond the first 1000 orphaned, causing storage leakage and an inconsistent DB/Storage state. No reset execution was performed during the audit.
+
+### PB-202 — Wired recipe image importer only inspects first 1000 existing images/skip attempts
+Status: OPEN — DATA/OPERATIONAL HIGH
+Location: `apps/backend/scripts/recipe-image-import.mjs`, `getMissingRecipes()`.
+Evidence: `imageRows` is fetched from `recipe_images?select=recipe_id&image_type=eq.primary&limit=1000` and skipped attempts from `recipe_image_import_attempts?...&limit=1000`; neither query paginates, while the recipe scan itself paginates through `recipes`. Impact: once more than 1000 primary-image rows or skipped attempts exist, recipes represented only in later pages are treated as missing/unattempted and can be reprocessed; depending on unique constraints this can cause duplicate/failed writes and unnecessary external downloads. Root cause: asymmetric pagination between the source recipe list and existing-state sets.
+
 ## Reconciliation note
 Preserve oldest canonical IDs when the same root cause already exists elsewhere. PB-112 and PB-167 are correction-trail IDs only. PB-185 is a specific surface of PB-129 and must not be double-counted.
