@@ -4,7 +4,7 @@ Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
 ## Scope actually read
-Baseline; complete Core source scope; final Prisma schema; all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and related Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/specs/native config; all Mobile components, `lib/motion.tsx`, and Mobile scripts; BATCH-0012 backend controller inventory and selected backend↔mobile route consumers; BATCH-0013 operational recipe/food/image scripts and legacy variants; backend common/config/bootstrap/database/i18n/images; historical high-value branch/PR reconciliation; BATCH-0024..0026 direct revalidation/control work; current-main recipe-intelligence scripts; current-main mobile route aliases; Prisma User cascade/account-erasure surface.
+Baseline; complete Core source scope; final Prisma schema; all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and related Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/specs/native config; all Mobile components, `lib/motion.tsx`, and Mobile scripts; BATCH-0012 backend controller inventory and selected backend↔mobile route consumers; BATCH-0013 operational recipe/food/image scripts and legacy variants; backend common/config/bootstrap/database/i18n/images; historical high-value branch/PR reconciliation; BATCH-0024..0027 direct revalidation/control work; current-main recipe-intelligence scripts; current-main mobile route aliases; Prisma User cascade/account-erasure surface; final Prisma index/query reconciliation for Workout and UserBehavior.
 
 ## Open gaps
 
@@ -27,7 +27,8 @@ Baseline; complete Core source scope; final Prisma schema; all 39 migration SQL 
 17. Reconcile configurable authentication lifetimes with persisted session lifetime and complete refresh-token rotation/reuse analysis (PB-172, PB-187, PB-208, PB-209).
 18. Reconcile package/CI validation coverage with the actual test inventory, especially mobile tests currently not represented by a package test script/CI test step.
 19. Reconcile operational script canonicality/deprecation/archive policy so historical executable variants cannot silently become alternate production procedures.
-20. Safely merge current PB-244..PB-256 decisions into the canonical Appendix without losing PB-156..PB-243 content; preserve the documented inability to recover exact PB-001..PB-155 Appendix prose from exposed Git history.
+20. Safely merge current PB-244..PB-257 decisions into the canonical Appendix without losing PB-156..PB-243 content; preserve the documented inability to recover exact PB-001..PB-155 Appendix prose from exposed Git history.
+21. Validate PB-257 against real row counts/query plans before remediation sizing; source evidence currently establishes the missing composite indexes but not a measured production performance regression.
 
 ## Confirmed integration/evidence refinements
 
@@ -45,6 +46,7 @@ Baseline; complete Core source scope; final Prisma schema; all 39 migration SQL 
 - PB-250 is merged into PB-160.
 - PB-254 remains provisional because Prisma cascades do not cover migration-only tables, Supabase Auth, or Storage, and no composed delete-account workflow was located.
 - Inline `Object`/interface body types are not automatically treated as class DTO whitelist collisions. PB-232/PB-237 are reclassified; PB-234 is narrowed to the concrete class DTO; PB-243 remains pending historical overlap reconciliation.
+- PB-257 is source-level: `Workout` lacks `[userId, performedAt]` indexing despite active chronological user-scoped range/order queries, and `UserBehavior` lacks `[userId, createdAt]` despite a 1000-row chronological learning query. Runtime query-plan validation remains outstanding.
 
 ## Resolved file-level gaps
 
@@ -63,5 +65,7 @@ Baseline; complete Core source scope; final Prisma schema; all 39 migration SQL 
 - Backend common config/bootstrap/database/i18n/image pipeline: RESOLVED for the identified `src/common` boundary; repository-wide consumer and runtime validation remains open.
 - Current-main recipe-intelligence script existence: RESOLVED by direct file lookup; remaining logic/provenance findings are separate.
 - Mobile root route alias chain: RESOLVED at source level; no new duplicate finding.
+- Current-main Prisma `User` cascade surface: RESOLVED at source level; account-erasure orchestration remains open.
+- Workout/UserBehavior index/query cross-check: RESOLVED for the inspected query surfaces; PB-257 records the resulting missing-index risk and requires runtime plan validation.
 
 No remaining gap is marked repository-wide resolved without direct evidence.
