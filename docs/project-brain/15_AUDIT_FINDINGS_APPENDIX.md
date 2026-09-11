@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-242
+## Findings PB-156 through PB-243
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -296,7 +296,7 @@ Evidence: `apps/mobile/lib/brand.ts` exports a complete `BRAND` object containin
 ### PB-220 — Recipe content audit orphan checks are logically non-functional
 Status: OPEN — QA/LOGIC HIGH
 Location: `apps/backend/scripts/recipe-content-audit.mjs`, initial `Promise.all()` orphan counters and the final gate.
-Evidence: the script assigns `orphanMedia = await prisma.recipeMedia.count({ where: { recipeId: { not: undefined } } })`, which counts records having a defined/non-null recipeId rather than records whose referenced recipe is missing; it assigns `orphanSteps = await prisma.recipeStep.count()`, which counts all steps rather than orphan steps. The only subsequent validation is `if (orphanMedia < 0 || orphanSteps < 0) throw ...`, a condition that normal database counts cannot satisfy. Therefore the audit does not actually verify for orphaned recipe media/steps despite naming and printing those counters. Impact: even after PB-188's missing-model/schema issue is fixed, this audit gate could report success while real orphaned child rows remain, so the content-quality check is incomplete and can provide false assurance.
+Evidence: the script assigns `orphanMedia = await prisma.recipeMedia.count({ where: { recipeId: { not: undefined } } })`, which counts records having a defined/non-null recipeId rather than records whose referenced recipe is missing; it assigns `orphanSteps = await prisma.recipeStep.count()`, which counts all steps rather than orphan steps. The only subsequent validation is `if (orphanMedia < 0 || orphanSteps < 0) throw ...`, a condition that normal database counts cannot satisfy. Therefore the audit does not actually verify for orphaned child rows despite naming and printing those counters. Impact: even after PB-188's missing-model/schema issue is fixed, this audit gate could report success while real orphaned child rows remain, so the content-quality check is incomplete and can provide false assurance.
 
 ### PB-221 — Adaptive Learning defaults and weekly window are UTC-based rather than user-local
 Status: OPEN — TIMEZONE/BEHAVIOR
@@ -407,6 +407,11 @@ Evidence: `addRecipeMissing()` validates the recipe and filters the requested it
 Status: OPEN — CI/BUILD HIGH
 Locations: `.github/workflows/recipe-image-import.yml`, root `pnpm-lock.yaml`, `apps/backend/package.json`; CI run `34613481370` on `main` at `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`.
 Evidence: the `Recipe image import` workflow uses `pnpm install --frozen-lockfile`. The observed GitHub Actions run `34613481370` failed in its `Install dependencies` step before the image-import step, so the workflow could not reach the intended job. The failure log reported `ERR_PNPM_OUTDATED_LOCKFILE` and specifically identified `sharp@^0.34.2` as missing from the lockfile, while also reporting lockfile entries for `prisma`, `supertest`, and `typescript` that are absent from the current package manifest and additional specifier/version mismatches. The workflow's toolchain setup itself completed successfully before this install failure. Impact: the committed dependency graph is not reproducible under the repository's own frozen-lockfile CI policy, and the recipe-image automation is currently blocked before execution. This is distinct from feature-script defects such as PB-203/194 because it prevents dependency installation at the workflow level.
+
+### PB-243 — Multiple active write DTOs lack class-validator metadata under the global whitelist/forbidNonWhitelisted policy
+Status: OPEN — API/RUNTIME HIGH
+Locations: `apps/backend/src/modules/habits/dto/habit.dto.ts`, `apps/backend/src/modules/workout/dto/create-workout.dto.ts`, `apps/backend/src/modules/supplements/dto/supplement.dto.ts`, `apps/backend/src/modules/life-execution/dto/task.dto.ts`, compared with `apps/backend/src/bootstrap.ts` and their active controllers.
+Evidence: `CreateHabitDto`/`UpdateHabitDto`, `CreateWorkoutDto`, `CreateSupplementDto`/`UpdateSupplementDto`, and all active Life Execution task DTOs (`CreateTaskDto`, `UpdateTaskDto`, `TaskEventDto`, `TaskDependencyDto`) are plain TypeScript classes with no `class-validator` decorators. These classes are used by active authenticated controllers; for example `LifeExecutionController` binds the DTOs on POST/PATCH/event/dependency routes, and Habits/Workout/Supplements modules are imported by the active application. The global `ValidationPipe` has `whitelist: true` and `forbidNonWhitelisted: true`. Unlike inline `@Body()` object types (which Nest treats as plain Object metadata), these are class DTO metatypes and therefore their ordinary request properties are not represented by validation metadata and are expected to be rejected as non-whitelisted. Impact: several active write surfaces can be blocked by the application's own validation configuration, and even if the global policy is relaxed, these contracts lack declarative input validation. This is grouped because the same concrete DTO defect repeats across four active domains; it is distinct from PB-233/234/232/237 because those findings cover separate active domain contracts already identified earlier.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
