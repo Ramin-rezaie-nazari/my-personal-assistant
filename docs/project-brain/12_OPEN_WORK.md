@@ -557,6 +557,24 @@ Locations: Mobile API clients including `apps/mobile/lib/api.ts` and domain clie
 Problem: runtime clients default to `http://localhost:3000`, while the repository's physical-device example requires the computer's LAN IP.
 Impact: a physical phone with no EXPO_PUBLIC_API_URL override attempts to contact itself rather than the development backend.
 
+### PB-132 — MYPA branch-validation Mobile gate checks only typecheck and omits normal Mobile CI checks
+Status: OPEN — CI COVERAGE
+Location: `.github/workflows/mypa-branch-validation.yml` versus `.github/workflows/mobile-ci.yml`.
+Problem: branch validation runs only `pnpm typecheck` for Mobile, while normal Mobile CI also runs Expo config validation and Android JavaScript bundling.
+Impact: the branch-validation gate can pass a Mobile change that fails later in normal CI/build packaging.
+
+### PB-133 — BrandMark SVG asset loading lacks observed SVG transformer/rendering configuration
+Status: OPEN — BUILD VALIDATION
+Location: `apps/mobile/components/BrandMark.tsx`, `apps/mobile/package.json`, `apps/mobile/app.json`.
+Problem: `BrandMark` loads `../assets/branding/logo-mark.svg` through React Native `Image`/`require()`, but no SVG transformer/config or dedicated SVG rendering dependency was observed in the inspected Mobile manifest/config.
+Impact: the actual Expo target build must verify whether the asset is bundled and rendered; until then this remains a build-contract gap rather than a confirmed runtime failure.
+
+### PB-134 — Mobile auth tokens are stored in AsyncStorage rather than secure credential storage
+Status: OPEN — SECURITY HIGH
+Locations: `apps/mobile/lib/api.ts` access/refresh token constants and `setAuthSession()`, plus domain clients reading those values.
+Problem: both access and refresh tokens are persisted through `@react-native-async-storage/async-storage`, and no secure-storage dependency or equivalent native credential store was found in the inspected Mobile manifest.
+Impact: bearer credentials have weaker at-rest protection than a platform secure credential store; compromise of app storage can expose long-lived authentication material.
+
 ## Next deterministic work
 
 1. Finish remaining Mobile route/component/library inventory and exhaustive backend-to-mobile consumer/route reconciliation.
