@@ -2,9 +2,9 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline + Core + complete Prisma schema + all 39 migration SQL files + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts + residual Mobile library contracts/tests + continued BATCH-0013 operational recipe/food scripts and relevant recipe migrations/local image pipeline variants + historical branch/PR reconciliation + backend common/config/auth/fitness cross-contract review.
-Scope not yet read: any Mobile source outside current audited trees if present; remaining Fitness-adjacent source; exhaustive common/platform/test inventory; repository-wide route/consumer/database matrices; full automated validation; full security/privacy closure; historical docs/branches beyond inspected high-value branches/PRs; remaining legacy/duplicate operational scripts.
-Evidence roots: Project Brain documents; `apps/backend/src/modules/`; `apps/backend/src/common/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`.
+Scope actually read: baseline + Core + complete Prisma schema and all 39 migrations + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts + residual Mobile library contracts/tests + continued BATCH-0013 operational recipe/food scripts + backend common/config/auth/fitness cross-contract review + historical branch/PR reconciliation + extended Mobile app/lib screen and domain-client consumer mapping.
+Scope not yet read: any repository source outside current audited trees; remaining Fitness-adjacent source; exhaustive common/platform/test inventory; exhaustive repository-wide route/consumer/database matrices; full automated validation; full security/privacy closure; historical docs/branches beyond inspected high-value branches/PRs; remaining legacy/duplicate operational scripts.
+Evidence roots: Project Brain documents; `apps/backend/src/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`.
 Confidence level: HIGH for completed file-level reads; MEDIUM for cross-module conclusions; no repository runtime execution claim.
 Open questions: exact repository-wide inventory/line counts, live DB drift, complete model/table consumer graph, transaction boundaries, complete route/mobile mappings, full CI validation and device behavior, operational ownership of remaining legacy variants.
 
@@ -76,8 +76,12 @@ Open questions: exact repository-wide inventory/line counts, live DB drift, comp
 - Inspected `apps/mobile/lib/api.ts` again and confirmed the currently observed mobile auth/session implementation still stores access and refresh tokens in AsyncStorage and refreshes through the unauthenticated `/auth/refresh` path; existing PB-182 and PB-187 remain the canonical related findings.
 - Reviewed current audit-branch CI status for the latest audit commit; no commit status checks are attached, so this session makes no new CI-green claim.
 - Inspected `.github/workflows/mypa-mobile-typecheck-repair-once.yml`; it is an old self-mutating one-time workflow that can write/commit `apps/mobile/app/reminders-localized.tsx` and delete its own workflow file. It is not treated as a production defect yet because it targets `agent/mypa-autonomous-control-plane`, but it remains part of the historical/CI control-plane reconciliation scope.
+- Extended the route↔mobile consumer pass across Brain, Meals/Nutrition, Calendar, Notifications, Habits, Supplements, Inventory, Shopping and Recipe Match screens; direct consumers were added to `CONTRACT_MATRIX.md` rather than inferred from helper names.
+- Compared Mobile transport clients and found a concrete shared-contract defect: `recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `inventory-api.ts`, and `assistant-api.ts` bypass the canonical 401→refresh→retry behavior implemented by `api.ts`, `calendar-api.ts`, `price-api.ts`, and `brain-execution.ts`. Recorded as PB-205 and kept as one cross-client root cause.
+- Rechecked `apps/mobile/app/index.tsx` and `command-center.tsx`: both are deliberate re-export shims to the active `command-center-v2` screen; they are not treated as orphan features.
 
 ## Next
-- Continue the Master Prompt with the remaining repository-wide consumer/route/DTO/database transaction reconciliation and exhaustive legacy/common/platform/test closure.
-- Close historical reconciliation only after the high-value open PR/feature branches have been mapped against `main` and no unreviewed production-affecting divergence remains.
+- Continue the Master Prompt with exhaustive database reader/writer/transaction/relation/index reconciliation and remaining backend↔mobile consumer/DTO/test mapping.
+- Continue remaining common/platform/test and legacy operational source closure, plus security/privacy retention/deletion reconciliation.
+- Close historical reconciliation only after remaining production-affecting divergence has been mapped against `main`.
 - Only after the Master Prompt audit scope is fully closed begin the separate correction/remediation phase using the final canonical findings catalog.
