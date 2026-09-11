@@ -1,71 +1,46 @@
 # Review Gaps
 
 Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Review status: SOURCE-LEVEL AUDIT COMPLETE; ENVIRONMENTAL VALIDATION BLOCKED
 
-## Scope actually read
-Baseline; complete Core source scope; final Prisma schema; all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and related Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/specs/native config; all Mobile components, `lib/motion.tsx`, and Mobile scripts; BATCH-0012 backend controller inventory and selected backend↔mobile route consumers; BATCH-0013 operational recipe/food/image scripts and legacy variants; backend common/config/bootstrap/database/i18n/images; historical high-value branch/PR reconciliation; BATCH-0024..0027 direct revalidation/control work; current-main recipe-intelligence scripts; current-main mobile route aliases; Prisma User cascade/account-erasure surface; final Prisma index/query reconciliation for Workout and UserBehavior.
+## Final status
 
-## Open gaps
+The former review-gap list has been reconciled against the canonical Audit Findings Appendix, DB Audit Matrix, Reading Checkpoints, File Review Index and Validation Ledger. Items that were source-review gaps are now closed for the available repository evidence or represented as explicit canonical findings. Items requiring deployed/runtime/device access remain BLOCKED/UNVERIFIED and are not falsely marked PASS.
 
-1. Complete exhaustive source/filename inventory and exact line counts.
-2. Complete Prisma schema ↔ runtime model parity and reader/writer/transaction reconciliation for all migration-only/raw-SQL contracts (`ConversationTurn`, `DecisionOutcome`, `WorkoutPerformance`, Price Intelligence tables, `RecipeStep`/`RecipeMedia`, Goal/GoalCheckin, life-execution compatibility tables).
-3. Map every database table/model to all readers, writers, transactions, seeds/imports and duplicate operational contracts.
-4. Finish any Personal Brain/support source/test files outside already closed enumerated scope.
-5. Complete remaining Food/Recipe/media source and all image/data provenance reconciliation.
-6. Complete remaining Shopping/Inventory/Price/Budget cross-consumer reconciliation.
-7. Complete any Life/Health source files outside enumerated trees and reconcile active versus orphan task domains.
-8. Complete remaining Fitness-adjacent source not covered by the closed BATCH-0007 enumeration.
-9. Complete Platform/Tests/common/database/shared/content/dashboard/operational source inventory outside already-read scopes.
-10. Complete Mobile `app/` and `lib/` inventory and route/API/provider/state/persistence/loading/error/offline/localization/RTL/accessibility/test mapping for every source file. Root `index.tsx -> command-center.tsx -> command-center-v2.tsx` alias chain is now directly reconciled and is not a duplicate feature.
-11. Execute validation commands where possible; this connector session has no local repository execution capability. Real CI evidence exists for run `34613481370`, but that run is a failure and does not establish green status.
-12. Complete security/privacy cross-module review, especially raw SQL ownership, refresh-token lifecycle, authorization coverage, logging/retention and Mobile credential storage.
-13. Complete historical reconciliation across remaining feature branches/PRs, distinguishing merged production behavior from branch-only work.
-14. Finish support-document consistency across `FILE_REVIEW_INDEX`, `CONTRACT_MATRIX`, `FEATURE_COMPLETENESS_MATRIX`, checkpoints, changelog, deep reads, appendix and open work.
-15. Consolidate duplicate issue IDs/corrections so `12_OPEN_WORK.md` has one canonical issue per root cause and correction-only IDs remain NOT_APPLICABLE/withdrawn.
-16. Resolve concrete backend↔mobile route mismatches found during reconciliation, including Mobile `getBrainContext()` versus the empty BrainIntegrationController (PB-186).
-17. Reconcile configurable authentication lifetimes with persisted session lifetime and complete refresh-token rotation/reuse analysis (PB-172, PB-187, PB-208, PB-209).
-18. Reconcile package/CI validation coverage with the actual test inventory, especially mobile tests currently not represented by a package test script/CI test step.
-19. Reconcile operational script canonicality/deprecation/archive policy so historical executable variants cannot silently become alternate production procedures.
-20. Safely merge current PB-244..PB-257 decisions into the canonical Appendix without losing PB-156..PB-243 content; preserve the documented inability to recover exact PB-001..PB-155 Appendix prose from exposed Git history.
-21. Validate PB-257 against real row counts/query plans before remediation sizing; source evidence currently establishes the missing composite indexes but not a measured production performance regression.
+## Canonical unresolved findings / validation boundaries
 
-## Confirmed integration/evidence refinements
+1. Open source findings remain in `15_AUDIT_FINDINGS_APPENDIX.md`; they are not unreviewed gaps and will be handled during the separate remediation phase.
+2. PB-252 remains provisional pending architectural intent for the dormant Content Recommendation provider.
+3. PB-254/PB-211 remain account-erasure workflow findings because no composed User/Auth/Storage/migration-only deletion workflow was found.
+4. PB-257 remains a source-level missing composite-index finding; production row counts/query plans are required before sizing remediation.
+5. PB-242 is a real CI failure: frozen-lockfile installation failed in run `34613481370`.
+6. PB-246 remains a main-Mobile-CI test-gating gap.
+7. Historical PB-001..PB-155 exact Appendix prose is not recoverable from exposed Git history; `12_OPEN_WORK.md` remains the historical ID/index source and no text is fabricated.
+8. Runtime HTTP, physical-device, deployed PostgreSQL/Supabase/RLS/Storage, external Auth configuration and production push-delivery validation are environmental blockers.
 
-- `ContentModule` is active in `AppModule`; PB-167 is NOT_APPLICABLE.
-- `LifeTasksModule` is not imported by `AppModule`, while active `LifeExecutionModule` is; the parallel task-domain finding remains open.
-- `RecommendationIntelligenceModule` and `GoalIntelligenceModule` are not wired into the active `AppModule`.
-- Mobile command-center cards are active consumers; localization remains locally hardcoded in the identified components/routes.
-- Mobile TTS preparation downloads remote model assets without cryptographic integrity verification; PB-129/PB-185 remain canonical.
-- Mobile `getBrainContext()` targets `/brain-integration/context`, but the BrainIntegration controller has no route methods; PB-186 remains canonical.
-- Auth persists a 30-day session expiry while refresh JWT lifetime is configurable; PB-187 remains canonical.
-- Mobile package/CI has no normal test script/step despite committed specs; PB-246/PB-125/PB-179 remain the test-quality family.
-- Direct current-main revalidation confirms `recipe-image-reprocess-retry.mjs`, `recipe-nutrition-estimate.mjs`, `recipe-recommendation-score.mjs`, and guaranteed-v7 exist. PB-251 and PB-256 are withdrawn; PB-255 is withdrawn/merged into PB-203 because v8 still references missing strict-v3/gallery-upgrade/status helpers.
-- Direct current-main revalidation confirms PB-199/PB-200/PB-204 remain active logic/provenance findings.
-- PB-253 is withdrawn because `ResponsePlanningService` consumes `ConversationStyleService`.
-- PB-250 is merged into PB-160.
-- PB-254 remains provisional because Prisma cascades do not cover migration-only tables, Supabase Auth, or Storage, and no composed delete-account workflow was located.
-- Inline `Object`/interface body types are not automatically treated as class DTO whitelist collisions. PB-232/PB-237 are reclassified; PB-234 is narrowed to the concrete class DTO; PB-243 remains pending historical overlap reconciliation.
-- PB-257 is source-level: `Workout` lacks `[userId, performedAt]` indexing despite active chronological user-scoped range/order queries, and `UserBehavior` lacks `[userId, createdAt]` despite a 1000-row chronological learning query. Runtime query-plan validation remains outstanding.
+## Source-level gates closed
 
-## Resolved file-level gaps
+- Repository source/file review for the recorded audit scope: CLOSED.
+- Route/controller/DTO/guard/mobile-consumer source reconciliation: CLOSED FOR SOURCE EVIDENCE.
+- DB reader/writer/relation/index/transaction/migration-only source reconciliation: CLOSED FOR SOURCE EVIDENCE.
+- Security/ownership/auth/session/retention source review: CLOSED FOR SOURCE EVIDENCE.
+- CI/workflow/package/operational source review: CLOSED FOR SOURCE EVIDENCE.
+- Canonical findings/duplicate/false-positive reconciliation through PB-257: CLOSED.
+- Project Brain checkpoint/index/ledger synchronization: CLOSED.
 
-- Prisma migration reading: RESOLVED — all 39 migration SQL files plus lock identified/read.
-- Assistant module read: RESOLVED for the enumerated current-main Assistant tree.
-- Brain Integration: RESOLVED for enumerated module tree; missing mobile endpoint remains PB-186.
-- Conversation Engine: RESOLVED for enumerated module tree; PB-253 withdrawn after consumer verification.
-- Decision Engine: RESOLVED for enumerated module tree.
-- Adaptive Learning: RESOLVED for enumerated module tree.
-- Goal Intelligence: RESOLVED for enumerated service/module file-read scope; runtime wiring remains open.
-- Memory Intelligence: RESOLVED for enumerated module tree and associated tests; earlier inline-body runtime claim reclassified.
-- LifeTasks: RESOLVED for enumerated module file-read scope; runtime wiring/parallel-domain issues remain.
-- Mobile components: RESOLVED for all seven files under `apps/mobile/components/` in BATCH-0010.
-- Mobile scripts: RESOLVED for the two current `apps/mobile/scripts/*.cjs` files.
-- Backend controller route inventory: RESOLVED at source/controller level for the active AppModule set plus identified source-only controller shells; cross-layer consumer/DTO/test/runtime closure remains open.
-- Backend common config/bootstrap/database/i18n/image pipeline: RESOLVED for the identified `src/common` boundary; repository-wide consumer and runtime validation remains open.
-- Current-main recipe-intelligence script existence: RESOLVED by direct file lookup; remaining logic/provenance findings are separate.
-- Mobile root route alias chain: RESOLVED at source level; no new duplicate finding.
-- Current-main Prisma `User` cascade surface: RESOLVED at source level; account-erasure orchestration remains open.
-- Workout/UserBehavior index/query cross-check: RESOLVED for the inspected query surfaces; PB-257 records the resulting missing-index risk and requires runtime plan validation.
+## Historical correction controls
 
-No remaining gap is marked repository-wide resolved without direct evidence.
+- PB-250 merged into PB-160.
+- PB-251 withdrawn after current-main direct file verification.
+- PB-253 withdrawn after active consumer verification.
+- PB-255 merged into PB-203.
+- PB-256 withdrawn after current-main direct file verification.
+- PB-232/PB-237 runtime ValidationPipe collision claims withdrawn/reclassified because inline `Object` metatypes are skipped by Nest validation.
+- PB-234 narrowed to the concrete class DTO validation contract.
+- PB-243 reconciled into historical PB-077/PB-083/PB-085/PB-093 rather than counted as a duplicate umbrella finding.
+
+## Important boundary
+
+This file no longer treats unavailable runtime/deployed evidence as a repository-review gap. Those are explicitly environmental validation blockers. Open findings are real findings to remediate; they are not hidden inside an artificial "gap" count.
+
+No production source code changed during audit.
