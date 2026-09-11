@@ -2,11 +2,11 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: backend/root and app package manifests; backend `main.ts`, `bootstrap.ts`, `tsconfig.json`, `eslint.config.mjs`; E2E config/setup/db-preparation/helper/specs; all 11 workflow files currently under `.github/workflows/`; Mobile `package.json`/`app.json`; selected Mobile native/runtime clients and components; GitHub workflow-run lookup for target commit (no usable PR-triggered run result exposed). File-level reading is complete for the enumerated platform/test/CI scope; no runtime command has been executed in this audit turn.
-Scope not yet read: every remaining common/config/database/shared/content utility and operational script outside previously completed batches; exhaustive backend test inventory; full historical workflow/run inspection; production deployment manifests/secrets configuration; full Mobile native/build configuration; actual local/unit/E2E/build execution; runtime performance/resource tests.
-Evidence roots: `.github/workflows/`; `apps/backend/package.json`; `apps/backend/src/main.ts`; `apps/backend/src/bootstrap.ts`; `apps/backend/tsconfig.json`; `apps/backend/eslint.config.mjs`; `apps/backend/test/`; `apps/mobile/package.json`; `apps/mobile/app.json`; selected `apps/mobile/lib/` and `apps/mobile/components/`.
-Confidence level: HIGH for inspected workflow/config findings; MEDIUM for repository-wide CI/test completeness until every test/config file and actual runs are reconciled.
-Open questions: exact CI run status for target commit; full test coverage map; whether E2E DB setup's `db push` is unavoidable legacy behavior; production release policy and branch protection; target Expo SVG and undeclared TTS dependency build behavior.
+Scope actually read: backend/root and app package manifests; backend `main.ts`, `bootstrap.ts`, `tsconfig.json`, `eslint.config.mjs`; E2E config/setup/db-preparation/helper/specs; all 11 workflow files currently under `.github/workflows/`; Mobile `package.json`/`app.json`; selected Mobile native/runtime clients and components; GitHub workflow-run lookup for target commit; backend controller inventory and selected backend↔mobile route consumers. File-level reading is complete for the enumerated platform/test/CI scope; no runtime command has been executed in this audit turn.
+Scope not yet read: every remaining common/config/database/shared/content utility and operational script outside previously completed batches; exhaustive backend test inventory; full historical workflow/run inspection; production deployment manifests/secrets configuration; full Mobile native/build configuration; actual local/unit/E2E/build execution; runtime performance/resource tests; full backend↔mobile consumer matrix.
+Evidence roots: `.github/workflows/`; `apps/backend/package.json`; `apps/backend/src/main.ts`; `apps/backend/src/bootstrap.ts`; `apps/backend/src/app.module.ts`; `apps/backend/tsconfig.json`; `apps/backend/eslint.config.mjs`; `apps/backend/test/`; `apps/backend/src/modules/**/controllers/`; `apps/mobile/package.json`; `apps/mobile/app.json`; selected `apps/mobile/lib/` and `apps/mobile/components/`.
+Confidence level: HIGH for inspected workflow/config/controller findings; MEDIUM for repository-wide CI/test completeness until every test/config file and actual runs are reconciled.
+Open questions: exact CI run status for target commit; full test coverage map; whether E2E DB setup's `db push` is unavoidable legacy behavior; production release policy and branch protection; target Expo SVG and undeclared TTS dependency build behavior; exact deployed API route prefixes.
 
 ## Findings
 
@@ -25,6 +25,8 @@ Open questions: exact CI run status for target commit; full test coverage map; w
 - `apps/mobile/lib/local-persian-tts.ts` imports `expo-av`, `expo-file-system/legacy` and `react-native-sherpa-onnx`, but `apps/mobile/package.json` does not declare those runtime dependencies. This is a Mobile build/dependency contract gap.
 - `apps/mobile/lib/local-persian-tts.ts` downloads its model archive from an external GitHub release URL and checks existence only; no cryptographic hash/signature verification was observed.
 - `apps/mobile/components/BrandMark.tsx` loads an SVG file through React Native `Image`/`require()`. No SVG transformer/config or dedicated SVG rendering dependency was observed in the inspected Mobile manifest/config; target Expo bundling is required to resolve this conclusively.
+- Mobile `lib/api.ts` contains a `getBrainContext()` consumer that requests `/brain-integration/context`, while the current `BrainIntegrationController` contains no route methods. This is a concrete backend↔mobile route mismatch and is tracked as PB-186.
+- `AuthService.createAuthResponse()` uses a hard-coded 30-day persisted session expiry while the refresh JWT expiry is configurable through `AppConfigService.jwtRefreshExpiresIn`. This configuration drift is tracked as PB-187.
 
 ## Platform/Test issue IDs
 
@@ -40,6 +42,8 @@ Open questions: exact CI run status for target commit; full test coverage map; w
 - PB-129: Local Persian TTS downloads an external model without cryptographic artifact integrity verification.
 - PB-132: MYPA branch-validation Mobile gate checks only typecheck and omits the Expo config/Android bundle checks used by normal Mobile CI.
 - PB-133: BrandMark SVG asset loading lacks observed SVG transformer/rendering configuration and therefore needs target-build validation.
+- PB-186: Mobile Brain Context consumer targets an unexposed backend route.
+- PB-187: Auth persisted refresh-session expiry hard-coded to 30 days rather than following configured refresh JWT lifetime.
 
 ## Remaining work
 
