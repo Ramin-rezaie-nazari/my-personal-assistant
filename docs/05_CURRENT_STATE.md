@@ -11,7 +11,7 @@ This root-level file is the canonical location required by the MYPA audit protoc
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Audit branch: `audit/project-brain-2026-09-11`
-- Latest audit checkpoint: BATCH-0016 validation-contract + Goals/Calendar/Memory continuation; current documentation remains audit-only.
+- Latest audit checkpoint: BATCH-0017 active Shopping batch-write transaction continuation; current documentation remains audit-only.
 - Audit is IN_PROGRESS.
 - No production-code modification has been made by this audit branch work; changes remain documentation/audit-only.
 
@@ -23,6 +23,7 @@ This root-level file is the canonical location required by the MYPA audit protoc
 - Raw-SQL ownership/destructive-operation paths were rechecked for Goals, ConversationTurn, LifeTask, TaskDependency, WorkoutPerformance and Price Intelligence.
 - CI/release workflows and package-script entrypoints were reconciled.
 - Memory Intelligence, Goals, Calendar, Preferences, Settings, Onboarding, Health DTOs, Yoga pose pipeline and notification contracts were directly inspected.
+- Active Shopping `addRecipeMissing()` and its Recipe Food Operating Loop consumer were inspected for batch-write consistency.
 - Historical high-value PRs/branches remain branch-only unless explicit merge evidence exists.
 
 ## Important current findings
@@ -46,6 +47,8 @@ This root-level file is the canonical location required by the MYPA audit protoc
 - PB-233: active Goals write/check-in DTOs conflict with the global `ValidationPipe` whitelist/forbid policy.
 - PB-234: active Calendar create/update write contracts conflict with the global `ValidationPipe` whitelist/forbid policy.
 - PB-235: Goal check-in performs logically coupled parent/child writes without a transaction.
+- PB-240: Price Intelligence controller exposes collection/mutation surfaces without authentication or user scoping.
+- PB-241: Shopping recipe-missing batch can partially persist basket changes on mid-batch failure because sequential `addToBasket()` writes are not transactionally grouped.
 
 ## Validation state
 
