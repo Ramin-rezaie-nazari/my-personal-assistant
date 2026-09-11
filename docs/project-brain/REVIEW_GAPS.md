@@ -2,11 +2,11 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline; complete Core source scope; final Prisma schema; all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and related Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/specs/native config; all Mobile components, `lib/motion.tsx`, and Mobile scripts.
-Scope not yet read: remaining Personal Brain/support files outside prior enumeration; remaining Mobile route/library/native files; exhaustive platform/common/test inventory; repository-wide route/consumer mapping; complete DB readers/writers/transactions; full automated validation; full security/privacy review; historical docs/branches.
-Evidence roots: `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`.
-Confidence level: HIGH for listed file-level reads; MEDIUM for cross-module integration conclusions; no runtime test execution claim.
-Open questions: exact complete source inventory/line counts; live DB drift; all route/mobile/database consumers; test execution; physical-device behavior; historical reconciliation.
+Scope actually read: baseline; complete Core source scope; final Prisma schema; all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and related Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/specs/native config; all Mobile components, `lib/motion.tsx`, and Mobile scripts; BATCH-0012 backend controller inventory and selected backend↔mobile route consumers.
+Scope not yet read: remaining repository source outside closed enumerations; exhaustive platform/common/test inventory; repository-wide route/database reader-writer/transaction matrix; full backend↔mobile consumer reconciliation; runtime validation; full security/privacy closure; historical docs/branches.
+Evidence roots: `apps/backend/src/`; `apps/backend/prisma/`; `apps/backend/test/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`.
+Confidence level: HIGH for listed file-level findings; MEDIUM for cross-module integration conclusions; no runtime test execution claim.
+Open questions: exact complete source inventory/line counts; live DB drift; all route/mobile/database consumers; test execution; physical-device behavior; historical reconciliation; deployed API prefix/configuration.
 
 ## Open gaps
 
@@ -25,6 +25,8 @@ Open questions: exact complete source inventory/line counts; live DB drift; all 
 13. Reconcile current source with historical docs/branches.
 14. Finish support-document consistency across FILE_REVIEW_INDEX, CONTRACT_MATRIX, FEATURE_COMPLETENESS_MATRIX, checkpoints, changelog, deep reads, appendix and open work.
 15. Consolidate duplicate issue IDs/corrections so `12_OPEN_WORK.md` has one canonical issue per root cause and correction-only IDs remain NOT_APPLICABLE.
+16. Resolve concrete backend↔mobile route mismatches found during reconciliation, including Mobile `getBrainContext()` versus the empty BrainIntegrationController (PB-186).
+17. Reconcile configurable authentication lifetimes with persisted session lifetime and complete refresh-token rotation/reuse analysis (PB-172, PB-187).
 
 ## Newly confirmed integration findings
 
@@ -34,12 +36,14 @@ Open questions: exact complete source inventory/line counts; live DB drift; all 
 - Mobile command-center cards are active consumers; their localization is locally hardcoded rather than routed through the global i18n dictionary.
 - `apps/mobile/components/AnimatedPressable.tsx` and `AnimatedSection.tsx` duplicate exports already present in `lib/motion.tsx` and have no observed external consumer in repository search.
 - Mobile TTS preparation downloads remote ONNX/token/vocoder assets and checks existence but not cryptographic integrity; this is a specific supply-chain expression of PB-129.
+- Mobile `lib/api.ts` defines `getBrainContext()` for `/brain-integration/context`, but the backend `BrainIntegrationController` exposes no route methods; PB-186 is a concrete consumer/endpoint mismatch.
+- `AuthService.createAuthResponse()` persists a 30-day session expiry while the refresh JWT lifetime is configuration-driven; PB-187 records the resulting contract drift.
 
 ## Resolved file-level gaps
 
 - Prisma migration reading: RESOLVED — all 39 migration SQL files plus lock identified/read.
 - Assistant module read: RESOLVED for the enumerated current-main Assistant tree.
-- Brain Integration: RESOLVED for enumerated module tree.
+- Brain Integration: RESOLVED for enumerated module tree; controller is intentionally noted as empty/source-only and its missing mobile endpoint remains PB-186.
 - Conversation Engine: RESOLVED for enumerated module tree.
 - Decision Engine: RESOLVED for enumerated module tree.
 - Adaptive Learning: RESOLVED for enumerated module tree.
@@ -48,5 +52,6 @@ Open questions: exact complete source inventory/line counts; live DB drift; all 
 - LifeTasks: RESOLVED for enumerated module file-read scope, but runtime wiring/parallel-domain issues remain open.
 - Mobile components: RESOLVED for all seven files under `apps/mobile/components/` in BATCH-0010.
 - Mobile scripts: RESOLVED for the two current `apps/mobile/scripts/*.cjs` files.
+- Backend controller route inventory: RESOLVED at source/controller level for the active AppModule set plus identified source-only controller shells; cross-layer consumer/DTO/test/runtime closure remains open.
 
 No remaining gap is marked repository-wide resolved without direct evidence.
