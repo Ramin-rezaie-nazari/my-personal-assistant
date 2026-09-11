@@ -29,6 +29,11 @@ Status: OPEN — ARCHITECTURE/API SURFACE MEDIUM
 Locations: `apps/backend/src/modules/context-engine/controllers/context-engine.controller.ts`, `apps/backend/src/modules/context-engine/context-engine.module.ts`, active internal consumer `apps/backend/src/modules/personal-brain/services/brain-state.service.ts`.
 Evidence: `ContextEngineModule` is active and `ContextEngineService` is injected into Personal Brain's `BrainStateService`, so the underlying context engine is not orphaned. However, `ContextEngineController` is registered under `@Controller('context-engine')` and injects `ContextEngineService` while defining no HTTP route methods. This creates an active module with an externally mounted controller artifact that exposes no actual endpoint and has no observed API purpose. Impact: the HTTP surface suggests a Context Engine API exists when the real contract is internal service-to-service use; future consumers can infer a route that does not exist or extend the wrong layer. This is an API-surface/documentation cleanup finding, not a claim that the internal context engine is unused.
 
+## PB-249 — Active root backend route is still the generic NestJS “Hello World” starter endpoint
+Status: OPEN — API/ARCHITECTURE MEDIUM
+Locations: `apps/backend/src/app.controller.ts`, `apps/backend/src/app.service.ts`, `apps/backend/src/app.module.ts`.
+Evidence: `AppModule` registers `AppController` and `AppService`; `AppController` exposes public `GET /`, and `AppService.getHello()` returns the literal `Hello World!`. The repository's actual application APIs live under domain controllers such as Auth, Dashboard, Personal Brain, Food, Meals, Shopping, etc. The root controller is therefore not a meaningful MYPA health/readiness contract; it is a leftover Nest starter surface. Impact: the public root endpoint can be mistaken for the canonical service health/readiness endpoint and leaves a starter artifact active in the production API surface. It also reinforces the documentation/onboarding drift captured separately in PB-245. This is not being counted as a health-route security finding; the dedicated health controller remains a separate concern.
+
 ## Validation correction/reconciliation notes
 
 ### PB-232 — REQUIRES RECLASSIFICATION
@@ -44,4 +49,4 @@ The earlier claim that the inline `@Body() body: { action: BehaviorAction; conte
 The grouped validation finding overlaps materially with historical findings: PB-077 covers Habit DTO validation, PB-085 covers Life Execution DTO validation, PB-089 covers Fitness controller write validation, PB-093 covers Workout write-contract validation, and PB-083 covers Supplements DTO contract drift. Do not treat PB-243 as a clean unique finding until each module's scope is mapped against those historical entries. If it adds distinct evidence for Supplements or another active class-DTO surface not covered historically, merge that evidence into the appropriate existing ID rather than retaining a duplicate umbrella ID.
 
 ## Audit control
-No production code changed. PB-244, PB-245, PB-246, PB-247 and PB-248 are new audit evidence and must be merged into the canonical Appendix during the next safe full-file Appendix update. Runtime/build/device validation remains unverified.
+No production code changed. PB-244, PB-245, PB-246, PB-247, PB-248 and PB-249 are new audit evidence and must be merged into the canonical Appendix during the next safe full-file Appendix update. Runtime/build/device validation remains unverified.
