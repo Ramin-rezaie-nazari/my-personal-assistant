@@ -9,6 +9,19 @@ export function getDateKeyInTimezone(now: Date, timezone: string): string {
   return `${values.year}-${values.month}-${values.day}`;
 }
 
+export function getLocalHourWeekday(now: Date, timezone: string): { hour: number; weekday: number } {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    hour: 'numeric',
+    hourCycle: 'h23',
+    weekday: 'numeric',
+  }).formatToParts(now);
+  const values = Object.fromEntries(
+    parts.filter((part) => part.type !== 'literal').map((part) => [part.type, part.value]),
+  ) as Record<string, string>;
+  return { hour: Number(values.hour), weekday: Number(values.weekday) };
+}
+
 export function zonedDateTimeToUtc(dateKey: string, time: string, timezone: string): Date {
   const [year, month, day] = dateKey.split('-').map(Number);
   const [hour, minute, second = 0] = time.split(':').map(Number);
