@@ -2,9 +2,9 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, and continued operational-script/legacy-variant review.
+Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, and continued operational-script/legacy-variant review including recipe image reprocessors, food entity resolvers, recipe intelligence classify/profile/nutrition/score, and relevant recipe migrations.
 Scope not yet read: remaining repository-wide source/tests/consumers, full matrices, exhaustive operational scripts, runtime execution, complete security/privacy reconciliation.
-Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/backend/prisma/`, `apps/backend/scripts/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
+Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/backend/prisma/`, `apps/backend/scripts/`, `apps/backend/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
 Confidence: HIGH for source-level findings below unless explicitly marked validation-needed.
 
 ## Correction log
@@ -152,7 +152,7 @@ Evidence: importer uses generated `PrismaClient`, while the audited final `schem
 ### PB-189 — Recipe image dataset importer has a destructive global RESET path
 Status: OPEN — OPERATIONAL SAFETY HIGH
 Location: `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `RESET`/`resetState()`.
-Evidence: setting `RECIPE_IMAGE_RESET=1` causes the script to enumerate/delete Storage objects under `recipes`, then execute DELETE against all `recipe_images` rows with `image_type=hero` and all `recipe_image_import_attempts` rows where `recipe_id` is not null. There is no interactive confirmation or environment safety gate. Impact: an operator can accidentally erase the complete hero-image dataset/attempt history before re-importing; this is especially dangerous because the script is operational and uses a Supabase service-role credential. Audit did not execute the reset path.
+Evidence: setting `RECIPE_IMAGE_RESET=1` causes the script to enumerate/delete Storage objects under `recipes`, then execute DELETE against all `recipe_images` rows with `image_type=eq.hero` and all `recipe_image_import_attempts` rows where `recipe_id` is not null. There is no interactive confirmation or environment safety gate. Impact: an operator can accidentally erase the complete hero-image dataset/attempt history before re-importing; this is especially dangerous because the script is operational and uses a Supabase service-role credential. Audit did not execute the reset path.
 
 ### PB-190 — Recipe country-intelligence LIMIT mode deletes prior global classification state before processing only the limited subset
 Status: OPEN — DATA/OPERATIONAL HIGH
@@ -183,6 +183,31 @@ Evidence: the inspected operational image import paths explicitly target WebP ou
 Status: OPEN — OPERATIONAL/ARCHITECTURE DRIFT
 Locations: `apps/backend/scripts/recipe-country-intelligence.mjs`, `recipe-country-intelligence-v2.mjs`, `recipe-country-intelligence-v3.mjs`, `recipe-country-intelligence-v4.mjs`, `recipe-country-intelligence-v5.mjs`, `recipe-country-intelligence-v6.mjs`, `recipe-country-intelligence-v7-source.mjs`, `recipe-country-intelligence-v8-source-evidence.mjs`, `recipe-country-intelligence-final.mjs`, and `apps/backend/package.json`.
 Evidence: the script directory contains a sequence of independently maintained country-intelligence implementations, while `apps/backend/package.json` exposes only `recipe-intelligence:country` mapped to `recipe-country-intelligence-final.mjs`. No canonical retirement/archive marker is encoded in the script directory itself. Impact: operators can manually execute legacy variants with behavior different from the wired command, making reproducibility and operational ownership ambiguous. This is an audit finding until the variants are reconciled, archived, or explicitly designated.
+
+### PB-196 — Reprocess-quality LIMIT is positional, not restartable
+Status: OPEN — OPERATIONAL/RESTARTABILITY
+Location: `apps/backend/scripts/recipe-image-reprocess-quality.mjs`, `existingRows()` and `main()`.
+Evidence: `existingRows()` fetches all hero-image rows ordered by `recipe_id.asc` and, when `RECIPE_IMAGE_REPROCESS_LIMIT > 0`, returns only `rows.slice(0, LIMIT)`. There is no offset, stable checkpoint, cursor, or processed-state marker. Impact: a bounded rerun always targets the first N rows again; an operator cannot safely advance through successive bounded passes using the exposed limit alone. This is inconsistent with the project requirement that long-running work be batchable and restartable.
+
+### PB-197 — Image importer family uses conflicting `image_type`/storage contracts across executable variants
+Status: OPEN — OPERATIONAL/ARCHITECTURE DRIFT
+Locations: `apps/backend/scripts/recipe-image-import.mjs`, `apps/backend/scripts/recipe-image-import-all.mjs`, `apps/backend/scripts/recipe-image-import-all-safe.mjs`, `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `apps/backend/package.json`.
+Evidence: the wired `recipe-images:import` script uses `image_type='primary'` and storage key `recipes/<recipeId>/primary.webp`; the wired dataset importer uses `image_type='hero'` and `recipes/<recipeId>/hero.webp`; legacy `recipe-image-import-all.mjs` also writes `primary`, while `recipe-image-import-all-safe.mjs` writes `hero`. They also use materially different candidate matching and pass semantics. Impact: manually running a different executable importer can create a second image contract for the same recipe and leave both primary/hero records, making downstream selection ambiguous. This is not yet shown to cause a live user failure because runtime DB state was not executed/inspected in this session.
+
+### PB-198 — Final food-entity resolver has no direct executable self-test; current self-test targets v2 implementation
+Status: OPEN — TEST GAP
+Locations: `apps/backend/scripts/food-entity-resolver-final.mjs`, `apps/backend/scripts/food-entity-resolver-v2-self-test.mjs`.
+Evidence: the final resolver imports and wraps `food-entity-resolver-v2.mjs`, adds quantity/unit parsing plus `resolveCanonicalId`, and exposes a different version (`food-entity-resolver-v3-final`). The inspected self-test imports only `food-entity-resolver-v2.mjs` and therefore does not directly execute the final wrapper behavior. Impact: changes/regressions in final-specific quantity/unit/canonical-ID behavior can pass the existing self-test without being exercised.
+
+### PB-199 — Recommendation quality score normalization conflicts with the ingest score scale
+Status: OPEN — LOGIC HIGH
+Locations: `apps/backend/scripts/recipe-ingest.mjs`, `scoreRecipe()`/`quality_score` write, and `apps/backend/scripts/recipe-recommendation-score.mjs`, `scoreRecipe()` quality calculation.
+Evidence: `recipe-ingest.mjs` computes `quality.score` as a bounded fractional value (for example additions `0.12`, `0.06`, etc., with a maximum below 1) and writes that value directly to `recipes.quality_score`. The recommendation scorer later computes `const quality = Number(recipe.quality_score) > 0 ? clamp(Number(recipe.quality_score) / 100) : 0.6;`. A stored value such as `0.82` therefore becomes `0.0082`, effectively turning the 4% quality component into near-zero contribution. Root cause: producer/consumer disagree on the quality score unit (fraction versus percentage). Impact: verified recipe quality has almost no effect on deterministic ranking when a positive stored score exists.
+
+### PB-200 — Nutrition estimation uses hard-coded nutrient constants/conversions without ingredient-data provenance
+Status: OPEN — DATA QUALITY/PROVENANCE
+Location: `apps/backend/scripts/recipe-nutrition-estimate.mjs`, `FOOD` table, `gramsFromLine()`, and `estimate()`.
+Evidence: the script embeds fixed calories/protein/carbs/fat constants for named foods and fixed household-volume conversions such as `cup -> 150g`, `tbsp -> 14g`, `tsp -> 4.2g`; the resulting evidence records matched ingredient names and grams but does not retain a source identifier/version for those nutrient constants or conversion rules. The output is labeled `estimated:true` and has a confidence, so this is not being classified as a hidden verified-value issue. Impact: future recipe decisions cannot trace the numeric source/version used for an estimate, weakening the project's required nutrition provenance and making recalculation/audit difficult.
 
 ## Reconciliation note
 Preserve oldest canonical IDs when the same root cause already exists elsewhere. PB-112 and PB-167 are correction-trail IDs only. PB-185 is a specific surface of PB-129 and must not be double-counted.
