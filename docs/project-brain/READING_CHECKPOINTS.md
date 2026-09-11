@@ -2,63 +2,54 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: current-main manifests/AppModule; complete identified Core source files; full Prisma schema; all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and related Personal Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/components; all seven Mobile component files; Mobile `lib/motion.tsx`; both Mobile scripts; remaining identified Mobile library/notification contract files; BATCH-0012 initial backend route/API reconciliation including AppModule/root startup/common config/database/i18n/image pipeline, Auth, Foods, Meals, Inventory, Shopping, Daily, Habits, Calendar, Nutrition, Dashboard, Daily Command Center, Device Intelligence, Budget Intelligence and Price Intelligence controllers plus Recommendation/Brain/Memory/Goal module wiring checks.
-Scope not yet read: remaining exhaustive backend controller/service/test cross-reconciliation; any Mobile source outside current `app/`, `lib/`, `components/`, `scripts` snapshots if present; exhaustive platform/common/test inventory; repository-wide route/consumer/database matrices; full runtime/device/build validation; full security/privacy closure; historical docs/branches.
-Evidence roots: target `main` @ `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`; audit branch `audit/project-brain-2026-09-11`; `apps/backend/src/`; `apps/backend/prisma/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`.
-Confidence level: HIGH for completed file-level reads; MEDIUM for cross-module conclusions until remaining scopes and runtime validation are complete; no runtime execution claim.
-Open questions: exhaustive repository inventory/line counts; live DB drift; full model/table reader-writer/transaction map; full backend-mobile route map; exact CI run status for target commit; physical-device behavior.
+Scope actually read: current-main manifests/AppModule; complete identified Core source files; full Prisma schema; all 39 migration SQL files; complete Assistant TypeScript source/test scope; complete enumerated Brain; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and related Personal Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile routes/clients/components; all seven Mobile component files; Mobile `lib/motion.tsx`; both Mobile scripts; remaining identified Mobile library/notification contract files; BATCH-0012 backend route/API/controller inventory and selected backend↔mobile consumer reconciliation; initial BATCH-0013 operational recipe scripts.
+Scope not yet read: exhaustive backend operational scripts and remaining repository source/tests/consumers; any remaining Mobile source; exhaustive platform/common/test inventory; repository-wide route/consumer/database reader-writer/transaction mapping; full runtime validation; full security/privacy closure; historical docs/branches.
+Evidence roots: target `main` @ `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`; audit branch `audit/project-brain-2026-09-11`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`.
+Confidence: HIGH for completed file reads; MEDIUM for cross-module conclusions; no runtime test/build/device verification claim.
+Open questions: exhaustive inventory/line counts; live DB drift; full consumer matrices; exact CI run results; physical-device behavior; script canonicality/deprecation policy.
 
 ## BATCH-0001 — baseline
 Status: COMPLETE
-Result: Project Brain initialized on isolated audit branch; Auth source and baseline manifests/AppModule read completely.
 
 ## BATCH-0002 — Core
 Status: COMPLETE
-Result: identified current-main Core files across Auth, Users, Profile, Preferences, Onboarding, Settings, Context Engine, Device Intelligence and User Intelligence read completely.
 
 ## BATCH-0003 — Database schema/migration baseline
-Status: COMPLETE
-Scope: `apps/backend/prisma/schema.prisma` completely; all 39 migration SQL files; migration lock identified.
-Result: final Prisma schema contains 32 models; migration evolution documented. Runtime anomalies remain open.
+Status: COMPLETE — `schema.prisma` + all 39 migrations + lock read.
 
-## BATCH-0004A/B/C/D — Brain
-Status: COMPLETE — FILE-READ SCOPE
-Result: Assistant + Personal Brain + Brain Integration + Conversation Engine + Decision Engine + Adaptive Learning + Goal Intelligence + Memory Intelligence enumerated source/test scopes were read and documented. This is not runtime verification.
+## BATCH-0004 — Brain
+Status: COMPLETE — FILE-READ SCOPE.
 
 ## BATCH-0005 — Food / Recipe / Nutrition / Shopping / Price
-Status: COMPLETE — ENUMERATED FILE-READ SCOPE
-Result: Food/Recipe/Nutrition/Meals/Recommendation/Budget plus Shopping/Inventory/Shopping Intelligence and substantial Price Intelligence scopes read and documented. Outstanding runtime/schema/consumer reconciliation remains open.
+Status: COMPLETE — ENUMERATED FILE-READ SCOPE.
 
 ## BATCH-0006 — Life / Health
-Status: COMPLETE — ENUMERATED FILE-READ SCOPE
-Result: Calendar, Daily, Goals, Habits, Life Execution, LifeTasks, Reminders, Notifications, Supplements and active/legacy Health surfaces were read and documented.
+Status: COMPLETE — ENUMERATED FILE-READ SCOPE.
 
 ## BATCH-0007 — Fitness
-Status: COMPLETE — ENUMERATED FILE-READ SCOPE
-Result: Fitness profile, Workout, Calisthenics, Gym, Yoga and related Personal Brain fitness consumers were read and documented.
+Status: COMPLETE — ENUMERATED FILE-READ SCOPE.
 
 ## BATCH-0008 — Platform / Tests / CI
-Status: COMPLETE — ENUMERATED FILE-READ SCOPE
-Result: backend/mobile package manifests; bootstrap/runtime validation setup; E2E config/setup/specs; workflow files identified under `.github/workflows`; target-commit workflow-run query. No runtime test/build execution claimed.
+Status: COMPLETE — ENUMERATED FILE-READ SCOPE; runtime unverified.
 
 ## BATCH-0009 — Mobile main route/client/native scope
-Status: COMPLETE — ENUMERATED FILE-READ SCOPE
-Result: primary `app/` routes, core API/domain clients, selected specs, and mobile/native manifest scope were read. Remaining source inventory continued in later batches.
+Status: COMPLETE — ENUMERATED FILE-READ SCOPE.
 
 ## BATCH-0010 — Mobile components / motion / scripts
-Status: COMPLETE — FILE-READ SCOPE
-Scope: all source files under `apps/mobile/components/` (7 files), `apps/mobile/lib/motion.tsx`, `apps/mobile/scripts/prepare-khadijah-tts-model.cjs`, `apps/mobile/scripts/start-lan.cjs`.
-Result: duplicate animation wrapper surface and TTS asset-integrity gap documented. No production code changes made.
+Status: COMPLETE — FILE-READ SCOPE.
 
 ## BATCH-0011 — Mobile residual library contracts
-Status: COMPLETE — FILE-READ SCOPE
-Scope: `apps/mobile/lib/design-system.ts`, `motion-components.tsx`, `branding.ts`, `branding.spec.ts`, `notifications/notification-contract.ts`, `notifications/notification-contract.spec.ts`; relevant consumer searches also performed.
-Result: these contracts are active in multiple screens/tests; notification contract has direct parser tests; `design-system`/`motion-components` are not orphaned. No new standalone correctness issue was promoted beyond existing documented reconciliation/design concerns.
-Findings cross-referenced: PB-183..PB-185 plus existing mobile localization/branding/API-contract issues.
+Status: COMPLETE — FILE-READ SCOPE.
 
 ## BATCH-0012 — Backend route/API inventory and consumer reconciliation
 Status: IN_PROGRESS
-Scope read this checkpoint: backend root startup/config/database/i18n/images; Auth controller/service/token/session; Foods, Meals, Inventory, Shopping, Daily, Habits, Calendar, Nutrition, Dashboard, Daily Command Center, Device Intelligence, Budget Intelligence, Price Intelligence controllers; Recommendation Intelligence module/controller/services/DTO; Brain Integration module/controller/services; Memory Intelligence module wiring; Goal Intelligence wiring checks; AppModule.
-Findings/corrections cross-referenced: PB-161..PB-173 are confirmed in current target snapshot; Brain Integration was checked and found transitively wired through PersonalBrain, so no new orphan finding was created. Common config/image review produced no additional confirmed standalone issue in this checkpoint.
-Unresolved: remaining controller inventory, route-to-service/DTO/error/test mapping, complete mobile API consumer mapping, final route deduplication, global security/runtime reconciliation.
-Next deterministic scope: remaining active controller files and their service/DTO/test/mobile consumers, then update `05_API_CATALOG.md`, `FILE_REVIEW_INDEX.md`, `REVIEW_GAPS.md`, and relevant architecture/deep-read docs before closing BATCH-0012.
+Scope completed so far: backend root startup/config/database/i18n/images; Auth controller/service/token/session; broad active controller inventory across Core, Brain, Food/Commerce, Life/Health, Fitness, Dashboard and Intelligence; AppModule wiring checks; selected Mobile route/consumer searches.
+Findings added/reconciled: PB-186 (Mobile `getBrainContext()` targets unexposed `/brain-integration/context`; no observed screen consumer), PB-187 (persisted refresh session expires in hard-coded 30 days while JWT expiry is configurable).
+Unresolved: full route DTO/output/error/test/mobile-consumer mapping; final duplicate controller reconciliation; runtime HTTP validation.
+
+## BATCH-0013 — Backend operational scripts
+Status: IN_PROGRESS
+Start scope: `apps/backend/scripts/` directory inventory plus exact reads of `recipe-content-import.mjs`, `recipe-image-import.mjs`, `recipe-image-dataset-import-v2.mjs`, `recipe-image-import-all-safe.mjs`, `recipe-country-intelligence-final.mjs`, and backend package script wiring.
+Findings added: PB-188 (recipe-content importer calls Prisma delegates absent from final Prisma schema), PB-189 (dataset image importer `RECIPE_IMAGE_RESET=1` has destructive global delete behavior), PB-190 (country-intelligence `LIMIT` mode performs unscoped global cleanup before limited reprocessing).
+Unresolved: remaining operational scripts, versioned duplicates, import lineage, exact canonical/deprecated status, execution validation.
+Next deterministic work: continue BATCH-0013 from the full `apps/backend/scripts/` inventory, prioritize scripts wired by `apps/backend/package.json`, then versioned/legacy scripts and any direct DB/storage/external-download code; update script/deep-read/data-flow docs and final consistency records after coverage closure.
