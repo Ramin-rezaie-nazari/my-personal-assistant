@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-233
+## Findings PB-156 through PB-234
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -362,6 +362,11 @@ Evidence: the active global `ValidationPipe` is configured with `whitelist: true
 Status: OPEN — API/RUNTIME HIGH
 Locations: `apps/backend/src/modules/goals/controllers/goals.controller.ts`, `apps/backend/src/modules/goals/dto/create-goal.dto.ts`, `update-goal.dto.ts`, `checkin-goal.dto.ts`, `apps/backend/src/bootstrap.ts`.
 Evidence: `GoalsController` uses `@Body() CreateGoalDto`, `UpdateGoalDto`, and `CheckinGoalDto` for the active `POST /goals`, `PATCH /goals/:id`, and `POST /goals/:id/checkin` endpoints. All three DTO classes are plain TypeScript property declarations and contain no `class-validator` decorators. The global `ValidationPipe` enables `whitelist: true` and `forbidNonWhitelisted: true`, so ordinary request properties are not represented as allowed validation metadata and are expected to be rejected before reaching `GoalsService`. Impact: the primary Goals create/update/check-in write paths are effectively blocked by the project's own runtime validation policy until the DTOs are decorated/validated or the global policy is intentionally changed. This is grouped separately from PB-232 because the affected active domain and contracts are distinct.
+
+### PB-234 — Active Calendar write endpoints have the same global ValidationPipe contract collision
+Status: OPEN — API/RUNTIME HIGH
+Locations: `apps/backend/src/modules/calendar/controllers/calendar.controller.ts`, `apps/backend/src/modules/calendar/dto/create-calendar-event.dto.ts`, `apps/backend/src/bootstrap.ts`.
+Evidence: `CalendarController.createEvent()` binds `@Body() dto: CreateCalendarEventDto`, and the active `PATCH /calendar/:id` binds an inline body type directly. `CreateCalendarEventDto` contains only plain `title`, `type`, `startsAt`, and optional `endsAt` property declarations without `class-validator` metadata; the update body has no class DTO/validation metadata at all. The global `ValidationPipe` uses `whitelist: true` and `forbidNonWhitelisted: true`. Therefore normal calendar create/update body fields are expected to be rejected as non-whitelisted before the service receives them. Impact: active Calendar create/update routes are likely unusable under the project's own validation configuration until both write contracts are represented by validated DTOs (or the global policy is intentionally changed). Runtime HTTP execution is unverified in this session, so the finding is source-level with strong framework-contract evidence.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
