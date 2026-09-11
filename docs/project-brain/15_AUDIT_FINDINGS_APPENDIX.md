@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, continued operational-script/legacy-variant review including recipe image reprocessors, food entity resolvers, recipe intelligence classify/profile/nutrition/score, relevant recipe migrations, local recipe-image pipeline variants, backend common/config/database/i18n/image boundary, historical high-value PR/branch reconciliation, continued Mobile domain-client review, CI/release/onboarding contract review, and session-lifecycle persistence review.
+Scope actually read: selected LifeTasks, Recommendation Intelligence, Goal Intelligence, Content, Dashboard/Daily Command Center, Auth/JWT, Mobile notification/voice/native/test/runtime, Mobile components/motion/scripts, backend route/controller inventory, selected backend↔mobile consumers, initial BATCH-0013 operational recipe import scripts, active country-intelligence script, continued operational-script/legacy-variant review including recipe image reprocessors, food entity resolvers, recipe intelligence classify/profile/nutrition/score, relevant recipe migrations, local recipe-image pipeline variants, backend common/config/bootstrap/database/i18n/image boundary, historical high-value PR/branch reconciliation, continued Mobile domain-client review, CI/release/onboarding contract review, and session-lifecycle persistence review; Brain history/retention and account erasure surface review.
 Scope not yet read: remaining repository-wide source/tests/consumers, full matrices, exhaustive operational scripts, runtime execution, complete security/privacy reconciliation.
 Evidence roots: corresponding source paths under `apps/backend/src/modules/`, `apps/backend/prisma/`, `apps/backend/scripts/`, `apps/backend/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
 Confidence: HIGH for source-level findings below unless explicitly marked validation-needed.
@@ -75,9 +75,10 @@ Location: `apps/backend/src/modules/daily-command-center/daily-command-center.se
 Status: OPEN — SECURITY HIGH
 Location: `apps/backend/src/modules/device-intelligence/controllers/device-intelligence.controller.ts`.
 
-### PB-171 — Active FitnessController reads req.user.sub although JWT strategy exposes User.id
+### PB-171 — Active authenticated controllers read req.user.sub although JWT strategy exposes User.id
 Status: OPEN — AUTH/SECURITY HIGH
-Locations: `auth/strategies/jwt.strategy.ts`, active `fitness/controllers/fitness.controller.ts`.
+Locations: `apps/backend/src/modules/auth/strategies/jwt.strategy.ts`, active consumers including `apps/backend/src/modules/fitness/controllers/fitness.controller.ts` and `apps/backend/src/modules/users/users.controller.ts`.
+Evidence: `JwtStrategy.validate()` returns `UsersService.findById(payload.sub)`, i.e. the loaded User object; the affected controllers type/read `req.user.sub`. Impact: authenticated identity extraction is inconsistent across the active request contract and can yield undefined user IDs in those controllers until the strategy/request typing is unified. Exact runtime manifestation remains unvalidated because the repo could not be executed locally in this session.
 
 ### PB-172 — Refresh-token rotation leaves old refresh session valid after successful refresh
 Status: OPEN — SECURITY HIGH
@@ -191,7 +192,7 @@ Evidence: `existingRows()` fetches all hero-image rows ordered by `recipe_id.asc
 
 ### PB-197 — Image importer family uses conflicting `image_type`/storage contracts across executable variants
 Status: OPEN — OPERATIONAL/ARCHITECTURE DRIFT
-Locations: `apps/backend/scripts/recipe-image-import.mjs`, `apps/backend/scripts/recipe-image-import-all.mjs`, `apps/backend/scripts/recipe-image-import-all-safe.mjs`, `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `apps/backend/package.json`.
+Locations: `apps/backend/scripts/recipe-image-import.mjs`, `recipe-image-import-all.mjs`, `recipe-image-import-all-safe.mjs`, `recipe-image-dataset-import-v2.mjs`, `apps/backend/package.json`.
 Evidence: the wired `recipe-images:import` script uses `image_type='primary'` and storage key `recipes/<recipeId>/primary.webp`; the wired dataset importer uses `image_type='hero'` and `recipes/<recipeId>/hero.webp`; legacy `recipe-image-import-all.mjs` also writes `primary`, while `recipe-image-import-all-safe.mjs` writes `hero`. They also use materially different candidate matching and pass semantics. Impact: manually running a different executable importer can create a second image contract for the same recipe and leave both primary/hero records, making downstream selection ambiguous. This is not yet shown to cause a live user failure because runtime DB state was not executed/inspected in this session.
 
 ### PB-198 — Final food-intelligence self-test exists but is not package/CI-wired in the inspected operational scripts
@@ -230,7 +231,7 @@ Evidence: both scripts define `globalCultureFit()` to match user `preferred_coun
 
 ### PB-205 — Mobile domain API clients bypass canonical 401 refresh/retry policy
 Status: OPEN — API CONTRACT HIGH
-Locations: `apps/mobile/lib/recipe-api.ts`, `apps/mobile/lib/shopping-api.ts`, `apps/mobile/lib/shopping-basket-api.ts`, `apps/mobile/lib/inventory-api.ts`, `apps/mobile/lib/assistant-api.ts`; comparison baseline `apps/mobile/lib/api.ts`, `apps/mobile/lib/calendar-api.ts`, `apps/mobile/lib/price-api.ts`, and `apps/mobile/lib/brain-execution.ts`.
+Locations: `apps/mobile/lib/recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `inventory-api.ts`, `assistant-api.ts`; comparison baseline `apps/mobile/lib/api.ts`, `calendar-api.ts`, `price-api.ts`, and `brain-execution.ts`.
 Evidence: the affected domain clients obtain the stored access token and issue their own `fetch()`/request helpers without a 401→refresh→retry path, while central/baseline clients implement refresh/retry behavior explicitly. Impact: after access-token expiry, recipe, shopping, inventory, or assistant actions can fail while other domain surfaces transparently recover, producing inconsistent session behavior. Root cause: multiple domain clients duplicated transport/auth logic instead of using one canonical request interceptor.
 
 ### PB-206 — Recipe content release workflow calls undefined backend package scripts
@@ -257,6 +258,11 @@ Evidence: `findByRefreshToken(refreshToken)` queries `Session` with `where: { re
 Status: OPEN — SECURITY/PRIVACY HIGH
 Locations: `apps/backend/src/modules/personal-brain/services/decision-history-retention.service.ts`, `apps/backend/src/modules/assistant/services/conversation-history.service.ts`, and the related Brain architecture documentation.
 Evidence: `DecisionHistoryRetentionService` stores per-user policies in an in-memory `Map<string, HistoryRetentionPolicy>` and exposes only policy lookup, cutoff calculation, and `isExpired()` evaluation. Repository search found no production consumer of `setPolicy()` beyond the service test, and the persisted `ConversationHistoryService` provides explicit `deleteAll()`/`deleteSince()` methods but does not consult the retention service. The architecture documentation itself describes the retention service as a conceptual policy layer and states that durable retention deletion still needs explicit database cleanup wiring. Impact: a configured retention policy is lost on process restart and, more importantly, there is no observed production path that automatically deletes persisted conversation history when the policy expires. This weakens the project's privacy/retention contract for long-lived Brain history. No cleanup job execution was observed during the audit.
+
+### PB-211 — No authenticated user-account erasure orchestration is exposed
+Status: OPEN — SECURITY/PRIVACY HIGH
+Locations: `apps/backend/src/modules/users/users.controller.ts`, `apps/backend/src/modules/users/users.service.ts`, and the persisted user-data model set.
+Evidence: the active `UsersController` exposes only `GET /users/me` and `PATCH /users/me`, both behind `JwtAuthGuard`; there is no delete-account route. `UsersService` provides lookup/profile update/create methods only and no account-erasure method. Repository search for account deletion/erasure did not identify a user-facing deletion orchestration. Impact: there is no observed authenticated application path that can atomically or systematically erase a user's account and associated persisted personal data. This is distinct from PB-210: PB-210 is automatic history retention enforcement, while PB-211 is the absence of an end-user erasure workflow.
 
 ## Reconciliation note
 Preserve oldest canonical IDs when the same root cause already exists elsewhere. Correction-only IDs remain NOT_APPLICABLE/COVERED_BY notes and must not be double-counted.
