@@ -2,7 +2,7 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline; Core; Prisma schema + all 39 migrations; Assistant; complete Brain file-level scope; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence; substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and related Personal Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile route/client scope; selected Content, Dashboard, Daily Command Center and JWT/Users cross-contract files.
+Scope actually read: baseline; Core; Prisma schema + all 39 migrations; Assistant; complete Brain file-level scope; Food/Recipe/Nutrition/Meals/Recommendation/Budget; Shopping/Inventory/Shopping Intelligence; substantial Price Intelligence; Life/Health enumerated modules; Fitness/Workout/Calisthenics/Gym/Yoga and Personal Brain fitness consumers; Platform/Test/CI enumerated manifests/E2E/workflows; substantial Mobile route/client/component scope; selected Content, Dashboard, Daily Command Center and Auth/JWT cross-contract files.
 Scope not yet read: remaining Fitness-adjacent source; remaining Mobile route/component/library files; exhaustive platform/common/test inventory; repository-wide route/consumer/database matrices; runtime/device validation; full security/privacy closure; historical docs/branches.
 Evidence roots: `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`.
 Confidence level: HIGH for exact issues below; MEDIUM for cross-module impact until all consumers/runtime are reconciled.
@@ -44,7 +44,7 @@ Locations: `personal-brain/services/notification-channel-intelligence.service.ts
 
 ### PB-009 — Notification dedupe is process-local and approved decisions are not marked sent in observed controller path
 Status: OPEN
-Locations: `notification-deduplication.service.ts`, `personal-brain/controllers/personal-brain.controller.ts`.
+Locations: `notification-deduplication.service.ts`, Personal Brain notification/delivery controller paths.
 
 ### PB-010 — Device disable endpoint lacks ownership check
 Status: OPEN — SECURITY HIGH
@@ -300,124 +300,99 @@ Location: `price-intelligence/services/automatic-price-scheduler.service.ts`.
 
 ### PB-073 — Goals use raw SQL tables outside final Prisma model contract
 Status: OPEN — DATA/SCHEMA HIGH
-Locations: `apps/backend/src/modules/goals/services/goals.service.ts`, tables `Goal` and `GoalCheckin`, final `apps/backend/prisma/schema.prisma`.
-Problem: goal create/find/update/checkin/delete all use raw SQL; Goal/GoalCheckin are not represented as final Prisma models in the audited schema.
-Impact: goal domain changes are invisible to the Prisma model graph and can drift from migrations, generated client and other services.
+Locations: GoalsService, `Goal`/`GoalCheckin`, final `schema.prisma`.
 
 ### PB-074 — Goal check-in dateKey uses UTC without user timezone
 Status: OPEN — TIMEZONE HIGH
-Location: `apps/backend/src/modules/goals/services/goals.service.ts` `checkin()`.
-Problem: absent dateKey defaults to `new Date().toISOString().slice(0,10)`.
-Impact: a late-night local check-in can be attached to the wrong calendar day.
+Location: GoalsService `checkin()`.
 
 ### PB-075 — Goal DTOs have no runtime validation decorators
 Status: OPEN
-Locations: `apps/backend/src/modules/goals/dto/create-goal.dto.ts`, `update-goal.dto.ts`, `checkin-goal.dto.ts`.
-Impact: intended priority/progress/date constraints are enforced only after controller binding reaches GoalsService.
+Locations: Goals create/update/checkin DTOs.
 
 ### PB-076 — Habit today/streak/weekly window is UTC-based rather than user-local
 Status: OPEN — TIMEZONE HIGH
-Location: `apps/backend/src/modules/habits/services/habits.service.ts` `todayKey()`, `stats()`, `getWeeklySummary()`.
-Impact: habit completion and streaks can fall on the wrong user-local day around midnight.
+Location: HabitsService date/streak/weekly helpers.
 
 ### PB-077 — Habit DTOs have no validation decorators
 Status: OPEN
-Location: `apps/backend/src/modules/habits/dto/habit.dto.ts`.
-Impact: string/enum/range guarantees rely on service logic rather than API validation.
+Location: `habits/dto/habit.dto.ts`.
 
 ### PB-078 — Habit weekly summary possible-count semantics are simplistic
 Status: OPEN / DESIGN REVIEW
-Location: `apps/backend/src/modules/habits/services/habits.service.ts` `getWeeklySummary()`.
-Problem: possible completions are computed as `sum(min(targetPerWeek,7))` without considering frequency-specific scheduling or whether a habit started/paused mid-window.
-Impact: completionPercent can misrepresent adherence for weekly habits or lifecycle-bound habits.
+Location: HabitsService `getWeeklySummary()`.
 
 ### PB-079 — Calendar update endpoint uses inline unvalidated patch body and time update has explicit UTC semantics
 Status: OPEN
-Locations: `calendar/controllers/calendar.controller.ts`, `calendar/services/calendar.service.ts`.
-Problem: update body has no DTO; `updateEventTime()` calls `setUTCHours()` without an explicit user timezone contract.
-Impact: time-only reschedules may shift the intended local time/day.
+Locations: CalendarController/Service.
 
 ### PB-080 — Daily Update DTO allows arbitrary numeric values without non-negative/range constraints
 Status: OPEN
 Location: `daily/dto/update-daily.dto.ts`.
-Problem: @IsNumber is present but no Min/finite constraint is defined, while `DailyService.updateDailyLog()` directly upserts values.
-Impact: negative/NaN/infinite/implausible calories/protein/water values can reach DailyLog depending on validation-pipe configuration.
 
 ### PB-081 — AddWaterDto has no validation decorators
 Status: OPEN
 Location: `daily/dto/add-water.dto.ts`.
-Impact: service validates range, but API contract does not express the required positive finite amount.
 
 ### PB-082 — Smart notification workout query has no end-of-day upper bound
 Status: OPEN — TIME/LOGIC HIGH
-Location: `apps/backend/src/modules/notifications/services/smart-notification.service.ts`, workout `findMany` query used for the daily rule.
-Problem: the filter applies only `performedAt >= <dateKey>T00:00:00.000Z` and does not apply `performedAt < <nextDateKey>T00:00:00.000Z`.
-Impact: future workouts can count as today's activity and alter notification decisions.
+Location: `notifications/services/smart-notification.service.ts`.
 
 ### PB-083 — Supplements contain conflicting duplicate CreateSupplementDto definitions
 Status: OPEN — API CONTRACT
-Locations: `apps/backend/src/modules/supplements/dto/create-supplement.dto.ts`, `supplement.dto.ts`, controller, service.
-Problem: the standalone DTO and active DTO define different required/optional fields; active controller/service use the latter and the standalone type has no observed consumer.
-Impact: duplicate contract can mislead refactors and silently drift API expectations.
+Locations: Supplements DTOs/controller/service.
 
 ### PB-084 — Life Execution dependency/event SQL uses legacy table contracts
 Status: OPEN — DATA/SCHEMA HIGH
-Location: `apps/backend/src/modules/life-execution/services/life-execution.service.ts`.
-Problem: dependency/event paths use legacy `TaskDependency`/`TaskEvent` while newer `LifeTaskDependency`/`LifeTaskEvent` structures also exist.
-Impact: runtime lifecycle data can diverge from newer schema contracts.
+Location: `life-execution/services/life-execution.service.ts`.
 
 ### PB-085 — Life Execution DTOs lack runtime validation decorators
 Status: OPEN — API CONTRACT
-Location: `apps/backend/src/modules/life-execution/dto/task.dto.ts`.
-Impact: malformed priorities, statuses, dates, dependency identifiers or state payloads can enter the service layer unless separately rejected.
+Location: `life-execution/dto/task.dto.ts`.
 
 ### PB-086 — Life Execution core service has no direct service spec in inspected tree
 Status: OPEN — TEST GAP
-Location: `apps/backend/src/modules/life-execution/services/life-execution.service.ts`; expected `life-execution.service.spec.ts` lookup returned 404.
-Impact: central raw-SQL task/dependency/event behavior has no direct unit-level regression safety in inspected scope.
+Location: `life-execution/services/life-execution.service.ts`.
 
 ### PB-087 — Health module contains a duplicate legacy root controller/service/test surface
 Status: OPEN — ARCHITECTURE/CONTRACT
-Locations: root `health.controller.ts`, `health.service.ts`, their specs versus active `health/controllers/*` and `health/services/*`.
-Problem: module wiring uses nested implementation while root pair expose separate simple health surface and tests cover legacy pair.
+Locations: root Health controller/service/specs versus active nested Health controllers/services.
 
 ### PB-088 — Active Health profile DTOs do not enforce domain ranges or enumerated values
 Status: OPEN — DATA INTEGRITY
-Locations: active Health update DTOs/services.
-Problem: broad type validators exist but no full range/enum constraints are enforced before direct upsert.
+Locations: active Health DTOs/services.
 
 ### PB-089 — Fitness controller write bodies lack DTO/runtime validation
 Status: OPEN — API CONTRACT
-Location: `apps/backend/src/modules/fitness/controllers/fitness.controller.ts`.
+Location: `fitness/controllers/fitness.controller.ts`.
 
 ### PB-090 — Active persistent and inactive in-memory FitnessProfileService implementations coexist and direct tests cover the inactive implementation
 Status: OPEN — ARCHITECTURE/TEST INTEGRITY
-Locations: `fitness.module.ts`, `fitness-profile-persistence.service.ts`, `fitness-profile.service.ts`, `fitness-profile.service.spec.ts`.
-Problem: Nest binds the token to persistence with `useExisting`, while the direct spec tests the in-memory implementation.
+Locations: Fitness module/persistence/service/spec.
 
-### PB-091 — Fitness profile normalization validates broad shape but not semantic ranges/enums
+### PB-091 — Fitness profile normalization lacks semantic ranges/enums
 Status: OPEN — DATA INTEGRITY
 Location: `fitness-profile-persistence.service.ts` `normalize()`.
 
 ### PB-092 — Active/inactive Fitness natural-goal parsing diverges
 Status: OPEN — CONTRACT DRIFT
-Locations: both `FitnessProfileService` and `FitnessProfilePersistenceService` `parseNaturalGoal()`.
+Locations: both Fitness profile implementations.
 
 ### PB-093 — Workout patch/create contract lacks dedicated validated DTO and explicit invalid-date/empty-text rejection
 Status: OPEN — API CONTRACT/DATA INTEGRITY
-Locations: Workout controller/DTO/service.
+Locations: Workout controller/service/DTO.
 
 ### PB-094 — Workout weekly summary uses UTC calendar boundaries without explicit user-local conversion
 Status: OPEN — TIMEZONE
-Location: `workout/services/workout.service.ts` weekly/date helpers.
+Location: `workout/services/workout.service.ts`.
 
 ### PB-095 — Calisthenics session generator can exceed requested duration and has no input validation
 Status: OPEN — LOGIC
-Location: `calisthenics/services/calisthenics-session-generator.service.ts`.
+Location: `calisthenics-session-generator.service.ts`.
 
 ### PB-096 — Gym session generator silently clamps duration and uses coarse workload fitting
 Status: OPEN — LOGIC
-Location: `gym/services/gym-session-generator.service.ts`.
+Location: `gym-session-generator.service.ts`.
 
 ### PB-097 — Yoga controller inputs lack DTO/runtime validation
 Status: OPEN — API CONTRACT
@@ -425,39 +400,39 @@ Location: `yoga/controllers/yoga.controller.ts`.
 
 ### PB-098 — Yoga motion analysis ignores per-landmark confidence and treats missing landmarks as angle=180
 Status: OPEN — LOGIC/SAFETY
-Location: `yoga/services/yoga-motion-analysis.service.ts`.
+Location: `yoga-motion-analysis.service.ts`.
 
 ### PB-099 — Backend PoseProvider contract differs from Mobile PoseProvider contract
 Status: OPEN — CROSS-PLATFORM CONTRACT
-Locations: backend `yoga/models/pose-provider.model.ts`; Mobile pose pipeline/bridge contracts.
+Locations: backend PoseProvider model; Mobile pose pipeline/bridge.
 
 ### PB-100 — YogaCoachService consumes hold duration during enter phase, effectively skipping hold timing
 Status: OPEN — LOGIC HIGH
-Location: `apps/backend/src/modules/yoga/services/yoga-coach.service.ts` phase initialization/tick logic.
+Location: `yoga-coach.service.ts`.
 
 ### PB-101 — Fitness TrainingConstraint type is incompatible with FitnessDecisionPolicyService low-impact check
 Status: OPEN — LOGIC/TYPE CONTRACT HIGH
-Locations: `fitness/models/fitness.model.ts`, `personal-brain/services/fitness-decision-policy.service.ts`, its spec, `brain-life-context.service.ts`.
+Locations: Fitness model/policy/brain context.
 
 ### PB-102 — FitnessSessionOrchestrator ignores policy blockers/canDecide
 Status: OPEN — SAFETY/LOGIC HIGH
-Location: `personal-brain/services/fitness-session-orchestrator.service.ts` and spec.
+Location: `fitness-session-orchestrator.service.ts`.
 
 ### PB-103 — FitnessSkillUnlock ownTrend path can unlock advanced skills without enforcing missing prerequisites
 Status: OPEN — LOGIC
-Location: `personal-brain/services/fitness-skill-unlock.service.ts`.
+Location: `fitness-skill-unlock.service.ts`.
 
 ### PB-104 — Fitness natural-goal IDs generated from Date.now() are unstable/collision-prone
 Status: OPEN — DATA IDENTITY
-Location: `fitness/services/fitness-profile-persistence.service.ts` goal ID creation path.
+Location: `fitness-profile-persistence.service.ts`.
 
-### PB-106 — E2E DB preparation uses `prisma db push` and can mask migration-chain drift
+### PB-106 — E2E DB preparation uses prisma db push and can mask migration-chain drift
 Status: OPEN — TEST/SCHEMA HIGH
 Location: `apps/backend/test/prepare-e2e-db.cjs`.
 
 ### PB-107 — E2E unauthenticated/high-risk endpoint coverage is incomplete
 Status: OPEN — SECURITY TEST GAP
-Locations: `apps/backend/test/api.e2e-spec.ts`, `app.e2e-spec.ts`, and high-risk controllers.
+Locations: E2E API/app specs and high-risk controllers.
 
 ### PB-108 — Mobile typecheck-repair workflow can mutate source and push commits automatically
 Status: OPEN — GOVERNANCE/REPRODUCIBILITY
@@ -465,7 +440,7 @@ Location: `.github/workflows/mypa-mobile-typecheck-repair-once.yml`.
 
 ### PB-109 — Duplicate Android build workflows
 Status: OPEN — CI ARCHITECTURE
-Locations: `.github/workflows/android-build.yml`, `.github/workflows/android-apk.yml`.
+Locations: `.github/workflows/android-build.yml`, `android-apk.yml`.
 
 ### PB-110 — ESLint static safety rules are weakened by broad any/unsafe warnings
 Status: OPEN / DESIGN REVIEW
@@ -475,11 +450,9 @@ Location: `apps/backend/eslint.config.mjs`.
 Status: OPEN — DATA CONSISTENCY HIGH
 Location: `apps/mobile/app/onboarding.tsx`, `lib/onboarding.ts`.
 
-### PB-112 — Mobile Brain `execute-next` endpoint is not exposed by the audited backend controller set, while feedback route exists
+### PB-112 — Mobile Brain execute-next endpoint is not exposed by the audited backend controller set, while feedback route exists
 Status: OPEN — MOBILE/BACKEND CONTRACT HIGH
-Locations: `apps/mobile/lib/brain-execution.ts` (`POST /personal-brain/decision/execute-next` and `POST /personal-brain/decision/feedback`), `apps/backend/src/modules/personal-brain/controllers/personal-brain.controller.ts`, `apps/backend/src/modules/personal-brain/controllers/decision-feedback.controller.ts`.
-Problem: repository search confirms `POST /personal-brain/decision/feedback` exists in `decision-feedback.controller.ts`; the exact `POST /personal-brain/decision/execute-next` path is not exposed by the inspected Personal Brain controller set. `confirm` is exposed as `/personal-brain/decision/confirm`.
-Impact: the Mobile next-action execution call can fail with a route-not-found response until the contract is reconciled; PB-112 no longer treats `feedback` itself as missing.
+Locations: Mobile `lib/brain-execution.ts`; Personal Brain controllers.
 
 ### PB-113 — Brain Overview ignores app locale and hardcodes English UI
 Status: OPEN — LOCALIZATION
@@ -491,19 +464,19 @@ Location: `apps/mobile/lib/onboarding.ts`.
 
 ### PB-115 — Mobile localization and RTL handling are partial/inconsistent
 Status: OPEN — UX/LOCALIZATION
-Locations: `apps/mobile/lib/i18n.ts`, `app/language.tsx`, most screen files.
+Locations: Mobile i18n/language/screens.
 
 ### PB-116 — Daily screen generates smart notifications as a read-screen side effect
 Status: OPEN — BEHAVIOR
-Location: `apps/mobile/app/daily.tsx` loader path.
+Location: `apps/mobile/app/daily.tsx` loader.
 
-### PB-117 — Mobile Meal Builder derives dateKey in UTC and can assign meals to the wrong local day
+### PB-117 — Mobile Meal Builder derives dateKey in UTC and can assign meals to wrong local day
 Status: OPEN — TIMEZONE/DATA
-Location: `apps/mobile/app/meal-builder.tsx` save path.
+Location: `apps/mobile/app/meal-builder.tsx`.
 
 ### PB-119 — Mobile Supplements mutations have no visible error handling or recovery state
 Status: OPEN — UX/ROBUSTNESS
-Location: `apps/mobile/app/supplements.tsx` add/take/delete.
+Location: `apps/mobile/app/supplements.tsx`.
 
 ### PB-120 — Mobile Yoga camera mode is unconfigured and feeds no pose frames to analysis
 Status: OPEN — FEATURE GAP HIGH
@@ -515,23 +488,23 @@ Location: `apps/mobile/app/reminders.tsx` `openEdit()`.
 
 ### PB-122 — No Mobile offline cache or mutation queue found
 Status: OPEN / ROADMAP GAP
-Locations: Mobile API clients/screens; no `NetInfo` usage found.
+Locations: Mobile API/runtime.
 
 ### PB-123 — Duplicate EAS Android preview workflows
 Status: OPEN — CI ARCHITECTURE
-Locations: `.github/workflows/eas-android.yml`, `.github/workflows/eas-preview.yml`.
+Locations: `.github/workflows/eas-android.yml`, `eas-preview.yml`.
 
 ### PB-124 — Command Center quick commands use hard-coded amounts/times independent of context
 Status: OPEN / DESIGN REVIEW
-Location: `apps/mobile/lib/command-actions.ts`, invoked by `command-center-v2.tsx`.
+Location: `apps/mobile/lib/command-actions.ts`.
 
 ### PB-125 — Mobile automated test coverage is limited and lacks screen/integration E2E setup
 Status: OPEN — TEST GAP
-Locations: `apps/mobile/package.json`; inspected Mobile tests.
+Locations: Mobile package/tests.
 
 ### PB-126 — Mobile domain API clients duplicate authentication/request implementations
 Status: OPEN — ARCHITECTURE/ROBUSTNESS
-Locations: `apps/mobile/lib/api.ts`, `assistant-api.ts`, `calendar-api.ts`, `inventory-api.ts`, `recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `price-api.ts`.
+Locations: multiple Mobile API clients.
 
 ### PB-127 — Expo Router typedRoutes is disabled
 Status: OPEN — STATIC SAFETY
@@ -540,96 +513,99 @@ Location: `apps/mobile/app.json`.
 ### PB-128 — Local Persian TTS imports undeclared runtime dependencies
 Status: OPEN — BUILD/DEPENDENCY
 Locations: `apps/mobile/lib/local-persian-tts.ts`, `apps/mobile/package.json`.
-Problem: TTS imports `expo-av`, `expo-file-system/legacy`, and `react-native-sherpa-onnx`, but the Mobile manifest does not declare these packages; root `package.json` has no dependency set to satisfy them.
-Impact: typecheck/build/install behavior can fail depending on workspace resolution and the feature cannot be treated as a reproducibly declared dependency graph.
+Problem: imports `expo-av`, `expo-file-system/legacy`, `react-native-sherpa-onnx`, none declared in Mobile manifest.
 
 ### PB-129 — Local Persian TTS model download lacks cryptographic integrity verification
 Status: OPEN — SUPPLY CHAIN
-Location: `apps/mobile/lib/local-persian-tts.ts` model download/extraction path.
-Problem: model archive is downloaded from an external GitHub release URL and only checked for existence/size/expected files; no hash/signature verification is performed.
-Impact: an altered artifact could be accepted as the expected model.
+Location: `apps/mobile/lib/local-persian-tts.ts`.
 
 ### PB-130 — Push-token refresh listener can reuse an expired access token
 Status: OPEN — AUTH/ROBUSTNESS
-Location: `apps/mobile/lib/notifications/push-registration.ts` `listenForPushTokenRefresh()`.
-Problem: listener captures `options.accessToken` and later calls registration with that token without invoking the shared refresh flow.
-Impact: token refresh events after access-token expiry can fail registration even when a refresh token/session is still valid.
+Location: `apps/mobile/lib/notifications/push-registration.ts`.
 
-### PB-131 — Mobile API default `localhost:3000` is incompatible with physical-device access when no environment override is supplied
+### PB-131 — Mobile API default localhost:3000 is incompatible with physical-device access without env override
 Status: OPEN — DEVICE/RUNTIME
-Locations: Mobile API clients including `apps/mobile/lib/api.ts` and domain clients; `apps/mobile/.env.example`.
-Problem: runtime clients default to `http://localhost:3000`, while the repository's physical-device example requires the computer's LAN IP.
-Impact: a physical phone with no EXPO_PUBLIC_API_URL override attempts to contact itself rather than the development backend.
+Locations: Mobile API clients; `.env.example`.
 
 ### PB-132 — MYPA branch-validation Mobile gate checks only typecheck and omits normal Mobile CI checks
 Status: OPEN — CI COVERAGE
-Location: `.github/workflows/mypa-branch-validation.yml` versus `.github/workflows/mobile-ci.yml`.
-Problem: branch validation runs only `pnpm typecheck` for Mobile, while normal Mobile CI also runs Expo config validation and Android JavaScript bundling.
-Impact: branch-validation can pass a Mobile change that fails later in normal CI/build packaging.
+Locations: `.github/workflows/mypa-branch-validation.yml`, `.github/workflows/mobile-ci.yml`.
 
 ### PB-133 — BrandMark SVG asset loading lacks observed SVG transformer/rendering configuration
 Status: OPEN — BUILD VALIDATION
-Location: `apps/mobile/components/BrandMark.tsx`, `apps/mobile/package.json`, `apps/mobile/app.json`.
-Problem: `BrandMark` loads `../assets/branding/logo-mark.svg` through React Native `Image`/`require()`, but no SVG transformer/config or dedicated SVG rendering dependency was observed in the inspected Mobile manifest/config.
-Impact: target Expo build is required to resolve whether the asset is bundled/rendered; not yet a confirmed runtime failure.
+Location: `apps/mobile/components/BrandMark.tsx` and Mobile config/manifest.
 
 ### PB-134 — Mobile auth tokens are stored in AsyncStorage rather than secure credential storage
 Status: OPEN — SECURITY HIGH
-Locations: `apps/mobile/lib/api.ts` token keys/setAuthSession, plus domain clients.
-Problem: access and refresh tokens are persisted through AsyncStorage, and no secure-storage dependency/equivalent native credential store was found in inspected Mobile manifest.
-Impact: long-lived bearer credentials have weaker at-rest protection than a platform secure credential store.
+Locations: `apps/mobile/lib/api.ts`, domain clients.
 
 ### PB-135 — ContentRecommendationService has no observed real consumer
 Status: OPEN — ARCHITECTURE
-Locations: `apps/backend/src/modules/content/content-recommendation.service.ts`, `content.module.ts`; repository-wide search found no observed external consumer.
-Problem: the service implements recipe/exercise ranking but search only resolves its own declaration and module provider/export.
-Impact: this recommendation logic can exist as an isolated duplicate system without affecting actual product recommendation flows.
+Location: `apps/backend/src/modules/content/content-recommendation.service.ts` and module export.
 
 ### PB-136 — Content catalog media/license contract is richer than TypeScript candidate types
 Status: OPEN — CONTRACT DRIFT
-Locations: `apps/backend/src/modules/content/content-catalog.schema.json`, `content.types.ts`.
-Problem: JSON Schema defines image/video objects requiring URL/source/license metadata, while `RecipeCandidate` and `ExerciseCandidate` TypeScript types omit those media fields.
-Impact: ingestion/runtime code can accept a richer catalog than downstream TypeScript contracts model, creating silent loss or unvalidated media/licensing data.
+Locations: `content-catalog.schema.json`, `content.types.ts`.
 
 ### PB-137 — Dashboard user-day and weekly boundaries default to UTC rather than user timezone
 Status: OPEN — TIMEZONE HIGH
-Location: `apps/backend/src/modules/dashboard/dashboard.service.ts` `normalizeDateKey()`, `getToday()`, `getOverview()`.
-Problem: absent dateKey defaults to `new Date().toISOString().slice(0,10)` and daily/weekly timestamps are constructed from UTC midnight.
-Impact: dashboard data can be assigned to the wrong local day/week around timezone boundaries.
+Location: `dashboard.service.ts`.
 
 ### PB-138 — Daily Command Center treats future workouts as today's workouts
 Status: OPEN — TIME/LOGIC HIGH
-Location: `apps/backend/src/modules/daily-command-center/daily-command-center.service.ts` workout `findMany` query.
-Problem: filter has `performedAt: { gte: todayStart }` but no `< tomorrowStart` bound.
-Impact: a workout scheduled/performed tomorrow or later can suppress the "add movement today" priority and increase `countToday` incorrectly. The direct spec does not cover this boundary.
+Location: `daily-command-center.service.ts` workout query.
 
 ### PB-139 — Device Intelligence health-data endpoint is public/unguarded
 Status: OPEN — SECURITY/MODEL HIGH
-Locations: `apps/backend/src/modules/device-intelligence/controllers/device-intelligence.controller.ts`, `device-intelligence.service.ts`, `apps/backend/src/app.module.ts`.
-Problem: `GET /device-intelligence` has no `JwtAuthGuard`, and AppModule has no global auth guard. The current service returns dummy data, but the endpoint contract is therefore public.
-Impact: replacing dummy data with actual device/health information without adding authorization would expose user-sensitive information.
+Locations: `device-intelligence.controller.ts`, service, `app.module.ts`.
 
-### PB-140 — JWT request-user shape mismatch causes `req.user.sub` usage against a Prisma User object
+### PB-140 — Active FitnessController uses req.user.sub although JwtStrategy exposes a Prisma User with id
 Status: OPEN — AUTH/SECURITY HIGH
-Locations: `apps/backend/src/modules/auth/strategies/jwt.strategy.ts`, `apps/backend/src/modules/users/users.service.ts`, `apps/backend/src/modules/users/users.controller.ts`, `apps/backend/src/modules/fitness/controllers/fitness.controller.ts`, `apps/backend/src/modules/users/users.controller` direct spec absent in inspected path.
-Problem: `JwtStrategy.validate(payload)` calls `UsersService.findById(payload.sub)` and returns the Prisma `User` object, whose persisted identity field is `id`. `AuthController /auth/me` also returns `req.user` directly. However `UsersController` and `FitnessController` type/access `req.user.sub` and pass it to user/profile services.
-Impact: those endpoints can receive `undefined` instead of the authenticated user ID, breaking `/users/me`, `/users/me` patch and Fitness profile/context/goal/equipment routes, with risk of invalid queries or failures. This is confirmed by source contract mismatch; runtime execution has not been performed.
+Locations: `auth/strategies/jwt.strategy.ts`, `users/users.service.ts`, active `fitness/controllers/fitness.controller.ts`.
+Problem: JWT validation returns a User object with `id`, while FitnessController accesses `req.user.sub`.
 
-### PB-141 — Content recommendation service lacks a direct automated test in inspected tree
+### PB-141 — ContentRecommendationService has no direct automated test in inspected tree
 Status: OPEN — TEST GAP
-Location: `apps/backend/src/modules/content/content-recommendation.service.ts`; repository search found no dedicated spec.
-Impact: ranking changes have no direct regression coverage in the inspected scope.
+Location: `content/content-recommendation.service.ts`.
 
 ### PB-142 — Dashboard and Daily Command Center boundary bugs lack future-activity regression tests
 Status: OPEN — TEST GAP
-Locations: `apps/backend/src/modules/dashboard/dashboard.service.spec.ts`, `apps/backend/src/modules/daily-command-center/daily-command-center.service.spec.ts`.
-Problem: both specs exercise normal aggregation/empty states but do not assert that activity outside the selected day is excluded.
-Impact: the already recorded timezone/boundary bugs can regress without direct unit-test detection.
+Locations: dashboard and daily-command-center specs.
+
+### PB-143 — Refresh-token rotation is not enforced; old refresh sessions remain valid after successful refresh
+Status: OPEN — SECURITY HIGH
+Locations: `auth.service.ts`, `services/session.service.ts`.
+Problem: refresh creates a new session but does not revoke/delete the old refresh session.
+
+### PB-144 — No application-level auth rate limiting/security middleware observed
+Status: OPEN / SECURITY DESIGN REVIEW
+Locations: `bootstrap.ts`, `main.ts`, backend package manifest.
+Caveat: external WAF/ingress may provide compensating controls.
+
+### PB-145 — Legacy root UsersController uses stale req.user.sub contract
+Status: OPEN — ARCHITECTURE/CONTRACT
+Locations: root `users.controller.ts` versus active nested controller, `users.module.ts`.
+
+### PB-146 — Authentication/session service has no direct spec found at expected service test path
+Status: OPEN — TEST GAP
+Locations: `auth.service.ts`, `services/session.service.ts`.
+
+### PB-147 — Mobile Price History hardcodes تومان and ignores snapshot currency
+Status: OPEN — DATA/UX HIGH
+Location: `apps/mobile/app/price-history.tsx` `money()` helper and all calls rendering current/history/stat prices.
+Problem: `PriceSnapshot` from `apps/mobile/lib/price-api.ts` explicitly carries `currency`, but `price-history.tsx` formats every amount as Persian تومان without reading currency. The same formatter is used for analysis values and per-store history.
+Impact: if a snapshot is not in IRR-equivalent units, the displayed monetary unit is false; users can misread magnitude/value. This is a frontend manifestation of the broader Price Intelligence currency-contract problem (PB-058/PB-059).
+
+### PB-148 — Mobile Price History chart legend forces a fabricated zero minimum
+Status: OPEN — UI/DATA PRESENTATION
+Location: `apps/mobile/app/price-history.tsx` `const min=Math.min(...history.map(x=>x.amount),0)` and chart legend.
+Problem: adding `0` to `Math.min()` makes the displayed minimum 0 whenever all observed prices are positive; the chart legend therefore claims a zero price that was never observed. The computed range/point positions are also scaled against this artificial zero.
+Impact: price-range visualization and trend shape can be misleading, especially when the observed price range is narrow relative to zero.
 
 ## Next deterministic work
 
-1. Finish remaining Mobile route/component/library inventory and exhaustive backend-to-mobile consumer/route reconciliation.
-2. Finish remaining Fitness-adjacent and Platform/common/test source inventory; reconcile all required Project Brain support matrices and review gaps.
-3. Complete full repository-wide route/API, database reader/writer/transaction, security/privacy and historical reconciliation.
+1. Finish remaining Mobile route/component/library/native inventory and exhaustive backend-to-mobile consumer/route reconciliation.
+2. Finish remaining Fitness-adjacent and Platform/common/test source inventory; reconcile support matrices and review gaps.
+3. Complete repository-wide route/API, database reader/writer/transaction, security/privacy and historical reconciliation.
 4. Record actual runtime/test/build/device execution only when executed; otherwise keep statuses as file-read or blocked.
 5. Only after Master Prompt closure begin the separate correction phase using this issue catalog.
