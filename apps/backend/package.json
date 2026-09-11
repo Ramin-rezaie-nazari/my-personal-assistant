@@ -31,7 +31,9 @@
     "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence-final.mjs",
     "recipe-intelligence:ingredients": "node ./scripts/recipe-ingredient-intelligence.mjs",
     "recipe-intelligence:nutrition": "node ./scripts/recipe-nutrition-estimate.mjs",
-    "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs"
+    "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs",
+    "recipe:content:import": "node ./scripts/recipe-content-import.mjs",
+    "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -80,22 +82,12 @@
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
-    "moduleFileExtensions": [
-      "js",
-      "json",
-      "ts"
-    ],
+    "moduleFileExtensions": ["js", "json", "ts"],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
-    "transform": {
-      "^.+\\.(t|j)s$": "ts-jest"
-    },
-    "moduleNameMapper": {
-      "^(.+)\\.js$": "$1"
-    },
-    "collectCoverageFrom": [
-      "**/*.(t|j)s"
-    ],
+    "transform": {"^.+\\.(t|j)s$": "ts-jest"},
+    "moduleNameMapper": {"^(.+)\\.js$": "$1"},
+    "collectCoverageFrom": ["**/*.(t|j)s"],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
