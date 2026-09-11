@@ -194,10 +194,10 @@ Status: OPEN — OPERATIONAL/ARCHITECTURE DRIFT
 Locations: `apps/backend/scripts/recipe-image-import.mjs`, `apps/backend/scripts/recipe-image-import-all.mjs`, `apps/backend/scripts/recipe-image-import-all-safe.mjs`, `apps/backend/scripts/recipe-image-dataset-import-v2.mjs`, `apps/backend/package.json`.
 Evidence: the wired `recipe-images:import` script uses `image_type='primary'` and storage key `recipes/<recipeId>/primary.webp`; the wired dataset importer uses `image_type='hero'` and `recipes/<recipeId>/hero.webp`; legacy `recipe-image-import-all.mjs` also writes `primary`, while `recipe-image-import-all-safe.mjs` writes `hero`. They also use materially different candidate matching and pass semantics. Impact: manually running a different executable importer can create a second image contract for the same recipe and leave both primary/hero records, making downstream selection ambiguous. This is not yet shown to cause a live user failure because runtime DB state was not executed/inspected in this session.
 
-### PB-198 — Final food-entity resolver has no direct executable self-test; current self-test targets v2 implementation
-Status: OPEN — TEST GAP
-Locations: `apps/backend/scripts/food-entity-resolver-final.mjs`, `apps/backend/scripts/food-entity-resolver-v2-self-test.mjs`.
-Evidence: the final resolver imports and wraps `food-entity-resolver-v2.mjs`, adds quantity/unit parsing plus `resolveCanonicalId`, and exposes a different version (`food-entity-resolver-v3-final`). The inspected self-test imports only `food-entity-resolver-v2.mjs` and therefore does not directly execute the final wrapper behavior. Impact: changes/regressions in final-specific quantity/unit/canonical-ID behavior can pass the existing self-test without being exercised.
+### PB-198 — Final food-intelligence self-test exists but is not package/CI-wired in the inspected operational scripts
+Status: OPEN — TEST/QA
+Locations: `apps/backend/scripts/food-intelligence-final-self-test.mjs`, `apps/backend/package.json`.
+Evidence: the final self-test directly imports `food-entity-resolver-final.mjs` and `localized-food-entity-resolver-final.mjs` and checks canonical IDs, localized aliases and quantity normalization. The inspected package manifest wires the production-facing intelligence scripts but does not expose a corresponding script command for this final self-test, and no CI invocation was observed during this scope. Impact: the strongest direct resolver regression suite exists but is not automatically exercised by the normal package/CI path, allowing final resolver regressions to escape routine validation.
 
 ### PB-199 — Recommendation quality score normalization conflicts with the ingest score scale
 Status: OPEN — LOGIC HIGH
