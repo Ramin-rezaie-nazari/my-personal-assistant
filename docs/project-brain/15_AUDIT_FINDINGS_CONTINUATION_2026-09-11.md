@@ -14,6 +14,11 @@ Location: `apps/backend/README.md`.
 Evidence: the README still identifies the project as a generic NestJS starter repository, gives only generic `pnpm install/start/test` instructions, and contains no MYPA-specific environment setup, Prisma migration/generation workflow, required runtime variables, module architecture, or repository-specific operational scripts. The actual backend has project-specific required environment validation and a large set of Prisma/recipe-intelligence operational commands.
 Impact: a new engineer can follow the README and still fail to obtain a runnable MYPA backend or misunderstand the canonical setup/operational workflow. This is documentation/onboarding debt rather than a runtime defect; canonical project documentation exists elsewhere but is not surfaced by the backend README.
 
+## PB-246 — Mobile CI has no automated test execution despite committed mobile spec files
+Status: OPEN — TEST/CI MEDIUM-HIGH
+Locations: `.github/workflows/mobile-ci.yml`, `apps/mobile/package.json`, `apps/mobile/` `*.spec.ts`/`*.test.ts` files.
+Evidence: `apps/mobile/package.json` defines `start`, `android`, `ios`, `web`, and `typecheck`, but no test script or test runner. The mobile CI workflow runs frozen install, TypeScript typecheck, Expo config validation, and Android JS export; it does not execute any mobile unit/spec tests. The repository nevertheless contains committed mobile spec files such as `apps/mobile/lib/branding.spec.ts` and notification/yoga specs. Impact: those mobile regression tests are not part of the normal main-branch CI gate, so changes can pass the mobile CI workflow without exercising the available behavioral test suite. This is distinct from PB-179: PB-179 is that typecheck explicitly excludes test files; PB-246 is the absence of a CI test execution path for the tests that do exist.
+
 ## Validation correction/reconciliation notes
 
 ### PB-232 — REQUIRES RECLASSIFICATION
@@ -29,4 +34,4 @@ The earlier claim that the inline `@Body() body: { action: BehaviorAction; conte
 The grouped validation finding overlaps materially with historical findings: PB-077 covers Habit DTO validation, PB-085 covers Life Execution DTO validation, PB-089 covers Fitness controller write validation, PB-093 covers Workout write-contract validation, and PB-083 covers Supplements DTO contract drift. Do not treat PB-243 as a clean unique finding until each module's scope is mapped against those historical entries. If it adds distinct evidence for Supplements or another active class-DTO surface not covered historically, merge that evidence into the appropriate existing ID rather than retaining a duplicate umbrella ID.
 
 ## Audit control
-No production code changed. PB-244 and PB-245 are new audit evidence and must be merged into the canonical Appendix during the next safe full-file Appendix update. Runtime/build/device validation remains unverified.
+No production code changed. PB-244, PB-245 and PB-246 are new audit evidence and must be merged into the canonical Appendix during the next safe full-file Appendix update. Runtime/build/device validation remains unverified.
