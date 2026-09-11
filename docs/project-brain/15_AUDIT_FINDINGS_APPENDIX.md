@@ -3,7 +3,7 @@
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
 
-## Findings PB-156 through PB-235
+## Findings PB-156 through PB-238
 
 ### PB-156 — LifeTasksModule is source-present but not runtime-wired
 Status: OPEN — ARCHITECTURE/FEATURE
@@ -281,7 +281,7 @@ Evidence: all listed inspected routes omit the mobile i18n contract (`getStoredL
 Status: OPEN — RUNTIME/BUILD HIGH
 Location: `apps/mobile/app/meals.tsx`, `MealsScreen()`.
 Evidence: `useCallback`, `useEffect`, and `useState` are declared at the top of the component, but `useMemo(() => meals.filter(...), [meals, query])` is declared only after `if (loading) return <View ... />`. On the initial render `loading` is `true`, so the `useMemo` hook is skipped; after `load()` sets `loading` to `false`, the same component instance reaches `useMemo`. This changes the number/order of hooks between renders, violating React's Rules of Hooks and potentially producing a hooks-order runtime error or unstable state behavior.
-Impact: the Meals screen can fail or behave unpredictably exactly when transitioning from its loading state to its loaded state. This is independent of the existing PB-216 localization finding and is a concrete runtime correctness issue. Runtime execution was not possible in this audit because the repository could not be run locally in this session.
+Impact: the Meals screen can fail or behave unpredictably exactly when transitioning from its loading state to its loaded state. This is independent of the existing PB-216 localization finding and is a concrete runtime correctness issue. Runtime execution was not possible in this audit because the repo could not be run locally in this session.
 
 ### PB-218 — Mobile command action helper returns hardcoded English user-facing messages
 Status: OPEN — LOCALIZATION/UX
@@ -372,6 +372,21 @@ Evidence: `CalendarController.createEvent()` binds `@Body() dto: CreateCalendarE
 Status: OPEN — DATA INTEGRITY HIGH
 Locations: `apps/backend/src/modules/goals/services/goals.service.ts`, `checkin()`, and migration `apps/backend/prisma/migrations/20260812112000_add_goals/migration.sql`.
 Evidence: `GoalsService.checkin()` first inserts/updates a `GoalCheckin` row and then separately updates the parent `Goal` row; neither operation is enclosed in `prisma.$transaction()`. The migration shows `GoalCheckin.goalId` has a foreign key with `ON DELETE CASCADE` and a unique `(goalId,dateKey)` key, so the child and parent represent one logical check-in state. A failure between the two independent operations can leave the persisted check-in history and the parent goal's `progressPercent`/`status` out of sync. Impact: retrying or auditing goal progress can observe a check-in record that was accepted while the parent aggregate was not updated (or vice versa if future ordering changes), violating aggregate consistency. Runtime failure injection was not executed in this audit.
+
+### PB-236 — Weekly habits reuse a daily-consecutive streak algorithm
+Status: OPEN — LOGIC/DESIGN REVIEW
+Location: `apps/backend/src/modules/habits/services/habits.service.ts`, `stats()`; related `Habit.frequency`/`targetPerWeek` contract in `apps/backend/src/modules/habits/dto/habit.dto.ts`.
+Evidence: `stats()` computes `streak` by iterating the last 14 calendar days and incrementing only while every consecutive day has a log. The same helper is used for both `daily` and `weekly` habits. A weekly habit can legitimately have a target such as `targetPerWeek=1`, but two valid weekly completions on non-consecutive days will produce a streak of 1 rather than measuring consecutive successful weeks; conversely, the current algorithm treats daily consecutive logs as the universal streak unit regardless of `frequency`. Impact: the habit API can report a misleading streak for weekly habits and the shared helper does not encode the frequency-specific semantics implied by the domain model. The repository contains the separate PB-078 review of weekly summary possible-count semantics; PB-236 is specifically the streak-calculation unit/algorithm mismatch.
+
+### PB-237 — User Intelligence event-write body is inline/unvalidated under the global ValidationPipe
+Status: OPEN — API/RUNTIME HIGH
+Locations: `apps/backend/src/modules/user-intelligence/controllers/user-intelligence.controller.ts`, `apps/backend/src/bootstrap.ts`.
+Evidence: active `POST /user-intelligence/events` accepts `@Body() body: { action: BehaviorAction; context?: BehaviorContext }` as an inline TypeScript type, not a decorated DTO. The global `ValidationPipe` is configured with `whitelist: true` and `forbidNonWhitelisted: true`. The request properties `action` and `context` therefore have no validation metadata defining them as whitelisted fields and are expected to be rejected before `LearningService.learnFromAction()` executes. Impact: the active event-ingestion path used to feed User Intelligence learning can be blocked by the application's own validation contract. Runtime HTTP execution remains unverified in this audit.
+
+### PB-238 — User Intelligence learning falls back to server timezone when behavior event metadata lacks hour/weekday
+Status: OPEN — TIMEZONE/BEHAVIOR
+Location: `apps/backend/src/modules/user-intelligence/services/learning.service.ts`, `buildProfile()`.
+Evidence: when stored behavior metadata lacks numeric `hour` or `weekday`, the service derives them with `event.createdAt.getHours()` and `event.createdAt.getDay()`, i.e. the backend process's local timezone. There is no lookup of the user's persisted `UserSettings.timezone` in this path. Impact: behavior patterns such as best hours and weekday completion can be assigned to the server's timezone instead of the user's actual local timezone, causing cross-timezone users to receive shifted learning signals. This is distinct from PB-221 because PB-238 is the User Intelligence event-level fallback rather than Adaptive Learning's current-day/weekly window.
 
 ## Correction log
 - PB-112: NOT_APPLICABLE; execute-next/confirm/feedback routes exist and are JWT guarded.
