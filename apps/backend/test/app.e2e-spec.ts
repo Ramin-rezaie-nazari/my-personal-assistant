@@ -3,18 +3,15 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { createTestApp } from './helpers/create-test-app';
 
-describe('AppController (e2e)', () => {
+describe('API e2e', () => {
   let app: INestApplication<App>;
 
   beforeAll(async () => {
     app = await createTestApp();
   });
 
-  it('/ (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+  it('does not expose the obsolete public root Hello World endpoint', async () => {
+    await request(app.getHttpServer()).get('/').expect(404);
   });
 
   it('supports authenticated recipe creation and retrieval with calculated nutrition', async () => {
