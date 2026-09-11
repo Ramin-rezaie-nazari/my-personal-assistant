@@ -1,12 +1,21 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../common/database/prisma.service';
+import { getDateKeyInTimezone, zonedDateTimeToUtc } from '../../common/utils/user-time';
 
 @Injectable()
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
   async getToday(userId: string, dateKey?: string) {
-    const key = this.normalizeDateKey(dateKey);
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId },
+      select: { timezone: true },
+    });
+    const timezone = settings?.timezone || 'UTC';
+    const key = dateKey ? this.normalizeDateKey(dateKey) : getDateKeyInTimezone(new Date(), timezone);
+    const startDate = zonedDateTimeToUtc(key, '00:00:00', timezone);
+    const endKey = this.nextDateKey(key);
+    const endDate = zonedDateTimeToUtc(endKey, '00:00:00', timezone);
 
     const [profile, nutritionProfile, dailyLog, meals] = await Promise.all([
       this.prisma.userProfile.findUnique({ where: { userId } }),
@@ -17,10 +26,7 @@ export class DashboardService {
       this.prisma.meal.findMany({
         where: {
           userId,
-          eatenAt: {
-            gte: new Date(`${key}T00:00:00.000Z`),
-            lt: new Date(`${this.nextDateKey(key)}T00:00:00.000Z`),
-          },
+          eatenAt: { gte: startDate, lt: endDate },
         },
         select: {
           id: true,
@@ -58,18 +64,15 @@ export class DashboardService {
         calories,
         calorieGoal,
         caloriesRemaining: Math.max(calorieGoal - calories, 0),
-        caloriesProgress:
-          calorieGoal > 0 ? this.progress(calories, calorieGoal) : 0,
+        caloriesProgress: calorieGoal > 0 ? this.progress(calories, calorieGoal) : 0,
         protein,
         proteinGoal,
         proteinRemaining: Math.max(proteinGoal - protein, 0),
-        proteinProgress:
-          proteinGoal > 0 ? this.progress(protein, proteinGoal) : 0,
+        proteinProgress: proteinGoal > 0 ? this.progress(protein, proteinGoal) : 0,
         waterMl,
         waterGoalMl,
         waterRemainingMl: Math.max(waterGoalMl - waterMl, 0),
-        waterProgress:
-          waterGoalMl > 0 ? this.progress(waterMl, waterGoalMl) : 0,
+        waterProgress: waterGoalMl > 0 ? this.progress(waterMl, waterGoalMl) : 0,
       },
       meals,
       mealCount: meals.length,
@@ -77,11 +80,16 @@ export class DashboardService {
   }
 
   async getOverview(userId: string, dateKey?: string) {
+    const settings = await this.prisma.userSettings.findUnique({
+      where: { userId },
+      select: { timezone: true },
+    });
+    const timezone = settings?.timezone || 'UTC';
     const today = await this.getToday(userId, dateKey);
     const endKey = today.dateKey;
     const startKey = this.addDays(endKey, -6);
-    const startDate = new Date(`${startKey}T00:00:00.000Z`);
-    const endDate = new Date(`${this.nextDateKey(endKey)}T00:00:00.000Z`);
+    const startDate = zonedDateTimeToUtc(startKey, '00:00:00', timezone);
+    const endDate = zonedDateTimeToUtc(this.nextDateKey(endKey), '00:00:00', timezone);
 
     const [dailyLogs, workouts, latestWorkout] = await Promise.all([
       this.prisma.dailyLog.findMany({
@@ -99,22 +107,13 @@ export class DashboardService {
     ]);
 
     const loggedDays = dailyLogs.length;
-    const totalCalories = dailyLogs.reduce(
-      (sum, item) => sum + item.calories,
-      0,
-    );
+    const totalCalories = dailyLogs.reduce((sum, item) => sum + item.calories, 0);
     const totalProtein = dailyLogs.reduce((sum, item) => sum + item.protein, 0);
     const totalWaterMl = dailyLogs.reduce((sum, item) => sum + item.waterMl, 0);
-    const workoutMinutes = workouts.reduce(
-      (sum, item) => sum + item.durationMinutes,
-      0,
-    );
-    const workoutCalories = workouts.reduce(
-      (sum, item) => sum + item.caloriesBurned,
-      0,
-    );
+    const workoutMinutes = workouts.reduce((sum, item) => sum + item.durationMinutes, 0);
+    const workoutCalories = workouts.reduce((sum, item) => sum + item.caloriesBurned, 0);
     const workoutDays = new Set(
-      workouts.map((item) => item.performedAt.toISOString().slice(0, 10)),
+      workouts.map((item) => getDateKeyInTimezone(item.performedAt, timezone)),
     ).size;
     const consistencyPercent = Math.round((loggedDays / 7) * 100);
 
@@ -128,16 +127,9 @@ export class DashboardService {
         totalCalories,
         totalProtein,
         totalWaterMl,
-        averageCalories: loggedDays
-          ? Math.round(totalCalories / loggedDays)
-          : 0,
-        averageProtein: loggedDays
-          ? Math.round((totalProtein / loggedDays) * 10) / 10
-          : 0,
-        currentStreak: this.calculateStreak(
-          dailyLogs.map((item) => item.dateKey),
-          endKey,
-        ),
+        averageCalories: loggedDays ? Math.round(totalCalories / loggedDays) : 0,
+        averageProtein: loggedDays ? Math.round((totalProtein / loggedDays) * 10) / 10 : 0,
+        currentStreak: this.calculateStreak(dailyLogs.map((item) => item.dateKey), endKey),
       },
       workouts: {
         count: workouts.length,
@@ -162,21 +154,15 @@ export class DashboardService {
     return Math.min(Math.round((value / goal) * 100), 100);
   }
 
-  private normalizeDateKey(value?: string): string {
-    const key = value ?? new Date().toISOString().slice(0, 10);
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(key)) {
+  private normalizeDateKey(value: string): string {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
       throw new Error('dateKey must use YYYY-MM-DD format');
     }
-
-    const parsed = new Date(`${key}T00:00:00.000Z`);
-    if (
-      Number.isNaN(parsed.getTime()) ||
-      parsed.toISOString().slice(0, 10) !== key
-    ) {
+    const parsed = new Date(`${value}T00:00:00.000Z`);
+    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== value) {
       throw new Error('dateKey must be a valid calendar date');
     }
-
-    return key;
+    return value;
   }
 
   private nextDateKey(key: string): string {
@@ -193,12 +179,10 @@ export class DashboardService {
     const dates = new Set(dateKeys);
     let streak = 0;
     let cursor = endKey;
-
     while (dates.has(cursor)) {
       streak += 1;
       cursor = this.addDays(cursor, -1);
     }
-
     return streak;
   }
 }
