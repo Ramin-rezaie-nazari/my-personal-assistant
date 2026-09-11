@@ -2,77 +2,110 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: all TypeScript source and test files under `apps/backend/src/modules/assistant/` as enumerated by the assistant module tree, including module/controller/specs, adapter, DTOs, provider, and services/specs. Remaining required Brain scope: `personal-brain`, `brain-integration`, `conversation-engine`, `memory-intelligence`, `decision-engine`, `adaptive-learning`, `goal-intelligence`; full test execution and cross-module consumer verification remain open.
-Scope not yet read: the seven remaining required Brain areas above; repository-wide cross-consumers of assistant actions; full automated test execution.
-Evidence roots: `apps/backend/src/modules/assistant/`; `apps/backend/src/modules/personal-brain/` references observed from assistant imports; Prisma conversation migration/schema.
-Confidence level: HIGH for the assistant-module file-level read; MEDIUM for assistant runtime behavior because tests have been read but not executed here; LOW for the complete Brain scope because the remaining seven areas are not yet fully read.
-Open questions: complete personal-brain orchestration; decision candidate generation and persistence; memory read/write semantics; whether ConversationTurn/DecisionOutcome runtime tables are the intended canonical contracts; authorization behavior across action execution; end-to-end tests.
+Scope actually read: complete Assistant TypeScript source/test scope; Personal Brain module and a substantial production slice covering state/reasoning/orchestration, decision selection/conflict/safety/execution/audit/learning, plan persistence/execution, adaptive replanning, action adapters, and selected Memory Intelligence production/repository/services/tests.
+Scope not yet read: remaining Personal Brain production/spec files; complete Memory Intelligence source/tests; `brain-integration`; `conversation-engine`; `decision-engine` (as a separate module if present); `adaptive-learning`; `goal-intelligence`; full cross-module consumer verification; full test execution.
+Evidence roots: `apps/backend/src/modules/assistant/`; `apps/backend/src/modules/personal-brain/`; `apps/backend/src/modules/memory-intelligence/`; `apps/backend/prisma/schema.prisma`; relevant migrations.
+Confidence level: HIGH for Assistant file-level scope; HIGH for the specifically listed Personal Brain and Memory files read; MEDIUM for end-to-end behavior because tests have been read but not executed; LOW for the complete Brain deep-read.
+Open questions: finish remaining Brain modules; reconcile all execution/outcome persistence; prove route/controller ownership across every adapter; reconcile rich memory governance fields with durable storage; runtime test results.
 
 ## Assistant orchestration observed
 
 `AssistantModule` imports `PrismaModule` and `PersonalBrainModule`, and wires assistant orchestration services including `AssistantService`, contextual command handling, planning, natural action execution, conversation context/history, local language understanding, a local intelligence provider, and a local basket adapter. Evidence: `apps/backend/src/modules/assistant/assistant.module.ts`.
 
-`AssistantController` exposes public status, authenticated history, authenticated natural-language processing, and authenticated confirmation. `GET /assistant` is not guarded, while `/assistant/history`, `POST /assistant`, and `POST /assistant/confirm` use `JwtAuthGuard`. Evidence: `apps/backend/src/modules/assistant/controllers/assistant.controller.ts`; controller spec confirms authenticated-owner propagation for history.
+`AssistantController` exposes public status, authenticated history, authenticated natural-language processing, and authenticated confirmation. `GET /assistant` is not guarded, while `/assistant/history`, `POST /assistant`, and `POST /assistant/confirm` use `JwtAuthGuard`. Evidence: `apps/backend/src/modules/assistant/controllers/assistant.controller.ts`; controller spec.
 
-`AssistantService.process()` appends the user turn, resolves contextual references, runs local language understanding, builds a local plan, uses local deterministic intent mapping when confidence is sufficient, otherwise delegates to `BrainOrchestratorService`, then optionally executes the selected action via `NaturalActionExecutionService`, and finally appends the assistant turn with action/execution/resource references. Evidence: `apps/backend/src/modules/assistant/services/assistant.service.ts`; assistant service tests cover fallback/orchestration and contextual mappings.
-
-The service contains explicit contextual follow-up routing for update/cancel of calendar events, reminders, workouts, habits and supplements based on prior action/resource and simple entity/time/quantity signals. Evidence: `assistant.service.ts`; assistant service spec covers workout update, habit cancel, supplement update, and unrelated-command preservation.
+`AssistantService.process()` appends the user turn, resolves contextual references, runs local language understanding, builds a local plan, uses local deterministic intent mapping when confidence is sufficient, otherwise delegates to `BrainOrchestratorService`, then optionally executes the selected action via `NaturalActionExecutionService`, and finally appends the assistant turn with action/execution/resource references. Evidence: `apps/backend/src/modules/assistant/services/assistant.service.ts` and its tests.
 
 ## Deterministic local understanding
 
-`LocalLanguageUnderstandingService` is a rule/regex based classifier. It normalizes Persian/Arabic character variants and Persian digits, extracts quantity/time/duration/calories/meal type/food/negations, detects references to prior turns, and maps a fixed set of local intents (`ADD_TO_BASKET`, `REMOVE_FROM_BASKET`, `RECOMMEND_MEAL`, `GET_NUTRITION_SUMMARY`, `CREATE_REMINDER`, `UPDATE_REQUEST`, `CANCEL_REQUEST`, `UNKNOWN`). Evidence: `apps/backend/src/modules/assistant/services/local-language-understanding.service.ts`.
+`LocalLanguageUnderstandingService` is a rule/regex based classifier that normalizes Persian/Arabic characters and digits, extracts common entities and maps a fixed local intent set. `ContextualCommandService` adds reference resolution, clause splitting, operation detection, contradictions and confidence scoring. Evidence: respective Assistant files and specs.
 
-The classifier's food vocabulary is a small hard-coded list, so it is a deterministic bootstrap rather than a general natural-language parser. Evidence: `local-language-understanding.service.ts`; its spec explicitly checks milk, bread, yogurt, basket requests, reminders, meal recommendation, nutrition summary, Persian digits, and ambiguous input.
-
-`ContextualCommandService` adds a second deterministic layer for follow-up references, operation detection, entity extraction, clause splitting, contradiction detection, and confidence scoring. It resolves previous action/execution/resource references from `ConversationContextService`. Evidence: `apps/backend/src/modules/assistant/services/contextual-command.service.ts`; its spec covers Persian pronouns, quantity, time, duration, and standalone create commands.
+The food vocabulary is a small hard-coded bootstrap list. Evidence: `local-language-understanding.service.ts`.
 
 ## Action execution and safety gates
 
-`NaturalActionExecutionService` converts a selected BrainResponse into a `DecisionCandidate` and delegates execution to `DecisionExecutionCoordinatorService`. It supports sequential plans, stops on pending confirmation/blocked/unsupported outcomes, and has bounded recovery attempts for other failures. Evidence: `apps/backend/src/modules/assistant/services/natural-action-execution.service.ts`; its spec checks completed, blocked, and no-action cases.
+`NaturalActionExecutionService` creates decision candidates and delegates to `DecisionExecutionCoordinatorService`. It supports sequential plans, stops on pending confirmation/blocked/unsupported outcomes and bounded recovery. Cancellation requires confirmation through the planning/coordinator path. Evidence: Assistant execution/planning services and specs.
 
-Cancellation is not inherently auto-executed by this layer: plan steps marked `cancel` require confirmation, and the coordinator controls the final execution receipt/status. Evidence: `planning.service.ts`; `natural-action-execution.service.ts`.
+`LocalBasketActionAdapter` performs direct `FoodItem` lookup and `ShoppingItem` writes using a hard-coded alias map. Evidence: `apps/backend/src/modules/assistant/adapters/local-basket-action.adapter.ts`.
 
-The candidate ID for natural-language execution is deterministic per `(userId, action, normalized input)` using an FNV-style hash. Evidence: `natural-action-execution.service.ts`.
+## Personal Brain orchestration
 
-`LocalBasketActionAdapter` registers for `add_to_basket` and `remove_from_basket`, looks up a `FoodItem` by a hard-coded alias map, creates or increments an active `ShoppingItem`, and marks active matching items completed on removal. It uses Prisma directly and sets assistant-origin metadata on creates. Evidence: `apps/backend/src/modules/assistant/adapters/local-basket-action.adapter.ts`.
+`PersonalBrainModule` imports Conversation Engine, Daily, Workout, Habits, Supplements, Brain Integration, Context Engine, Memory Intelligence, User Intelligence, Reminders, Calendar, Fitness, Yoga, Calisthenics and Gym modules. It registers and exports a very large service graph covering decisioning, scheduling, proactive coaching/notifications, execution, learning, explanations and action adapters. Evidence: `apps/backend/src/modules/personal-brain/personal-brain.module.ts`.
 
-## Planning and reasoning
+`BrainOrchestratorService` builds `BrainReasoningContext`, runs `BrainDecisionPipelineService`, detects scenario intent, and can compare a primary/deferred scenario using goal alignment plus simple budget/capacity signals. Evidence: `brain-orchestrator.service.ts`.
 
-`PlanningService` is deterministic. It blocks conflicting requests, asks for clarification under low confidence, creates step dependencies when a clause references a previous step or an update follows a create, marks cancel steps as confirmation-required, and rejects unsafe dependent cancellation plans. Evidence: `apps/backend/src/modules/assistant/services/planning.service.ts`.
+`BrainStateService` concurrently loads context, memory, goals, daily/weekly status, nutrition targets, workout status and life context; it then builds additional Context Engine context and fuses life-context signals. Shopping, budget and wearable inputs in the fusion call are currently empty/zero-confidence placeholders in this layer. Evidence: `brain-state.service.ts`.
 
-`ReasoningService` is a lighter deterministic planner that maps supplied clauses/intents to ordered `LocalPlanStep` objects, links later steps to earlier steps, marks cancel steps for confirmation, and lowers confidence/asks for clarification when contradictions or incomplete clause-to-intent alignment occur. Evidence: `apps/backend/src/modules/assistant/services/reasoning.service.ts`.
+`BrainReasoningContextService` derives readiness signals and a life-context quality score before invoking the reasoning engine. Evidence: `brain-reasoning-context.service.ts`.
 
-## Conversation persistence
+`BrainDecisionService` is deterministic keyword/regex decision logic for goal, nutrition-target, habit, reminder, supplement, workout, weekly and daily status requests. It produces explicit blockers and next actions when required context is missing. Evidence: `brain-decision.service.ts`.
 
-`ConversationContextService` keeps up to 24 turns per user in an in-process cache and falls back to `ConversationHistoryService` on cache misses. Its tests verify user isolation, bounded history, latest-action resolution, clearing, and hydration from persistence. Evidence: `apps/backend/src/modules/assistant/services/conversation-context.service.ts`; corresponding spec.
+`BrainDecisionPipelineService` combines fitness-aware or base decision output with historical explanation memory, a learning-policy confidence boost, and outcome-memory confidence adjustment, then creates a decision explanation. Evidence: `brain-decision-pipeline.service.ts`.
 
-`ConversationHistoryService` persists turns using parameterized raw SQL directly against `ConversationTurn`, enforces trimmed non-empty text, a 12,000-character max, and valid user/assistant roles, and exposes recent/latest-action/deletion operations. Evidence: `apps/backend/src/modules/assistant/services/conversation-history.service.ts`; corresponding spec verifies normalization, chronological ordering, linked resources, latest action, and scoped deletion.
+## Unified decision / execution layer
 
-This directly confirms that the migration-created `ConversationTurn` table is an active runtime dependency even though it is not represented as a Prisma model in the final `schema.prisma`. Evidence: `conversation-history.service.ts`; `apps/backend/prisma/migrations/20260812193000_add_conversation_turns/migration.sql`; `apps/backend/prisma/schema.prisma`.
+`UnifiedDecisionEngineService` filters excluded/expired/blocked candidates, gives hard constraints precedence, resolves pairwise conflicts, ranks candidates by priority/confidence/score and optionally goal alignment/goal downside, and emits human-readable rationale. Evidence: `unified-decision-engine.service.ts`.
 
-## Local provider and provider routing
+`DecisionConflictResolutionService` detects time/budget/capacity/health/goal conflicts. A notable implementation detail is that conflict resolution's final `prefer_first`/`prefer_second` comparison calls `utility()` with an empty context, so context urgency used for the initial ranking is not used in that final pairwise preference. Evidence: `decision-conflict-resolution.service.ts`. This is a review finding, not yet a code change.
 
-`LocalIntelligenceProvider` implements the AI provider abstraction but delegates to the deterministic local language understanding service and emits canned responses for the fixed local intents. Evidence: `apps/backend/src/modules/assistant/providers/local-intelligence.provider.ts`; `services/ai-provider.types.ts`.
+`DecisionSafetyGuardService` caps total actions and actions per domain and can block configured domains. Evidence: `decision-safety-guard.service.ts`.
 
-`AiProviderRouterService` maintains an in-memory provider list, currently registering the local provider, skips providers in cooldown, and applies 60-second cooldown to HTTP 429 errors and 5-second cooldown to other provider failures. Evidence: `ai-provider-router.service.ts`.
+`DecisionGuardrailService` composes in-memory idempotency and rate limiting before execution. Idempotency keys are `${userId}:${candidate.id}:${candidate.action}` with a 24-hour in-memory TTL by default. Evidence: `decision-guardrail.service.ts`, `decision-idempotency.service.ts`, `decision-rate-limiter.service.ts`.
 
-`KnowledgeService`, `MemoryService`, `RecommendationService`, and `ContextService` in the assistant module are currently placeholder-level implementations: knowledge returns an empty array, memory returns a readiness message/empty array, recommendation returns a readiness message, and context returns a readiness message. Evidence: `knowledge.service.ts`, `memory.service.ts`, `recommendation.service.ts`, `context.service.ts`.
+`DecisionExecutionCoordinatorService` applies execution policy and confirmation first, then guardrails, adapter execution, feedback/history, asynchronous decision audit and asynchronous outcome learning. It distinguishes `completed`, `blocked`, `unsupported`, `failed`, `dry_run`, `pending_confirmation`, and `confirmation_invalid`. Evidence: `decision-execution-coordinator.service.ts`.
 
-`RuleEngineService` is also a minimal placeholder that always returns `{ success: true, engine: 'Rule Engine' }`. Evidence: `rule-engine.service.ts`.
+`DecisionExecutionPolicyService` applies domain-specific timeout/retry defaults, caps requested policy values and performs timed execution with bounded retries. Evidence: `decision-execution-policy.service.ts`.
 
-The `UpdateAssistantProfileDto` exposes optional string/int/number fields for health, fitness, nutrition, smoking, water, sleep, and exercise goals, while `ProcessAssistantRequestDto` only validates a non-empty string message. Evidence: both DTO files.
+`DecisionExecutionStateService` is in-memory only; it tracks pending/running/completed/failed/cancelled execution state by key. Evidence: `decision-execution-state.service.ts`.
 
-At this point there is no evidence in the read scope that an external AI provider is registered in the assistant module; the current wired provider is local and deterministic. This is an observed implementation fact, not a claim that external-provider code does not exist elsewhere in the repository.
+`DecisionExecutionHistoryService` is also in-memory only, with a configurable retention policy defaulting to three months and bounded query/cleanup functions. Evidence: `decision-execution-history.service.ts`, `decision-history-retention.service.ts`.
+
+`PersistentPlanStateService` persists multi-step plan state into the Prisma `PlanExecutionState` model and supports resume/clear. `PlanExecutionService` uses it to save running/partial/blocked/failed/completed states and resume unfinished work. Evidence: both plan-state services and final Prisma schema.
+
+## Action adapters and ownership
+
+`ReminderActionAdapter`, `CalendarActionAdapter`, `WorkoutActionAdapter`, `HabitActionAdapter` and `SupplementActionAdapter` all require a `userId` and pass it to their domain services while obtaining the target resource from contextual state. Their implementations are narrow, deterministic parsers rather than general LLM actions. Evidence: each adapter path.
+
+`LifeTaskActionAdapter` uses raw SQL against `LifeTask`, requiring candidate ID + user ID, and performs an ownership-scoped lookup/update. Evidence: `life-task-action-adapter.ts`.
+
+`WorkoutActionAdapter` uses the current UTC date (`toISOString().slice(0,10)`) when a time is supplied without a date, which is potentially inconsistent with a user's local timezone. Evidence: `workout-action-adapter.ts`. This remains a review finding only.
+
+## Audit / explanation / learning
+
+`DecisionAuditService` persists to Prisma `DecisionAuditEntry` when a Prisma service is provided, otherwise keeping in-memory fallback entries. Evidence: `decision-audit.service.ts` and the Prisma model.
+
+`DecisionExplanationMemoryService` reads recent/trend data from `DecisionAuditEntry`, including repeated reasons and selected-action frequency. Evidence: `decision-explanation-memory.service.ts`.
+
+`DecisionLearningPolicyService` adds a small confidence boost for stable repeated decision patterns. `DecisionFeedbackLoopService` writes personalization signals and outcome-learning records. Evidence: respective services.
+
+`DecisionOutcomeLearningService` directly executes parameterized raw SQL against `DecisionOutcome`. It validates outcomes/scores, computes historical profiles/trends and per-decision confidence adjustments. This is an active runtime dependency on the migration-created `DecisionOutcome` table even though that table is absent from final `schema.prisma`. Evidence: `decision-outcome-learning.service.ts`; `apps/backend/prisma/migrations/...decision outcome...`; final Prisma schema.
+
+A further observation is that `DecisionExecutionCoordinatorService.record()` writes outcome-learning rows for almost every receipt. In that mapping, completed/dry-run/blocked/pending/confirmation-invalid become `neutral`, while failed/unsupported become `negative`; direct feedback records separately map accepted/completed to positive. The effective learning signal therefore depends on which path records the outcome. Evidence: `decision-execution-coordinator.service.ts`; `decision-feedback-loop.service.ts`.
+
+## Memory Intelligence
+
+`MemoryIntelligenceModule` binds both in-memory and persistent repositories, but the active `MEMORY_REPOSITORY` and `PERSISTENT_MEMORY_REPOSITORY` providers point to `PrismaMemoryRepository`. Evidence: `memory-intelligence.module.ts`.
+
+`Memory` is a rich contract with user ownership, type/key/value/importance plus optional governance fields for layer/source/visibility/confidence/retention/relationships/topics/confirmation/expiry. Evidence: `memory.model.ts`.
+
+`PrismaMemoryRepository` maps durable Memory records to `UserFact` rows with source `brain-memory`, serializing `value` as JSON and clamping importance to a 0-100 integer. It scopes reads/writes/deletes by user ID. However, the richer optional governance fields are not written to `UserFact`; they are therefore not durably represented by this persistence adapter. Evidence: `prisma-memory.repository.ts`; `memory.model.ts`; final Prisma `UserFact` schema.
+
+`MemoryRetrievalService` performs user-scoped retrieval by loading all user memories and filtering key/value by lowercase substring. `MemoryRankingService` then ranks by token match, exact phrase/key bonuses and importance. Evidence: corresponding services and ranking tests.
+
+`MemoryGovernanceService` supports retention windows, expiry checks, reinforcement and confidence increases on confirmation; `MemorySurfaceService` applies visibility/confidence/importance thresholds for user/brain exposure. Evidence: their services.
+
+`MemoryLifecycleService` composes classification, scoring and consolidation, but `MemoryClassificationService`, `MemoryScoringService`, and `MemoryConsolidationService` are currently minimal implementations. `MemoryManagerService` in Personal Brain is also a placeholder that returns a success message without storing anything itself. Evidence: the respective service paths.
 
 ## Batch status
 
 ### BATCH-0004A — Assistant orchestration
-Status: COMPLETE for the exact orchestration files read in that sub-batch.
+Status: COMPLETE for the exact orchestration files read.
 
-### BATCH-0004B — Complete Assistant module read
-Status: COMPLETE for all TypeScript files enumerated under `apps/backend/src/modules/assistant/`, including tests. The only non-source file found in the service tree is `__tmp_fix_note.md`, which is treated as non-source/N/A and is not counted as executable source.
+### BATCH-0004B — Assistant module complete
+Status: COMPLETE for all TypeScript source/test files enumerated under `apps/backend/src/modules/assistant/`. `__tmp_fix_note.md` is non-source/N/A.
 
-Key new findings: local basket adapter has hard-coded food aliases and direct ShoppingItem writes; contextual follow-up logic is comprehensively unit-tested; several assistant services are still placeholders; runtime conversation persistence bypasses Prisma model typing via raw SQL.
+### BATCH-0004C — Personal Brain + Memory Intelligence foundation
+Status: IN_PROGRESS. Substantial production slice read and findings recorded. Full module completion is not claimed until every source/test file in the required scopes is actually read.
 
 ### Next
-Read `personal-brain` and continue through the seven remaining required Brain areas, recording cross-module contracts and decision/memory persistence as they are established.
+Continue deterministic reading of all remaining Personal Brain production/spec files, then finish Memory Intelligence, Brain Integration, Conversation Engine, Decision Engine, Adaptive Learning and Goal Intelligence. After all Brain source is read, reconcile cross-module contracts into the required matrices and run whatever validation is possible through available repository tooling.
