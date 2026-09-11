@@ -96,8 +96,7 @@ export class AuthService {
       this.appConfigService,
       user.id,
     );
-    const expiresAt = new Date();
-    expiresAt.setTime(expiresAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const expiresAt = this.getRefreshTokenExpiry(refreshToken);
 
     const rotatedSession = await this.sessionService.rotate(
       data.refreshToken,
@@ -152,8 +151,7 @@ export class AuthService {
       user.id,
     );
 
-    const expiresAt = new Date();
-    expiresAt.setTime(expiresAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const expiresAt = this.getRefreshTokenExpiry(refreshToken);
 
     await this.sessionService.create({
       userId: user.id,
@@ -172,5 +170,13 @@ export class AuthService {
         avatarUrl: user.avatarUrl,
       },
     };
+  }
+
+  private getRefreshTokenExpiry(refreshToken: string) {
+    const decoded = this.jwtService.decode<{ exp?: number }>(refreshToken);
+    if (!decoded?.exp) {
+      throw new UnauthorizedException('Invalid refresh token expiry');
+    }
+    return new Date(decoded.exp * 1000);
   }
 }
