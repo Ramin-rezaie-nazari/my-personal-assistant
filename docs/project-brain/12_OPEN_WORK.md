@@ -2,233 +2,204 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: baseline; complete Core source scope; complete Assistant TypeScript source/test scope; final Prisma schema; all 39 migration SQL files; substantial Personal Brain production/test scope; Brain Integration, Conversation Engine, Decision Engine, Adaptive Learning, Goal Intelligence; Memory Intelligence source/test scope.
-Scope not yet read: remaining non-Brain deep-read scopes, remaining repository-wide tests/scripts/CI/mobile, complete route/consumer matrix, full runtime validation, historical docs/branches.
-Evidence roots: `apps/backend/src/modules/`; `apps/backend/prisma/schema.prisma`; `apps/backend/prisma/migrations/`; `docs/project-brain/`.
-Confidence level: HIGH for issues below whose exact source locations are listed; MEDIUM for cross-module impact until remaining scopes are reconciled.
-Open questions: live DB drift; complete reader/writer/transaction graph; runtime test outcomes; downstream mobile consumers.
+Scope actually read: baseline; complete Core source scope; complete Assistant TypeScript source/test scope; final Prisma schema; all 39 migration SQL files; complete enumerated Brain file-level scope; Food base module and active Recipe service/controller/data/scaling files started.
+Scope not yet read: remaining Food/Nutrition/Meals/Recommendation/Budget files; Shopping; Life/Health; Fitness outside Brain integrations; Platform/Tests; Mobile; repository-wide route/consumer/database matrices; runtime validation; full security/privacy; historical docs/branches.
+Evidence roots: `apps/backend/src/modules/`; `apps/backend/prisma/`; `docs/project-brain/`.
+Confidence level: HIGH for issues below whose exact source locations are listed; MEDIUM for cross-module impact until remaining food/data/runtime consumers are reconciled.
+Open questions: FoodItem nutrient units, RecipeStep/Media persistence contract, inventory unit semantics, country data completeness/ownership, nutrition targets and meal recommendation consumers.
 
 ## Issue catalog — evidence-backed
 
 ### PB-001 — Memory governance metadata is not persisted
 Status: OPEN
 Location: `apps/backend/src/modules/memory-intelligence/models/memory.model.ts`, `models/memory-governance.model.ts`, `repositories/prisma-memory.repository.ts`, `apps/backend/prisma/schema.prisma` (`UserFact`).
-Problem: the in-memory/domain Memory model carries richer governance fields (layer, visibility, confidence, retention, relationship/topic, confirmation and expiry concepts), while the Prisma `UserFact` persistence shape stores only a subset.
-Impact: persisted memories cannot fully round-trip their governance semantics; retrieval/surfacing after restart can differ from in-process behavior.
-Action later: define an authoritative persistence contract and migrate all readers/writers to it.
+Problem: domain Memory has richer governance fields than durable UserFact persistence.
+Impact: persisted memories cannot fully round-trip governance semantics.
 
-### PB-002 — Brain memory integration does not satisfy the required user-id contract
+### PB-002 — Brain memory integration does not satisfy required user-id contract
 Status: OPEN
-Location: `apps/backend/src/modules/brain-integration/services/brain-memory.service.ts`, `apps/backend/src/modules/memory-intelligence/services/memory-intelligence.service.ts`, `apps/backend/src/modules/memory-intelligence/repositories/prisma-memory.repository.ts`.
-Problem: Brain integration delegates memory retrieval without supplying the user identity required by the persistence layer.
-Impact: runtime failure risk or empty/incorrect memory context depending on repository guard behavior.
-Action later: pass authenticated user scope end-to-end and add contract tests.
+Location: `apps/backend/src/modules/brain-integration/services/brain-memory.service.ts`, Memory Intelligence service/repository.
+Problem: retrieval delegation omits user identity required by the persistence layer.
+Impact: runtime failure risk or incomplete user-scoped memory context.
 
-### PB-003 — Personal Brain MemoryManager is a placeholder while Memory Intelligence is real
+### PB-003 — Personal Brain MemoryManager is placeholder-level
 Status: OPEN
 Location: `apps/backend/src/modules/personal-brain/services/memory-manager.service.ts`.
-Problem: placeholder orchestration exists beside functional Memory Intelligence persistence/retrieval.
-Impact: architectural split; callers can depend on a façade that does not implement the intended Brain memory behavior.
-Action later: either replace with the real memory orchestrator or remove it and standardize on one contract.
+Impact: duplicate façade beside actual Memory Intelligence persistence.
 
-### PB-004 — DecisionOutcome exists in migration/runtime SQL but not final Prisma schema
+### PB-004 — DecisionOutcome raw SQL runtime contract absent from final Prisma model
 Status: OPEN
-Location: `apps/backend/src/modules/personal-brain/services/decision-outcome-learning.service.ts`; migration history including `apps/backend/prisma/migrations/*decision*outcome*`; final `apps/backend/prisma/schema.prisma`.
-Problem: production service uses parameterized raw SQL against `DecisionOutcome`, but the final Prisma schema does not expose a corresponding model.
-Impact: schema/client drift; migrations, generated Prisma client and runtime code can disagree.
-Action later: choose one authoritative contract and reconcile schema, migrations, service access and tests.
+Location: `apps/backend/src/modules/personal-brain/services/decision-outcome-learning.service.ts`; migration history; `schema.prisma`.
+Impact: schema/client/runtime drift.
 
-### PB-005 — ConversationTurn exists in migration/runtime SQL but not final Prisma schema
+### PB-005 — ConversationTurn raw SQL runtime contract absent from final Prisma model
 Status: OPEN
-Location: `apps/backend/src/modules/assistant/services/conversation-history.service.ts`; migration `apps/backend/prisma/migrations/20260812193000_add_conversation_turns/migration.sql`; final `apps/backend/prisma/schema.prisma`.
-Problem: Assistant conversation persistence directly reads/writes `ConversationTurn` with raw SQL while the final Prisma schema has no model.
-Impact: persistent conversation functionality depends on a hidden DB contract outside the Prisma model graph.
-Action later: reconcile model/migration/runtime ownership and add end-to-end persistence validation.
+Location: `apps/backend/src/modules/assistant/services/conversation-history.service.ts`; `20260812193000_add_conversation_turns`; `schema.prisma`.
+Impact: hidden DB contract outside Prisma model graph.
 
-### PB-006 — WorkoutPerformance exists in raw SQL runtime but is not represented as a Prisma model
+### PB-006 — WorkoutPerformance raw SQL runtime contract absent from final Prisma model
 Status: OPEN
-Location: `apps/backend/src/modules/personal-brain/services/workout-performance-memory.service.ts`; migration `apps/backend/prisma/migrations/*workout*performance*/migration.sql`; final `apps/backend/prisma/schema.prisma`.
-Problem: service inserts/selects `WorkoutPerformance` via raw SQL while final Prisma schema omits the model.
-Impact: fitness performance memory has the same hidden runtime-schema split as DecisionOutcome/ConversationTurn.
-Action later: reconcile table, schema/client, indexes and transaction boundaries.
+Location: `apps/backend/src/modules/personal-brain/services/workout-performance-memory.service.ts`; workout-performance migration; `schema.prisma`.
+Impact: fitness performance persistence drift.
 
-### PB-007 — Additional migration-only runtime tables need reconciliation
+### PB-007 — Other migration-only tables need reconciliation
 Status: OPEN
-Locations: `apps/backend/prisma/migrations/` and final `apps/backend/prisma/schema.prisma`.
-Known examples: Price Intelligence tables (`PriceTrackedProduct`, `PriceSource`, `PriceSnapshot`, `PriceCollectionRun`), `RecipeStep`, `RecipeMedia`, and legacy Life Execution compatibility tables (`TaskDependency`, `TaskEvent`).
-Impact: unclear whether these are intentionally raw-SQL-only, obsolete compatibility objects, or missing Prisma contracts.
-Action later: map every table to active readers/writers and deployment expectations.
+Locations: `apps/backend/prisma/migrations/`, `schema.prisma`.
+Examples: Price Intelligence tables, RecipeStep, RecipeMedia, legacy Life Execution compatibility tables.
 
-### PB-008 — Notification channel intelligence can select unsupported delivery channels
+### PB-008 — Notification intelligence can select unsupported channels
 Status: OPEN
-Location: `apps/backend/src/modules/personal-brain/services/notification-channel-intelligence.service.ts`; `notification-delivery-provider.service.ts`.
-Problem: channel intelligence ranks `push`, `in_app`, `email`, and `web_push`, while the concrete provider registry exposes only `in_app`.
-Impact: the decision layer can recommend channels that the delivery layer cannot actually fulfill.
-Action later: make channel capabilities authoritative and shared by intelligence + dispatcher/provider registry.
+Locations: `notification-channel-intelligence.service.ts`, `notification-delivery-provider.service.ts`.
+Impact: decision layer can recommend a channel that delivery cannot fulfill.
 
-### PB-009 — Notification deduplication is process-local, not user-scoped, and markSent has no production caller
+### PB-009 — Notification dedupe is process-local and approved decisions are not marked sent in observed controller path
 Status: OPEN
-Locations: `apps/backend/src/modules/personal-brain/services/notification-deduplication.service.ts`; `apps/backend/src/modules/personal-brain/controllers/personal-brain.controller.ts` (`POST coach/notification-decision`).
-Problem: dedupe state is a process-local Map keyed only by `event.dedupeKey`; production controller calls `shouldSend()` but does not call `markSent()`. `markSent()` only appears in the service test in the current search.
-Impact: duplicate prevention does not survive process restart, can collide across users when keys are not globally unique, and approved decisions are not recorded as sent in that controller path.
-Action later: define persisted/user-scoped dedupe semantics and call it at the actual delivery boundary.
+Locations: `notification-deduplication.service.ts`, `personal-brain.controller.ts`.
+Impact: restart/scale-out duplication risk and incomplete delivery lifecycle.
 
-### PB-010 — Device disable endpoint lacks owner scoping
-Status: OPEN — SECURITY PRIORITY: HIGH
-Locations: `apps/backend/src/modules/personal-brain/controllers/personal-brain.controller.ts` (`POST coach/device/disable`); `apps/backend/src/modules/personal-brain/services/notification-device-registry.service.ts` (`disable(id)`).
-Problem: the controller authenticates the caller but passes only `deviceId`; the registry disables by global device ID without checking `device.userId` against the authenticated user.
-Impact: an authenticated user who knows another device ID may be able to disable another user's device.
-Action later: require `(userId, deviceId)` ownership checks and add negative authorization tests.
+### PB-010 — Device disable endpoint lacks ownership check
+Status: OPEN — SECURITY HIGH
+Locations: `personal-brain.controller.ts` `POST coach/device/disable`; `notification-device-registry.service.ts`.
+Impact: possible cross-user device disabling if another device ID is known.
 
-### PB-011 — Multiple adaptive/decision/notification state stores are process-local
+### PB-011 — Multiple adaptive/decision/notification stores are process-local
 Status: OPEN
-Locations include `notification-feedback.service.ts`, `notification-device-registry.service.ts`, `notification-delivery-queue.service.ts`, `notification-experiment.service.ts`, `notification-deduplication.service.ts`, `decision-idempotency.service.ts`, `decision-rate-limiter.service.ts`, `decision-execution-state.service.ts`, `decision-execution-history.service.ts`, `personalization-engine.service.ts`.
-Problem: important state is held in process memory Maps/counters.
-Impact: restart/scale-out loses state and different instances can make inconsistent decisions; durable audit/history semantics become partial.
-Action later: classify each state as intentionally ephemeral vs durable and persist the latter.
+Locations: notification feedback/device/queue/experiment/dedupe; decision idempotency/rate-limit/execution state/history; personalization engine.
+Impact: lost state and inconsistent multi-instance behavior.
 
-### PB-012 — Controller endpoints use unvalidated inline body contracts
+### PB-012 — Personal Brain controller bodies are frequently inline/any rather than validated DTOs
 Status: OPEN
-Locations: `apps/backend/src/modules/personal-brain/controllers/personal-brain.controller.ts`, `decision-feedback.controller.ts`, `decision-execution.controller.ts`.
-Problem: many endpoints use inline TypeScript body types or `any` rather than dedicated class-validator DTOs. Example: `coach/notification-decision` accepts `event: any`; scenario and fitness performance endpoints also use inline objects.
-Impact: runtime validation is weaker and malformed values can reach decision/execution logic.
-Action later: create DTOs, validate enums/ranges/ISO dates/nested objects, and enforce validation consistently.
+Locations: `personal-brain.controller.ts`, `decision-feedback.controller.ts`, `decision-execution.controller.ts`.
+Impact: malformed inputs can reach decision/execution services.
 
-### PB-013 — Coach cue explanation path accepts empty/unbounded message semantics
+### PB-013 — Coach cue explanation accepts empty/unbounded message semantics
 Status: OPEN
-Location: `apps/backend/src/modules/personal-brain/controllers/personal-brain.controller.ts` (`POST coach/cue`); `services/coach-cue-engine.service.ts`.
-Problem: the explanation branch passes `body.message ?? ''` without a required/non-empty contract; other cue fields also rely on inline types and manual defaults.
-Impact: low-value/blank coach output and inconsistent input handling.
-Action later: validate cue-specific fields with explicit DTO rules.
+Location: `personal-brain.controller.ts` + `coach-cue-engine.service.ts`.
 
-### PB-014 — UTC date derivation can disagree with user-local date
+### PB-014 — Workout implicit date can use UTC instead of user-local date
 Status: OPEN
-Location: `apps/backend/src/modules/personal-brain/services/workout-action-adapter.ts`.
-Problem: when only a time is supplied, date derivation uses `toISOString().slice(0,10)`.
-Impact: workout updates near local midnight can target the wrong calendar date for the user.
-Action later: use the authenticated user's timezone consistently and test boundary cases.
+Location: `workout-action-adapter.ts`.
 
-### PB-015 — Decision planning dependency graph is overly broad
+### PB-015 — Decision execution dependency graph is broader than semantic predecessors
 Status: OPEN
-Location: `apps/backend/src/modules/personal-brain/services/decision-execution-planner.service.ts`.
-Problem: later steps are currently modeled as depending on all earlier steps rather than only semantically required predecessors.
-Impact: independent actions can become unnecessarily blocked/serialized, reducing plan parallelism and increasing failure coupling.
-Action later: represent explicit predecessor semantics and validate dependency DAGs.
+Location: `decision-execution-planner.service.ts`.
+Impact: unnecessary serialization/failure coupling.
 
-### PB-016 — Schedule policy and scenario logic are heavily deterministic/rule-based despite adaptive naming
+### PB-016 — Adaptive/scheduling/scenario behavior is strongly rule-based despite broader adaptive naming
 Status: OPEN / DESIGN REVIEW
-Locations: `schedule-policy.service.ts`, `scenario-planning.service.ts`, `multi-scenario-simulator.service.ts`, `adaptive-notification-decision.service.ts`.
-Problem: behavior relies on fixed thresholds, handcrafted markers and deterministic weighting; the adaptive layer is narrow and several state sources are local.
-Impact: feature names imply broader personalization/adaptation than current implementation actually provides.
-Action later: decide which behavior is intentionally rule-based MVP and document/implement a measured learning loop where required.
+Locations: schedule/scenario/adaptive decision services.
 
-### PB-017 — User understanding and intention analysis remain placeholders
+### PB-017 — UserUnderstanding/IntentionAnalysis placeholders
 Status: OPEN
-Locations: `apps/backend/src/modules/personal-brain/services/user-understanding.service.ts`, `intention-analysis.service.ts`.
-Problem: services return minimal placeholder responses rather than the richer analysis expected by the Brain architecture.
-Impact: naming suggests active intelligence while downstream context can remain shallow.
-Action later: wire them to real context/memory/goal signals or remove dead façade layers.
+Locations: `user-understanding.service.ts`, `intention-analysis.service.ts`.
 
-### PB-018 — Goal Intelligence remains placeholder-level
+### PB-018 — Goal Intelligence placeholders
 Status: OPEN
-Locations: `apps/backend/src/modules/goal-intelligence/services/goal-analysis.service.ts`, `goal-planning.service.ts`, `goal-progress.service.ts`, related controller/DTO.
-Problem: core goal analysis/planning/progress services are placeholders and CreateGoalDto is only a plain data shape.
-Impact: goal-intelligence layer does not yet provide the intended domain intelligence.
-Action later: complete the service contract or clearly scope it out of MVP.
+Locations: `apps/backend/src/modules/goal-intelligence/services/*`, controller/DTO.
 
-### PB-019 — Brain Integration context is a thin placeholder
+### PB-019 — Brain Integration context is thin placeholder
 Status: OPEN
 Location: `apps/backend/src/modules/brain-integration/services/brain-context.service.ts`.
-Problem: current context service returns only minimal timestamp/source information.
-Impact: Brain consumers may receive a structurally valid but semantically weak context object.
-Action later: define authoritative context sources and quality semantics.
 
-### PB-020 — Decision Engine service is placeholder-level while rule/scoring logic lives elsewhere
+### PB-020 — Decision Engine top-level service is placeholder-level while logic is split
 Status: OPEN
-Locations: `apps/backend/src/modules/decision-engine/services/decision-engine.service.ts`, `rule-evaluation.service.ts`, `decision-scoring.service.ts`, `action-decision.service.ts`.
-Problem: module façade is minimal while meaningful behavior is split across Personal Brain and rule/scoring services.
-Impact: unclear ownership of decision orchestration and duplicated conceptual layers.
-Action later: consolidate the canonical decision path.
+Locations: `apps/backend/src/modules/decision-engine/services/decision-engine.service.ts` and related rule/scoring services.
 
-### PB-021 — Adaptive Learning write path is incomplete
+### PB-021 — Adaptive Learning write path incomplete
 Status: OPEN
-Locations: `apps/backend/src/modules/adaptive-learning/`; controller/DTO/services.
-Problem: read-side insight generation exists, but FeedbackAnalysisService/LearningMemoryService are placeholders and `CreateLearningEventDto` is not wired to a current write endpoint.
-Impact: learning loop can read history but lacks a complete durable event-ingestion contract.
-Action later: connect events, persistence, feedback analysis and policy updates.
+Locations: `apps/backend/src/modules/adaptive-learning/`.
 
-### PB-022 — Personal Brain channel/provider model has incompatible duplicate type definitions
+### PB-022 — Duplicate incompatible NotificationChannel contracts
 Status: OPEN
-Locations: `notification-channel-intelligence.service.ts` and `notification-delivery-provider.service.ts`.
-Problem: separate `NotificationChannel` unions disagree (`email`/`web_push` exist in intelligence but not provider registry).
-Impact: compile-time isolation hides a runtime capability mismatch.
-Action later: move channel capability types into one shared contract.
+Locations: notification channel intelligence/provider.
 
-### PB-023 — Proactive event generation depends on local process dedupe and does not itself deliver
+### PB-023 — Proactive event -> delivery lifecycle incomplete
 Status: OPEN
-Locations: `proactive-event-engine.service.ts`, `notification-deduplication.service.ts`, `notification-delivery-dispatcher.service.ts`.
-Problem: event generation, dedupe decision and delivery queue are separate services, but the observed controller path stops at decision and no production `markSent()` call was found.
-Impact: the architecture can generate actionable events without a closed durable delivery lifecycle.
-Action later: define event -> decision -> queue -> provider -> receipt -> dedupe lifecycle.
+Locations: proactive event/dedupe/delivery services.
 
-### PB-024 — Confirmation tokens are deterministic rather than high-entropy
+### PB-024 — Confirmation tokens deterministic instead of high-entropy one-time secrets
 Status: DESIGN/SECURITY REVIEW
-Location: `apps/backend/src/modules/personal-brain/services/action-confirmation-intelligence.service.ts`.
-Problem: confirmation token is an FNV-like deterministic hash of `userId:candidate.id:candidate.action`.
-Impact: token unpredictability depends on secrecy of these inputs; this is weaker than a random one-time secret for security-sensitive confirmations.
-Action later: use cryptographically random, persisted/expiring one-time tokens where confirmation security matters.
+Location: `action-confirmation-intelligence.service.ts`.
 
-### PB-025 — Scenario simulation can alter candidate scores/confidence heuristically rather than modeling distinct actions
+### PB-025 — Scenario simulator uses heuristic candidate mutations instead of explicit scenario models
 Status: OPEN / DESIGN REVIEW
 Locations: `multi-scenario-simulator.service.ts`, `scenario-planning.service.ts`.
-Problem: conservative/balanced scenarios mutate candidate score/confidence/goal alignment and reuse candidate IDs rather than constructing explicit scenario-specific action state.
-Impact: scenario labels can look more independent than the actual model; comparisons may be sensitive to arbitrary adjustment constants.
-Action later: define explicit scenario transformations and evidence for each transformation.
 
-### PB-026 — Brain daily/weekly status is UTC-based rather than explicitly user-timezone-based
+### PB-026 — Brain daily/weekly/life-context boundaries are UTC-based
 Status: OPEN
-Locations: `apps/backend/src/modules/personal-brain/services/brain-daily-status.service.ts`, `brain-weekly-status.service.ts`, `brain-life-context.service.ts`.
-Problem: date keys are derived with `toISOString().slice(0,10)` / UTC date arithmetic. The weekly and daily brain summaries therefore use server/UTC boundaries rather than a user-local timezone contract.
-Impact: users outside UTC can see the wrong "today"/week near midnight, and life-context streaks/daily queries can disagree with other timezone-aware features.
-Action later: make timezone an explicit Brain context input and use one shared date-key service.
+Locations: `brain-daily-status.service.ts`, `brain-weekly-status.service.ts`, `brain-life-context.service.ts`.
 
-### PB-027 — Brain reasoning context quality score ignores major context dimensions
+### PB-027 — Brain reasoning context quality ignores major context dimensions and freshness
 Status: OPEN / DESIGN REVIEW
-Location: `apps/backend/src/modules/personal-brain/services/brain-reasoning-context.service.ts` (`calculateLifeContextQuality`).
-Problem: quality is calculated from only four binary-ish signals: active habits, next reminder, supplements presence and active goals. Fitness context, performance memory, decision memory, outcome memory and data freshness are not included.
-Impact: a numerically high quality score can coexist with weak/stale/missing high-value context, causing confidence to be overstated.
-Action later: define evidence-weighted quality dimensions and freshness/availability semantics.
+Location: `brain-reasoning-context.service.ts`.
 
-### PB-028 — BrainStateAnalyzer readiness treats empty arrays as available context
+### PB-028 — BrainStateAnalyzer treats empty goal/memory arrays as available
 Status: OPEN
-Location: `apps/backend/src/modules/personal-brain/services/brain-state-analyzer.service.ts`.
-Problem: `hasMemories` and `hasGoals` are derived from `Array.isArray(...)`, so empty arrays return `true`.
-Impact: readiness can report that memory/goals are available even when there are zero records, contradicting the semantics used elsewhere where counts/length determine availability.
-Action later: derive readiness from meaningful counts rather than container type.
+Location: `brain-state-analyzer.service.ts`.
 
-### PB-029 — Full-day scheduler uses legacy dependency table and server-local time semantics
-Status: OPEN — DATA INTEGRITY / TIMEZONE PRIORITY: HIGH
-Location: `apps/backend/src/modules/personal-brain/services/full-day-scheduler.service.ts`.
-Problem: the scheduler's raw SQL joins `TaskDependency` to derive dependency statuses, while migration history also contains the newer `LifeTaskDependency` structure. Separately, schedule-day normalization and supplement/habit slot construction use JavaScript `setHours`/`setDate` before emitting UTC ISO strings, making behavior depend on the server's local timezone rather than an explicit user timezone.
-Impact: dependency resolution may ignore the canonical Life Execution relation if both tables diverge; scheduled items can shift date/time for users in non-server timezones.
-Action later: identify the canonical dependency table, reconcile legacy compatibility usage, and centralize timezone-aware schedule calculations.
+### PB-029 — Full-day scheduler uses legacy TaskDependency + server-local time semantics
+Status: OPEN — DATA/TIMEZONE HIGH
+Location: `full-day-scheduler.service.ts`.
 
-## Completed audit work still requiring runtime validation
+### PB-030 — Recipe nutrition totals assume FoodItem nutrition unit semantics without an explicit base-quantity contract
+Status: OPEN — DATA INTEGRITY HIGH
+Locations: `apps/backend/src/modules/recipes/services/recipes.service.ts`; `apps/backend/src/modules/foods/services/foods.service.ts`; `apps/backend/prisma/schema.prisma` (`FoodItem`).
+Problem: recipe creation multiplies `FoodItem.calories/protein/carbs/fat` directly by ingredient quantity, while the `FoodItem` persistence contract inspected so far does not expose a base quantity/unit field tying those nutrition values to a specific amount (for example per-100g, per-piece, or per-serving).
+Impact: unless all stored FoodItem nutrition values are guaranteed to mean "per one unit of ingredient quantity", recipe totals can be materially wrong. The ambiguity also propagates into scaling, recommendation calorie/protein filters, inventory planning and meal plans.
+Action later: define one authoritative nutrition basis for FoodItem and enforce ingredient-unit conversion before aggregation.
 
-- Core source read: COMPLETE.
-- Assistant TypeScript source/test read: COMPLETE.
-- Prisma schema read: COMPLETE.
-- All 39 migration SQL files read: COMPLETE.
-- Brain supporting modules file-level read: COMPLETE where checkpointed.
-- Personal Brain is still IN_PROGRESS until every source/test file in its exact scope is closed.
+### PB-031 — Food Operating Loop and RecipeInventoryMatcher use incompatible inventory unit semantics
+Status: OPEN — DATA INTEGRITY HIGH
+Locations: `apps/backend/src/modules/recipes/services/food-operating-loop.service.ts`; `recipe-inventory-matcher.service.ts`.
+Problem: `FoodOperatingLoopService` normalizes mass/volume/count units before comparing inventory; `RecipeInventoryMatcherService` compares raw numeric quantities directly without unit conversion.
+Impact: the same recipe can produce different availability/missing-ingredient results depending on which endpoint is used (`/recipes/match` vs recommendation/food-plan path), e.g. 1 kg inventory vs 500 g recipe is not equivalent to the direct matcher comparison.
+Action later: centralize unit normalization/comparison into one shared domain service.
+
+### PB-032 — Package/unitless inventory cannot be meaningfully compared in FoodOperatingLoop
+Status: OPEN
+Location: `apps/backend/src/modules/recipes/services/food-operating-loop.service.ts` (`normalizeUnit`/`matchScaledIngredients`).
+Problem: package/unitless units return null from the comparable-unit normalizer, so the algorithm falls back to treating the entire scaled quantity as missing even when inventory may contain the same food and same unit.
+Impact: valid package-based ingredients can be falsely reported missing and added to shopping.
+Action later: define package/count/unitless equivalence rules with explicit conversion metadata where possible.
+
+### PB-033 — Recipe meal-plan endpoint assigns breakfast/lunch/dinner without consulting recipe meal types
+Status: OPEN
+Location: `apps/backend/src/modules/recipes/controllers/recipes.controller.ts` `GET /recipes/meal-plan`.
+Problem: controller takes the top ranked recommendations and assigns them sequentially to breakfast, lunch and dinner; `RecipeContract` has a mealTypes field but this endpoint does not use it.
+Impact: a dessert/snack/drink or dinner-only recipe can be placed into breakfast, producing semantically incorrect meal plans.
+Action later: rank/filter by requested meal type, with fallback rules and explicit reasons.
+
+### PB-034 — Country code input lacks explicit validation against supported set
+Status: OPEN
+Locations: `recipes.controller.ts`, `global-country-food.service.ts`.
+Problem: endpoints accept arbitrary strings for `countryCode`; the service returns null/falls back for unknown values instead of rejecting invalid codes.
+Impact: typo/invalid country codes silently disable localization/ranking rather than producing deterministic validation feedback.
+Action later: validate ISO code format and supported set at the API boundary.
+
+### PB-035 — Controller serving-count contract is looser than DTO/service contract
+Status: OPEN
+Locations: `recipes.controller.ts` `parseRequiredServings`; `create-recipe.dto.ts`; `recipes.service.ts`.
+Problem: DTO and service bound servings to 1..10000, while controller parser only checks positive integer and does not enforce the 10000 maximum.
+Impact: API layer and domain layer accept different ranges and return inconsistent validation behavior depending on entry path.
+Action later: centralize shared serving validation.
+
+### PB-036 — Recipe presentation reads migration-only RecipeStep with raw SQL
+Status: OPEN
+Location: `apps/backend/src/modules/recipes/services/recipe-presentation.service.ts`; RecipeStep migration; final Prisma schema.
+Problem: `RecipeStep` is consumed directly through raw SQL and is absent from final Prisma model graph.
+Impact: recipe instructions depend on hidden schema contract and cannot be safely managed through the same Prisma lifecycle as Recipe/RecipeIngredient.
+Action later: reconcile RecipeStep persistence and lifecycle with recipe writes/versioning.
+
+### PB-037 — Recipe create/update does not manage RecipeStep/RecipeMedia, leaving presentation completeness disconnected from recipe lifecycle
+Status: OPEN
+Locations: `recipes.service.ts`, `recipe-presentation.service.ts`, RecipeStep/RecipeMedia migrations.
+Problem: recipe create/update persists recipe + ingredients only; presentation reads steps from a separate migration-created table and the controller exposes no step/media write path in this scope.
+Impact: recipes can be created with zero instructions/media even though presentation supports those fields, producing structurally incomplete recipes.
+Action later: define explicit recipe content authoring/import contract and transactionally manage steps/media/versioning.
 
 ## Next deterministic work
 
-1. Finish every remaining Personal Brain source/test file and close BATCH-0004.
-2. Freeze the Brain issue catalog and reconcile it against `CONTRACT_MATRIX.md` and `FEATURE_COMPLETENESS_MATRIX.md`.
-3. Continue Food/Shopping/Life-Health/Fitness/Platform-Tests/Mobile deep reads.
-4. Map every route to controller/service/DTO/output/auth/DB effects and every mobile consumer.
-5. Compare every Prisma model/table with readers, writers, raw SQL, migrations, indexes, seeds/imports and transactions.
-6. Execute repository CI/test commands where tooling provides an executable path; no runtime execution claim has been made yet.
-7. Finish security/privacy review and historical reconciliation.
-8. Only after the audit is complete, begin a separate correction phase that uses this catalog as the repair plan.
+1. Continue BATCH-0005 through remaining Recipe services/specs/data, then Nutrition, Meals, Recommendation Intelligence and Budget Intelligence.
+2. Freeze Food issue IDs after complete Food deep-read.
+3. Update `deep-read/03-food.md`, `FEATURE_COMPLETENESS_MATRIX.md`, `CONTRACT_MATRIX.md`, `FILE_REVIEW_INDEX.md` after each closed Food sub-batch.
+4. After all deep-read scopes, perform full route/API/mobile/database/security validation before correction phase.
