@@ -1,5 +1,10 @@
+import { createHash } from 'crypto';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
+
+function hashRefreshToken(refreshToken: string) {
+  return createHash('sha256').update(refreshToken, 'utf8').digest('hex');
+}
 
 @Injectable()
 export class SessionService {
@@ -11,14 +16,18 @@ export class SessionService {
     expiresAt: Date;
   }) {
     return this.prisma.session.create({
-      data,
+      data: {
+        userId: data.userId,
+        refreshTokenHash: hashRefreshToken(data.refreshToken),
+        expiresAt: data.expiresAt,
+      },
     });
   }
 
   async findByRefreshToken(refreshToken: string, now = new Date()) {
     return this.prisma.session.findFirst({
       where: {
-        refreshToken,
+        refreshTokenHash: hashRefreshToken(refreshToken),
         expiresAt: { gt: now },
       },
     });
@@ -35,7 +44,7 @@ export class SessionService {
     return this.prisma.$transaction(async (tx) => {
       const deleted = await tx.session.deleteMany({
         where: {
-          refreshToken: currentRefreshToken,
+          refreshTokenHash: hashRefreshToken(currentRefreshToken),
           userId: data.userId,
         },
       });
@@ -44,14 +53,20 @@ export class SessionService {
         return null;
       }
 
-      return tx.session.create({ data });
+      return tx.session.create({
+        data: {
+          userId: data.userId,
+          refreshTokenHash: hashRefreshToken(data.refreshToken),
+          expiresAt: data.expiresAt,
+        },
+      });
     });
   }
 
   async deleteByRefreshToken(refreshToken: string) {
     return this.prisma.session.deleteMany({
       where: {
-        refreshToken,
+        refreshTokenHash: hashRefreshToken(refreshToken),
       },
     });
   }
@@ -67,7 +82,7 @@ export class SessionService {
   async revokeSession(refreshToken: string) {
     return this.prisma.session.deleteMany({
       where: {
-        refreshToken,
+        refreshTokenHash: hashRefreshToken(refreshToken),
       },
     });
   }
