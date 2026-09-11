@@ -14,8 +14,8 @@ Open questions: remaining library/component files; full backend/mobile contract 
 - `apps/mobile/lib/assistant-api.ts` calls history/message endpoints without the shared 401 refresh flow.
 - `apps/mobile/app/onboarding.tsx` collects substantial profile/nutrition/fitness/schedule/permission state but completion only writes AsyncStorage; no backend onboarding/profile write is called in the inspected file.
 - `apps/mobile/lib/onboarding.ts` version-checks stored state but otherwise accepts parsed values without full runtime shape/value validation.
-- `apps/mobile/app/brain-overview.tsx` hardcodes English and relies on Brain execution paths needing backend reconciliation.
-- `apps/mobile/lib/brain-execution.ts` calls `POST /personal-brain/decision/execute-next`; repository search did not find that route in the audited backend. Feedback exists separately; confirm exists as `/personal-brain/decision/confirm`.
+- `apps/mobile/app/brain-overview.tsx` hardcodes English and uses `brain-execution.ts` execution APIs.
+- Correction to a prior audit note: `POST /personal-brain/decision/execute-next` and `POST /personal-brain/decision/feedback` DO exist in the audited backend (`personal-brain/controllers/decision-execution.controller.ts` and `decision-feedback.controller.ts`) and are JWT-protected. The earlier route-mismatch finding is therefore NOT_APPLICABLE/false and must not be treated as an open Mobile contract break. `POST /personal-brain/decision/confirm` is also exposed by the execution controller.
 - `apps/mobile/app/language.tsx` changes `I18nManager.allowRTL()` but does not establish a full restart/layout-reload strategy; most screens ignore the locale system.
 - `apps/mobile/lib/i18n.ts` has only a small dictionary; many screens hardcode English/mixed-language UI and use inconsistent RTL handling.
 - `apps/mobile/app/daily.tsx` calls `generateSmartNotifications()` every time its loader runs, making read-screen load/refresh mutate notification state.
@@ -35,8 +35,8 @@ Open questions: remaining library/component files; full backend/mobile contract 
 - `apps/mobile/lib/local-persian-tts.ts` imports `expo-av`, `expo-file-system/legacy`, `react-native-sherpa-onnx` but these are not declared in Mobile manifest.
 - Local TTS model download has no cryptographic integrity verification.
 - `apps/mobile/lib/notifications/push-registration.ts` captures a supplied access token in its token-refresh listener and does not invoke shared auth refresh when that token expires.
-- Repository search finds no active caller of `registerForPushNotifications()` or `listenForPushTokenRefresh()` outside their defining file, so device registration is currently disconnected from app lifecycle.
-- `apps/mobile/lib/notifications/push-runtime.ts` defines foreground handler, response listeners and last-response consumption, but repository search finds no active caller of `startNotificationRuntime()` or `consumeLastNotificationResponse()` outside that file.
+- Repository search found no active caller of `registerForPushNotifications()` or `listenForPushTokenRefresh()` outside their defining file, so device registration is currently disconnected from app lifecycle.
+- `apps/mobile/lib/notifications/push-runtime.ts` defines foreground handler, response listeners and last-response consumption, but repository search found no active caller of `startNotificationRuntime()` or `consumeLastNotificationResponse()` outside that file.
 - `apps/mobile/lib/notifications/notification-actions.ts` defines `open/complete/snooze/dismiss` feedback payloads, but no caller was found. Backend has feedback adapter/service, but no matching controller endpoint was found in inspected controller search.
 - `apps/mobile/tsconfig.json` excludes all `*.spec.*` and `*.test.*` files, so standard Mobile typecheck does not validate the test files themselves.
 - `apps/mobile/lib/voice.ts` imports `expo-speech`, but `apps/mobile/package.json` does not declare `expo-speech`.
@@ -50,7 +50,7 @@ Open questions: remaining library/component files; full backend/mobile contract 
 ## Mobile issue IDs
 
 - PB-111: Local-only onboarding.
-- PB-112: Brain execute-next route mismatch.
+- PB-112: NOT_APPLICABLE — earlier route mismatch finding was disproven; execute-next and feedback routes exist and are guarded.
 - PB-113: Brain Overview localization gap.
 - PB-114: Onboarding state lacks runtime validation.
 - PB-115: Partial localization/RTL.
