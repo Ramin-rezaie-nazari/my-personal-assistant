@@ -5,15 +5,15 @@ Review status: IN_PROGRESS
 
 ## Purpose
 
-This document tracks the post-Appendix product-development work against the MYPA Master Prompt vision. It must not override `docs/05_CURRENT_STATE.md` or the canonical findings register.
+This document tracks the post-Appendix product-development work against the MYPA Master Prompt vision. It does not override `docs/05_CURRENT_STATE.md` or the canonical findings register.
 
 ## Baseline
 
 - Appendix remediation: complete for the recoverable PB-156..PB-257 catalog.
-- Backend CI: previously verified green on the remediation tree; a fresh verification run is in progress for the current product changes.
-- Mobile CI: previously verified green on the remediation tree.
+- Backend CI: green on the verified Master-0002 tree.
+- Mobile CI: green on the verified Master-0002 tree.
 - Project Brain source-level audit: reconciled to available repository evidence.
-- Product readiness is not 100%; remaining work is primarily integrated mobile journeys, central/local brain depth, global food intelligence depth, offline behavior, voice/action UX, production validation and future integrations.
+- Product readiness is not 100%; remaining work is integrated mobile journeys, central/local brain depth, global food intelligence depth, offline behavior, voice/action UX, production validation and future integrations.
 
 ## Product workstream order
 
@@ -33,24 +33,35 @@ This document tracks the post-Appendix product-development work against the MYPA
 Status: COMPLETE.
 
 ### MASTER-0002 — deterministic local Brain context
-Status: IMPLEMENTED — VALIDATION IN PROGRESS.
+Status: VERIFIED_BY_TEST.
 
 Changes:
-- `LocalLanguageUnderstandingService` now extracts household size, budget amount/currency, protein target, dietary preferences and allergy context in addition to existing intent/entity parsing.
-- Persian label-first numeric targets such as `پروتئین 120 گرم` and `کالری 1800` are supported.
-- `PlanningService` accepts and carries structured local entities into actionable plan steps.
-- `AssistantService` merges contextual-command entities with local-understanding entities before planning, so local constraints become planning context rather than metadata-only decoration.
-- Added direct tests for local constraint extraction and planner entity propagation.
+- `LocalLanguageUnderstandingService` extracts household size, budget amount/currency, protein target, calorie target, dietary preferences, allergy context, time/duration, food and core assistant intents.
+- Persian numeric normalization and label-first numeric target parsing are covered.
+- `PlanningService` propagates structured local entities into actionable plan steps.
+- `AssistantService` merges contextual-command and local-understanding entities before planning and passes local understanding/plan context into execution.
+- `DecisionActionAdapter` now type-checks advertised action capability metadata.
+- `LocalMealRecommendationActionAdapter` exposes `recommend_meal`, passes supported nutrition constraints into `FoodOperatingLoopService`, and fails closed when allergy/diet constraints lack verified canonical data support.
+- Direct tests cover local parsing, planning propagation, action capability registration and recommendation safety behavior.
 
 Validation:
-- Backend CI for the latest product-change tree is running through PR #70.
-- Build, Prisma validation/generation, migrations/idempotence and food self-test have already passed in the currently observed Backend CI run before the remaining unit/E2E gates.
-- Fresh unit/E2E result for the latest commit is still pending and must not be called green early.
+- Backend CI `34686237627`: SUCCESS.
+  - migrations + idempotence: PASS
+  - food-intelligence self-test: PASS
+  - backend build: PASS
+  - 427/427 backend unit tests: PASS
+  - API E2E: PASS
+- Mobile CI `34686237631`: SUCCESS.
+  - install/typecheck/source tests/Jest specs/Expo validation/Android JS bundle: PASS
+
+## Current architectural decision
+
+Do not claim allergy/diet hard-filtering is implemented merely because local language understanding recognizes those constraints. The recommendation engine must have verified recipe/ingredient safety semantics before it can return results under such constraints. Until then, execution fails closed.
 
 ## Next
 
-After MASTER-0002 is fully verified, continue the Brain vertical journey by connecting structured local constraints to domain recommendation/planning decisions and then exposing the resulting capabilities coherently through the Mobile Assistant/Command Center flow.
+`MASTER-0003`: create the verified recipe/ingredient safety-taxonomy contract. First inspect the existing ingredient taxonomy, resolver aliases and import pipeline to determine whether a deterministic mapping can be derived without a schema change. If the existing data cannot represent verified per-FoodItem safety flags, add the smallest backward-compatible model/migration needed, populate it only from trusted deterministic inputs, and add hard-filter integration tests.
 
 ## Evidence boundary
 
-The repository is being modified on `audit/project-brain-2026-09-11`. No automatic merge to `main` is performed. Production/deployed infrastructure and physical-device behavior remain outside the available runtime unless explicitly validated there.
+The repository is being modified on `audit/project-brain-2026-09-11`. No automatic merge to `main` is performed. Production/deployed infrastructure and physical-device behavior remain outside the available runtime unless explicitly validated.
