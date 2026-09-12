@@ -1,50 +1,25 @@
 # Platform and Tests Deep Read
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
-Scope actually read: backend/root and app package manifests; backend `main.ts`, `bootstrap.ts`, `tsconfig.json`, `eslint.config.mjs`; E2E config/setup/db-preparation/helper/specs; all 11 workflow files currently under `.github/workflows/`; Mobile `package.json`/`app.json`; selected Mobile native/runtime clients and components; GitHub workflow-run lookup for target commit; backend controller inventory and selected backend↔mobile route consumers. File-level reading is complete for the enumerated platform/test/CI scope; no runtime command has been executed in this audit turn.
-Scope not yet read: every remaining common/config/database/shared/content utility and operational script outside previously completed batches; exhaustive backend test inventory; full historical workflow/run inspection; production deployment manifests/secrets configuration; full Mobile native/build configuration; actual local/unit/E2E/build execution; runtime performance/resource tests; full backend↔mobile consumer matrix.
-Evidence roots: `.github/workflows/`; `apps/backend/package.json`; `apps/backend/src/main.ts`; `apps/backend/src/bootstrap.ts`; `apps/backend/src/app.module.ts`; `apps/backend/tsconfig.json`; `apps/backend/eslint.config.mjs`; `apps/backend/test/`; `apps/backend/src/modules/**/controllers/`; `apps/mobile/package.json`; `apps/mobile/app.json`; selected `apps/mobile/lib/` and `apps/mobile/components/`.
-Confidence level: HIGH for inspected workflow/config/controller findings; MEDIUM for repository-wide CI/test completeness until every test/config file and actual runs are reconciled.
-Open questions: exact CI run status for target commit; full test coverage map; whether E2E DB setup's `db push` is unavoidable legacy behavior; production release policy and branch protection; target Expo SVG and undeclared TTS dependency build behavior; exact deployed API route prefixes.
+Last updated: 2026-09-12
+Review status: SOURCE-LEVEL RECONCILED; CI VERIFIED ON REMEDIATION TREE
+Scope actually read: backend/root and app package manifests; bootstrap/main/config/TS/ESLint; E2E setup/config/specs; recorded CI workflows; selected Mobile native/runtime/config clients; controller inventory; backend↔mobile contract checks; remediation CI rechecks.
+Scope not yet read: deployed release settings, branch protection controls not exposed through the runtime, physical-device execution, production secrets/configuration and performance behavior.
+Evidence roots: `.github/workflows/`; `apps/backend/package.json`; `apps/backend/src/main.ts`; `apps/backend/src/bootstrap.ts`; `apps/backend/test/`; `apps/mobile/package.json`; `apps/mobile/app.json`; canonical Appendix; GitHub Actions runs.
+Confidence level: HIGH for recorded source/workflow evidence and CI results; MEDIUM for deployment-only controls.
+Open questions: production release policy, deployed environment configuration and device-level build/runtime behavior.
 
-## Findings
+## Current platform/test state
 
-- Global backend `ValidationPipe` is configured with `whitelist: true`, `forbidNonWhitelisted: true`, `transform: true`, and `enableImplicitConversion: true`. Therefore DTO decorator presence materially changes runtime input semantics; inline controller bodies bypass this contract layer.
-- Backend E2E setup uses `prisma db push` in `test/prepare-e2e-db.cjs`. CI migration steps may run `prisma migrate deploy`, but E2E database preparation can then force the database toward the current Prisma schema instead of proving the migration chain itself reproduces the target schema. This can mask migration-only/raw-SQL drift.
-- E2E coverage inspected does not comprehensively assert anonymous rejection for known high-risk endpoints, including unguarded Price Intelligence and Shopping Intelligence paths. Existing happy-path E2E therefore does not give complete security-route confidence.
-- The target commit did not expose a usable PR-triggered workflow result through the available GitHub run query, so no test/build pass is claimed from that source. No local runtime test was executed in this audit.
-- `apps/backend/eslint.config.mjs` weakens static safety by permitting explicit `any` and using warning-level unsafe rules. This reduces the ability of CI to reject contract mismatches that compile but fail at runtime.
-- `.github/workflows/mypa-mobile-typecheck-repair-once.yml` is not a pure verification workflow: it has write permissions and is designed to edit source, commit and push changes. This is a governance/reproducibility risk because CI can become an actor that changes the audited codebase.
-- `.github/workflows/android-build.yml` and `android-apk.yml` provide overlapping Android debug build workflows, creating duplicated build/release responsibility and identical artifact naming.
-- `.github/workflows/eas-android.yml` and `eas-preview.yml` also provide substantially overlapping EAS Android preview-build workflows through different CLI invocation methods.
-- `.github/workflows/mypa-branch-validation.yml` runs only Mobile typecheck, while `mobile-ci.yml` additionally validates Expo config and bundles Android JavaScript. The dedicated validation workflow therefore does not exercise the same Mobile gate as normal main/PR CI.
-- Mobile `package.json` has only `start`, `android`, `ios`, `web`, and `typecheck` scripts. No dedicated unit/integration/E2E script or test runner dependency was found; current Mobile quality gates therefore rely on typecheck and CI/build workflows plus a small number of library specs.
-- `apps/mobile/app.json` has Expo Router `typedRoutes: false`, removing compile-time verification for route strings.
-- Recipe content workflows are operationally separate from canonical Prisma recipe paths in parts of the audited repository: recipe image import/legacy ingestion use Supabase service-role secrets and direct scripts, while recipe content release applies Prisma migrations and imports. This reinforces the already recorded legacy/new recipe schema drift issue.
-- `apps/mobile/lib/local-persian-tts.ts` imports `expo-av`, `expo-file-system/legacy` and `react-native-sherpa-onnx`, but `apps/mobile/package.json` does not declare those runtime dependencies. This is a Mobile build/dependency contract gap.
-- `apps/mobile/lib/local-persian-tts.ts` downloads its model archive from an external GitHub release URL and checks existence only; no cryptographic hash/signature verification was observed.
-- `apps/mobile/components/BrandMark.tsx` loads an SVG file through React Native `Image`/`require()`. No SVG transformer/config or dedicated SVG rendering dependency was observed in the inspected Mobile manifest/config; target Expo bundling is required to resolve this conclusively.
-- Mobile `lib/api.ts` contains a `getBrainContext()` consumer that requests `/brain-integration/context`, while the current `BrainIntegrationController` contains no route methods. This is a concrete backend↔mobile route mismatch and is tracked as PB-186.
-- `AuthService.createAuthResponse()` uses a hard-coded 30-day persisted session expiry while the refresh JWT expiry is configurable through `AppConfigService.jwtRefreshExpiresIn`. This configuration drift is tracked as PB-187.
+The global backend ValidationPipe contract is enforced at the application boundary, and historical inline-body/DTO issues were handled in the Appendix remediation chain. E2E preparation now follows migrations rather than relying on `prisma db push` as the source of truth. Mobile type validation includes committed test files, and the self-mutating one-time typecheck workflow was retired.
 
-## Platform/Test issue IDs
+Backend CI on remediation commit `46614b36040cb839d6062dae726dc74e51ab3b96` passed dependency installation, Prisma validation/generation, migrations/idempotence, food-intelligence self-test, build, unit tests and API E2E. Mobile CI passed dependency installation, TypeScript, source tests, committed Jest specs, Expo validation and Android JS bundling.
 
-- PB-106: E2E DB preparation uses `prisma db push` and can mask migration-chain drift.
-- PB-107: E2E unauthenticated/high-risk endpoint coverage incomplete.
-- PB-108: Mobile typecheck-repair workflow can mutate and push source automatically.
-- PB-109: Duplicate Android build workflows.
-- PB-110: ESLint static safety rules weakened by any/unsafe warning settings.
-- PB-123: Duplicate EAS Android preview workflows.
-- PB-125: Mobile automated test coverage lacks screen/integration E2E setup.
-- PB-127: Expo Router typed routes disabled.
-- PB-128: Local Persian TTS imports undeclared runtime dependencies.
-- PB-129: Local Persian TTS downloads an external model without cryptographic artifact integrity verification.
-- PB-132: MYPA branch-validation Mobile gate checks only typecheck and omits the Expo config/Android bundle checks used by normal Mobile CI.
-- PB-133: BrandMark SVG asset loading lacks observed SVG transformer/rendering configuration and therefore needs target-build validation.
-- PB-186: Mobile Brain Context consumer targets an unexposed backend route.
-- PB-187: Auth persisted refresh-session expiry hard-coded to 30 days rather than following configured refresh JWT lifetime.
+Historical findings around duplicate/overlapping workflows, route security, undeclared TTS dependencies, stale Brain route contracts and refresh-session lifetime were remediated or explicitly reclassified in the canonical Appendix.
 
-## Remaining work
+## Test philosophy boundary
 
-Complete exhaustive test-file inventory and common/platform source inventory, inspect branch protection/release settings where available, reconcile all test commands and expected outputs, and only then close this deep read. Runtime execution remains explicitly unverified until actually run.
+Automated CI green proves the committed verification path, not full product behavior. Screen-level UX, offline reliability, physical-device permissions, push delivery, voice latency/model behavior, deployed database/RLS state and external price/AI provider health still require environment-specific validation.
+
+## Conclusion
+
+The recorded Platform/Test/CI source scope is reconciled for the current remediation baseline. Future defects require new evidence; historical closed findings should not be reopened solely because the broader MYPA Vision remains under development.
