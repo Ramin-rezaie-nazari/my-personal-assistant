@@ -235,6 +235,27 @@ model MealItem {
   food FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
 }
 
+model Recipe {
+  id String @id @default(uuid())
+  userId String?
+  name String
+  description String?
+  imageUrl String?
+  imageSource String?
+  servings Int @default(2)
+  calories Int @default(0)
+  protein Float @default(0)
+  carbs Float @default(0)
+  fat Float @default(0)
+  verified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredients RecipeIngredient[]
+  steps RecipeStep[]
+  media RecipeMedia[]
+}
+
 model RecipeIngredient {
   id String @id @default(uuid())
   recipeId String
@@ -255,23 +276,45 @@ model RecipeIngredient {
   food FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
 }
 
-model Recipe {
-  id String @id @default(uuid())
-  userId String?
-  name String
-  description String?
+model RecipeStep {
+  id String @id
+  recipeId String
+  stepNumber Int
+  instruction String
+  durationSeconds Int?
+  temperatureC Float?
   imageUrl String?
   imageSource String?
-  servings Int @default(2)
-  calories Int @default(0)
-  protein Float @default(0)
-  carbs Float @default(0)
-  fat Float @default(0)
-  verified Boolean @default(false)
+  sourceLicense String?
+  sourceAttribution String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ingredients RecipeIngredient[]
+  updatedAt DateTime @default(now())
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@unique([recipeId, stepNumber])
+  @@index([recipeId, stepNumber])
+  @@index([imageSource])
+}
+
+model RecipeMedia {
+  id String @id
+  recipeId String
+  position Int
+  url String
+  sourceUrl String
+  sourceProvider String
+  license String
+  attribution String?
+  mimeType String @default("image/webp")
+  width Int?
+  height Int?
+  checksum String?
+  status String @default("approved")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  @@unique([recipeId, position])
+  @@index([recipeId, status])
+  @@index([sourceProvider, license])
 }
 
 model InventoryItem {
