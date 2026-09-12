@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../common/database/prisma.service';
-import { HouseholdInventoryIntelligenceService } from '../shopping-intelligence/services/household-inventory-intelligence.service';
+import { HouseholdInventoryIntelligenceService } from './household-inventory-intelligence.service';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 
 @Injectable()
