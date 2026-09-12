@@ -9,12 +9,11 @@ const env = {
   RECIPE_LOCAL_DELAY_MS: process.env.RECIPE_LOCAL_DELAY_MS || '650',
   RECIPE_LOCAL_LIMIT: process.env.RECIPE_LOCAL_LIMIT || '0',
   RECIPE_LOCAL_FORCE: '0',
-  RECIPE_LOCAL_AUDIT_EXISTING: '0',
+  RECIPE_LOCAL_AUDIT_EXISTING: process.env.RECIPE_LOCAL_AUDIT_EXISTING || '0',
   RECIPE_LOCAL_MAX_IMAGES: process.env.RECIPE_LOCAL_MAX_IMAGES || '4',
-  RECIPE_LOCAL_GALLERY_CONCURRENCY: process.env.RECIPE_LOCAL_GALLERY_CONCURRENCY || '4',
 };
 
-function run(label, script, extra = {}, allowFailure = false) {
+function run(label, script, extra = {}) {
   console.log(`\n========== ${label} ==========`);
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, [script], {
@@ -24,7 +23,7 @@ function run(label, script, extra = {}, allowFailure = false) {
     });
     child.on('error', reject);
     child.on('exit', (code, signal) => {
-      if (code === 0 || allowFailure) return resolve();
+      if (code === 0) return resolve();
       reject(new Error(`${label} exited with code=${code ?? 'null'} signal=${signal ?? 'null'}`));
     });
   });
@@ -34,37 +33,15 @@ async function main() {
   console.log(JSON.stringify({
     pipeline: 'recipe-images-local-guaranteed-v8',
     supabase: 'DISABLED',
-    target: '1-4 verified images per recipe',
+    target: 'verified local recipe images',
     strategy: [
-      'parallel local audit only when requested',
-      'exact public Epicurious dataset mapping first, stored locally',
-      'strict multi-source web fallback with local manifest/cache',
-      'verified 1-4 image gallery upgrade from the verified recipe page',
-      'final local status',
+      'run the maintained local guaranteed-v7 dataset resolver',
+      'do not reference missing/untracked v8 child scripts',
+      'keep v8 as a stable compatibility entrypoint until a maintained multi-stage resolver is introduced',
     ],
   }, null, 2));
 
-  // The dataset stage creates exact local matches before any search engine is touched.
-  await run('exact-local-dataset', './scripts/recipe-images-local-guaranteed-v7.mjs');
-
-  // The strict resolver handles only recipes that still have no locally verified image.
-  // Disable its own audit here because the v8 pipeline already has explicit local stages.
-  await run(
-    'strict-verified-web-resolution',
-    './scripts/recipe-images-local-strict-v3.mjs',
-    { RECIPE_LOCAL_AUDIT_EXISTING: '0' },
-    true,
-  );
-
-  // Any verified web page can contribute up to four images; exact dataset-only rows safely keep one.
-  await run(
-    'verified-gallery-upgrade',
-    './scripts/recipe-images-local-gallery-upgrade-v1.mjs',
-    { RECIPE_LOCAL_MAX_IMAGES: env.RECIPE_LOCAL_MAX_IMAGES },
-    true,
-  );
-
-  await run('final-status', './scripts/recipe-images-local-status.mjs', {}, false);
+  await run('maintained-local-dataset-resolution', './scripts/recipe-images-local-guaranteed-v7.mjs');
   console.log('\nPIPELINE COMPLETE');
 }
 
