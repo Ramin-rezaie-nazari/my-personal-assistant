@@ -2,11 +2,11 @@
 
 Last updated: 2026-09-12
 Review status: MASTER PROMPT DEVELOPMENT IN PROGRESS
-Scope actually read: audit governance, source-audit reconciliation, remediation decisions, CI verification, and Master Prompt product development decisions through the verified MASTER-0004 Shopping/Inventory/Budget slice.
+Scope actually read: audit governance, source-audit reconciliation, remediation decisions, CI verification, and Master Prompt product development decisions through the verified MASTER-0004 Shopping/Inventory/Budget slice and recipe budget-shopping orchestration.
 Scope not yet read: no known recoverable source scope remains in the recorded audit baseline; future product work continues by vertical; production/deployed/device validation remains outside the environment.
 Evidence roots: `docs/project-brain/`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; GitHub Actions runs on remediation/product commits.
 Confidence level: HIGH for repository/source and completed CI evidence; MEDIUM for cross-module runtime semantics; BLOCKED for deployed/device state.
-Open questions: production database/RLS/Storage/Auth configuration, real-device behavior, external provider quotas, unrecoverable PB-001..PB-155 historical prose, and the remaining recipe→budget→shopping orchestration.
+Open questions: production database/RLS/Storage/Auth configuration, real-device behavior, external provider quotas, unrecoverable PB-001..PB-155 historical prose, and the remaining mobile budget/shopping user journey.
 
 | Date | Decision | Reason | Evidence |
 |---|---|---|---|
@@ -33,3 +33,4 @@ Open questions: production database/RLS/Storage/Auth configuration, real-device 
 | 2026-09-12 | Bound Budget planning to seven-day price freshness and preserve price provenance. | Latest data is not automatically current data; stale or incompatible evidence must not become fabricated costs. | `budget-intelligence.service.ts`; budget service spec |
 | 2026-09-12 | Recognize `PLAN_FOOD_BUDGET` as a first-class local Brain intent and route it through the Assistant execution path. | Parsing budget entities alone is not sufficient; the local provider and Assistant intent map must reach the executable deterministic budget action. | `local-language-understanding.service.ts`; `local-intelligence.provider.ts`; `assistant.service.ts`; `local-food-budget-action.adapter.ts` |
 | 2026-09-12 | Validate Budget/Shopping endpoints at both security and authenticated HTTP levels. | A user-specific intelligence endpoint needs both unauthenticated rejection and a real JWT happy-path check before its API contract is considered complete. | `apps/backend/test/api.e2e-spec.ts`; Backend CI |
+| 2026-09-12 | Keep recipe budget orchestration in the Food Operating Loop and consume Budget as a pricing engine. | Budget must not import Recipes/introduce a module cycle. Scaled quantities come only from the canonical recipe scaling contract; only verified `priced` missing ingredients are eligible for budget-aware shopping insertion. | `food-operating-loop.service.ts`; `budget-intelligence.service.ts`; `recipes.module.ts`; recipe/controller and service specs |
