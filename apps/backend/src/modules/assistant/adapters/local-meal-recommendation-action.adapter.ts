@@ -26,19 +26,15 @@ export class LocalMealRecommendationActionAdapter implements OnModuleInit {
       | { entities?: Record<string, unknown> }
       | undefined;
     const entities = local?.entities ?? {};
-    const unsupportedHardConstraints = this.readStringArray(entities.allergies).concat(
-      this.readStringArray(entities.dietaryPreferences),
-    );
-    if (unsupportedHardConstraints.length) {
-      throw new Error(
-        `unsupported_hard_constraints:${unsupportedHardConstraints.join(',')}`,
-      );
-    }
 
     const targetServings = this.readPositiveInteger(entities.householdSize) ?? 1;
     const maxCalories = this.readPositiveNumber(entities.calories);
     const minProteinGrams = this.readPositiveNumber(entities.proteinGrams);
     const countryCode = this.readString(entities.countryCode) ?? '';
+    const safetyConstraints = {
+      allergies: this.readStringArray(entities.allergies),
+      dietaryPreferences: this.readStringArray(entities.dietaryPreferences),
+    };
 
     const recommendations = await this.food.recommend(
       context.userId as string,
@@ -46,11 +42,18 @@ export class LocalMealRecommendationActionAdapter implements OnModuleInit {
       countryCode,
       maxCalories,
       minProteinGrams,
+      safetyConstraints,
     );
 
     return {
       targetServings,
-      constraints: { maxCalories, minProteinGrams, countryCode: countryCode || undefined },
+      constraints: {
+        maxCalories,
+        minProteinGrams,
+        countryCode: countryCode || undefined,
+        allergies: safetyConstraints.allergies,
+        dietaryPreferences: safetyConstraints.dietaryPreferences,
+      },
       recommendations,
     };
   }
