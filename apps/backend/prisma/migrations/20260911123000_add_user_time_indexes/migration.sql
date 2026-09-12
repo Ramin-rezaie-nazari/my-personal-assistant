@@ -1,7 +1,5 @@
--- Add composite indexes for the user-scoped chronological queries used by
--- workout history and adaptive/user-behavior learning reads.
-CREATE INDEX "Workout_userId_performedAt_idx"
+-- Add the composite index for the user-scoped chronological workout queries.
+-- UserBehavior is created by a later compatibility migration because the
+-- historical migration chain does not create that table.
+CREATE INDEX IF NOT EXISTS "Workout_userId_performedAt_idx"
 ON "Workout"("userId", "performedAt");
-
-CREATE INDEX "UserBehavior_userId_createdAt_idx"
-ON "UserBehavior"("userId", "createdAt");
