@@ -35,5 +35,5 @@ export function convertUnitPrice(
   const source = normalizeQuantity(1, priceUnit);
   const target = normalizeQuantity(targetQuantity, targetUnit);
   if (!source || !target || source.kind !== target.kind || source.value <= 0) return null;
-  return Number((unitPrice * (target.value / source.value)).toFixed(2));
+  return unitPrice * (target.value / source.value);
 }
