@@ -1,7 +1,7 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-12
-Review status: CANONICAL FINDINGS REGISTER RECONCILED THROUGH PB-284; LATEST CODE CI VERIFIED; DOC RECONCILIATION CONTINUING
+Review status: CANONICAL FINDINGS REGISTER RECONCILED THROUGH PB-284; CODE AND DOCUMENTATION CHECKPOINT VERIFIED
 
 This file is the canonical findings register for the recoverable 2026-09-11 audit plus subsequent evidence-driven Master Prompt remediation. Historical PB-001..PB-155 prose is not recoverable from the exposed repository history and is never fabricated. Later IDs are current-branch findings and remediation records.
 
@@ -125,28 +125,28 @@ This file is the canonical findings register for the recoverable 2026-09-11 audi
 | PB-264 | CLOSED — CI VERIFIED | Recipe scaling → missing inventory → budget quote bridge implemented. |
 | PB-265 | CLOSED — CI VERIFIED | Budget-qualified recipe gaps flow into canonical ShoppingService. |
 | PB-266 | CLOSED — CI VERIFIED | Mobile Shopping/Price clients use canonical authenticated transport. |
-| PB-267 | CLOSED — CI VERIFIED | Partial/insufficient budget evidence states are explicit and fail closed. |
-| PB-268 | CLOSED — CI VERIFIED | Fresh compatible price evidence is selected over newer stale evidence. |
-| PB-269 | CLOSED — CI VERIFIED | Deterministic next-action codes for blocked budget evidence added. |
-| PB-270 | CLOSED — CI VERIFIED | ShoppingItem unit-compatible merge conversion/rejection implemented. |
+| PB-267 | CLOSED — CI VERIFIED | Partial/insufficient budget evidence explicit and fail closed. |
+| PB-268 | CLOSED — CI VERIFIED | Fresh compatible price evidence preferred over newer stale evidence. |
+| PB-269 | CLOSED — CI VERIFIED | Deterministic next-action codes for blocked budget evidence. |
+| PB-270 | CLOSED — CI VERIFIED | ShoppingItem unit-compatible merge conversion/rejection. |
 | PB-271 | CLOSED — CI VERIFIED | Shopping completion synchronizes Inventory transactionally/idempotently. |
-| PB-061 | CLOSED — CI VERIFIED | Market analysis uses durable PricePersistence history; process-local history store retired. |
-| PB-064 | CLOSED — CI VERIFIED | Price source capability/trust metadata + runtime health telemetry added. |
+| PB-061 | CLOSED — CI VERIFIED | Market analysis uses durable PricePersistence history; process-local history retired. |
+| PB-064 | CLOSED — CI VERIFIED | Price source capability/trust metadata + runtime health telemetry. |
 | PB-065 | CLOSED — CI VERIFIED | Product matching accounts for package quantity/unit compatibility. |
 | PB-059 | CLOSED — CI VERIFIED | Price analysis rejects incompatible currency evidence and prefers unitPrice. |
-| PB-272 | CLOSED — CI VERIFIED | Unused Price History/Analysis placeholder providers retired. |
+| PB-272 | CLOSED — CI VERIFIED | Unused Price History/Analysis placeholders retired. |
 | PB-273 | CLOSED — CI VERIFIED | Public Price analysis delegates to canonical MarketAnalysisService. |
 | PB-274 | CLOSED — CI VERIFIED | Unused ShoppingList/PurchaseAnalysis placeholder facades retired. |
-| PB-275 | CLOSED — CI VERIFIED | PurchasePlan rejects item currency mismatches with `currency_mismatch`. |
-| PB-276 | CLOSED — CI VERIFIED | Invalid Shopping basket quantity returns Bad Request semantics. |
-| PB-277 | CLOSED — CI VERIFIED | Shopping basket/from-recipe bodies use runtime-validated DTO classes. |
-| PB-278 | CLOSED — CI VERIFIED | Recipe→Shopping requests reject non-recipe/invalid items instead of silently dropping. |
-| PB-279 | CLOSED — CI VERIFIED | DTO test loads `reflect-metadata` before decorator-dependent modules; isolated Jest bootstrap fixed. |
-| PB-280 | CLOSED — CI VERIFIED | Budget meal-plan servings validated as integer 1..10000 before service invocation. |
+| PB-275 | CLOSED — CI VERIFIED | PurchasePlan rejects item currency mismatch. |
+| PB-276 | CLOSED — CI VERIFIED | Invalid Shopping basket quantity returns Bad Request. |
+| PB-277 | CLOSED — CI VERIFIED | Shopping basket/from-recipe request bodies use runtime-validated DTOs. |
+| PB-278 | CLOSED — CI VERIFIED | Recipe→Shopping rejects non-recipe/invalid items rather than silently dropping. |
+| PB-279 | CLOSED — CI VERIFIED | DTO test loads `reflect-metadata` before decorator-dependent imports. |
+| PB-280 | CLOSED — CI VERIFIED | Budget meal-plan servings validated as integer 1..10000. |
 | PB-281 | CLOSED — CI VERIFIED | Unused `createMealBudgetPlan()` placeholder removed. |
-| PB-282 | CLOSED — CI VERIFIED | FoodOperatingLoop invalid target servings now return Bad Request, with direct tests. |
-| PB-283 | CLOSED — CI VERIFIED | Unbounded Budget quote reports actual priced spend; `budgetRemaining` is null without a limit. |
-| PB-284 | OPEN — DOCUMENTATION CONSISTENCY | `docs/project-brain/05_API_CATALOG.md` still contains stale `No guard`/route rows for active Budget, Shopping Intelligence and Price Intelligence controllers. Current source has JWT guards and current route wiring. This must be reconciled without losing the historical route inventory. |
+| PB-282 | CLOSED — CI VERIFIED | FoodOperatingLoop invalid target servings return Bad Request. |
+| PB-283 | CLOSED — CI VERIFIED | Unbounded Budget quote reports actual priced spend. |
+| PB-284 | CLOSED — CI VERIFIED | API Catalog stale route/guard snapshot was reconciled to current controllers; retired shells are explicitly marked non-contracts. |
 
 ## Historical boundary and environment limits
 
@@ -160,4 +160,4 @@ Latest implementation code head verified by CI: `56d29953e83ead705eb57b39e7681b1
 - Backend CI `34693061066`: SUCCESS — Prisma validation/generation, migrations/idempotence, food self-test, build, backend unit tests, API E2E and diagnostics.
 - Mobile CI `34693061017`: SUCCESS — dependency install, TypeScript, source tests, committed Jest specs, Expo validation and Android JavaScript bundle.
 
-Later commits are documentation-only reconciliation commits and do not change runtime code. Validation PR #70 remains open, mergeable, unmerged, and validation-only.
+Documentation reconciliation commits followed and do not change runtime code. Validation PR #70 remains open, mergeable, unmerged, and validation-only.
