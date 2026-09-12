@@ -1,7 +1,7 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-12
-Review status: CANONICAL FINDINGS REGISTER RECONCILED THROUGH PB-284; CODE AND DOCUMENTATION CHECKPOINT VERIFIED
+Review status: CANONICAL FINDINGS REGISTER RECONCILED THROUGH PB-285; NEW BUDGET UNIT HARDENING IN CI
 
 This file is the canonical findings register for the recoverable 2026-09-11 audit plus subsequent evidence-driven Master Prompt remediation. Historical PB-001..PB-155 prose is not recoverable from the exposed repository history and is never fabricated. Later IDs are current-branch findings and remediation records.
 
@@ -147,6 +147,18 @@ This file is the canonical findings register for the recoverable 2026-09-11 audi
 | PB-282 | CLOSED — CI VERIFIED | FoodOperatingLoop invalid target servings return Bad Request. |
 | PB-283 | CLOSED — CI VERIFIED | Unbounded Budget quote reports actual priced spend. |
 | PB-284 | CLOSED — CI VERIFIED | API Catalog stale route/guard snapshot was reconciled to current controllers; retired shells are explicitly marked non-contracts. |
+| PB-285 | IN CI — NEW HARDENING | Budget quote now accepts compatible mass/volume/count price units and converts source unit price into the requested quantity for `estimatedCost`; source `price` field remains unchanged. Shared quantity conversion is centralized for Budget and Shopping. |
+
+## PB-285 detailed evidence
+
+- Finding: Budget quote matched price evidence units by exact string equality, so semantically compatible evidence such as `L` vs `ml` or `kg` vs `g` was rejected as `unit_mismatch` even though the repository already defines compatible-unit normalization in the Shopping/Food operating path.
+- Root cause: Budget Intelligence had no shared conversion primitive and compared `row.unit === candidate.unit`.
+- Impact: valid fresh price evidence could be discarded, making budget totals incomplete and potentially triggering misleading `review_units` actions.
+- Severity: MEDIUM.
+- Priority: HIGH for Budget/Price contract consistency.
+- Remediation: added `apps/backend/src/common/units/quantity-conversion.ts`; Shopping now imports its conversion helper; Budget uses `convertUnitPrice()` and preserves the existing `price` field semantics.
+- Validation: new direct Budget unit-conversion test covers `4 USD/L` against `500 ml` and expects `estimatedCost = 2`; full backend/mobile CI is running on the remediation branch.
+- Status rule: close only after CI passes for the final head; otherwise remain IN PROGRESS with exact failing step recorded.
 
 ## Historical boundary and environment limits
 
@@ -156,8 +168,9 @@ Production/deployed PostgreSQL schema/RLS/Storage/Auth configuration, real Andro
 
 ## Verification evidence
 
-Latest implementation code head verified by CI: `56d29953e83ead705eb57b39e7681b1793e97bcd`.
+Last fully verified implementation code head before PB-285: `56d29953e83ead705eb57b39e7681b1793e97bcd`.
 - Backend CI `34693061066`: SUCCESS — Prisma validation/generation, migrations/idempotence, food self-test, build, backend unit tests, API E2E and diagnostics.
 - Mobile CI `34693061017`: SUCCESS — dependency install, TypeScript, source tests, committed Jest specs, Expo validation and Android JavaScript bundle.
+- PB-285 final-head CI is in progress and is not yet counted as verified.
 
 Documentation reconciliation commits followed and do not change runtime code. Validation PR #70 remains open, mergeable, unmerged, and validation-only.
