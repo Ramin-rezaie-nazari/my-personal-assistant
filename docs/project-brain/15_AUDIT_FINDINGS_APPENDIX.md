@@ -1,7 +1,7 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-12
-Review status: CANONICAL FINDINGS REGISTER RECONCILED; PB-271..PB-273 ADDED; LATEST-HEAD CI PENDING
+Review status: CANONICAL FINDINGS REGISTER RECONCILED; PB-271..PB-274 ADDED; LATEST-HEAD CI PENDING
 
 This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit and subsequent evidence-driven Master Prompt development. The original `OPEN` labels represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
 
@@ -133,9 +133,10 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-061 | CLOSED — REMEDIATED; PRIOR CI VERIFIED | Market analysis previously depended on process-local `PriceHistoryStoreService` rather than durable snapshots. Analysis now reads `PricePersistenceService.history()`, and the obsolete process-local store was retired after consumer search and direct tests. |
 | PB-064 | CLOSED — REMEDIATED; PRIOR CI VERIFIED | Price sources now expose explicit capability/trust metadata plus runtime attempt/success/failure health telemetry; detailed collection reports failed and attempted source IDs. Static trust/capability metadata is heuristic and runtime health is process-local rather than durable external-provider monitoring. |
 | PB-065 | CLOSED — REMEDIATED; PRIOR CI VERIFIED | Product matching now normalizes compatible mass/volume/count units and penalizes materially different or incompatible quantities, preventing misleading near-matches. Strong identifiers remain prioritized. |
-| PB-059 | CLOSED — REMEDIATED; LATEST-HEAD CI PENDING | Price Intelligence analysis now filters out incompatible currencies (currently IRT is the supported analysis currency) and uses `unitPrice` when available, avoiding direct USD/IRT aggregation. Further durable package normalization remains constrained by source evidence. |
-| PB-272 | CLOSED — REMEDIATED; LATEST-HEAD CI PENDING | Two active Price Intelligence placeholder providers (`PriceHistoryService`, `PriceAnalysisService`) had no consumers and only returned placeholder messages. After repository-wide consumer search, both were retired and their module registrations/exports removed; durable persistence and `MarketAnalysisService` remain canonical. |
+| PB-059 | CLOSED — REMEDIATED; PRIOR CI VERIFIED | Price Intelligence analysis now filters out incompatible currencies (currently IRT is the supported analysis currency) and uses `unitPrice` when available, avoiding direct USD/IRT aggregation. Further durable package normalization remains constrained by source evidence. |
+| PB-272 | CLOSED — REMEDIATED; PRIOR CI VERIFIED | Two active Price Intelligence placeholder providers (`PriceHistoryService`, `PriceAnalysisService`) had no consumers and only returned placeholder messages. After repository-wide consumer search, both were retired and their module registrations/exports removed; durable persistence and `MarketAnalysisService` remain canonical. |
 | PB-273 | CLOSED — REMEDIATED; LATEST-HEAD CI PENDING | `PriceIntelligenceService.analyze()` duplicated a separate market-analysis implementation with different scoring/time semantics. The public analysis entrypoint now delegates to canonical `MarketAnalysisService`, so analysis logic has one source of truth and direct delegation coverage. |
+| PB-274 | CLOSED — REMEDIATED; LATEST-HEAD CI PENDING | Shopping Intelligence still registered unused placeholder facades `ShoppingListService` and `PurchaseAnalysisService`. Consumer search found no active runtime use beyond their module registration; both files were retired and removed from module providers/exports, leaving the deterministic `ShoppingIntelligenceService` and active purchase-planning services as the runtime path. |
 
 ## Historical catalog boundary
 
@@ -143,6 +144,6 @@ The exact prose of PB-001 through PB-155 is not recoverable from the repository 
 
 ## Verification boundary
 
-Latest code tree: `759e959d1e226798494fb5083c6843b6ece42929` (latest implementation head). The immediately preceding head `f52ac24c5ef394aa84ead938ae036f52d51e596c` had Backend CI `34692215406` and Mobile CI `34692215496` completed successfully. Subsequent Price Intelligence cleanup/refactor commits advanced the branch, so latest-head CI must be re-checked before treating the newest code as CI-verified. Production database/RLS/storage state, external provider quotas, push delivery and real-device UX remain outside the available runtime boundary.
+Latest implementation head: `103452b92321023445a0cd9aa317675b095f10e2`. The preceding head `f52ac24c5ef394aa84ead938ae036f52d51e596c` had Backend CI `34692215406` and Mobile CI `34692215496` completed successfully; the latest head has fresh Backend CI `34692506118` and Mobile CI `34692506067` currently in progress. Latest-head status must be confirmed before changing PB-273/PB-274 to CI-verified. Production database/RLS/storage state, external provider quotas, push delivery and real-device UX remain outside the available runtime boundary.
 
 Local repository execution is unavailable because direct GitHub network access is blocked in the container environment.
