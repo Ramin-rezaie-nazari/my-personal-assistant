@@ -1,5 +1,5 @@
 import { HouseholdPurchasePlannerService } from './household-purchase-planner.service';
-import { HouseholdInventoryIntelligenceService } from './household-inventory-intelligence.service';
+import { HouseholdInventoryIntelligenceService } from '../../inventory/household-inventory-intelligence.service';
 
 describe('HouseholdPurchasePlannerService', () => {
   const service = new HouseholdPurchasePlannerService(
@@ -78,7 +78,7 @@ describe('HouseholdPurchasePlannerService', () => {
     expect(result.budgetRemainingAfterPlan).toBeGreaterThanOrEqual(0);
   });
 
-  it('does not spend or mix currencies when a quote uses a different budget currency', () => {
+  it('does not spend or expose a mismatched quote when the budget currency differs', () => {
     const result = service.plan(
       [
         {
@@ -104,6 +104,7 @@ describe('HouseholdPurchasePlannerService', () => {
     );
     expect(result.items[0]).toMatchObject({
       action: 'watch',
+      price: null,
       estimatedCost: null,
       reason: 'price_currency_mismatch',
     });
