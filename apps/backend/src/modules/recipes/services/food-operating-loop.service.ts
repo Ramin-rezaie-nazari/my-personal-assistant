@@ -4,6 +4,7 @@ import { RecipeServingScalingService } from '../../nutrition/recipe-intelligence
 import { ShoppingService } from '../../shopping/shopping.service';
 import { GlobalCountryFoodService } from './global-country-food.service';
 import { GlobalCountryFinanceService } from '../../budget-intelligence/services/global-country-finance.service';
+import { FoodSafetyTaxonomyService } from '../../foods/services/food-safety-taxonomy.service';
 
 export type FoodOperatingPlan = {
   recipe: { id: string; name: string; baseServings: number; targetServings: number; scaleFactor: number };
@@ -35,6 +36,11 @@ type RecipeIngredientPersisted = {
   food?: { name: string } | null;
 };
 
+type MealSafetyConstraints = {
+  allergies?: string[];
+  dietaryPreferences?: string[];
+};
+
 @Injectable()
 export class FoodOperatingLoopService {
   constructor(
@@ -43,6 +49,7 @@ export class FoodOperatingLoopService {
     private readonly shopping: ShoppingService,
     private readonly countryFood: GlobalCountryFoodService,
     private readonly countryFinance: GlobalCountryFinanceService,
+    private readonly safetyTaxonomy: FoodSafetyTaxonomyService,
   ) {}
 
   async buildPlan(userId: string, recipeId: string, targetServings: number, countryCode = ''): Promise<FoodOperatingPlan> {
@@ -65,7 +72,14 @@ export class FoodOperatingLoopService {
     };
   }
 
-  async recommend(userId: string, targetServings: number, countryCode = '', maxCalories?: number, minProteinGrams?: number) {
+  async recommend(
+    userId: string,
+    targetServings: number,
+    countryCode = '',
+    maxCalories?: number,
+    minProteinGrams?: number,
+    safetyConstraints: MealSafetyConstraints = {},
+  ) {
     this.validateServings(targetServings);
     const [recipes, inventory, nutritionProfile] = await Promise.all([
       this.prisma.recipe.findMany({ where: { OR: [{ userId: null }, { userId }] }, include: { ingredients: { include: { food: true } } } }),
@@ -79,6 +93,11 @@ export class FoodOperatingLoopService {
     const rankIndex = new Map(ranked.map((recipe, index) => [recipe.name, index]));
     return recipes.map((recipe) => {
       const scaled = this.buildScaledRecipe(recipe, targetServings);
+      const safety = this.safetyTaxonomy.evaluate(
+        recipe.ingredients.map((ingredient) => ingredient.food?.name ?? ''),
+        safetyConstraints,
+      );
+      if (!safety.allowed) return null;
       const { missing } = this.matchScaledIngredients(recipe.ingredients, scaled.ingredients, inventoryByFood);
       const coveragePercent = scaled.ingredients.length === 0 ? 0 : Math.round(((scaled.ingredients.length - missing.length) / scaled.ingredients.length) * 100);
       const calories = scaled.nutritionForFullBatch.calories / targetServings;
@@ -86,7 +105,10 @@ export class FoodOperatingLoopService {
       const nutritionScore = (calorieLimit && calories <= calorieLimit ? 15 : 0) + (proteinFloor && protein >= proteinFloor ? 15 : 0);
       const score = Math.min(100, coveragePercent + nutritionScore + Math.max(0, 20 - (rankIndex.get(recipe.name) ?? recipes.length)));
       return { recipeId: recipe.id, name: recipe.name, score, coveragePercent, missingCount: missing.length, caloriesPerServing: Number(calories.toFixed(1)), proteinPerServing: Number(protein.toFixed(1)), targetServings, missingIngredients: missing };
-    }).filter((recipe) => (calorieLimit === undefined || recipe.caloriesPerServing <= calorieLimit) && (proteinFloor === undefined || recipe.proteinPerServing >= proteinFloor)).sort((a, b) => b.score - a.score || b.coveragePercent - a.coveragePercent || a.name.localeCompare(b.name)).slice(0, 10);
+    }).filter((recipe): recipe is NonNullable<typeof recipe> => recipe !== null)
+      .filter((recipe) => (calorieLimit === undefined || recipe.caloriesPerServing <= calorieLimit) && (proteinFloor === undefined || recipe.proteinPerServing >= proteinFloor))
+      .sort((a, b) => b.score - a.score || b.coveragePercent - a.coveragePercent || a.name.localeCompare(b.name))
+      .slice(0, 10);
   }
 
   async addMissingToShopping(userId: string, recipeId: string, targetServings: number) {
@@ -146,15 +168,6 @@ export class FoodOperatingLoopService {
       status: recipe.verified ? 'verified' : 'draft', sourceType: recipe.userId ? 'user' : 'internal', version: 1,
     }, { targetServings, kitchenFriendlyRounding: true });
   }
-}
-
-function inferMeasurementKind(unit: string): 'mass' | 'volume' | 'count' | 'package' | 'unitless' {
-  const normalized = unit.trim().toLowerCase();
-  if (['g', 'kg', 'mg', 'oz', 'lb', 'gr', 'کیلو', 'گرم'].includes(normalized)) return 'mass';
-  if (['ml', 'l', 'tsp', 'tbsp', 'cup', 'cups', 'ml.'].includes(normalized)) return 'volume';
-  if (['piece', 'pieces', 'pcs', 'count', 'عدد'].includes(normalized)) return 'count';
-  if (['package', 'pack', 'box', 'بسته'].includes(normalized)) return 'package';
-  return 'unitless';
 }
 
 type NormalizedUnit = { kind: ComparableUnitKind; value: number } | null;
