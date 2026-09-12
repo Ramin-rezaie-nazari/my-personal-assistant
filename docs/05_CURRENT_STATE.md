@@ -11,27 +11,45 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Working branch: `audit/project-brain-2026-09-11`
-- Current branch head: `9c09a6948d403a0a981e4581d5ce4cf8fe9f195f`
+- Current branch head: `19eceeb3f7af8aa253b3aff2666f2cd738fb67fc`
 - Validation PR: #70 (validation-only; do not merge automatically)
 - Base: `main`
 
 ## Appendix/remediation status
 
-The canonical Appendix finding set is reconciled through PB-257. Recoverable concrete findings have been remediated/reclassified and the historical PB-001..PB-155 limitation is explicitly preserved without fabricated text. CI verification on the prior remediation tree passed both Backend and Mobile pipelines.
+The canonical Appendix finding set is reconciled through PB-257. Recoverable concrete findings have been remediated/reclassified and the historical PB-001..PB-155 limitation is explicitly preserved without fabricated text. Prior full Backend and Mobile remediation CI was green.
 
 ## Master Prompt development progress
 
-`MASTER-0001` baseline reconciliation is complete. `MASTER-0002` is implemented at source level with validation pending: deterministic local-language understanding now extracts household size, budget amount/currency, protein target, dietary preferences and allergy context; the planner carries these entities into executable plan steps; AssistantService merges contextual-command and local-understanding entities before planning; direct unit coverage was added for local constraint extraction and planner propagation.
+`MASTER-0001` baseline reconciliation: COMPLETE.
 
-This slice intentionally remains provider-independent and cloud-AI-free. It improves the central Brain's structured context without claiming that the full meal-planning or budgeting loop is already implemented.
+`MASTER-0002` deterministic local Brain context: VERIFIED BY CI.
 
-## Validation status
+Implemented and verified:
+- local Persian/English normalization;
+- intent classification for core assistant actions;
+- quantity, household-size, budget amount/currency, protein, calorie, time and duration extraction;
+- dietary preference and allergy detection;
+- local/contextual entity merge into PlanningService;
+- propagation of structured entities into executable plan steps;
+- recommendation action registration in the central decision-action adapter registry;
+- Brain→Food Operating Loop connection for supported nutrition constraints;
+- fail-closed behavior when allergy/diet constraints cannot yet be proven safe from canonical recipe data;
+- direct unit coverage for local understanding, planner propagation and recommendation adapter behavior.
 
-Fresh Backend and Mobile GitHub Actions runs have been triggered for the latest product changes through PR #70. At the latest observed checkpoint, those fresh runs were still in progress, so this head is not yet marked CI-green. Prior remediation-tree Backend and Mobile runs remain green evidence for the previously tested source tree.
+## Validation evidence
+
+Backend CI run `34686237627` completed successfully: dependency installation, Prisma validation/generation, all migrations plus idempotence, food-intelligence self-test, backend build, 427/427 backend unit tests and API E2E all passed.
+
+Mobile CI run `34686237631` completed successfully: dependency installation, TypeScript typecheck, mobile source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
+
+## Current architectural boundary
+
+The Brain can now carry structured nutrition constraints into the Food Operating Loop, but allergy/dietary hard filtering is intentionally not claimed complete because the canonical recipe/ingredient data model does not yet provide sufficient verified allergen/diet semantics for every recommendation. Unsupported hard constraints therefore stop recommendation execution rather than being silently ignored.
 
 ## Next workstream
 
-Complete verification for `MASTER-0002`, then continue the central Brain vertical journey: structured local entities → contextual state → decision/planning → safe tool execution → explanation/memory. After that, integrate the Food/Nutrition/Inventory/Shopping budget loop and complete the corresponding Mobile journey.
+`MASTER-0003`: establish a verified recipe/ingredient safety-taxonomy contract that can support hard allergy/diet filters without weakening correctness. This requires mapping canonical `FoodItem`/`RecipeIngredient` records to deterministic safety flags with explicit unknown-state behavior, then integrating those flags into Food Operating Loop filtering and tests. Schema changes will only be made if source evidence shows the existing contract cannot represent the required data safely.
 
 ## Environment boundary
 
