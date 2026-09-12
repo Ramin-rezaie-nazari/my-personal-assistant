@@ -10,8 +10,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdjustInventoryDto } from './dto/adjust-inventory.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
-import { AdjustInventoryDto } from '../shopping/dto/shopping.dto';
 import { InventoryService } from './inventory.service';
 
 @Controller('inventory')
