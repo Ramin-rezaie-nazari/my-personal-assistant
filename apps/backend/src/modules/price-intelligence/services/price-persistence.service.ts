@@ -2,17 +2,21 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { NormalizedPrice } from '../models/price-intelligence.model';
+import { PriceProductKeyService } from './price-product-key.service';
 
 @Injectable()
 export class PricePersistenceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly productKey: PriceProductKeyService,
+  ) {}
 
   async ensureTrackedProducts() {
     const foods = await this.prisma.$queryRaw<
       Array<{ id: string; name: string }>
     >`SELECT id, name FROM "FoodItem" WHERE "userId" IS NULL ORDER BY "createdAt" ASC`;
     for (const food of foods) {
-      const productKey = this.normalizeKey(food.name);
+      const productKey = this.productKey.fromFoodName(food.name);
       await this.prisma
         .$executeRaw`INSERT INTO "PriceTrackedProduct" ("id","productKey","name") VALUES (${randomUUID()},${productKey},${food.name}) ON CONFLICT ("productKey") DO NOTHING`;
     }
@@ -90,14 +94,5 @@ export class PricePersistenceService {
       Array<{ completedAt: Date | null }>
     >`SELECT "completedAt" FROM "PriceCollectionRun" WHERE "status" IN ('completed','partial') ORDER BY "completedAt" DESC LIMIT 1`;
     return rows[0]?.completedAt;
-  }
-
-  private normalizeKey(value: string) {
-    return value
-      .trim()
-      .toLocaleLowerCase('fa-IR')
-      .replace(/[\u200c\s]+/g, '-')
-      .replace(/[^\p{L}\p{N}-]+/gu, '')
-      .slice(0, 180);
   }
 }
