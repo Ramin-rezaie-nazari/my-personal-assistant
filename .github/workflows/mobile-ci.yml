@@ -41,6 +41,9 @@ jobs:
       - name: Typecheck mobile
         run: pnpm --filter @my-personal-assistant/mobile typecheck
 
+      - name: Run mobile source tests
+        run: pnpm --filter @my-personal-assistant/mobile test
+
       - name: Validate Expo project
         run: pnpm --filter @my-personal-assistant/mobile exec expo config --type public
 
