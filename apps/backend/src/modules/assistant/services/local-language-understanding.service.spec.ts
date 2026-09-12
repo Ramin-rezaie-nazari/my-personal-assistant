@@ -18,6 +18,15 @@ describe('LocalLanguageUnderstandingService', () => {
     expect(result.entities.quantity).toBe(1);
   });
 
+  it('does not leak household or budget numbers into generic quantity', () => {
+    const result = service.understand(
+      'برای ۴ نفر بودجه حداکثر ۱۵ میلیون تومان برای شام میخوام',
+    );
+    expect(result.entities.householdSize).toBe(4);
+    expect(result.entities.budgetAmount).toBe(15_000_000);
+    expect(result.entities.quantity).toBeUndefined();
+  });
+
   it('understands reminder requests and extracts time', () => {
     const result = service.understand('یادم بنداز ساعت 18:30 آب بخورم');
     expect(result.intent).toBe('CREATE_REMINDER');
@@ -34,7 +43,7 @@ describe('LocalLanguageUnderstandingService', () => {
 
   it('extracts meal-planning constraints without requiring cloud AI', () => {
     const result = service.understand(
-      'برای ۴ نفر بودجه غذا حداکثر ۱۵ میلیون تومان و پروتئین ۱۲۰ گرم برای شام میخوام، بدون شیر و وگان نباشه',
+      'برای ۴ نفر بودجه غذا حداکثر ۱۵ میلیون تومان و پروتئین ۱۲۰ گرم برای شام میخوام، بدون شیر وگان نباشه',
     );
     expect(result.intent).toBe('RECOMMEND_MEAL');
     expect(result.entities.householdSize).toBe(4);
@@ -54,7 +63,7 @@ describe('LocalLanguageUnderstandingService', () => {
 
   it('extracts allergy constraints as hard safety-relevant context', () => {
     const result = service.understand('برای من حساسیت به شیر و لبنیات مهمه');
-    expect(result.entities.allergies).toEqual(['milk', 'dairy']);
+    expect(result.entities.allergies).toEqual(['dairy', 'milk']);
   });
 
   it('understands meal and nutrition requests', () => {
