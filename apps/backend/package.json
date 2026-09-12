@@ -33,6 +33,7 @@
     "recipe-intelligence:ingredients": "node ./scripts/recipe-ingredient-intelligence.mjs",
     "recipe-intelligence:nutrition": "node ./scripts/recipe-nutrition-estimate.mjs",
     "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs",
+    "recipe-intelligence:self-test": "node ./scripts/food-intelligence-final-self-test.mjs",
     "recipe:content:import": "node ./scripts/recipe-content-import.mjs",
     "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs"
   },
