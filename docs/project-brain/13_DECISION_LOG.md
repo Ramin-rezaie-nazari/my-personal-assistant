@@ -1,11 +1,11 @@
 # Decision Log
 
 Last updated: 2026-09-12
-Review status: RECONCILED THROUGH APPENDIX REMEDIATION AND SOURCE-AUDIT CLOSURE
-Scope actually read: audit governance, source-audit reconciliation, remediation decisions and CI verification.
-Scope not yet read: no known recoverable source scope remains in the recorded audit baseline; production/deployed/device validation remains outside the environment.
-Evidence roots: `docs/project-brain/`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; GitHub Actions runs on remediation commit.
-Confidence level: HIGH for repository/source and CI evidence; MEDIUM for cross-module runtime semantics; BLOCKED for deployed/device state.
+Review status: MASTER PROMPT DEVELOPMENT IN PROGRESS
+Scope actually read: audit governance, source-audit reconciliation, remediation decisions, CI verification, and Master Prompt product development decisions through `MASTER-0002`.
+Scope not yet read: no known recoverable source scope remains in the recorded audit baseline; future product work continues by vertical; production/deployed/device validation remains outside the environment.
+Evidence roots: `docs/project-brain/`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; GitHub Actions runs on remediation/product commits.
+Confidence level: HIGH for repository/source and completed CI evidence; MEDIUM for cross-module runtime semantics; BLOCKED for deployed/device state.
 Open questions: production database/RLS/Storage/Auth configuration, real-device behavior, external provider quotas, and unrecoverable PB-001..PB-155 historical prose.
 
 | Date | Decision | Reason | Evidence |
@@ -17,3 +17,6 @@ Open questions: production database/RLS/Storage/Auth configuration, real-device 
 | 2026-09-12 | Preserve PB-230 as an evidence limitation rather than inventing PB-001..PB-155 history. | Exact historical prose is not recoverable from the exposed repository history. | `15_AUDIT_FINDINGS_APPENDIX.md` |
 | 2026-09-12 | Treat production/device/external-provider checks as explicit environmental blockers. | They cannot be truthfully marked PASS from the current connector/runtime. | `REVIEW_GAPS.md`; `05_CURRENT_STATE.md` |
 | 2026-09-12 | Do not reopen closed Appendix findings without new evidence. | Product roadmap gaps and previously-fixed defects are different work categories. | `REVIEW_GAPS.md`; `15_AUDIT_FINDINGS_APPENDIX.md` |
+| 2026-09-12 | Start Master Prompt work with deterministic local Brain context before cloud AI integration. | Structured intent/entities can power many MYPA decisions without vendor lock-in or mandatory network cost. | `MASTER_PROMPT_PROGRESS.md`; `local-language-understanding.service.ts`; `planning.service.ts` |
+| 2026-09-12 | Carry local planning entities into the Food Operating Loop through an explicit action adapter. | Brain understanding is only useful when it reaches a domain service through a testable orchestration boundary. | `local-meal-recommendation-action.adapter.ts`; `assistant.module.ts`; adapter spec |
+| 2026-09-12 | Do not implement allergy/diet hard filters against Recipe data until a real ingredient/recipe dietary contract exists. | Existing data has partial flags, but the canonical Recipe model lacks complete recipe-level allergen/diet metadata; guessing would violate safety/correctness. | `prisma/schema.prisma`; `ingredient-taxonomy-supplement-v1.json` |
