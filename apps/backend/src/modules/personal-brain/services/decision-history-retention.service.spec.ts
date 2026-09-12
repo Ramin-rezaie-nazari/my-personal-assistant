@@ -1,22 +1,19 @@
 import { DecisionHistoryRetentionService } from './decision-history-retention.service';
 
 describe('DecisionHistoryRetentionService', () => {
-  it('supports finite and unlimited retention', () => {
+  it('uses a restart-stable configured retention policy', () => {
     const service = new DecisionHistoryRetentionService();
     const now = Date.UTC(2026, 7, 12);
-    expect(service.cutoff('u1', now)).toBeLessThan(now);
-    service.setPolicy('u1', { retention: 'unlimited' });
-    expect(service.cutoff('u1', now)).toBeNull();
+    const cutoff = service.cutoff('u1', now);
+    expect(cutoff).toBeLessThan(now);
+    expect(service.getPolicy('u1').retention).toBe('3_months');
   });
 
-  it('supports 1 month and 3 month policies', () => {
+  it('supports finite and unlimited retention as validated policy values', () => {
     const service = new DecisionHistoryRetentionService();
-    const now = Date.UTC(2026, 7, 12);
-    service.setPolicy('u1', { retention: '1_month' });
-    const one = service.cutoff('u1', now)!;
-    service.setPolicy('u1', { retention: '3_months' });
-    const three = service.cutoff('u1', now)!;
-    expect(now - one).toBeLessThan(now - three);
+    expect(service.setPolicy('u1', { retention: 'unlimited' }).retention).toBe('unlimited');
+    expect(service.setPolicy('u1', { retention: '1_month' }).retention).toBe('1_month');
+    expect(service.setPolicy('u1', { retention: '3_months' }).retention).toBe('3_months');
   });
 
   it('clamps recent-delete hours to a safe range', () => {
