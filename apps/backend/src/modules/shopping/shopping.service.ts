@@ -75,7 +75,7 @@ export class ShoppingService {
     },
   ) {
     if (!Number.isFinite(item.quantity) || item.quantity <= 0)
-      throw new NotFoundException('Quantity must be positive');
+      throw new BadRequestException('Quantity must be positive');
 
     const food = await this.prisma.foodItem.findFirst({
       where: {
