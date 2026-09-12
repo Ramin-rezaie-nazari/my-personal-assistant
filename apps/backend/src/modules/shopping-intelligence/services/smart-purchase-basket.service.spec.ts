@@ -2,7 +2,7 @@ import { SmartPurchaseBasketService } from './smart-purchase-basket.service';
 import { SmartPurchaseDecisionService } from './smart-purchase-decision.service';
 
 describe('SmartPurchaseBasketService', () => {
-  it('computes a basket total and feasibility against remaining budget', () => {
+  it('computes a basket total from committed purchases and feasibility against remaining budget', () => {
     const service = new SmartPurchaseBasketService(
       new SmartPurchaseDecisionService(),
     );
@@ -42,9 +42,12 @@ describe('SmartPurchaseBasketService', () => {
       150,
       'USD',
     );
-    expect(result.total).toBe(120);
+    expect(result.total).toBe(80);
     expect(result.feasible).toBe(true);
     expect(result.currency).toBe('USD');
+    expect(result.items[0].decision.action).toBe('buy_now');
+    expect(result.items[1].decision.action).toBe('compare_more');
+    expect(result.items[1].selectedPrice).toBeNull();
   });
 
   it('ignores quotes in a different currency when a budget currency is specified', () => {
