@@ -1,25 +1,35 @@
 # Architecture Map
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
-Scope actually read: root module wiring, package manifests and complete current-`main` Core source read.
-Scope not yet read: non-Core backend internals, mobile internals, DB/migrations, CI/runtime.
-Evidence roots: `apps/backend/src/app.module.ts`; manifests; Core module paths.
-Confidence level: MEDIUM for Core.
-Open questions: global middleware/prefix/guards; provider graph outside Core; DB relations; mobile consumers.
+Last updated: 2026-09-12
+Review status: SOURCE-LEVEL AUDIT RECONCILED; RUNTIME/DEPLOYED VALIDATION BLOCKED
+Scope actually read: backend root/module wiring, Core plus Brain/Food/Shopping/Life-Health/Fitness/Platform source scopes, Prisma schema/migrations, CI/workflows, mobile routes/clients/components/native/library contracts, route/DTO/guard/consumer reconciliation and operational script surfaces, as recorded in `FILE_REVIEW_INDEX.md` and `READING_CHECKPOINTS.md` through BATCH-0030.
+Scope not yet read: no known in-scope source scope remains unreviewed in the recorded audit. Environmental runtime/deployed infrastructure and physical-device behavior remain outside the available environment.
+Evidence roots: `apps/backend/src/app.module.ts`; `apps/backend/src/modules/`; `apps/backend/prisma/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/FILE_REVIEW_INDEX.md`.
+Confidence level: HIGH for recorded source-level topology; MEDIUM for some dynamic/runtime relationships that require deployment execution.
+Open questions: production-only integrations, live database/RLS state, real device behavior and external provider configuration.
 
 ## Backend root
 
-`AppModule` imports config and Prisma infrastructure plus domain modules for auth/users/profile/settings/onboarding, assistant/brain, nutrition/food/recipes, shopping/inventory, reminders/calendar/notifications/habits/goals/life execution, fitness disciplines, intelligence engines, dashboard/command center and content. Evidence: `apps/backend/src/app.module.ts:4-86`.
+`AppModule` is the primary runtime composition root and connects authentication, user/account foundations, assistant/brain, food/nutrition/recipes, shopping/inventory/price, life/health, fitness, intelligence, dashboards/command-center and content modules. Runtime registration and retired orphan/placeholder artifacts are reconciled in the canonical Appendix.
 
-## Core dependency shape
+## Cross-domain dependency shape
 
-Auth imports UsersModule, ConfigModule, PassportModule and JwtModule; it exports AuthService. Evidence: `apps/backend/src/modules/auth/auth.module.ts:1-31`.
+Authentication owns credential/session issuance and refresh rotation and is consumed by authenticated domain controllers. Session state is persisted through Prisma; refresh tokens are stored as hashes and expiry is enforced by the session service.
 
-Users imports Prisma and registers only `controllers/users.controller.ts`; the sibling `users/users.controller.ts` is present but is not referenced by `UsersModule`. Evidence: `apps/backend/src/modules/users/users.module.ts:1-12`; `apps/backend/src/modules/users/controllers/users.controller.ts:1-24`; `apps/backend/src/modules/users/users.controller.ts:1-23`.
+LifeTasks is the canonical task domain for active task execution; historical parallel LifeExecution artifacts were retired or reconciled. Goal Intelligence, Recommendation Intelligence and other decision services are runtime-mounted rather than left as disconnected providers.
 
-Profile, Preferences, Onboarding and Settings are thin Prisma-backed modules with JWT-guarded controllers. Evidence: their respective module/controller/service files under `apps/backend/src/modules/profile/`, `preferences/`, `onboarding/`, `settings/`.
+Food/recipe intelligence is backed by canonical Prisma recipe structures, transactional/restartable import paths, image pagination/reset safety and recommendation/nutrition provenance contracts. Shopping/Inventory consumes user-scoped food/recipe data and transactional basket-generation paths. Price intelligence preserves source-native currency rather than assuming a single locale.
 
-Context Engine composes `LifeContextFusionService` and `ContextPriorityResolverService`. Fusion normalizes ten domains, freshness and confidence; priority ranks by freshness-weighted confidence. Evidence: `apps/backend/src/modules/context-engine/services/life-context-fusion.service.ts:1-72`; `apps/backend/src/modules/context-engine/services/context-priority-resolver.service.ts:1-57`.
+Time-sensitive domains propagate persisted user timezone into date-window and scheduling semantics. Mobile domain clients use shared authenticated transport, with localization/RTL and notification lifecycle integrated into active application paths.
 
-Device Intelligence has no observed persistence in its current services; it returns placeholder values/messages. User Intelligence persists behavior/insight records through Prisma and builds deterministic adaptive profiles. Evidence: `apps/backend/src/modules/device-intelligence/services/device-intelligence.service.ts:1-15`; `apps/backend/src/modules/user-intelligence/services/learning.service.ts:15-120`.
+## Database topology
+
+Prisma is the canonical application data contract. The audit compared `schema.prisma` with all recorded migration SQL files and reconciled ownership, relations, indexes and transaction boundaries. Composite indexes relevant to workout and behavior lookup are present in the reconciled schema.
+
+## Mobile topology
+
+The mobile layer consumes backend contracts through a shared authenticated transport. Audited routes and command-center surfaces use the common localization/RTL layer; notification startup/action handling and voice/TTS consumer paths are active. CI validates type safety, mobile tests, Expo configuration and Android JS bundle generation.
+
+## Architecture boundary
+
+This map describes verified source topology, not a claim that every future MYPA Vision capability already exists. The global local/offline AI brain, advanced voice orchestration, camera coaching, broad wearable integrations, comprehensive pricing providers and fully polished mobile product journeys remain future implementation layers.

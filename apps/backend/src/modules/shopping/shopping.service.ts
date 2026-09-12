@@ -1,6 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InventoryService } from '../inventory/inventory.service';
 import { PrismaService } from '../../common/database/prisma.service';
+import { convertQuantity } from '../../common/units/quantity-conversion';
+
 export type SmartShoppingItem = {
   foodId: string;
   name: string;
@@ -12,12 +14,14 @@ export type SmartShoppingItem = {
   reason: string;
   essential: boolean;
 };
+
 @Injectable()
 export class ShoppingService {
   constructor(
     private readonly inventory: InventoryService,
     private readonly prisma: PrismaService,
   ) {}
+
   async smartList(userId: string): Promise<SmartShoppingItem[]> {
     const inventory = await this.inventory.list(userId);
     return inventory
@@ -47,6 +51,7 @@ export class ShoppingService {
           a.name.localeCompare(b.name),
       );
   }
+
   async listBasket(userId: string) {
     return this.prisma.shoppingItem.findMany({
       where: { userId, completed: false },
@@ -58,6 +63,7 @@ export class ShoppingService {
       ],
     });
   }
+
   async addToBasket(
     userId: string,
     item: {
@@ -69,24 +75,37 @@ export class ShoppingService {
       priority?: string;
     },
   ) {
-    if (item.quantity <= 0)
-      throw new NotFoundException('Quantity must be positive');
-    const food = await this.prisma.foodItem.findUnique({
-      where: { id: item.foodId },
+    if (!Number.isFinite(item.quantity) || item.quantity <= 0)
+      throw new BadRequestException('Quantity must be positive');
+
+    const food = await this.prisma.foodItem.findFirst({
+      where: {
+        id: item.foodId,
+        OR: [{ userId: null }, { userId }],
+      },
     });
     if (!food) throw new NotFoundException('Food item not found');
+
     const existing = await this.prisma.shoppingItem.findFirst({
       where: { userId, foodId: item.foodId, completed: false },
     });
-    if (existing)
+    if (existing) {
+      const quantity = convertQuantity(item.quantity, item.unit, existing.unit);
+      if (quantity === null) {
+        throw new BadRequestException(
+          `Incompatible shopping units: ${item.unit} cannot be merged into ${existing.unit}`,
+        );
+      }
       return this.prisma.shoppingItem.update({
         where: { id: existing.id },
         data: {
-          quantity: { increment: item.quantity },
+          quantity: { increment: quantity },
           source: item.source ?? existing.source,
           priority: item.priority ?? existing.priority,
         },
       });
+    }
+
     return this.prisma.shoppingItem.create({
       data: {
         userId,
@@ -99,23 +118,38 @@ export class ShoppingService {
       },
     });
   }
+
   async addRecipeMissing(
     userId: string,
     recipeId: string,
     items: Array<{ foodId: string; quantity: number; unit: string }>,
   ) {
-    const recipe = await this.prisma.recipe.findUnique({
-      where: { id: recipeId },
+    const recipe = await this.prisma.recipe.findFirst({
+      where: { id: recipeId, OR: [{ userId: null }, { userId }] },
       include: { ingredients: true },
     });
     if (!recipe) throw new NotFoundException('Recipe not found');
+
     const allowed = new Set(recipe.ingredients.map((i) => i.foodId));
-    const valid = items.filter((i) => allowed.has(i.foodId) && i.quantity > 0);
+    const invalidItem = items.find(
+      (i) =>
+        !allowed.has(i.foodId) ||
+        !Number.isFinite(i.quantity) ||
+        i.quantity <= 0 ||
+        typeof i.unit !== 'string' ||
+        !i.unit.trim(),
+    );
+    if (invalidItem) {
+      throw new BadRequestException(
+        'Every shopping item must belong to the recipe and have a positive quantity and unit',
+      );
+    }
+    const valid = items;
 
     await this.prisma.$transaction(async (tx) => {
       for (const item of valid) {
-        const food = await tx.foodItem.findUnique({
-          where: { id: item.foodId },
+        const food = await tx.foodItem.findFirst({
+          where: { id: item.foodId, OR: [{ userId: null }, { userId }] },
           select: { name: true },
         });
         if (!food) throw new NotFoundException('Food item not found');
@@ -131,10 +165,16 @@ export class ShoppingService {
         });
 
         if (existing) {
+          const quantity = convertQuantity(item.quantity, item.unit, existing.unit);
+          if (quantity === null) {
+            throw new BadRequestException(
+              `Incompatible shopping units: ${item.unit} cannot be merged into ${existing.unit}`,
+            );
+          }
           await tx.shoppingItem.update({
             where: { id: existing.id },
             data: {
-              quantity: { increment: item.quantity },
+              quantity: { increment: quantity },
               source: 'recipe',
               priority: 'high',
             },
@@ -158,12 +198,50 @@ export class ShoppingService {
 
     return { recipeId, added: valid.length };
   }
+
   async complete(userId: string, id: string) {
-    return this.prisma.shoppingItem.updateMany({
-      where: { id, userId, completed: false },
-      data: { completed: true },
+    return this.prisma.$transaction(async (tx) => {
+      const item = await tx.shoppingItem.findFirst({
+        where: { id, userId, completed: false },
+      });
+      if (!item) return { count: 0, inventorySynced: false };
+
+      const completed = await tx.shoppingItem.updateMany({
+        where: { id, userId, completed: false },
+        data: { completed: true },
+      });
+      if (!completed.count) return { count: 0, inventorySynced: false };
+
+      const existing = await tx.inventoryItem.findUnique({
+        where: { userId_foodId: { userId, foodId: item.foodId } },
+      });
+
+      if (existing) {
+        const quantity = convertQuantity(item.quantity, item.unit, existing.unit);
+        if (quantity === null) {
+          throw new BadRequestException(
+            `Incompatible inventory units: ${item.unit} cannot be added to ${existing.unit}`,
+          );
+        }
+        await tx.inventoryItem.update({
+          where: { id: existing.id },
+          data: { quantity: { increment: quantity } },
+        });
+      } else {
+        await tx.inventoryItem.create({
+          data: {
+            userId,
+            foodId: item.foodId,
+            quantity: item.quantity,
+            unit: item.unit,
+          },
+        });
+      }
+
+      return { count: 1, inventorySynced: true };
     });
   }
+
   private priority(u: SmartShoppingItem['urgency']) {
     return u === 'critical' ? 3 : u === 'soon' ? 2 : u === 'normal' ? 1 : 0;
   }

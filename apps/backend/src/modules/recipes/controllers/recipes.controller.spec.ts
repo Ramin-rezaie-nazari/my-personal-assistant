@@ -4,28 +4,17 @@ import { RecipesController } from './recipes.controller';
 describe('RecipesController food operating loop', () => {
   const recipesService = { getScaledRecipe: jest.fn() };
   const matcher = { match: jest.fn() };
-  const globalCountryFood = {
-    getLocalRecipeGuidance: jest.fn(),
-    getSupportedCountryCodes: jest.fn(),
-    rankRecipesForCountry: jest.fn((countryCode, recipes) => recipes),
-  };
-  const foodOperatingLoop = {
-    buildPlan: jest.fn(),
-    addMissingToShopping: jest.fn(),
-    recommend: jest.fn(),
-  };
-  const controller = new RecipesController(
-    recipesService as never,
-    matcher as never,
-    globalCountryFood as never,
-    foodOperatingLoop as never,
-  );
+  const globalCountryFood = { getLocalRecipeGuidance: jest.fn(), getSupportedCountryCodes: jest.fn(), rankRecipesForCountry: jest.fn((countryCode, recipes) => recipes) };
+  const foodOperatingLoop = { buildPlan: jest.fn(), buildBudgetPlan: jest.fn(), addBudgetQualifiedMissingToShopping: jest.fn(), addMissingToShopping: jest.fn(), recommend: jest.fn() };
+  const controller = new RecipesController(recipesService as never, matcher as never, globalCountryFood as never, foodOperatingLoop as never);
 
   beforeEach(() => jest.clearAllMocks());
 
   it('requires the target serving count', () => {
     expect(() => controller.scale({ user: { id: 'user-1' } }, 'recipe-1', undefined)).toThrow(BadRequestException);
     expect(() => controller.foodPlan({ user: { id: 'user-1' } }, 'recipe-1', undefined)).toThrow(BadRequestException);
+    expect(() => controller.foodPlanBudget({ user: { id: 'user-1' } }, 'recipe-1', undefined, '10', 'USD')).toThrow(BadRequestException);
+    expect(() => controller.addBudgetQualifiedMissingToShopping({ user: { id: 'user-1' } }, 'recipe-1', '2', undefined, 'USD')).toThrow(BadRequestException);
     expect(() => controller.recommendations({ user: { id: 'user-1' } }, undefined)).toThrow(BadRequestException);
   });
 
@@ -41,6 +30,23 @@ describe('RecipesController food operating loop', () => {
     expect(foodOperatingLoop.buildPlan).toHaveBeenCalledWith('user-1', 'recipe-1', 50, 'JP');
   });
 
+  it('passes budget and currency into the deterministic food budget plan', async () => {
+    foodOperatingLoop.buildBudgetPlan.mockResolvedValue({ budget: { budget: 10, currency: 'USD' } });
+    await expect(controller.foodPlanBudget({ user: { id: 'user-1' } }, 'recipe-1', '4', '10', 'USD', 'US')).resolves.toEqual({ budget: { budget: 10, currency: 'USD' } });
+    expect(foodOperatingLoop.buildBudgetPlan).toHaveBeenCalledWith('user-1', 'recipe-1', 4, 10, 'USD', 'US');
+  });
+
+  it('adds only budget-qualified missing ingredients to shopping', async () => {
+    foodOperatingLoop.addBudgetQualifiedMissingToShopping.mockResolvedValue({ shopping: { recipeId: 'recipe-1', added: 1 } });
+    await expect(controller.addBudgetQualifiedMissingToShopping({ user: { id: 'user-1' } }, 'recipe-1', '4', '10', 'USD')).resolves.toEqual({ shopping: { recipeId: 'recipe-1', added: 1 } });
+    expect(foodOperatingLoop.addBudgetQualifiedMissingToShopping).toHaveBeenCalledWith('user-1', 'recipe-1', 4, 10, 'USD');
+  });
+
+  it('requires currency for budget flows', () => {
+    expect(() => controller.foodPlanBudget({ user: { id: 'user-1' } }, 'recipe-1', '4', '10', undefined)).toThrow(BadRequestException);
+    expect(() => controller.addBudgetQualifiedMissingToShopping({ user: { id: 'user-1' } }, 'recipe-1', '4', '10', undefined)).toThrow(BadRequestException);
+  });
+
   it('passes nutrition filters and country into recommendations', async () => {
     foodOperatingLoop.recommend.mockResolvedValue([{ recipeId: 'recipe-1', name: 'Chicken Bowl', score: 92 }]);
     await expect(controller.recommendations({ user: { id: 'user-1' } }, '2', 'JP', '700', '35')).resolves.toEqual([{ recipeId: 'recipe-1', name: 'Chicken Bowl', score: 92 }]);
@@ -53,15 +59,10 @@ describe('RecipesController food operating loop', () => {
       { recipeId: 'r2', name: 'Chicken Rice', score: 88 },
       { recipeId: 'r3', name: 'Salmon Salad', score: 84 },
     ]);
-    await expect(controller.mealPlan({ user: { id: 'user-1' } }, '2', 'JP')).resolves.toEqual({
-      targetServings: 2,
-      countryCode: 'JP',
-      meals: [
-        { mealType: 'breakfast', recipe: { recipeId: 'r1', name: 'Breakfast Bowl', score: 92 } },
-        { mealType: 'lunch', recipe: { recipeId: 'r2', name: 'Chicken Rice', score: 88 } },
-        { mealType: 'dinner', recipe: { recipeId: 'r3', name: 'Salmon Salad', score: 84 } },
-      ],
-      generatedDeterministically: true,
-    });
+    await expect(controller.mealPlan({ user: { id: 'user-1' } }, '2', 'JP')).resolves.toEqual({ targetServings: 2, countryCode: 'JP', meals: [
+      { mealType: 'breakfast', recipe: { recipeId: 'r1', name: 'Breakfast Bowl', score: 92 } },
+      { mealType: 'lunch', recipe: { recipeId: 'r2', name: 'Chicken Rice', score: 88 } },
+      { mealType: 'dinner', recipe: { recipeId: 'r3', name: 'Salmon Salad', score: 84 } },
+    ], generatedDeterministically: true });
   });
 });

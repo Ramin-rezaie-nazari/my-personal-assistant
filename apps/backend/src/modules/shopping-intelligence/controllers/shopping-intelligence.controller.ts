@@ -1,12 +1,14 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Request, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { ShoppingIntelligenceService } from '../services/shopping-intelligence.service';
 
 @Controller('shopping-intelligence')
+@UseGuards(JwtAuthGuard)
 export class ShoppingIntelligenceController {
   constructor(private readonly shoppingService: ShoppingIntelligenceService) {}
 
   @Get()
-  getShoppingPlan() {
-    return this.shoppingService.createShoppingPlan();
+  getShoppingPlan(@Request() req: { user: { id: string } }) {
+    return this.shoppingService.createShoppingPlan(req.user.id);
   }
 }

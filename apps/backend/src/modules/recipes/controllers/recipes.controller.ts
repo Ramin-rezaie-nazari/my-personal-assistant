@@ -101,6 +101,35 @@ export class RecipesController {
     return this.foodOperatingLoop.buildPlan(req.user.id, id, servings, countryCode);
   }
 
+  @Get(':id/food-plan/budget')
+  foodPlanBudget(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Query('servings') servingsText?: string,
+    @Query('budget') budgetText?: string,
+    @Query('currency') currency?: string,
+    @Query('countryCode') countryCode = '',
+  ) {
+    const servings = parseRequiredServings(servingsText);
+    const budget = parseRequiredNonNegative(budgetText, 'budget');
+    if (!currency?.trim()) throw new BadRequestException('currency is required');
+    return this.foodOperatingLoop.buildBudgetPlan(req.user.id, id, servings, budget, currency, countryCode);
+  }
+
+  @Post(':id/food-plan/budget-shopping')
+  addBudgetQualifiedMissingToShopping(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Query('servings') servingsText?: string,
+    @Query('budget') budgetText?: string,
+    @Query('currency') currency?: string,
+  ) {
+    const servings = parseRequiredServings(servingsText);
+    const budget = parseRequiredNonNegative(budgetText, 'budget');
+    if (!currency?.trim()) throw new BadRequestException('currency is required');
+    return this.foodOperatingLoop.addBudgetQualifiedMissingToShopping(req.user.id, id, servings, budget, currency);
+  }
+
   @Post(':id/food-plan/shopping')
   addFoodPlanMissingToShopping(
     @Request() req: { user: { id: string } },
@@ -141,6 +170,13 @@ function parseRequiredServings(value?: string): number {
   if (!value?.trim()) throw new BadRequestException('servings is required');
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed <= 0) throw new BadRequestException('servings must be a positive integer');
+  return parsed;
+}
+
+function parseRequiredNonNegative(value: string | undefined, name: string): number {
+  if (!value?.trim()) throw new BadRequestException(`${name} is required`);
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) throw new BadRequestException(`${name} must be a non-negative number`);
   return parsed;
 }
 

@@ -1,13 +1,10 @@
 import { Module } from '@nestjs/common';
-
 import { PrismaModule } from '../../common/database/prisma.module';
 import { PersonalBrainModule } from '../personal-brain/personal-brain.module';
+import { RecipesModule } from '../recipes/recipes.module';
+import { BudgetIntelligenceModule } from '../budget-intelligence/budget-intelligence.module';
 import { AssistantController } from './controllers/assistant.controller';
 import { AssistantService } from './services/assistant.service';
-import { MemoryService } from './services/memory.service';
-import { ContextService } from './services/context.service';
-import { ReasoningService } from './services/reasoning.service';
-import { RecommendationService } from './services/recommendation.service';
 import { PlanningService } from './services/planning.service';
 import { RuleEngineService } from './services/rule-engine.service';
 import { KnowledgeService } from './services/knowledge.service';
@@ -19,19 +16,22 @@ import { AiProviderRouterService } from './services/ai-provider-router.service';
 import { LocalLanguageUnderstandingService } from './services/local-language-understanding.service';
 import { LocalIntelligenceProvider } from './providers/local-intelligence.provider';
 import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter';
+import { LocalMealRecommendationActionAdapter } from './adapters/local-meal-recommendation-action.adapter';
+import { LocalFoodBudgetActionAdapter } from './adapters/local-food-budget-action.adapter';
 
 @Module({
-  imports: [PrismaModule, PersonalBrainModule],
+  imports: [
+    PrismaModule,
+    PersonalBrainModule,
+    RecipesModule,
+    BudgetIntelligenceModule,
+  ],
   controllers: [AssistantController],
   providers: [
     KnowledgeService,
     RuleEngineService,
     PlanningService,
     AssistantService,
-    MemoryService,
-    ContextService,
-    ReasoningService,
-    RecommendationService,
     NaturalActionExecutionService,
     ConversationHistoryService,
     ConversationContextService,
@@ -40,13 +40,11 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     LocalLanguageUnderstandingService,
     LocalIntelligenceProvider,
     LocalBasketActionAdapter,
+    LocalMealRecommendationActionAdapter,
+    LocalFoodBudgetActionAdapter,
   ],
   exports: [
     AssistantService,
-    MemoryService,
-    ContextService,
-    ReasoningService,
-    RecommendationService,
     NaturalActionExecutionService,
     ConversationHistoryService,
     ConversationContextService,

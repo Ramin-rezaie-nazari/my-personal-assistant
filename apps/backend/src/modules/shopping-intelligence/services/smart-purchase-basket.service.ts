@@ -27,12 +27,43 @@ export type BasketDecision = {
 export class SmartPurchaseBasketService {
   constructor(private readonly decision: SmartPurchaseDecisionService) {}
 
-  optimize(items: BasketItem[], budgetRemaining: number): BasketDecision {
+  optimize(
+    items: BasketItem[],
+    budgetRemaining: number,
+    budgetCurrency?: string,
+  ): BasketDecision {
     const currency =
-      items.flatMap((item) => item.candidates).find(Boolean)?.currency ?? 'USD';
+      budgetCurrency ??
+      items.flatMap((item) => item.candidates).find(Boolean)?.currency ??
+      'USD';
+    let remaining = Math.max(0, budgetRemaining);
+
     const results = items.map((item) => {
-      const decision = this.decision.decide(item.candidates, budgetRemaining);
-      const price = decision.candidate?.price ?? null;
+      const compatibleCandidates = budgetCurrency
+        ? item.candidates.filter((candidate) => candidate.currency === budgetCurrency)
+        : item.candidates;
+      const affordableCandidates = compatibleCandidates.filter(
+        (candidate) =>
+          Number.isFinite(candidate.price) &&
+          candidate.price >= 0 &&
+          candidate.price * Math.max(0, item.quantity) <= remaining,
+      );
+
+      const decision = affordableCandidates.length
+        ? this.decision.decide(affordableCandidates, remaining)
+        : {
+            action: 'avoid' as const,
+            score: 0,
+            reasons: compatibleCandidates.length
+              ? ['over_budget']
+              : ['currency_mismatch'],
+            candidate: null,
+          };
+      const purchaseCommitted = decision.action === 'buy_now';
+      const price = purchaseCommitted ? decision.candidate?.price ?? null : null;
+      const estimatedCost = price !== null ? price * Math.max(0, item.quantity) : 0;
+      remaining = Math.max(0, remaining - estimatedCost);
+
       return {
         productKey: item.productKey,
         quantity: item.quantity,
@@ -41,7 +72,7 @@ export class SmartPurchaseBasketService {
       };
     });
     const total = results.reduce(
-      (sum, item) => sum + (item.selectedPrice ?? 0) * item.quantity,
+      (sum, item) => sum + (item.selectedPrice ?? 0) * Math.max(0, item.quantity),
       0,
     );
     const feasible =
@@ -49,7 +80,15 @@ export class SmartPurchaseBasketService {
       results.every((item) => item.decision.action !== 'avoid');
     const reasons = feasible
       ? []
-      : ['basket_exceeds_budget_or_contains_avoid_items'];
+      : [
+          ...new Set(
+            results.flatMap((item) =>
+              item.decision.reasons.length
+                ? item.decision.reasons
+                : ['basket_exceeds_budget_or_contains_avoid_items'],
+            ),
+          ),
+        ];
     return { total, currency, items: results, feasible, reasons };
   }
 }

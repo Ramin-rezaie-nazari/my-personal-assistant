@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
+export type LocalPlanEntities = Record<string, string | number | boolean | string[]>;
+
 export type LocalPlanStep = {
   index: number;
   intent: 'create' | 'update' | 'cancel' | 'unknown';
   clause: string;
+  entities?: LocalPlanEntities;
   dependsOn?: number;
   requiresConfirmation: boolean;
 };
@@ -21,11 +24,13 @@ export class PlanningService {
     intents?: Array<'create' | 'update' | 'cancel' | 'unknown'>;
     contradictions?: string[];
     confidence?: number;
+    entities?: LocalPlanEntities;
   }): Promise<LocalActionPlan> {
     const clauses = input?.clauses ?? [];
     const intents = input?.intents ?? [];
     const contradictions = input?.contradictions ?? [];
     const confidence = input?.confidence ?? 0;
+    const entities = input?.entities ?? {};
 
     if (contradictions.length)
       return {
@@ -56,6 +61,7 @@ export class PlanningService {
           index,
           intent,
           clause,
+          ...(Object.keys(entities).length ? { entities } : {}),
           ...(dependsOn !== undefined ? { dependsOn } : {}),
           requiresConfirmation: intent === 'cancel',
         };

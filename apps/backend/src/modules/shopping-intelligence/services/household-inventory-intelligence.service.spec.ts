@@ -1,4 +1,4 @@
-import { HouseholdInventoryIntelligenceService } from './household-inventory-intelligence.service';
+import { HouseholdInventoryIntelligenceService } from '../../inventory/household-inventory-intelligence.service';
 
 describe('HouseholdInventoryIntelligenceService', () => {
   const service = new HouseholdInventoryIntelligenceService();

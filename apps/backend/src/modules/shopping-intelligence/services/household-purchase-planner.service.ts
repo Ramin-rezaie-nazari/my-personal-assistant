@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   HouseholdInventoryIntelligenceService,
   InventoryItem,
-} from './household-inventory-intelligence.service';
+} from '../../inventory/household-inventory-intelligence.service';
 
 export type HouseholdPrice = {
   productKey: string;
@@ -31,6 +31,7 @@ export class HouseholdPurchasePlannerService {
     items: InventoryItem[],
     prices: HouseholdPrice[],
     budgetRemaining: number,
+    budgetCurrency?: string,
   ): {
     items: HouseholdPurchasePlanItem[];
     totalEstimatedCost: number;
@@ -46,10 +47,14 @@ export class HouseholdPurchasePlannerService {
       );
       const quantity = item.recommendedQuantity;
       if (quantity <= 0) {
+        const zeroQuantityPrice =
+          price && (!budgetCurrency || price.currency === budgetCurrency)
+            ? price.price
+            : null;
         plan.push({
           productKey: item.productKey,
           quantity: 0,
-          price: price?.price ?? null,
+          price: zeroQuantityPrice,
           estimatedCost: 0,
           urgency: item.urgency,
           action: 'skip',
@@ -58,15 +63,12 @@ export class HouseholdPurchasePlannerService {
         continue;
       }
 
-      const unitPrice = price?.available ? price.price : null;
+      const currencyMatches =
+        !budgetCurrency || !price || price.currency === budgetCurrency;
+      const unitPrice =
+        price?.available && currencyMatches ? price.price : null;
+
       let purchaseQuantity = quantity;
-      if (
-        item.urgency === 'critical' &&
-        item.safetyStock !== undefined &&
-        item.safetyStock > 0
-      ) {
-        purchaseQuantity = Math.min(purchaseQuantity, item.safetyStock);
-      }
       if (
         unitPrice !== null &&
         unitPrice > 0 &&
@@ -103,18 +105,20 @@ export class HouseholdPurchasePlannerService {
       plan.push({
         productKey: item.productKey,
         quantity: purchaseQuantity,
-        price: price?.price ?? null,
+        price: unitPrice,
         estimatedCost,
         urgency: item.urgency,
         action,
         reason:
-          action === 'buy'
-            ? 'inventory_need_and_budget_align'
-            : action === 'watch'
-              ? 'monitor_price_or_stock'
-              : estimatedCost === null
-                ? 'price_unavailable'
-                : 'budget_constraint',
+          !currencyMatches
+            ? 'price_currency_mismatch'
+            : action === 'buy'
+              ? 'inventory_need_and_budget_align'
+              : action === 'watch'
+                ? 'monitor_price_or_stock'
+                : estimatedCost === null
+                  ? 'price_unavailable'
+                  : 'budget_constraint',
       });
     }
 

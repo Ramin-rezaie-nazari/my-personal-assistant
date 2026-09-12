@@ -1,78 +1,62 @@
 # Shopping / Inventory / Price Intelligence Deep Read
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
-Scope actually read: complete current-main file-level scope for `shopping`, `inventory`, `shopping-intelligence`, and the enumerated `price-intelligence` module files including controllers, DTO/model, core source/adapters/persistence/analysis/scheduling files and available direct specs.
-Scope not yet read: remaining repository-wide consumers, mobile consumers, some legacy support/test files not present in module trees, full DB reader/writer/transaction matrix and runtime execution.
-Evidence roots: `apps/backend/src/modules/shopping/`, `inventory/`, `shopping-intelligence/`, `price-intelligence/`, `apps/backend/prisma/`, `docs/project-brain/12_OPEN_WORK.md`.
-Confidence level: HIGH for file-level source behavior listed here; MEDIUM for end-to-end behavior until route/mobile/database/runtime validation is completed.
-Open questions: deployed price tables, exact unit semantics across all shopping paths, durable consumption-learning persistence, external source health, mobile usage.
+Last updated: 2026-09-12
+Review status: RECONCILED FOR RECORDED SOURCE SCOPE; LATEST REMEDIATION THROUGH PB-286; RUNTIME CI VERIFIED
+Scope actually read: complete recorded source-level scope for `shopping`, `inventory`, `shopping-intelligence`, and `price-intelligence`, including controllers, DTO/model contracts, persistence, analysis, scheduling, operational paths and direct specs/rechecks; focused Inventory → Shopping lifecycle/unit reconciliation; focused Shopping Intelligence placeholder/consumer reconciliation; focused PurchasePlan currency contract; Budget ↔ Price unit compatibility; household purchase/reorder semantics.
+Scope not yet read: production price-source health/quotas, deployed runtime behavior and physical mobile execution.
+Evidence roots: `apps/backend/src/modules/shopping/`; `apps/backend/src/modules/inventory/`; `apps/backend/src/modules/shopping-intelligence/`; `apps/backend/src/modules/price-intelligence/`; `apps/backend/src/modules/budget-intelligence/`; `apps/backend/src/common/units/quantity-conversion.ts`; `apps/backend/src/modules/recipes/services/food-operating-loop.service.ts`; `apps/backend/prisma/`; canonical Appendix.
+Confidence level: HIGH for recorded source-level audit and implemented remediations; MEDIUM for behavior requiring deployment/external sources.
+Open questions: live price-source health, provider availability, deployed data state and real-device shopping UX.
 
 ## Shopping base
 
-`ShoppingController` is JWT guarded and exposes smart list, basket list/add, recipe-missing add and basket completion. `ShoppingService.smartList()` delegates inventory forecasting and maps low-stock/essential items into purchase-ready rows. Basket listing/completion are user-scoped.
+Shopping access is user-scoped in the remediation baseline. FoodItem and Recipe lookups used by basket operations enforce intended global-or-current-user visibility. Basket listing/completion is user-scoped and purchase completion synchronizes inventory transactionally.
 
-A data-isolation defect exists in `addToBasket()`: it loads `FoodItem` by ID only rather than enforcing the global-or-current-user visibility rule used by Inventory/Foods. `addRecipeMissing()` also loads `Recipe` by ID only before accepting recipe ingredient IDs, without checking recipe ownership/global visibility. These are documented as PB-049 and PB-066.
-
-The shopping write DTO layer is absent: controller bodies are inline objects. The `shopping` module directory contains no direct service/controller specs, creating PB-054 and PB-070 test/contract gaps.
+`addToBasket()` validates quantity semantics as a bad request before resource lookup. Existing basket quantities are merged only after compatible unit conversion; incompatible unit kinds fail closed.
 
 ## Inventory
 
-`InventoryService` is JWT/user-scoped, validates non-negative quantity, enforces food visibility on create, upserts by `(userId, foodId)`, and delegates list prioritization to `HouseholdInventoryIntelligenceService`. Adjustment/removal are user-scoped. `PATCH /inventory/:id` takes a bare numeric body parameter and lacks finite-number DTO validation (PB-055).
+Inventory is JWT/user-scoped. `InventoryService.list()` feeds deterministic inventory intelligence into Shopping and preserves quantity/unit values for the smart-list consumer. Purchased basket completion increments an existing inventory row in its established unit or creates a new row when absent.
+
+`HouseholdInventoryIntelligenceService` computes `reorderPoint` from consumption and safety stock, then derives `recommendedQuantity` as the quantity required to reach that threshold. Safety stock is therefore a threshold component, not itself a purchase cap.
+
+## Inventory ↔ Shopping lifecycle and unit reconciliation
+
+A cross-domain integrity defect was found when an active ShoppingItem was merged by `foodId` without unit compatibility checks. That is fixed: compatible mass/volume/count units are converted into the existing row's unit, and incompatible unit kinds are rejected before persistence.
+
+A second lifecycle defect was found in purchase completion: the mobile `Mark as bought` operation previously completed only the basket record. It now completes the basket and synchronizes Inventory atomically, with idempotent completion guards and rollback on incompatible inventory units.
+
+Quantity conversion is now centralized in `apps/backend/src/common/units/quantity-conversion.ts` and consumed by both Shopping and Budget to reduce divergent unit semantics.
 
 ## Shopping Intelligence
 
-The module exports a mixture of placeholder facades and deterministic household intelligence. `ShoppingIntelligenceService`, `ShoppingListService` and `PurchaseAnalysisService` remain placeholder-level. `ShoppingIntelligenceController` is public and only calls the placeholder service, yielding no user-specific plan (PB-050/PB-056).
+The module retains active deterministic/provider services in its runtime graph. Placeholder-only `ShoppingListService` and `PurchaseAnalysisService` facades were confirmed to have no active consumers and were retired. The authenticated controller delegates to `ShoppingIntelligenceService`, which combines the canonical Shopping smart-list and open basket.
 
-`SmartPurchaseDecisionService` scores purchase candidates from price discount/trend, seller score, user preference, urgency, affordability and availability. `SmartPurchaseBasketService` sums candidate price×quantity and takes currency from the first candidate without verifying all items share the same currency. `PurchasePlanService` ranks urgency/score and respects a numeric budget but does not enforce `item.currency === input.currency`. These are PB-068/PB-069.
+`PurchasePlanService` enforces plan-currency/item-currency compatibility and skips mismatched monetary units with explicit `currency_mismatch` reasoning. `SmartPurchaseBasketService` independently filters candidate currencies when a budget currency is supplied and commits cost only for `buy_now` decisions.
 
-`HouseholdInventoryIntelligenceService` computes daysRemaining/reorderPoint/recommendedQuantity by direct numeric arithmetic with `unit` treated as metadata. There is no canonical unit conversion, producing PB-052.
+`HouseholdPurchasePlannerService` now preserves the forecasted `recommendedQuantity` rather than capping it by `safetyStock`; the remaining budget constraint is the explicit purchase limiter. This closes the current revalidation finding PB-286.
 
-`HouseholdConsumptionLearningService` maintains up to 500 events per product in a process-local Map keyed only by productKey. Events have quantity but no unit and no user/household identity. This creates both state-isolation and dimensional-semantic problems (PB-051/PB-067).
+The household consumption/reorder planning stack is source-present but not directly consumed by the HTTP Shopping Intelligence controller. Its current consumption-learning implementation remains process-local and unitless; this is treated as an architectural/product boundary rather than claimed as a completed durable household-learning capability. A durable, user-scoped consumption event model remains future work before that subsystem can be presented as persistent multi-user learning.
 
-`HouseholdPurchasePlannerService` combines forecast and prices under a budget, but for critical items it caps purchaseQuantity by safetyStock itself rather than clearly modeling safety stock as a target threshold, creating PB-053. Its tests currently codify this behavior.
+## Price Intelligence and Budget bridge
 
-`HouseholdReorderForecastService` uses the learned dailyRate and next30DayNeed to derive reorder points/quantities but inherits the process-local, unitless consumption contract.
+Price routes have an authenticated controller boundary. Durable snapshots are the canonical price-history source for market analysis. Source definitions expose capability/trust metadata and runtime in-process health telemetry. Product matching accounts for compatible package quantities and incompatible unit kinds. Price analysis filters incompatible currencies and uses unit price when available.
 
-## Price Intelligence
+Budget quote now accepts price evidence expressed in a compatible unit family, e.g. `L` evidence for an `ml` requirement, converts the source unit price into the requested quantity for `estimatedCost`, and preserves the source `price` field semantics. Freshness is still enforced before costing. This closes PB-285.
 
-`PriceIntelligenceController` has no JWT guard. Public routes include price reads, source registry, schedule, matching, history/analysis, and `POST /price-intelligence/nightly/run`, which invokes external price collection and raw DB writes. This is PB-057 security critical. The controller uses inline bodies for `match`, `nightly/run` and `nightly/preview`; the provided `CreatePriceRecordDto` is unused and unvalidated.
-
-`PriceSourceRegistryService` contains nine enabled Iranian retailer/marketplace sources with environment-configurable search URL templates. There is no source health/quality/currency/unit capability or trust-score contract (PB-064).
-
-`HttpPriceSourceAdapter` fetches configured search URLs with a 12-second timeout and parses JSON-LD, generic script/meta and Persian price text. It converts IRR to IRT, but its normalization unconditionally labels output `currency: 'IRT'` for every other currency too, without FX conversion; this is PB-058 critical.
-
-`PricePersistenceService` stores tracking/snapshots/runs using raw SQL against migration-created tables (`PriceTrackedProduct`, `PriceSnapshot`, `PriceCollectionRun`) absent from final Prisma models, contributing to PB-007 and a price-specific hidden schema contract. `latest()` and `history()` return rows from durable snapshots.
-
-`PriceIntelligenceService.analyze()` aggregates prices by productKey without compatibility filtering for currency, unit, package size or source normalization. This can create false averages/trends across incompatible observations (PB-059).
-
-`PriceHistoryStoreService` is process-local, while `PriceHistoryService` and `PriceAnalysisService` are placeholders. `MarketAnalysisService` uses the in-memory store. This creates duplicate ownership and divergent history paths (PB-060/PB-061).
-
-`PriceSourceService` creates one HTTP adapter per enabled registry source and collects through `Promise.allSettled`, retaining successes while listing failed sources. `NightlyMarketIntelligenceService` performs scheduled collection with retry/catch-up and persists run metadata. Its retry loop has a validation risk in the reported `attempts` count after natural loop termination (PB-063). `PriceCollectionSchedulerService` and `AutomaticPriceSchedulerService` independently implement 03:30 `Asia/Tehran` defaults, creating duplicated timezone policy (PB-062). The automatic scheduler is process-local and has no direct service spec (PB-072).
-
-`ProductMatchingService` uses identifiers/title/brand/quantity. Quantity only adds positive score on exact unit + within 1% value, while strong title/brand overlap can still produce high similarity without explicit incompatible package-size penalties (PB-065).
-
-`MarketBudgetImpactService` projects planned spending against a numeric monthly budget. `MarketIntelligenceOrchestratorService` connects nightly collection, market analysis, source discovery and budget impact. These are useful deterministic primitives but are not sufficient by themselves to guarantee normalized cross-source monetary semantics.
+Placeholder Price History/Analysis providers were retired after consumer search, and the public PriceIntelligenceService analysis entrypoint delegates to canonical MarketAnalysisService.
 
 ## Cross-domain contract risks
 
-Shopping, Inventory, Food/Recipe, Budget, and Price paths all currently carry quantity/unit/currency concepts with different contracts. The largest shared risks are:
+Quantity/unit/currency remain strategic architecture concerns across Recipe, Food, Inventory, Shopping, Budget and Price systems. Concrete source defects found in the remediation stream are registered in the canonical Appendix and covered by direct regression tests/CI. Long-term Vision still benefits from a stronger canonical currency abstraction and durable consumption-learning model.
 
-1. no single canonical quantity/unit conversion contract across RecipeInventoryMatcher, FoodOperatingLoop, Inventory Forecast, Consumption Learning, Product Matching and Purchase Planning;
-2. no single canonical currency/FX contract across Price Intelligence, Shopping Intelligence, Budget and purchase planning;
-3. multiple placeholder facades alongside more functional specialized implementations;
-4. raw SQL migration-only price tables outside Prisma's model graph;
-5. public/internal boundary confusion around price collection and shopping-intelligence endpoints.
+## Verification
 
-## File-level batch status
+Latest verified runtime implementation head: `c1af40ddd8b7d6af03308b4fb78301d6fc11ad1d`.
+- Backend CI `34704215875`: SUCCESS — Prisma validation/generation, migrations/idempotence, food self-test, build, backend unit tests, API E2E and diagnostics.
+- Mobile CI `34704215862`: SUCCESS — dependency install, TypeScript, source tests, committed Jest specs, Expo validation and Android JavaScript bundle.
+- Documentation synchronization commits after the runtime head do not alter implementation behavior.
 
-### BATCH-0005 — Shopping
-Status: COMPLETE for the enumerated file-level scope read in this batch.
-Important: `COMPLETE` means source inventory explicitly inspected and corresponding deep-read written; it does not mean runtime verified or repository-wide consumer mapping complete.
+## Boundary
 
-## Issue references
-
-Shopping/Price-specific issues are PB-049 through PB-072 in `docs/project-brain/12_OPEN_WORK.md`.
-
-## Next
-Proceed to Life/Health/Calendar/Daily/Habits/Life-Execution/Life-Tasks/Reminders/Notifications/Supplements/Health. Then Fitness, Platform/Tests/Scripts/CI and Mobile. Final stages remain route/mobile/database/security/runtime/historical reconciliation followed by the separate correction phase.
+Source-level closure is not the same as live market-data correctness, deployed scheduled-job reliability, physical-device behavior or external provider availability. Those remain explicit environment validation gates.

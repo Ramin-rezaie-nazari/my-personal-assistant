@@ -41,6 +41,11 @@ export class LocalIntelligenceProvider implements AiProvider {
           providerId: this.id,
           text: 'حتماً. موجودی خونه و برنامه غذایی‌ات رو بررسی می‌کنم تا گزینه مناسب پیدا کنم.',
         };
+      case 'PLAN_FOOD_BUDGET':
+        return {
+          providerId: this.id,
+          text: 'حتماً. بودجه غذا رو با اطلاعات موجود و قیمت‌های قابل‌اعتماد برنامه‌ریزی می‌کنم.',
+        };
       case 'GET_NUTRITION_SUMMARY':
         return {
           providerId: this.id,

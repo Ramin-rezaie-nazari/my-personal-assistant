@@ -10,6 +10,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AdjustInventoryDto } from './dto/adjust-inventory.dto';
 import { CreateInventoryDto } from './dto/create-inventory.dto';
 import { InventoryService } from './inventory.service';
 
@@ -35,9 +36,9 @@ export class InventoryController {
   adjust(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
-    @Body('quantity') quantity: number,
+    @Body() dto: AdjustInventoryDto,
   ) {
-    return this.inventory.adjust(req.user.id, id, quantity);
+    return this.inventory.adjust(req.user.id, id, dto.quantity);
   }
 
   @Delete(':id')

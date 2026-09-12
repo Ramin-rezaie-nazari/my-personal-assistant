@@ -41,8 +41,14 @@ jobs:
       - name: Typecheck mobile
         run: pnpm --filter @my-personal-assistant/mobile typecheck
 
+      - name: Run mobile source tests
+        run: pnpm --filter @my-personal-assistant/mobile test
+
+      - name: Run committed mobile Jest specs
+        run: pnpm --filter backend exec jest --config ../../apps/mobile/jest.config.cjs --runInBand
+
       - name: Validate Expo project
         run: pnpm --filter @my-personal-assistant/mobile exec expo config --type public
 
       - name: Bundle Android JavaScript
-        run: pnpm --filter @my-personal-assistant/mobile exec expo export --platform android --output-dir /tmp/mobile-export
+        run: pnpm --filter @my-personal-assistant/mobile exec expo export --platform android --output-dir .ci-export
