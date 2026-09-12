@@ -10,7 +10,7 @@ const i18n = await readFile(resolve(root, 'lib/i18n.ts'), 'utf8');
 const localizedRoutes = [
   'daily.tsx', 'habits.tsx', 'inventory.tsx', 'insights.tsx', 'meals.tsx',
   'meal-builder.tsx', 'shopping.tsx', 'smart-meals.tsx', 'recipe-match.tsx',
-  'supplements.tsx', 'yoga.tsx',
+  'supplements.tsx', 'yoga.tsx', 'budget.tsx',
 ];
 const routeSources = await Promise.all(localizedRoutes.map(async (file) => [file, await readFile(resolve(root, 'app', file), 'utf8')]));
 
@@ -20,6 +20,8 @@ const checks = [
   ['secure store dependency declared', Boolean(pkg.dependencies?.['expo-secure-store'])],
   ['speech dependency declared', Boolean(pkg.dependencies?.['expo-speech'])],
   ['api uses SecureStore', api.includes("from 'expo-secure-store'")],
+  ['api exposes canonical request transport', api.includes('export async function request<T>')],
+  ['api exposes recipe budget contract', api.includes('getRecipeFoodBudget') && api.includes('addBudgetQualifiedRecipeShopping')],
   ['assistant exposes TTS action', assistant.includes('speakAssistantText') && assistant.includes('🔊')],
   ['notification runtime starts from app lifecycle', layout.includes('startNotificationRuntime') && layout.includes('registerForPushNotifications')],
   ['shared i18n exports locale hook', i18n.includes('export function useAppLocale')],
