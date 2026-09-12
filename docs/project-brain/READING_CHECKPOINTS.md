@@ -1,54 +1,36 @@
 # Reading Checkpoints
 
-Last updated: 2026-09-11
-Review status: SOURCE-LEVEL AUDIT COMPLETE; ENVIRONMENTAL VALIDATION BLOCKED
+Last updated: 2026-09-12
+Review status: SOURCE-LEVEL MASTER PROMPT AUDIT RECONCILED; APPENDIX REMEDIATION VERIFIED; ENVIRONMENTAL VALIDATION BLOCKED
 
 ## Scope and evidence baseline
-Scope read/reconciled: current-main manifests/AppModule; complete identified Core source files; full Prisma schema; all 39 migration SQL files; complete enumerated Assistant/Brain/Food/Recipe/Nutrition/Meals/Recommendation/Budget/Shopping/Inventory/Price/Life/Health/Fitness/Workout/Calisthenics/Gym/Yoga scopes; Platform/Test/CI manifests/E2E/workflows; substantial Mobile routes/clients/components/native/library contracts; backend route/controller/DTO/guard and consumer reconciliation; operational recipe scripts; backend common/config/bootstrap/database/i18n/images; Project Brain security/control documents; historical high-value PR/branch and Audit Appendix history checks; direct current-main revalidation of recipe intelligence/operational script paths; Prisma User cascade/ownership surface; Workout/UserBehavior query/index reconciliation; canonical Appendix reconciliation through PB-257; DB matrix closure; File Review Index/Validation Ledger synchronization.
 
-Source-level closure is complete for the recorded audit scope. No production-code remediation was performed.
+Scope read/reconciled: complete enumerated backend Core, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget, Shopping/Inventory/Price, Life/Health, Fitness/Workout/Calisthenics/Gym/Yoga and Platform/Test/CI scopes; full Prisma schema and all 39 migration SQL files; substantial-to-complete mobile route/client/component/native/library scope; route/controller/DTO/guard/mobile-consumer reconciliation; operational recipe scripts; current-main direct revalidation of recipe/food and account-erasure/ownership/index surfaces; Project Brain findings/reconciliation artifacts. The recorded file-review batches through BATCH-0030 are the audit checkpoint history.
 
-Evidence roots: target `main` @ `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`; audit branch `audit/project-brain-2026-09-11`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; `docs/`; `docs/project-brain/`; `tools/`.
+Source-level closure is complete for the recorded audit scope. The later Appendix remediation phase is also complete through PB-257 and has green Backend/Mobile CI evidence on the verified remediation tree.
 
-Confidence: HIGH for completed file reads/direct current-main checks; MEDIUM for cross-module semantic conclusions; runtime/deployed environment remains explicitly unavailable.
+Evidence roots: `apps/backend/`; `apps/mobile/`; `.github/workflows/`; `docs/`; `docs/project-brain/`; `tools/`.
 
-## BATCH-0001 through BATCH-0027
+Confidence: HIGH for recorded source reads and remediation evidence; MEDIUM for cross-module semantic conclusions; runtime/deployed environment remains explicitly unavailable.
 
-All previously recorded batches retain their historical scope/status and are superseded for closure purposes by the final reconciliation below. Intermediate `IN_PROGRESS` labels on earlier batches describe when they were active, not an outstanding unreviewed source gate after BATCH-0030.
+## Final checkpoint — BATCH-0030 + remediation verification
 
-## BATCH-0028 — route/DTO/mobile/test and intelligence reachability recheck
-Status: COMPLETE
-Completed: inline `Object` body semantics versus class DTO validation contracts; Recommendation Intelligence and Goal Intelligence reachability; mobile domain-client 401/retry policy; route/consumer spot reconciliation. Withdrawn/reclassified validation claims were preserved in the canonical Appendix.
+Status: COMPLETE FOR AVAILABLE SOURCE EVIDENCE.
 
-## BATCH-0029 — CI/workflow/package gate recheck
-Status: COMPLETE
-Completed: backend main CI, mobile main CI, branch-only validation workflow, recipe release/image workflows, package entrypoint comparison and real run `34613481370`. PB-206/PB-242/PB-246 retained as canonical findings; no duplicate CI finding created.
+Completed controls:
+1. Enumerated source scopes were reviewed in deterministic batches and recorded in `FILE_REVIEW_INDEX.md`.
+2. Backend routes/controllers/DTOs/guards were reconciled with tests and mobile consumers or explicit no-consumer status.
+3. Prisma schema, all 39 migrations, ownership, relations, transaction boundaries and relevant indexes were reconciled.
+4. Mobile routes/clients/native/library contracts were cross-checked against backend capabilities and validation coverage.
+5. Operational recipe/content/image entrypoints were reconciled and their known safety findings were resolved or reclassified.
+6. The canonical Appendix was reconciled through PB-257; no recoverable active Appendix finding remains open.
+7. Backend CI and Mobile CI passed on remediation commit `46614b36040cb839d6062dae726dc74e51ab3b96`.
+8. Historical PB-001..PB-155 prose remains unavailable from exposed history and is explicitly not reconstructed.
 
-## BATCH-0030 — canonical audit closure
-Status: COMPLETE — SOURCE-LEVEL MASTER PROMPT GATES CLOSED
-Completed:
-1. Route/controller/DTO/guard/test/mobile-consumer source reconciliation and duplicate control.
-2. DB reader/writer/relation/index/transaction/migration-only matrix closure for source evidence.
-3. Security/ownership/auth/session/retention/account-erasure source closure; unresolved policy/workflow issues remain explicit findings.
-4. Common/platform/test/legacy/operational source closure through recorded findings and revalidation.
-5. Canonical Appendix reconciled through PB-257, including PB-250 merge, PB-251/PB-253/PB-256 withdrawals, PB-255→PB-203, PB-232/PB-237 reclassification, PB-234 narrowing, PB-243 historical reconciliation.
-6. File Review Index, DB matrix and Validation Ledger synchronized.
-7. Historical PB-001..PB-155 exact prose limitation explicitly recorded; no fabricated history.
-8. Runtime/device/deployed DB/RLS/Storage/Auth/push limitations explicitly classified as BLOCKED/UNVERIFIED rather than PASS.
+## Environmental checkpoint
 
-## Final closure gates
+Runtime HTTP execution, real-device notification/voice/offline behavior, deployed PostgreSQL/RLS/Storage/Auth state, external provider quotas and production push delivery remain BLOCKED/UNVERIFIED because they are outside the available connector/container runtime.
 
-| Gate | Status | Evidence |
-|---|---|---|
-| Route ↔ DTO ↔ test ↔ mobile source reconciliation | CLOSED FOR SOURCE EVIDENCE | Controller/consumer/DTO sweeps + canonical findings |
-| DB reader/writer/relation/index/transaction source matrix | CLOSED FOR SOURCE EVIDENCE | DB_AUDIT_MATRIX + all 39 migrations previously read |
-| Security/privacy/authorization/retention source review | CLOSED FOR SOURCE EVIDENCE | Auth/ownership/delete/retention/account-erasure sweeps + findings |
-| CI/workflow/package/operational source review | CLOSED FOR SOURCE EVIDENCE | Workflow/package comparison + real run evidence |
-| Canonical findings Appendix | CLOSED FOR SOURCE EVIDENCE | Appendix reconciled through PB-257 |
-| Duplicate/false-positive control | CLOSED | Reconciliation log in Appendix/Validation Ledger |
-| Historical PB-001..PB-155 exact text | NOT RECOVERABLE | Explicit repository-history limitation |
-| Runtime HTTP/device/deployed infrastructure | BLOCKED | Connector/environment limitation |
+## Next checkpoint
 
-## Important evidence boundary
-
-`COMPLETE` here means the Master Prompt's repository/source audit has been reconciled to the available evidence. It does not mean open findings are fixed, CI is green, or production runtime/deployed infrastructure has passed. Remediation is a separate phase.
+Begin MYPA product-development work from the reconciled architecture and findings baseline. Use the Vision/Master Prompt as a product target, while keeping source-audit completion, Appendix remediation completion and product readiness as three separate measures.
