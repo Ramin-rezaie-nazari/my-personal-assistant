@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { ConversationStyleService } from '../../conversation-engine/services/conversation-style.service';
+import { PrismaService } from '../../../common/database/prisma.service';
 
 import { ResponsePlan, ResponsePlanningInput } from '../types';
 import { ConversationLanguage } from '../../conversation-engine/types';
@@ -9,10 +10,18 @@ import { ConversationLanguage } from '../../conversation-engine/types';
 export class ResponsePlanningService {
   constructor(
     private readonly conversationStyleService: ConversationStyleService,
+    private readonly prisma: PrismaService,
   ) {}
 
-  createPlan(input: ResponsePlanningInput): ResponsePlan {
-    const requestedLanguage = input.reasoningContext.userContext.preferences?.language;
+  async createPlan(input: ResponsePlanningInput): Promise<ResponsePlan> {
+    const userId = input.reasoningContext.userContext.userId;
+    const settings = userId
+      ? await this.prisma.userSettings.findUnique({
+          where: { userId },
+          select: { language: true },
+        })
+      : null;
+    const requestedLanguage = settings?.language ?? input.reasoningContext.userContext.preferences?.language;
     const language: ConversationLanguage = requestedLanguage === 'fa' || requestedLanguage === 'en' ? requestedLanguage : 'en';
     const style = this.conversationStyleService.getDefaultStyle(language);
 
