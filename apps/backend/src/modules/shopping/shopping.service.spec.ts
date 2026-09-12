@@ -13,6 +13,11 @@ describe('ShoppingService', () => {
       updateMany: jest.fn(),
       findUnique: jest.fn(),
     },
+    inventoryItem: {
+      findUnique: jest.fn(),
+      update: jest.fn(),
+      create: jest.fn(),
+    },
     recipe: { findFirst: jest.fn() },
     $transaction: jest.fn(),
   };
@@ -132,5 +137,118 @@ describe('ShoppingService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(tx.shoppingItem.update).not.toHaveBeenCalled();
+  });
+
+  it('marks a purchased basket item complete and adds its quantity to inventory', async () => {
+    const tx = {
+      shoppingItem: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'basket-1',
+          userId: 'user-1',
+          foodId: 'food-1',
+          quantity: 500,
+          unit: 'g',
+          completed: false,
+        }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      inventoryItem: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'inventory-1',
+          userId: 'user-1',
+          foodId: 'food-1',
+          quantity: 1,
+          unit: 'kg',
+        }),
+        update: jest.fn().mockResolvedValue({ id: 'inventory-1', quantity: 1.5, unit: 'kg' }),
+        create: jest.fn(),
+      },
+    };
+    prisma.$transaction.mockImplementation(async (callback: (value: typeof tx) => Promise<unknown>) => callback(tx));
+
+    await expect(service.complete('user-1', 'basket-1')).resolves.toEqual({
+      count: 1,
+      inventorySynced: true,
+    });
+
+    expect(tx.shoppingItem.updateMany).toHaveBeenCalledWith({
+      where: { id: 'basket-1', userId: 'user-1', completed: false },
+      data: { completed: true },
+    });
+    expect(tx.inventoryItem.update).toHaveBeenCalledWith({
+      where: { id: 'inventory-1' },
+      data: { quantity: { increment: 0.5 } },
+    });
+  });
+
+  it('fails closed and rolls back when purchased and inventory units are incompatible', async () => {
+    const tx = {
+      shoppingItem: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'basket-1',
+          userId: 'user-1',
+          foodId: 'food-1',
+          quantity: 2,
+          unit: 'piece',
+          completed: false,
+        }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      inventoryItem: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 'inventory-1',
+          userId: 'user-1',
+          foodId: 'food-1',
+          quantity: 2,
+          unit: 'kg',
+        }),
+        update: jest.fn(),
+        create: jest.fn(),
+      },
+    };
+    prisma.$transaction.mockImplementation(async (callback: (value: typeof tx) => Promise<unknown>) => callback(tx));
+
+    await expect(service.complete('user-1', 'basket-1')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+
+    expect(tx.shoppingItem.updateMany).toHaveBeenCalled();
+    expect(tx.inventoryItem.update).not.toHaveBeenCalled();
+  });
+
+  it('creates a new inventory item when a purchased food is not tracked yet', async () => {
+    const tx = {
+      shoppingItem: {
+        findFirst: jest.fn().mockResolvedValue({
+          id: 'basket-1',
+          userId: 'user-1',
+          foodId: 'food-1',
+          quantity: 3,
+          unit: 'piece',
+          completed: false,
+        }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      inventoryItem: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        update: jest.fn(),
+        create: jest.fn().mockResolvedValue({ id: 'inventory-1' }),
+      },
+    };
+    prisma.$transaction.mockImplementation(async (callback: (value: typeof tx) => Promise<unknown>) => callback(tx));
+
+    await expect(service.complete('user-1', 'basket-1')).resolves.toEqual({
+      count: 1,
+      inventorySynced: true,
+    });
+
+    expect(tx.inventoryItem.create).toHaveBeenCalledWith({
+      data: {
+        userId: 'user-1',
+        foodId: 'food-1',
+        quantity: 3,
+        unit: 'piece',
+      },
+    });
   });
 });
