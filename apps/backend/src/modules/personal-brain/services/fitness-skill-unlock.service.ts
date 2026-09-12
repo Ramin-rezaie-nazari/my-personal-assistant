@@ -19,6 +19,10 @@ export class FitnessSkillUnlockService {
     private readonly performanceMemory: WorkoutPerformanceMemoryService,
   ) {}
 
+  async list(userId: string): Promise<SkillUnlockStatus[]> {
+    return this.evaluateCalisthenicsSkills(userId);
+  }
+
   async evaluateCalisthenicsSkills(
     userId: string,
     candidateIds?: string[],
