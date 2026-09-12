@@ -13,8 +13,9 @@ describe('LocalMealRecommendationActionAdapter', () => {
     return { recommend, registered: register.mock.calls[0][0] };
   }
 
-  it('translates supported local planning constraints into recommendations', async () => {
+  it('advertises and executes the meal recommendation action', async () => {
     const { recommend, registered } = build();
+    expect(registered.actions).toEqual(['recommend_meal']);
     expect(registered.supports({
       id: 'd1', domain: 'nutrition', action: 'recommend_meal', score: 1, confidence: 1,
     })).toBe(true);
@@ -29,14 +30,17 @@ describe('LocalMealRecommendationActionAdapter', () => {
       },
     );
 
-    expect(recommend).toHaveBeenCalledWith('user-1', 4, 'IR', 700, 40);
+    expect(recommend).toHaveBeenCalledWith('user-1', 4, 'IR', 700, 40, {
+      allergies: [],
+      dietaryPreferences: [],
+    });
     expect(result.targetServings).toBe(4);
     expect(result.recommendations).toHaveLength(1);
   });
 
-  it('fails closed when allergy or diet constraints are not supported by recipe data', async () => {
+  it('passes safety constraints to the Food Operating Loop instead of silently ignoring them', async () => {
     const { recommend, registered } = build();
-    await expect(registered.execute(
+    await registered.execute(
       { id: 'd1', domain: 'nutrition', action: 'recommend_meal', score: 1, confidence: 1 },
       {
         userId: 'user-1',
@@ -44,7 +48,11 @@ describe('LocalMealRecommendationActionAdapter', () => {
           householdSize: 4, allergies: ['milk'], dietaryPreferences: ['vegan'],
         } },
       },
-    )).rejects.toThrow('unsupported_hard_constraints:milk,vegan');
-    expect(recommend).not.toHaveBeenCalled();
+    );
+
+    expect(recommend).toHaveBeenCalledWith('user-1', 4, '', undefined, undefined, {
+      allergies: ['milk'],
+      dietaryPreferences: ['vegan'],
+    });
   });
 });
