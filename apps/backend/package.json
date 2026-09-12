@@ -16,7 +16,6 @@
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\"",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "jest",
-    "test:ci": "jest --runInBand",
     "pretest": "prisma generate",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
@@ -33,7 +32,7 @@
     "recipe-intelligence:ingredients": "node ./scripts/recipe-ingredient-intelligence.mjs",
     "recipe-intelligence:nutrition": "node ./scripts/recipe-nutrition-estimate.mjs",
     "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs",
-    "recipe-intelligence:self-test": "node ./scripts/food-intelligence-final-self-test.mjs",
+    "food-intelligence:self-test": "node ./scripts/food-intelligence-final-self-test.mjs",
     "recipe:content:import": "node ./scripts/recipe-content-import.mjs",
     "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs"
   },
@@ -82,7 +81,6 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
-    "typescript": "~5.9.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {

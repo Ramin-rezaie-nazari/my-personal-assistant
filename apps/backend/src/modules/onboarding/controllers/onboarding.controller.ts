@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
+
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { OnboardingService } from '../services/onboarding.service';
 import { CompleteOnboardingDto } from '../dto/complete-onboarding.dto';
@@ -14,7 +22,10 @@ export class OnboardingController {
   }
 
   @Post('complete')
-  complete(@Request() req: { user: { id: string } }, @Body() dto: CompleteOnboardingDto) {
-    return this.onboardingService.complete(req.user.id, dto);
+  complete(
+    @Request() req: { user: { id: string } },
+    @Body() dto: CompleteOnboardingDto,
+  ) {
+    return this.onboardingService.complete(req.user.id, dto.currentStep);
   }
 }

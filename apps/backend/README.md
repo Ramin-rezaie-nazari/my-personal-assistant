@@ -1,10 +1,6 @@
 # MYPA Backend
 
-This directory contains the production backend for **My Personal Assistant (MYPA)**, built with NestJS, TypeScript and Prisma/PostgreSQL.
-
-## Requirements
-
-Use a Node.js version supported by the repository CI and install dependencies from the repository root with pnpm.
+NestJS + Prisma backend for **My Personal Assistant**.
 
 ## Setup
 
@@ -12,60 +8,46 @@ From the repository root:
 
 ```bash
 pnpm install
+cp apps/backend/.env.example apps/backend/.env
 ```
 
-Create `apps/backend/.env` from `apps/backend/.env.example` and provide real local values for `DATABASE_URL`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET`.
+Set a real `DATABASE_URL` and unique development JWT secrets in `apps/backend/.env`.
 
-Generate Prisma Client and apply migrations:
+Generate Prisma Client and apply the migration history:
 
 ```bash
-pnpm --dir apps/backend exec prisma generate
-pnpm --dir apps/backend exec prisma migrate deploy
+cd apps/backend
+pnpm prisma generate
+pnpm prisma migrate deploy
 ```
 
-For local development, ensure PostgreSQL is running and `DATABASE_URL` points at the intended database.
-
-## Run
+## Development
 
 ```bash
-pnpm --dir apps/backend start:dev
+pnpm start:dev
 ```
 
-Production uses the compiled application:
+Production start:
 
 ```bash
-pnpm --dir apps/backend build
-pnpm --dir apps/backend start:prod
+pnpm build
+pnpm start:prod
 ```
 
 ## Validation
 
-Backend CI and local validation commands include:
-
 ```bash
-pnpm --dir apps/backend typecheck
-pnpm --dir apps/backend test:ci
-pnpm --dir apps/backend test:e2e
-pnpm --dir apps/backend lint
+pnpm typecheck
+pnpm test
+pnpm test:e2e
 ```
 
-The repository's CI migration path is authoritative for database compatibility. Avoid replacing migrations with `prisma db push` for CI/production validation.
+The project uses the committed Prisma migration history as the database contract. Do not replace migration validation with `prisma db push` for release verification.
 
-## Operational recipe/intelligence scripts
+## Operational scripts
 
-The backend package exposes the maintained operational entrypoints for recipe content, images, nutrition and intelligence. Run them only against an intentionally selected environment and review the script documentation before destructive/reset operations.
+Recipe/image/intelligence operations are exposed through the scripts in `apps/backend/package.json`, including recipe content import/audit, recipe image import/reprocessing and recipe intelligence stages. Review the corresponding script source before running destructive or large-batch operations.
 
-Examples:
+## Project Brain
 
-```bash
-pnpm --dir apps/backend recipe:content:import
-pnpm --dir apps/backend recipe:content:audit
-pnpm --dir apps/backend recipe-images:import
-pnpm --dir apps/backend recipe-intelligence:country
-pnpm --dir apps/backend recipe-intelligence:nutrition
-pnpm --dir apps/backend recipe-intelligence:score
-```
-
-## Project documentation
-
-The canonical architecture, database, API, testing and security contracts live under `docs/project-brain/`. Changes to backend architecture or data contracts should be reconciled there before release.
+The repository-level engineering record is under `docs/project-brain/`. The root `docs/05_CURRENT_STATE.md` is the canonical current-state record for audit work. The Audit Findings Appendix is `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`.

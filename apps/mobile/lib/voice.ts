@@ -75,12 +75,10 @@ export async function setStoredVoiceProfile(id: string): Promise<void> {
 
 async function getAvailableVoices(): Promise<Speech.Voice[]> {
   if (!voicesPromise) {
-    voicesPromise = Speech.getAvailableVoicesAsync()
-      .then((voices) => voices ?? [])
-      .catch((error) => {
-        voicesPromise = null;
-        throw error;
-      });
+    voicesPromise = Speech.getAvailableVoicesAsync().catch((error) => {
+      voicesPromise = null;
+      throw error;
+    });
   }
   return voicesPromise;
 }
@@ -175,7 +173,7 @@ async function speakWithSystemTts(
         volume: 1,
         onDone: finish,
         onStopped: finish,
-        onError: () => fail(new Error('System TTS failed.')),
+        onError: fail,
       });
     } catch (error) {
       fail(error);
@@ -200,6 +198,7 @@ export async function speakAssistantText(text: string, profile: VoiceProfile): P
       if (__DEV__) console.warn('[MYPA][LOCAL_TTS]', error);
     }
 
+    // Do not silently turn Persian into an unrelated Android voice.
     try {
       await speakWithSystemTts(normalizedText, profile, textLocale);
       return;

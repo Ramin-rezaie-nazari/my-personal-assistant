@@ -1,0 +1,1 @@
+Temporary audit remediation note. Source-level changes on this branch must be validated before any production merge. Do not treat this note as a PASS assertion.

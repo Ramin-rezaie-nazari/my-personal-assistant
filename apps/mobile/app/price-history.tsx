@@ -4,21 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
 import { getPriceAnalysis, getPriceHistory, getPriceSources, normalizeProductKey, PriceAnalysis, PriceSnapshot, PriceSource } from '../lib/price-api';
 
-function currencyLabel(currency: string) {
-  const code = String(currency || '').toUpperCase();
-  if (code === 'IRT' || code === 'IRR') return 'تومان';
-  if (code === 'USD') return '$';
-  if (code === 'EUR') return '€';
-  if (code === 'GBP') return '£';
-  return code || '';
+function currencyLabel(currency:string){
+  const normalized=currency.trim().toUpperCase();
+  if(normalized==='IRT')return 'تومان';
+  if(normalized==='IRR')return 'ریال';
+  return normalized||'واحد';
 }
-function money(value:number|null, currency='IRT') {
-  if (value === null) return '—';
-  const code = String(currency || 'IRT').toUpperCase();
-  const locale = code === 'IRT' || code === 'IRR' ? 'fa-IR' : 'en-US';
-  const formatted = Math.round(value).toLocaleString(locale);
-  return `${formatted} ${currencyLabel(code)}`.trim();
-}
+function money(value:number|null,currency='IRT'){return value===null?'—':`${Math.round(value).toLocaleString('fa-IR')} ${currencyLabel(currency)}`}
 function shortDate(value:string){return new Date(value).toLocaleDateString('fa-IR',{month:'short',day:'numeric'})}
 
 export default function PriceHistoryScreen(){
@@ -26,21 +18,21 @@ export default function PriceHistoryScreen(){
   const key=useMemo(()=>normalizeProductKey(String(params.productKey??params.name??'')),[params.productKey,params.name]);
   const [history,setHistory]=useState<PriceSnapshot[]>([]); const [analysis,setAnalysis]=useState<PriceAnalysis|null>(null); const [sources,setSources]=useState<PriceSource[]>([]); const [days,setDays]=useState(30); const [loading,setLoading]=useState(true); const [error,setError]=useState<string|null>(null);
   useEffect(()=>{let alive=true;(async()=>{try{setLoading(true);setError(null);const [h,a,s]=await Promise.all([getPriceHistory(key,days),getPriceAnalysis(key),getPriceSources()]);if(alive){setHistory(h.items);setAnalysis(a);setSources(s)}}catch(e){if(alive)setError(e instanceof Error?e.message:'خطا در دریافت تاریخچه قیمت')}finally{if(alive)setLoading(false)}})();return()=>{alive=false}},[key,days]);
-  const points=useMemo(()=>{const grouped=new Map<string,PriceSnapshot>();for(const item of history)grouped.set(item.sourceId,item);return [...grouped.values()].sort((a,b)=>a.amount-b.amount)},[history]);
-  const chartValues = history.length ? history.map(x=>x.amount) : [];
-  const min = chartValues.length ? Math.min(...chartValues) : 0;
-  const max = chartValues.length ? Math.max(...chartValues) : 0;
-  const range=Math.max(1,max-min);
-  const chartCurrency = history[history.length - 1]?.currency ?? 'IRT';
+  const displayCurrency=useMemo(()=>history[0]?.currency??'IRT',[history]);
+  const chartHistory=useMemo(()=>history.filter(item=>item.currency.toUpperCase()===displayCurrency.toUpperCase()),[history,displayCurrency]);
+  const points=useMemo(()=>{const grouped=new Map<string,PriceSnapshot>();for(const item of chartHistory)grouped.set(item.sourceId,item);return [...grouped.values()].sort((a,b)=>a.amount-b.amount)},[chartHistory]);
+  const min=chartHistory.length?Math.min(...chartHistory.map(x=>x.amount)):null;
+  const max=chartHistory.length?Math.max(...chartHistory.map(x=>x.amount)):null;
+  const range=min!==null&&max!==null?Math.max(1,max-min):1;
   if(loading)return <View style={styles.center}><ActivityIndicator size="large"/></View>;
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content}>
     <Pressable onPress={()=>router.back()}><Text style={styles.back}>← برگشت</Text></Pressable>
     <Text style={styles.eyebrow}>PRICE INTELLIGENCE</Text><Text style={styles.title}>{params.name??key.replace(/-/g,' ')}</Text>
     {error?<View style={styles.card}><Text style={styles.error}>{error}</Text></View>:null}
     <View style={styles.periods}>{[7,30,90,365].map(d=><Pressable key={d} onPress={()=>setDays(d)} style={[styles.period,d===days&&styles.periodActive]}><Text style={[styles.periodText,d===days&&styles.periodTextActive]}>{d===365?'۱ سال':`${d} روز`}</Text></Pressable>)}</View>
-    {analysis?<View style={styles.hero}><Text style={styles.label}>قیمت فعلی</Text><Text style={styles.current}>{money(analysis.current, chartCurrency)}</Text><Text style={styles.change}>{analysis.changeVs7d===null?'داده کافی نیست':`${analysis.changeVs7d>0?'↑':'↓'} ${Math.abs(analysis.changeVs7d).toFixed(1)}٪ نسبت به قبل`}</Text></View>:null}
-    <View style={styles.card}><Text style={styles.section}>نمودار قیمت</Text>{history.length<2?<Text style={styles.muted}>برای نمایش نمودار حداقل دو ثبت قیمت لازم است.</Text>:<View style={styles.chart}>{history.slice(-20).map((p,i)=>{const displayed=history.slice(-20);const values=displayed.map(item=>item.amount);const localMin=Math.min(...values);const localMax=Math.max(...values);const localRange=Math.max(1,localMax-localMin);const x=(i/Math.max(1,displayed.length-1))*92+4;const y=90-((p.amount-localMin)/localRange)*78;return <View key={`${p.id}-${i}`} style={[styles.point,{left:`${x}%`,top:`${y}%` as any}]}><View style={styles.dot}/></View>})}</View>}<View style={styles.chartLegend}><Text style={styles.muted}>{money(min,chartCurrency)}</Text><Text style={styles.muted}>{money(max,chartCurrency)}</Text></View></View>
-    {analysis?<View style={styles.grid}><View style={styles.stat}><Text style={styles.muted}>میانگین ۷ روز</Text><Text style={styles.statValue}>{money(analysis.average7d,chartCurrency)}</Text></View><View style={styles.stat}><Text style={styles.muted}>میانگین ۳۰ روز</Text><Text style={styles.statValue}>{money(analysis.average30d,chartCurrency)}</Text></View><View style={styles.stat}><Text style={styles.muted}>کمترین</Text><Text style={styles.statValue}>{money(analysis.min30d,chartCurrency)}</Text></View><View style={styles.stat}><Text style={styles.muted}>بیشترین</Text><Text style={styles.statValue}>{money(analysis.max30d,chartCurrency)}</Text></View></View>:null}
+    {analysis?<View style={styles.hero}><Text style={styles.label}>قیمت فعلی</Text><Text style={styles.current}>{money(analysis.current,displayCurrency)}</Text><Text style={styles.change}>{analysis.changeVs7d===null?'داده کافی نیست':`${analysis.changeVs7d>0?'↑':'↓'} ${Math.abs(analysis.changeVs7d).toFixed(1)}٪ نسبت به قبل`}</Text></View>:null}
+    <View style={styles.card}><Text style={styles.section}>نمودار قیمت</Text>{history.length!==chartHistory.length?<Text style={styles.muted}>ثبت‌های با واحد پول متفاوت از نمودار فعلی نمایش داده نمی‌شوند.</Text>:null}{chartHistory.length<2?<Text style={styles.muted}>برای نمایش نمودار حداقل دو ثبت قیمت لازم است.</Text>:<View style={styles.chart}>{chartHistory.slice(-20).map((p,i)=>{const x=(i/Math.max(1,Math.min(chartHistory.length,20)-1))*92+4;const y=90-((p.amount-(min??p.amount))/range)*78;return <View key={`${p.id}-${i}`} style={[styles.point,{left:`${x}%`,top:`${y}%` as any}]}><View style={styles.dot}/></View>})}</View>}<View style={styles.chartLegend}><Text style={styles.muted}>{money(min,displayCurrency)}</Text><Text style={styles.muted}>{money(max,displayCurrency)}</Text></View></View>
+    {analysis?<View style={styles.grid}><View style={styles.stat}><Text style={styles.muted}>میانگین ۷ روز</Text><Text style={styles.statValue}>{money(analysis.average7d,displayCurrency)}</Text></View><View style={styles.stat}><Text style={styles.muted}>میانگین ۳۰ روز</Text><Text style={styles.statValue}>{money(analysis.average30d,displayCurrency)}</Text></View><View style={styles.stat}><Text style={styles.muted}>کمترین</Text><Text style={styles.statValue}>{money(analysis.min30d,displayCurrency)}</Text></View><View style={styles.stat}><Text style={styles.muted}>بیشترین</Text><Text style={styles.statValue}>{money(analysis.max30d,displayCurrency)}</Text></View></View>:null}
     <View style={styles.card}><Text style={styles.section}>فروشگاه‌ها</Text>{points.length?points.map(p=><View key={p.id} style={styles.row}><View><Text style={styles.name}>{sources.find(s=>s.id===p.sourceId)?.name??p.sourceId}</Text><Text style={styles.muted}>{p.availability==='in_stock'?'موجود':'وضعیت نامشخص'} · {shortDate(p.observedAt)}</Text></View><Text style={styles.price}>{money(p.amount,p.currency)}</Text></View>):<Text style={styles.muted}>هنوز قیمتی برای این محصول ثبت نشده.</Text>}</View>
   </ScrollView></SafeAreaView>
 }

@@ -1,6 +1,6 @@
 import { Controller, Get, UseGuards } from '@nestjs/common';
-import { DeviceIntelligenceService } from '../services/device-intelligence.service';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { DeviceIntelligenceService } from '../services/device-intelligence.service';
 
 @Controller('device-intelligence')
 @UseGuards(JwtAuthGuard)

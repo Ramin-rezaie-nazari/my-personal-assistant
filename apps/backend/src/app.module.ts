@@ -15,6 +15,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { HabitsModule } from './modules/habits/habits.module';
 import { GoalsModule } from './modules/goals/goals.module';
 import { LifeExecutionModule } from './modules/life-execution/life-execution.module';
+import { LifeTasksModule } from './modules/life-tasks/life-tasks.module';
 import { ConfigModule } from './common/config/config.module';
 import { PrismaModule } from './common/database/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
@@ -58,6 +59,7 @@ import { ContentModule } from './modules/content/content.module';
     HabitsModule,
     GoalsModule,
     LifeExecutionModule,
+    LifeTasksModule,
     ConfigModule,
     PrismaModule,
     AuthModule,

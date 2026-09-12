@@ -1,12 +1,14 @@
-import { IsIn, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsIn, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class TaskEventDto {
   @IsIn(['started', 'completed', 'cancelled', 'snoozed', 'skipped'])
   eventType!: 'started' | 'completed' | 'cancelled' | 'snoozed' | 'skipped';
 
-  @IsOptional() @IsString() @MaxLength(1000)
+  @IsOptional()
+  @IsString()
   reason?: string;
 
-  @IsOptional() @IsObject()
+  @IsOptional()
+  @IsObject()
   metadata?: Record<string, unknown>;
 }
