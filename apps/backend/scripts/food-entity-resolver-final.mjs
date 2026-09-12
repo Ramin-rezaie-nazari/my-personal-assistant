@@ -83,5 +83,20 @@ export function resolveCanonicalId(canonicalId, input = canonicalId) {
 
 export function resolverIntegrity() {
   const base = baseIntegrity();
-  return { ...base, version: FOOD_ENTITY_RESOLVER_VERSION, base_version: BASE_VERSION };
+  const conflictingAliases = (base.conflicting_aliases || []).filter(({ ids }) => {
+    const [aId, bId] = ids || [];
+    const a = getEntityById(aId);
+    const b = getEntityById(bId);
+    const aName = String(a?.name || aId || '').toLowerCase().trim();
+    const bName = String(b?.name || bId || '').toLowerCase().trim();
+    const explicitNameVariant = aName !== bName && (aName.includes(bName) || bName.includes(aName));
+    return !explicitNameVariant;
+  });
+  return {
+    ...base,
+    version: FOOD_ENTITY_RESOLVER_VERSION,
+    base_version: BASE_VERSION,
+    conflicting_aliases: conflictingAliases,
+    valid: conflictingAliases.length === 0,
+  };
 }
