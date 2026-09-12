@@ -188,9 +188,45 @@ export class ShoppingService {
   }
 
   async complete(userId: string, id: string) {
-    return this.prisma.shoppingItem.updateMany({
-      where: { id, userId, completed: false },
-      data: { completed: true },
+    return this.prisma.$transaction(async (tx) => {
+      const item = await tx.shoppingItem.findFirst({
+        where: { id, userId, completed: false },
+      });
+      if (!item) return { count: 0, inventorySynced: false };
+
+      const completed = await tx.shoppingItem.updateMany({
+        where: { id, userId, completed: false },
+        data: { completed: true },
+      });
+      if (!completed.count) return { count: 0, inventorySynced: false };
+
+      const existing = await tx.inventoryItem.findUnique({
+        where: { userId_foodId: { userId, foodId: item.foodId } },
+      });
+
+      if (existing) {
+        const quantity = convertQuantity(item.quantity, item.unit, existing.unit);
+        if (quantity === null) {
+          throw new BadRequestException(
+            `Incompatible inventory units: ${item.unit} cannot be added to ${existing.unit}`,
+          );
+        }
+        await tx.inventoryItem.update({
+          where: { id: existing.id },
+          data: { quantity: { increment: quantity } },
+        });
+      } else {
+        await tx.inventoryItem.create({
+          data: {
+            userId,
+            foodId: item.foodId,
+            quantity: item.quantity,
+            unit: item.unit,
+          },
+        });
+      }
+
+      return { count: 1, inventorySynced: true };
     });
   }
 
