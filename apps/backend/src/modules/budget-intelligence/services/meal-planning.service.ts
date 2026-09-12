@@ -7,11 +7,7 @@ export type MealPlanSlot = 'breakfast' | 'lunch' | 'dinner';
 export class MealPlanningService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createMealPlan(
-    userId: string,
-    targetServings = 1,
-    countryCode = '',
-  ) {
+  async createMealPlan(userId: string, targetServings = 1, countryCode = '') {
     if (!Number.isInteger(targetServings) || targetServings <= 0 || targetServings > 10000)
       throw new BadRequestException('targetServings must be an integer between 1 and 10000');
 
@@ -31,20 +27,16 @@ export class MealPlanningService {
     const caloriePerMeal = dailyCalories ? dailyCalories / 3 : null;
     const proteinPerMeal = dailyProtein ? dailyProtein / 3 : null;
 
-    const candidates = recipes.map((recipe) => {
-      const caloriesPerServing = recipe.calories / recipe.servings;
-      const proteinPerServing = recipe.protein / recipe.servings;
-      const calorieDistance = caloriePerMeal ? Math.abs(caloriesPerServing - caloriePerMeal) / Math.max(1, caloriePerMeal) : 0;
-      const proteinDistance = proteinPerMeal ? Math.abs(proteinPerServing - proteinPerMeal) / Math.max(1, proteinPerMeal) : 0;
-      const score = Math.max(0, Math.round(100 - calorieDistance * 50 - proteinDistance * 35));
-      return {
-        recipeId: recipe.id,
-        name: recipe.name,
-        caloriesPerServing: Number(caloriesPerServing.toFixed(1)),
-        proteinPerServing: Number(proteinPerServing.toFixed(1)),
-        score,
-      };
-    }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
+    const candidates = recipes
+      .map((recipe) => {
+        const caloriesPerServing = recipe.calories / recipe.servings;
+        const proteinPerServing = recipe.protein / recipe.servings;
+        const calorieDistance = caloriePerMeal ? Math.abs(caloriesPerServing - caloriePerMeal) / Math.max(1, caloriePerMeal) : 0;
+        const proteinDistance = proteinPerMeal ? Math.abs(proteinPerServing - proteinPerMeal) / Math.max(1, proteinPerMeal) : 0;
+        const score = Math.max(0, Math.round(100 - calorieDistance * 50 - proteinDistance * 35));
+        return { recipeId: recipe.id, name: recipe.name, caloriesPerServing: Number(caloriesPerServing.toFixed(1)), proteinPerServing: Number(proteinPerServing.toFixed(1)), score };
+      })
+      .sort((a, b) => b.score - a.score || a.name.localeCompare(b.name));
 
     const chosen: MealPlanSlot[] = ['breakfast', 'lunch', 'dinner'];
     const used = new Set<string>();
@@ -65,14 +57,6 @@ export class MealPlanningService {
       },
       meals,
       generatedDeterministically: true,
-    };
-  }
-
-  async createMealBudgetPlan() {
-    return {
-      message: 'Meal budget plan requires a user context and target country.',
-      budget: null,
-      suggestions: [],
     };
   }
 }
