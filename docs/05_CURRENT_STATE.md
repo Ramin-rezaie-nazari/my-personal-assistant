@@ -1,7 +1,7 @@
 # MYPA Current State
 
 Last updated: 2026-09-12
-Review status: MASTER PROMPT DEVELOPMENT IN PROGRESS; SHOPPING UNIT INTEGRITY REMEDIATED AND CI VERIFIED
+Review status: MASTER PROMPT DEVELOPMENT IN PROGRESS; SHOPPING UNIT INTEGRITY AND BASKET TRANSPORT REMEDIATED + CI VERIFIED
 
 ## Canonical ownership
 
@@ -11,13 +11,13 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Working branch: `audit/project-brain-2026-09-11`
-- Latest code tree verified by CI: `1f3f73601183779fbef865a82ce2ea3dee3f8c33`
+- Latest code tree verified by CI: `c0c31b8733649b306247550377ff682bb85f5803`
 - Validation PR: #70 (validation-only; do not merge automatically)
 - Base: `main`
 
 ## Appendix/remediation status
 
-The canonical Appendix finding set is reconciled through PB-270. Recoverable concrete findings have been remediated/reclassified and the historical PB-001..PB-155 limitation is explicitly preserved without fabricated text. Master Prompt product findings are tracked in the same Appendix beginning at PB-258.
+The canonical Appendix finding set is reconciled through PB-270. Recoverable concrete findings have been remediated/reclassified and the historical PB-001..PB-155 limitation is explicitly preserved without fabricated text. Master Prompt product findings are tracked in the same Appendix beginning at PB-258. The residual PB-205 basket-client transport surface is now revalidated and fixed.
 
 ## Master Prompt development progress
 
@@ -39,26 +39,27 @@ Completed and verified in MASTER-0004:
 - authenticated recipe budget and budget-shopping routes with controller/API E2E coverage;
 - Mobile Recipe Budget journey with loading/error/RTL/i18n handling and Smart Basket handoff;
 - Mobile Shopping/Price clients reuse the canonical authenticated transport and aligned Persian product-key normalization;
+- the residual `shopping-basket-api.ts` client now also reuses the canonical authenticated transport (PB-205 revalidated);
 - user-scoped offline Budget cache with fail-closed Shopping handoff while offline;
 - Mobile Budget next-action rendering and native storage/Jest coverage;
 - Shopping basket merges now convert compatible quantity units into the existing row's unit and reject incompatible unit kinds rather than corrupting numeric quantities (PB-270).
 
 ## Validation evidence
 
-Verified code tree `1f3f73601183779fbef865a82ce2ea3dee3f8c33`:
-- Backend CI `34691080753`: SUCCESS — Prisma validation/generation, migrations/idempotence, food self-test, build, unit tests, API E2E, diagnostics.
-- Mobile CI `34691080764`: SUCCESS — install, TypeScript typecheck, source tests, committed Jest specs, Expo validation, Android JavaScript bundling.
+Verified code tree `c0c31b8733649b306247550377ff682bb85f5803`:
+- Backend CI `34691283317`: SUCCESS — Prisma validation/generation, migrations/idempotence, food self-test, build, unit tests, API E2E, diagnostics.
+- Mobile CI `34691283280`: SUCCESS — install, TypeScript typecheck, source tests, committed Jest specs, Expo validation, Android JavaScript bundling.
 
 ## Current architectural boundary
 
-The local Brain can recognize food-budget requests and execute the deterministic budget action. The recipe operating loop now scales first, derives actual missing quantities, resolves price evidence across sources, surfaces evidence quality, and can add only verified priced requirements into Shopping. Shopping now preserves numeric unit meaning when inventory/recipe sources converge on an existing basket row.
+The local Brain can recognize food-budget requests and execute the deterministic budget action. The recipe operating loop now scales first, derives actual missing quantities, resolves price evidence across sources, surfaces evidence quality, and can add only verified priced requirements into Shopping. Shopping now preserves numeric unit meaning when inventory/recipe sources converge on an existing basket row, and the full Shopping mobile journey uses the canonical authenticated transport.
 
 No implicit FX conversion, fuzzy monetary matching, stale-price-as-current behavior, or guessed costs are permitted. Incompatible quantity units are also not silently merged.
 
 ## Remaining MASTER-0004 work
 
 - broaden price-source breadth and source health/failure semantics;
-- complete Pantry↔Shopping lifecycle reconciliation and user-visible edits beyond the unit-integrity boundary;
+- complete Pantry↔Shopping lifecycle reconciliation and user-visible edits beyond the unit-integrity and transport boundaries;
 - audit any remaining stale non-consuming Budget/Shopping artifacts;
 - richer actionable explanations after evidence is blocked;
 - continue end-to-end vertical hardening and only then move to the next vertical.
