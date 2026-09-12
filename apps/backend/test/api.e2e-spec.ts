@@ -16,6 +16,19 @@ describe('Backend API contract (e2e)', () => {
     await app.close();
   });
 
+  async function registerUser() {
+    const email = `api-contract-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
+    const response = await httpRequest(baseUrl, 'POST', '/auth/register', {
+      body: {
+        email,
+        password: 'StrongPassword123!',
+        firstName: 'Test',
+      },
+    });
+    expect(response.status).toBe(201);
+    return response.body as { accessToken: string; user: { id: string; email: string } };
+  }
+
   it('serves the public health endpoint', async () => {
     const response = await httpRequest(baseUrl, 'GET', '/health');
     expect(response.status).toBe(200);
@@ -48,6 +61,44 @@ describe('Backend API contract (e2e)', () => {
       body: method === 'GET' ? undefined : {},
     });
     expect(response.status).toBe(401);
+  });
+
+  it('serves the authenticated shopping intelligence plan for the current user', async () => {
+    const auth = await registerUser();
+    const response = await httpRequest(baseUrl, 'GET', '/shopping-intelligence', {
+      headers: { Authorization: `Bearer ${auth.accessToken}` },
+    });
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        userId: auth.user.id,
+        generatedDeterministically: true,
+        counts: expect.objectContaining({
+          recommended: expect.any(Number),
+          openBasket: expect.any(Number),
+        }),
+      }),
+    );
+  });
+
+  it('serves the authenticated budget plan for the current user', async () => {
+    const auth = await registerUser();
+    const response = await httpRequest(
+      baseUrl,
+      'GET',
+      '/budget-intelligence/plan?budget=15000000&currency=IRT',
+      { headers: { Authorization: `Bearer ${auth.accessToken}` } },
+    );
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(
+      expect.objectContaining({
+        userId: auth.user.id,
+        budget: 15000000,
+        currency: 'IRT',
+        generatedDeterministically: true,
+        items: expect.any(Array),
+      }),
+    );
   });
 
   it('keeps the assistant status endpoint public', async () => {
