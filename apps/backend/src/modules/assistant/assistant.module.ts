@@ -4,10 +4,6 @@ import { PrismaModule } from '../../common/database/prisma.module';
 import { PersonalBrainModule } from '../personal-brain/personal-brain.module';
 import { AssistantController } from './controllers/assistant.controller';
 import { AssistantService } from './services/assistant.service';
-import { MemoryService } from './services/memory.service';
-import { ContextService } from './services/context.service';
-import { ReasoningService } from './services/reasoning.service';
-import { RecommendationService } from './services/recommendation.service';
 import { PlanningService } from './services/planning.service';
 import { RuleEngineService } from './services/rule-engine.service';
 import { KnowledgeService } from './services/knowledge.service';
@@ -28,10 +24,6 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     RuleEngineService,
     PlanningService,
     AssistantService,
-    MemoryService,
-    ContextService,
-    ReasoningService,
-    RecommendationService,
     NaturalActionExecutionService,
     ConversationHistoryService,
     ConversationContextService,
@@ -43,10 +35,6 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
   ],
   exports: [
     AssistantService,
-    MemoryService,
-    ContextService,
-    ReasoningService,
-    RecommendationService,
     NaturalActionExecutionService,
     ConversationHistoryService,
     ConversationContextService,
