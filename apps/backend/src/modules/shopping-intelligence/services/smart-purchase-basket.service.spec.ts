@@ -167,4 +167,36 @@ describe('SmartPurchaseBasketService', () => {
     expect(result.total).toBe(8);
     expect(result.feasible).toBe(false);
   });
+
+  it('does not count wait decisions as committed basket cost', () => {
+    const service = new SmartPurchaseBasketService(
+      new SmartPurchaseDecisionService(),
+    );
+    const result = service.optimize(
+      [
+        {
+          productKey: 'coffee',
+          quantity: 1,
+          candidates: [
+            {
+              id: 'coffee-1',
+              productKey: 'coffee',
+              price: 8,
+              currency: 'USD',
+              availability: 'in_stock',
+              priceTrend: 'falling',
+              priceVs30dAverage: 0,
+            },
+          ],
+        },
+      ],
+      10,
+      'USD',
+    );
+
+    expect(result.items[0].decision.action).toBe('wait');
+    expect(result.items[0].selectedPrice).toBeNull();
+    expect(result.total).toBe(0);
+    expect(result.feasible).toBe(true);
+  });
 });
