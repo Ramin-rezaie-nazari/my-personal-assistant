@@ -7,6 +7,7 @@ import { PriceSourceService } from './services/price-source.service';
 import { PriceSourceRegistryService } from './services/price-source-registry.service';
 import { PriceHistoryStoreService } from './services/price-history-store.service';
 import { PricePersistenceService } from './services/price-persistence.service';
+import { PriceProductKeyService } from './services/price-product-key.service';
 import { MarketAnalysisService } from './services/market-analysis.service';
 import { MarketBudgetImpactService } from './services/market-budget-impact.service';
 import { NightlyMarketIntelligenceService } from './services/nightly-market-intelligence.service';
@@ -27,6 +28,7 @@ import { PrismaModule } from '../../common/database/prisma.module';
     PriceSourceRegistryService,
     PriceHistoryStoreService,
     PricePersistenceService,
+    PriceProductKeyService,
     MarketAnalysisService,
     MarketBudgetImpactService,
     NightlyMarketIntelligenceService,
@@ -43,6 +45,7 @@ import { PrismaModule } from '../../common/database/prisma.module';
     PriceSourceRegistryService,
     PriceHistoryStoreService,
     PricePersistenceService,
+    PriceProductKeyService,
     MarketAnalysisService,
     MarketBudgetImpactService,
     NightlyMarketIntelligenceService,
