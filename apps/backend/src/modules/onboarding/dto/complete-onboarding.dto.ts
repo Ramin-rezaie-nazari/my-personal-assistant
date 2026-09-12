@@ -1,9 +1,13 @@
-import { IsNumber, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
+import { IsIn, IsNumber, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
 
 export class CompleteOnboardingDto {
   @IsOptional()
   @IsString()
   currentStep?: string;
+
+  @IsOptional()
+  @IsString()
+  fullName?: string;
 
   @IsOptional()
   @IsString()
@@ -32,6 +36,10 @@ export class CompleteOnboardingDto {
 
   @IsOptional()
   @IsString()
+  fitnessLevel?: string;
+
+  @IsOptional()
+  @IsString()
   dietType?: string;
 
   @IsOptional()
@@ -41,4 +49,24 @@ export class CompleteOnboardingDto {
   @IsOptional()
   @IsString()
   rhythm?: string;
+
+  @IsOptional()
+  @IsString()
+  detectedCountry?: string;
+
+  @IsOptional()
+  @IsString()
+  @IsIn(['none', 'home', 'gym'])
+  equipment?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @IsIn([20, 30, 45, 60])
+  sessionMinutes?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(2)
+  @Max(6)
+  trainingDaysPerWeek?: number;
 }
