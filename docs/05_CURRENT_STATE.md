@@ -10,44 +10,26 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 ## Repository state
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
-- Remediation branch: `audit/final-verification-2026-09-12`
-- Pull request: #71 (`audit: remediation pass for Appendix findings`)
+- Remediation branch: `audit/project-brain-2026-09-11`
+- Primary validation PR: #70
+- Additional backend validation PR: #74 (validation-only; do not merge automatically)
 - Base: `main`
 - Scope: source-level remediation against `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`.
 
 ## Remediation status
 
-The branch contains source-level fixes and reconciliation across the Appendix finding set, including:
+The audit branch contains the verified remediation chain plus subsequent targeted fixes across the Appendix findings, including backend module/runtime wiring, LifeTasks/Goals/auth/security, timezone handling, recipe/food/schema/import/image paths, shopping/inventory ownership and transaction boundaries, price normalization, mobile auth/transport/localization/notification/TTS contracts, and CI/test coverage.
 
-- backend module/runtime wiring and removal of stale placeholder/orphan providers;
-- LifeTasks validation, completion-state semantics and direct service coverage;
-- Goals DTO/runtime contract and transactional check-ins;
-- auth refresh-session hashing, expiry enforcement, rotation and secure mobile token storage;
-- authenticated Device/Price/Brain boundaries;
-- user-timezone propagation through Dashboard, Daily Command Center, Smart Planning, Adaptive Learning and User Intelligence;
-- mobile onboarding synchronization to the authenticated backend onboarding/profile contract;
-- authenticated account-erasure of the application database graph and session state;
-- recipe Prisma schema reconciliation, transactional/restartable content import and real orphan checks;
-- recipe image pagination, reset safety, 100–150KB target alignment and canonical hero contract;
-- legacy country/image executable variants retired from the active script surface;
-- food-intelligence resolver integrity, quantity parsing and self-test CI wiring;
-- recommendation score normalization and country-preference selection-shape fixes;
-- durable conversation-history retention enforcement through persisted per-user policy;
-- mobile localization/RTL coverage on audited command-center and secondary routes;
-- mobile notification lifecycle startup and action integration;
-- mobile CI typecheck, source tests, committed Jest specs, Expo validation and Android bundle export;
-- project-brain/current-state ownership and reconciliation updates.
+The latest targeted fixes in this continuation include stricter Daily and Habit DTO validation, frequency-aware habit streak semantics, user-scoped Shopping FoodItem/Recipe access with transactional recipe-missing basket writes, local Inventory DTO ownership, source-native price currency preservation, and unique JWT `jti` values to make refresh-token rotation produce distinct tokens reliably.
 
 ## Canonical finding reconciliation
 
-The current branch source no longer reproduces the concrete defects described by the active Appendix findings PB-156–PB-249 and PB-252/PB-257; their original OPEN labels are historical audit observations and must be treated as superseded by the current source state plus CI evidence.
-
-PB-230 is retained only as a documented historical-evidence limitation: exact prose for PB-001–PB-155 was not recoverable from the exposed repository history, so no historical text was fabricated.
-
-PB-254 is withdrawn as a false-positive integration assumption: current repository evidence shows custom Prisma/JWT authentication and recipe-focused Storage scripts, but no Supabase Auth identity binding or user-owned Supabase Storage deletion contract. Application account erasure is implemented in the database/session layer.
+The canonical Appendix records PB-156–PB-249 and PB-252/PB-257 as remediated, with historical/evidence-limited/withdrawn findings preserved explicitly. `docs/project-brain/12_OPEN_WORK.md` is now a historical index and no longer represents an independent actionable queue.
 
 ## Validation status
 
-Recent GitHub Actions evidence has already verified the Mobile pipeline end-to-end and has verified Backend dependency installation, Prisma schema validation/generation, all migrations and migration idempotence, plus the food-intelligence self-test. The latest Backend build recheck is still required after the retention-service compatibility fix.
+On the latest verification run for the current backend remediation tree, dependency installation, Prisma validation/generation, database migrations and idempotence, food-intelligence self-test, backend build and backend unit tests have all passed. Backend API E2E is currently the remaining running gate on the same tree, specifically rechecking the refresh-token rotation path that previously failed.
 
-The local container cannot clone the repository because direct GitHub network access is unavailable. Production/deployed Supabase Auth/RLS/Storage behavior and real-device UX remain outside this connector's runtime boundary and are not claimed as verified.
+Mobile CI on the same remediation head has passed dependency installation, TypeScript typecheck, mobile source tests, committed Jest specs, Expo validation and Android JS bundling.
+
+The local container cannot clone the repository because direct GitHub network access is unavailable. Production/deployed database/RLS/storage behavior and physical-device UX remain outside this connector runtime and are not claimed as verified.
