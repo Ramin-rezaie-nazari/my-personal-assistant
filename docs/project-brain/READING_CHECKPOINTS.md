@@ -5,9 +5,9 @@ Review status: SOURCE-LEVEL MASTER PROMPT AUDIT RECONCILED; APPENDIX REMEDIATION
 
 ## Scope and evidence baseline
 
-Scope read/reconciled: complete enumerated backend Core, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget, Shopping/Inventory/Price, Life/Health, Fitness/Workout/Calisthenics/Gym/Yoga and Platform/Test/CI scopes; full Prisma schema and all 39 migration SQL files; substantial-to-complete mobile route/client/component/native/library scope; route/controller/DTO/guard/mobile-consumer reconciliation; operational recipe scripts; current-main direct revalidation of recipe/food and account-erasure/ownership/index surfaces; Project Brain findings/reconciliation artifacts; focused Inventory/Recipe → Shopping quantity-unit reconciliation.
+Scope read/reconciled: complete enumerated backend Core, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget, Shopping/Inventory/Price, Life/Health, Fitness/Workout/Calisthenics/Gym/Yoga and Platform/Test/CI scopes; full Prisma schema and all 39 migration SQL files; substantial-to-complete mobile route/client/component/native/library scope; route/controller/DTO/guard/mobile-consumer reconciliation; operational recipe scripts; current-main direct revalidation of recipe/food and account-erasure/ownership/index surfaces; Project Brain findings/reconciliation artifacts; focused Inventory/Recipe → Shopping quantity-unit reconciliation; focused Mobile Shopping basket transport reconciliation.
 
-Source-level closure is complete for the recorded audit scope. The later Appendix remediation phase is complete through PB-270. The focused PB-270 remediation is CI-verified on `1f3f73601183779fbef865a82ce2ea3dee3f8c33`.
+Source-level closure is complete for the recorded audit scope. The later Appendix remediation phase is complete through PB-270. PB-270 and the residual PB-205 basket-transport correction are CI-verified on the current code tree `c0c31b8733649b306247550377ff682bb85f5803`.
 
 Evidence roots: `apps/backend/`; `apps/mobile/`; `.github/workflows/`; `docs/`; `docs/project-brain/`; `tools/`.
 
@@ -46,10 +46,27 @@ Verification:
 - Mobile CI `34691080764`: SUCCESS.
 - All backend validation/test stages and all mobile validation stages completed successfully.
 
+## BATCH-0033 — Mobile Shopping basket transport reconciliation
+
+Status: COMPLETE — REMEDIATED + CI VERIFIED.
+
+Focused source read:
+- `apps/mobile/lib/api.ts`
+- `apps/mobile/lib/shopping-api.ts`
+- `apps/mobile/lib/shopping-basket-api.ts`
+- `apps/mobile/app/shopping.tsx`
+
+Revalidation found that `shopping-basket-api.ts` still carried a private token/refresh implementation even after the other Shopping/Price clients had moved to the canonical `api.ts` transport. This was the residual surface of PB-205. It was replaced with the shared `request()` helper for basket listing and completion, eliminating a second refresh policy inside the Shopping journey.
+
+Verification:
+- Backend CI `34691283317`: SUCCESS.
+- Mobile CI `34691283280`: SUCCESS.
+- Mobile TypeScript, source tests, committed Jest specs, Expo validation and Android JS bundling all completed successfully.
+
 ## Environmental checkpoint
 
 Runtime HTTP execution, real-device notification/voice/offline behavior, deployed PostgreSQL/RLS/Storage/Auth state, external provider quotas and production push delivery remain BLOCKED/UNVERIFIED because they are outside the available connector/container runtime.
 
 ## Next checkpoint
 
-Continue MASTER-0004 with Pantry/Inventory ↔ Shopping lifecycle reconciliation beyond unit integrity, then broaden price-source coverage and audit remaining stale Budget/Shopping artifacts. Keep source-audit completion, Appendix remediation completion and product readiness as separate measures.
+Continue MASTER-0004 with Pantry/Inventory ↔ Shopping lifecycle reconciliation beyond unit integrity and transport, then broaden price-source coverage and audit remaining stale Budget/Shopping artifacts. Keep source-audit completion, Appendix remediation completion and product readiness as separate measures.
