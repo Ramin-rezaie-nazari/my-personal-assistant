@@ -12,7 +12,6 @@ export class LocalMealRecommendationActionAdapter implements OnModuleInit {
 
   onModuleInit() {
     this.adapters.register({
-      actions: ['recommend_meal'],
       supports: (candidate) => candidate.action === 'recommend_meal',
       execute: (candidate, context) => this.execute(candidate, context),
     });
@@ -45,9 +44,9 @@ export class LocalMealRecommendationActionAdapter implements OnModuleInit {
         maxCalories,
         minProteinGrams,
         countryCode: countryCode || undefined,
-        unsupportedHardConstraints: this.readStringArray(
-          entities.allergies,
-        ).concat(this.readStringArray(entities.dietaryPreferences)),
+        unsupportedHardConstraints: this.readStringArray(entities.allergies).concat(
+          this.readStringArray(entities.dietaryPreferences),
+        ),
       },
       recommendations,
     };
