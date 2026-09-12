@@ -5,15 +5,15 @@ Review status: IN_PROGRESS
 
 ## Purpose
 
-This document tracks the post-Appendix product-development work against the MYPA Master Prompt vision. It does not override `docs/05_CURRENT_STATE.md` or the canonical findings register.
+This document tracks post-Appendix product-development work against the MYPA Master Prompt vision. It does not override `docs/05_CURRENT_STATE.md` or the canonical findings register.
 
 ## Baseline
 
 - Appendix remediation: complete for the recoverable PB-156..PB-257 catalog.
-- Backend CI: green on the verified Master-0002 tree.
-- Mobile CI: green on the verified Master-0002 tree.
+- Backend CI: green on the current verified product tree.
+- Mobile CI: green on the current verified product tree.
 - Project Brain source-level audit: reconciled to available repository evidence.
-- Product readiness is not 100%; remaining work is integrated mobile journeys, central/local brain depth, global food intelligence depth, offline behavior, voice/action UX, production validation and future integrations.
+- Product readiness is not 100%; remaining work is integrated mobile journeys, deeper central/local Brain behavior, global food-intelligence depth, offline behavior, voice/action UX, production validation and future integrations.
 
 ## Product workstream order
 
@@ -40,27 +40,38 @@ Changes:
 - Persian numeric normalization and label-first numeric target parsing are covered.
 - `PlanningService` propagates structured local entities into actionable plan steps.
 - `AssistantService` merges contextual-command and local-understanding entities before planning and passes local understanding/plan context into execution.
-- `DecisionActionAdapter` now type-checks advertised action capability metadata.
-- `LocalMealRecommendationActionAdapter` exposes `recommend_meal`, passes supported nutrition constraints into `FoodOperatingLoopService`, and fails closed when allergy/diet constraints lack verified canonical data support.
-- Direct tests cover local parsing, planning propagation, action capability registration and recommendation safety behavior.
+- `DecisionActionAdapter` type-checks advertised action capability metadata.
+- `LocalMealRecommendationActionAdapter` exposes `recommend_meal`, passes supported nutrition constraints into `FoodOperatingLoopService`, and enforces fail-closed behavior where verified safety data is insufficient.
 
 Validation:
-- Backend CI `34686237627`: SUCCESS.
-  - migrations + idempotence: PASS
-  - food-intelligence self-test: PASS
-  - backend build: PASS
-  - 427/427 backend unit tests: PASS
-  - API E2E: PASS
-- Mobile CI `34686237631`: SUCCESS.
-  - install/typecheck/source tests/Jest specs/Expo validation/Android JS bundle: PASS
+- Backend CI `34686237627`: SUCCESS — migrations/idempotence, food-intelligence self-test, backend build, 427/427 unit tests and API E2E passed.
+- Mobile CI `34686237631`: SUCCESS — install, typecheck, source tests, Jest specs, Expo validation and Android JS bundle passed.
 
-## Current architectural decision
+### MASTER-0003 — recipe/ingredient safety taxonomy
+Status: VERIFIED_BY_TEST.
 
-Do not claim allergy/diet hard-filtering is implemented merely because local language understanding recognizes those constraints. The recommendation engine must have verified recipe/ingredient safety semantics before it can return results under such constraints. Until then, execution fails closed.
+Changes:
+- Added `FoodSafetyTaxonomyService` backed by the canonical ingredient taxonomy's names, aliases and deterministic flags.
+- Added explicit `known`/`unknown` resolution state and fail-closed evaluation when constrained recipes contain unknown safety ingredients.
+- Implemented supported hard filters for milk/dairy, peanuts, tree nuts, fish, shellfish, vegan, vegetarian and gluten-free semantics where canonical flags exist.
+- Integrated safety evaluation into `FoodOperatingLoopService.recommend()` before inventory/nutrition scoring so blocked recipes are not merely down-ranked.
+- Connected the safety-aware recommendation path to the local Brain `recommend_meal` adapter.
+- Added deterministic build packaging for the taxonomy asset and direct resolver/service test coverage.
+- Preserved the boundary that this is not a claim of complete allergen coverage for every possible ingredient or production dataset.
+
+Validation:
+- Backend CI `34686577253`: SUCCESS — dependency installation, Prisma validation/generation, migrations/idempotence, food-intelligence self-test, build, unit tests and API E2E passed.
+- Mobile CI `34686577182`: SUCCESS — dependency installation, typecheck, source tests, committed Jest specs, Expo validation and Android JS bundle passed.
+
+## Current architectural decisions
+
+- Deterministic local Brain context remains provider-independent and cloud-AI-free.
+- Hard allergy/diet filtering is allowed only when canonical ingredient safety evidence exists; unknown ingredient safety remains a hard stop.
+- Safety taxonomy is an ingredient-level evidence layer, not a substitute for complete regulatory/allergen coverage.
 
 ## Next
 
-`MASTER-0003`: create the verified recipe/ingredient safety-taxonomy contract. First inspect the existing ingredient taxonomy, resolver aliases and import pipeline to determine whether a deterministic mapping can be derived without a schema change. If the existing data cannot represent verified per-FoodItem safety flags, add the smallest backward-compatible model/migration needed, populate it only from trusted deterministic inputs, and add hard-filter integration tests.
+`MASTER-0004`: complete the Nutrition/Food → Pantry/Inventory → Shopping → Budget vertical journey. Connect recommendation results and missing-ingredient quantities into a user-scoped, provenance-preserving shopping/budget flow with deterministic currency semantics and explicit loading/empty/error/offline states.
 
 ## Evidence boundary
 
