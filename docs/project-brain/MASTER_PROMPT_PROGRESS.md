@@ -10,7 +10,7 @@ This document tracks post-Appendix product-development work against the MYPA Mas
 ## Baseline
 
 - Appendix remediation is complete for the recoverable PB-156..PB-257 catalog; new product-development findings are tracked in the same Appendix from PB-258 onward.
-- Backend and Mobile CI have passed on the currently verified product tree.
+- Backend and Mobile CI have passed on the verified MASTER-0004 code tree.
 - Project Brain source-level audit is reconciled to available repository evidence.
 - Product readiness is not 100%; remaining work includes the rest of the Food OS vertical, deeper central/local Brain orchestration, full mobile journeys, offline behavior, voice/action UX, global intelligence depth, production validation and future integrations.
 
@@ -63,7 +63,9 @@ Validation:
 ### MASTER-0004 — Nutrition/Food → Pantry/Inventory → Shopping → Budget
 Status: BACKEND SLICE VERIFIED_BY_CI; FULL VERTICAL IN PROGRESS.
 
-Completed and verified on tree `9c0b31cfcd310d75eda68de80e739cc29d6e3d19`:
+Verified code tree: `975cdf1ef8c51f33f34634a7f9cdbeec0e8c9651`.
+
+Completed and verified:
 - active Shopping Intelligence facade delegates to canonical user-scoped ShoppingService;
 - `GET /shopping-intelligence` is JWT protected;
 - direct Shopping Intelligence service/controller tests;
@@ -78,18 +80,21 @@ Completed and verified on tree `9c0b31cfcd310d75eda68de80e739cc29d6e3d19`:
 - explicit price provenance (`priceSourceId`, `priceObservedAt`);
 - explicit `price_unavailable`, `currency_mismatch`, `unit_mismatch`, `stale_price`, and `over_budget` states;
 - authenticated `/budget-intelligence/plan` route;
-- local `PLAN_FOOD_BUDGET` intent and Brain execution action wiring;
-- authenticated and unauthenticated API E2E coverage for Shopping Intelligence and Budget Plan.
+- local `PLAN_FOOD_BUDGET` intent and Brain execution action wiring through the Assistant/local provider path;
+- authenticated and unauthenticated API E2E coverage for Shopping Intelligence and Budget Plan;
+- regression coverage for the budget status semantics and canonical price-key normalization.
 
-Validation on this verified tree:
-- Backend CI `34688191807`: SUCCESS — dependency install, Prisma validate/generate, migrations/idempotence, food self-test, build, unit tests, API E2E.
-- Mobile CI `34688191731`: SUCCESS — dependency install, typecheck, source tests, committed Jest specs, Expo validation, Android JS bundle.
+Validation on the verified code tree:
+- Backend CI `34688334661`: SUCCESS — dependency install, Prisma validate/generate, migrations/idempotence, food self-test, backend build, unit tests, API E2E.
+- Mobile CI `34688334655`: SUCCESS — dependency install, typecheck, source tests, committed Jest specs, Expo validation, Android JS bundle.
+
+Post-verification documentation reconciliation is intentionally tracked separately; code readiness remains tied to the verified code tree above until the documentation-only HEAD receives its normal CI validation.
 
 Current remaining work inside MASTER-0004:
 - connect recipe scaled/missing ingredients directly to deterministic budget costing;
 - connect budget results to shopping generation as one coherent domain journey;
 - broaden price coverage and multi-source freshness handling;
-- remove remaining placeholder-level Budget/Shopping intelligence artifacts where they are not active consumers;
+- remove remaining stale/placeholder-level Budget/Shopping artifacts where they are not active consumers;
 - complete Mobile Budget/Shopping UX and offline states;
 - add richer end-user explanations and actionable alternatives when price evidence is missing or budget is insufficient.
 
@@ -102,6 +107,8 @@ Current remaining work inside MASTER-0004:
 - Inventory owns inventory intelligence; Shopping Intelligence depends on Inventory and must not create a reverse module dependency.
 - Monetary estimates use deterministic FoodItem-name product-key mapping only; fuzzy matching is forbidden for money.
 - Price freshness is bounded to seven days for Budget planning; stale snapshots do not become current costs.
+- `PLAN_FOOD_BUDGET` is an executable local Brain action, not merely a parser label.
+- Budget/Shopping HTTP routes must pass both unauthenticated security checks and authenticated user-scoped E2E checks.
 
 ## Next
 
