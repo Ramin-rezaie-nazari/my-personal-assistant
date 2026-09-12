@@ -130,9 +130,20 @@ export class ShoppingService {
     if (!recipe) throw new NotFoundException('Recipe not found');
 
     const allowed = new Set(recipe.ingredients.map((i) => i.foodId));
-    const valid = items.filter(
-      (i) => allowed.has(i.foodId) && Number.isFinite(i.quantity) && i.quantity > 0,
+    const invalidItem = items.find(
+      (i) =>
+        !allowed.has(i.foodId) ||
+        !Number.isFinite(i.quantity) ||
+        i.quantity <= 0 ||
+        typeof i.unit !== 'string' ||
+        !i.unit.trim(),
     );
+    if (invalidItem) {
+      throw new BadRequestException(
+        'Every shopping item must belong to the recipe and have a positive quantity and unit',
+      );
+    }
+    const valid = items;
 
     await this.prisma.$transaction(async (tx) => {
       for (const item of valid) {
