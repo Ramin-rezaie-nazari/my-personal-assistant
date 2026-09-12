@@ -69,10 +69,13 @@ export class ShoppingService {
       priority?: string;
     },
   ) {
-    if (item.quantity <= 0)
+    if (!Number.isFinite(item.quantity) || item.quantity <= 0)
       throw new NotFoundException('Quantity must be positive');
-    const food = await this.prisma.foodItem.findUnique({
-      where: { id: item.foodId },
+    const food = await this.prisma.foodItem.findFirst({
+      where: {
+        id: item.foodId,
+        OR: [{ userId: null }, { userId }],
+      },
     });
     if (!food) throw new NotFoundException('Food item not found');
     const existing = await this.prisma.shoppingItem.findFirst({
@@ -104,18 +107,20 @@ export class ShoppingService {
     recipeId: string,
     items: Array<{ foodId: string; quantity: number; unit: string }>,
   ) {
-    const recipe = await this.prisma.recipe.findUnique({
-      where: { id: recipeId },
+    const recipe = await this.prisma.recipe.findFirst({
+      where: { id: recipeId, OR: [{ userId: null }, { userId }] },
       include: { ingredients: true },
     });
     if (!recipe) throw new NotFoundException('Recipe not found');
     const allowed = new Set(recipe.ingredients.map((i) => i.foodId));
-    const valid = items.filter((i) => allowed.has(i.foodId) && i.quantity > 0);
+    const valid = items.filter(
+      (i) => allowed.has(i.foodId) && Number.isFinite(i.quantity) && i.quantity > 0,
+    );
 
     await this.prisma.$transaction(async (tx) => {
       for (const item of valid) {
-        const food = await tx.foodItem.findUnique({
-          where: { id: item.foodId },
+        const food = await tx.foodItem.findFirst({
+          where: { id: item.foodId, OR: [{ userId: null }, { userId }] },
           select: { name: true },
         });
         if (!food) throw new NotFoundException('Food item not found');
