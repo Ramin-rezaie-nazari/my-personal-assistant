@@ -27,11 +27,25 @@ export type BasketDecision = {
 export class SmartPurchaseBasketService {
   constructor(private readonly decision: SmartPurchaseDecisionService) {}
 
-  optimize(items: BasketItem[], budgetRemaining: number): BasketDecision {
+  optimize(items: BasketItem[], budgetRemaining: number, budgetCurrency?: string): BasketDecision {
     const currency =
-      items.flatMap((item) => item.candidates).find(Boolean)?.currency ?? 'USD';
+      budgetCurrency ??
+      items.flatMap((item) => item.candidates).find(Boolean)?.currency ??
+      'USD';
+
     const results = items.map((item) => {
-      const decision = this.decision.decide(item.candidates, budgetRemaining);
+      const compatibleCandidates = budgetCurrency
+        ? item.candidates.filter((candidate) => candidate.currency === budgetCurrency)
+        : item.candidates;
+
+      const decision = compatibleCandidates.length
+        ? this.decision.decide(compatibleCandidates, budgetRemaining)
+        : {
+            action: 'avoid' as const,
+            score: 0,
+            reasons: ['currency_mismatch'],
+            candidate: null,
+          };
       const price = decision.candidate?.price ?? null;
       return {
         productKey: item.productKey,
@@ -49,7 +63,15 @@ export class SmartPurchaseBasketService {
       results.every((item) => item.decision.action !== 'avoid');
     const reasons = feasible
       ? []
-      : ['basket_exceeds_budget_or_contains_avoid_items'];
+      : [
+          ...new Set(
+            results.flatMap((item) =>
+              item.decision.reasons.length
+                ? item.decision.reasons
+                : ['basket_exceeds_budget_or_contains_avoid_items'],
+            ),
+          ),
+        ];
     return { total, currency, items: results, feasible, reasons };
   }
 }
