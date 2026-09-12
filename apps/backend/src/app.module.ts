@@ -14,7 +14,6 @@ import { CalendarModule } from './modules/calendar/calendar.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { HabitsModule } from './modules/habits/habits.module';
 import { GoalsModule } from './modules/goals/goals.module';
-import { LifeExecutionModule } from './modules/life-execution/life-execution.module';
 import { LifeTasksModule } from './modules/life-tasks/life-tasks.module';
 import { ConfigModule } from './common/config/config.module';
 import { PrismaModule } from './common/database/prisma.module';
@@ -47,11 +46,11 @@ import { GoalIntelligenceModule } from './modules/goal-intelligence/goal-intelli
   imports: [
     HealthModule, DailyModule, NutritionModule, FoodsModule, MealsModule, RecipesModule, InventoryModule, ShoppingModule,
     WorkoutModule, SupplementsModule, RemindersModule, CalendarModule, NotificationsModule, HabitsModule, GoalsModule,
-    LifeExecutionModule, LifeTasksModule, ConfigModule, PrismaModule, AuthModule, UsersModule, SettingsModule, ProfileModule,
-    OnboardingModule, AssistantModule, UserIntelligenceModule, BudgetIntelligenceModule, PriceIntelligenceModule,
-    ShoppingIntelligenceModule, DeviceIntelligenceModule, DecisionEngineModule, AdaptiveLearningModule, ContextEngineModule,
-    PreferencesModule, PersonalBrainModule, DashboardModule, DailyCommandCenterModule, YogaModule, CalisthenicsModule,
-    FitnessModule, ContentModule, RecommendationIntelligenceModule, GoalIntelligenceModule,
+    LifeTasksModule, ConfigModule, PrismaModule, AuthModule, UsersModule, SettingsModule, ProfileModule, OnboardingModule,
+    AssistantModule, UserIntelligenceModule, BudgetIntelligenceModule, PriceIntelligenceModule, ShoppingIntelligenceModule,
+    DeviceIntelligenceModule, DecisionEngineModule, AdaptiveLearningModule, ContextEngineModule, PreferencesModule,
+    PersonalBrainModule, DashboardModule, DailyCommandCenterModule, YogaModule, CalisthenicsModule, FitnessModule,
+    ContentModule, RecommendationIntelligenceModule, GoalIntelligenceModule,
   ],
 })
 export class AppModule {}
