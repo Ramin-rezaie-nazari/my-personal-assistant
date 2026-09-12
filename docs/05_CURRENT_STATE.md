@@ -11,13 +11,13 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Working branch: `audit/project-brain-2026-09-11`
-- Current branch head at last verified product tree: `975cdf1ef8c51f33f34634a7f9cdbeec0e8c9651`
+- Current code tree verified by CI: `c493e3fb470f391d3b21cad28788046a57f5e570`
 - Validation PR: #70 (validation-only; do not merge automatically)
 - Base: `main`
 
 ## Appendix/remediation status
 
-The canonical Appendix finding set is reconciled through PB-257. Recoverable concrete findings have been remediated/reclassified and the historical PB-001..PB-155 limitation is explicitly preserved without fabricated text. Master Prompt product findings are tracked in the same Appendix beginning at PB-258.
+The canonical Appendix finding set is reconciled through PB-267. Recoverable concrete findings have been remediated/reclassified and the historical PB-001..PB-155 limitation is explicitly preserved without fabricated text. Master Prompt product findings are tracked in the same Appendix beginning at PB-258.
 
 ## Master Prompt development progress
 
@@ -27,42 +27,40 @@ The canonical Appendix finding set is reconciled through PB-257. Recoverable con
 
 `MASTER-0003` recipe/ingredient safety-taxonomy contract: VERIFIED BY CI.
 
-`MASTER-0004` Nutrition/Food → Pantry/Inventory → Shopping → Budget: BACKEND SLICE VERIFIED BY CI; FULL VERTICAL IN PROGRESS.
+`MASTER-0004` Nutrition/Food → Pantry/Inventory → Shopping → Budget: BACKEND + MOBILE CORE SLICE VERIFIED BY CI; FULL VERTICAL IN PROGRESS.
 
-Completed in MASTER-0004 on the verified tree:
-- `ShoppingIntelligenceService` delegates to canonical user-scoped `ShoppingService.smartList()` and `listBasket()` instead of returning placeholder output;
-- `GET /shopping-intelligence` is JWT protected and derives `req.user.id`;
-- direct Shopping Intelligence service/controller tests are present;
-- shopping/budget quote handling preserves explicit budget currency and fails closed on mismatched quotes;
-- Smart Purchase Basket applies remaining budget sequentially and only committed `buy_now` decisions consume committed cost;
-- Inventory intelligence is owned by the Inventory domain, removing the real Inventory ↔ Shopping Intelligence module cycle;
-- `PriceProductKeyService` centralizes deterministic `FoodItem.name → PriceTrackedProduct.productKey` normalization using the existing locale-aware contract;
-- `BudgetIntelligenceService.createPlan()` uses user inventory plus compatible price snapshots, exact unit compatibility, explicit price provenance and a 7-day freshness boundary;
-- `/budget-intelligence/plan` is authenticated and user-scoped;
-- `PLAN_FOOD_BUDGET` is recognized by local language understanding and mapped through the Assistant execution path to the deterministic budget action;
-- API E2E covers authenticated Shopping Intelligence and Budget Plan endpoints in addition to unauthenticated rejection.
+Completed and verified in MASTER-0004:
+- Shopping Intelligence delegates to canonical user-scoped ShoppingService and is JWT protected;
+- shopping budget calculations enforce explicit currency compatibility, sequential remaining-budget accounting, and committed `buy_now` cost semantics;
+- Inventory intelligence is owned by Inventory, removing the real module cycle;
+- deterministic `PriceProductKeyService` mapping aligns price persistence and budget estimation without fuzzy money matching;
+- `BudgetIntelligenceService` supports deterministic arbitrary recipe-item quotes with exact currency/unit compatibility, seven-day freshness and price provenance;
+- budget states distinguish `within_budget`, `over_budget`, `partial_price_evidence`, and `insufficient_price_data`;
+- the Food Operating Loop uses the canonical recipe scaling contract, derives scaled missing quantities, prices them through Budget, and inserts only verified `priced` items into canonical ShoppingService;
+- authenticated recipe budget and budget-qualified shopping endpoints are covered by controller/API contracts;
+- Mobile has an authenticated Recipe Budget journey with servings/budget/currency inputs, verified-vs-blocked price presentation, safe loading/error states, RTL/i18n, and Smart Basket handoff;
+- Mobile Shopping and Price API clients reuse the canonical authenticated transport; Persian product-key normalization is aligned with backend;
+- Mobile source smoke checks and Jest coverage protect the new Budget route/transport contract.
 
 ## Validation evidence
 
-Verified tree `975cdf1ef8c51f33f34634a7f9cdbeec0e8c9651`:
-- Backend CI `34688334661`: SUCCESS.
-- Mobile CI `34688334655`: SUCCESS.
-- The successful backend validation includes dependency installation, Prisma validation/generation, migrations/idempotence, food-intelligence self-test, backend build, unit tests and API E2E.
-- The successful mobile validation includes dependency installation, TypeScript typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
+Code tree `c493e3fb470f391d3b21cad28788046a57f5e570`:
+- Backend CI `34689456388`: SUCCESS — dependency installation, Prisma validation/generation, migrations/idempotence, food-intelligence self-test, backend build, unit tests, API E2E and diagnostics.
+- Mobile CI `34689456439`: SUCCESS — dependency installation, TypeScript typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
+
+The CI-covered code changes include the recipe missing-ingredient → deterministic price → budget impact → budget-qualified shopping bridge and the Mobile Budget journey.
 
 ## Current architectural boundary
 
-The Brain can now recognize a food-budget request, carry structured budget/currency entities into planning, route the request to `plan_food_budget`, and execute a deterministic budget plan against user-scoped inventory and compatible fresh price snapshots.
+The Brain can recognize a food-budget request and execute the deterministic budget action. The recipe path now scales ingredients first, resolves inventory coverage, prices only deterministic missing quantities, exposes evidence states, and can hand only verified purchasable items to Shopping.
 
-The current monetary contract is deterministic: `FoodItem.name` is normalized by `PriceProductKeyService` to the same canonical product-key shape used by price persistence. No fuzzy monetary matching is used.
+No implicit FX conversion, fuzzy monetary matching, stale-price-as-current behavior, or guessed costs are permitted.
 
-The budget plan deliberately refuses implicit FX conversion, stale prices, incompatible units and missing price evidence. It reports those conditions explicitly rather than fabricating cost.
-
-The full Food OS vertical is not complete yet: recipe-to-budget costing, shopping generation orchestration, broader price coverage, mobile Budget/Shopping UX, offline behavior and end-user completion flows remain.
+The remaining MASTER-0004 work is no longer the core recipe→budget→shopping bridge. Remaining work is broader price coverage/multi-source freshness, cleanup of non-consuming legacy artifacts if any remain, richer user-facing alternatives/explanations, deeper offline behavior, and the broader Food OS/mobile completion journey.
 
 ## Next workstream
 
-`MASTER-0004` continues with recipe missing-ingredient costing → budget optimization → shopping generation → mobile Budget/Shopping journey, followed by the broader Brain, offline and global product workstreams.
+Continue MASTER-0004 with price-source breadth/freshness and actionable alternatives, then finish Mobile offline/edge-state behavior before moving to Fitness/health and the wider Brain/global workstreams.
 
 ## Environment boundary
 
