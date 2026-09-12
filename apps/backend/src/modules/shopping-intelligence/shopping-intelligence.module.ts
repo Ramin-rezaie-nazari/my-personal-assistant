@@ -8,7 +8,6 @@ import { PurchaseAnalysisService } from './services/purchase-analysis.service';
 import { SmartPurchaseDecisionService } from './services/smart-purchase-decision.service';
 import { SmartPurchaseBasketService } from './services/smart-purchase-basket.service';
 import { PurchasePlanService } from './services/purchase-plan.service';
-import { HouseholdInventoryIntelligenceService } from '../inventory/household-inventory-intelligence.service';
 import { HouseholdPurchasePlannerService } from './services/household-purchase-planner.service';
 import { HouseholdConsumptionLearningService } from './services/household-consumption-learning.service';
 import { HouseholdReorderForecastService } from './services/household-reorder-forecast.service';
@@ -23,7 +22,6 @@ import { HouseholdReorderForecastService } from './services/household-reorder-fo
     SmartPurchaseDecisionService,
     SmartPurchaseBasketService,
     PurchasePlanService,
-    HouseholdInventoryIntelligenceService,
     HouseholdPurchasePlannerService,
     HouseholdConsumptionLearningService,
     HouseholdReorderForecastService,
@@ -35,7 +33,6 @@ import { HouseholdReorderForecastService } from './services/household-reorder-fo
     SmartPurchaseDecisionService,
     SmartPurchaseBasketService,
     PurchasePlanService,
-    HouseholdInventoryIntelligenceService,
     HouseholdPurchasePlannerService,
     HouseholdConsumptionLearningService,
     HouseholdReorderForecastService,
