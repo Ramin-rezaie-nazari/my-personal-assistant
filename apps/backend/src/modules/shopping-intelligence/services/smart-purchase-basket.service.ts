@@ -59,7 +59,8 @@ export class SmartPurchaseBasketService {
               : ['currency_mismatch'],
             candidate: null,
           };
-      const price = decision.candidate?.price ?? null;
+      const purchaseCommitted = decision.action === 'buy_now';
+      const price = purchaseCommitted ? decision.candidate?.price ?? null : null;
       const estimatedCost = price !== null ? price * Math.max(0, item.quantity) : 0;
       remaining = Math.max(0, remaining - estimatedCost);
 
