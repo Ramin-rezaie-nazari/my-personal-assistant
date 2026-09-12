@@ -6,7 +6,7 @@ describe('HouseholdPurchasePlannerService', () => {
     new HouseholdInventoryIntelligenceService(),
   );
 
-  it('buys critical stock when affordable and available', () => {
+  it('fills the computed critical reorder need and lets the budget constraint reduce it', () => {
     const result = service.plan(
       [
         {
@@ -30,9 +30,9 @@ describe('HouseholdPurchasePlannerService', () => {
       10,
       'USD',
     );
-    expect(result.items[0].action).toBe('buy');
-    expect(result.totalEstimatedCost).toBe(6);
-    expect(result.budgetRemainingAfterPlan).toBe(4);
+    expect(result.items[0]).toMatchObject({ action: 'buy', quantity: 3, estimatedCost: 9 });
+    expect(result.totalEstimatedCost).toBe(9);
+    expect(result.budgetRemainingAfterPlan).toBe(1);
   });
 
   it('does not overspend when multiple essentials compete for budget', () => {

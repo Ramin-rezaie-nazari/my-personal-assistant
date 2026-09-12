@@ -70,13 +70,6 @@ export class HouseholdPurchasePlannerService {
 
       let purchaseQuantity = quantity;
       if (
-        item.urgency === 'critical' &&
-        item.safetyStock !== undefined &&
-        item.safetyStock > 0
-      ) {
-        purchaseQuantity = Math.min(purchaseQuantity, item.safetyStock);
-      }
-      if (
         unitPrice !== null &&
         unitPrice > 0 &&
         purchaseQuantity * unitPrice > remaining &&
