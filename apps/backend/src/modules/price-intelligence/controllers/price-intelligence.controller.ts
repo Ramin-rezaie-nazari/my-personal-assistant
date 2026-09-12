@@ -1,11 +1,13 @@
-import { Body, Controller, Get, Post, Query, Param } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { PriceIntelligenceService } from '../services/price-intelligence.service';
 import { PriceCollectionSchedulerService } from '../services/price-collection-scheduler.service';
 import { PriceSourceRegistryService } from '../services/price-source-registry.service';
 import { PricePersistenceService } from '../services/price-persistence.service';
 import { ProductCandidate } from '../services/product-matching.service';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 
 @Controller('price-intelligence')
+@UseGuards(JwtAuthGuard)
 export class PriceIntelligenceController {
   constructor(
     private readonly priceService: PriceIntelligenceService,
