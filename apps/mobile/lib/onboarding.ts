@@ -53,14 +53,20 @@ async function syncCompletedOnboarding(state: OnboardingState) {
   const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
   const body = {
     currentStep: 'completed',
+    fullName: state.fullName.trim() || undefined,
     gender: state.gender || undefined,
     birthDate: state.birthDate || undefined,
     heightCm: state.heightCm ? Number(state.heightCm) : undefined,
     weightKg: state.weightKg ? Number(state.weightKg) : undefined,
     primaryGoal: state.goal || undefined,
+    fitnessLevel: state.fitnessLevel || undefined,
     dietType: state.diet,
     workoutPlace: state.workoutPlace,
     rhythm: `${state.trainingDaysPerWeek} days/week · ${state.sessionMinutes} min`,
+    detectedCountry: state.detectedCountry || undefined,
+    equipment: state.equipment || undefined,
+    sessionMinutes: state.sessionMinutes,
+    trainingDaysPerWeek: state.trainingDaysPerWeek,
   };
   const response = await fetch(`${API_URL}/onboarding/complete`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
   if (!response.ok) throw new Error((await response.text()) || `Onboarding sync failed (${response.status})`);
