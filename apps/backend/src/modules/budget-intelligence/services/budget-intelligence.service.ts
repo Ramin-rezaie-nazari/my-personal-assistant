@@ -22,7 +22,7 @@ export class BudgetIntelligenceService {
   }
   async quoteItems(input: BudgetQuoteInput[], currency: string, budget?: number) {
     const normalizedCurrency = normalizeCurrency(currency); if (budget !== undefined && (!Number.isFinite(budget) || budget < 0)) throw new BadRequestException('budget must be a non-negative number');
-    const now = Date.now(); let remaining = budget ?? Number.POSITIVE_INFINITY; const items: BudgetQuoteItem[] = [];
+    const now = Date.now(); let remaining = budget ?? Number.POSITIVE_INFINITY; let spent = 0; const items: BudgetQuoteItem[] = [];
     for (const candidate of input) {
       if (!Number.isFinite(candidate.quantity) || candidate.quantity <= 0) throw new BadRequestException('quote item quantity must be a positive finite number');
       const productKey = this.productKeys.fromFoodName(candidate.name); const rows = (await this.prices.latest(productKey)) as PriceEvidenceRow[];
@@ -38,9 +38,9 @@ export class BudgetIntelligenceService {
       const price = Number(selected.row.unitPrice); const estimatedCost = price * candidate.quantity;
       if (!Number.isFinite(price) || price < 0 || !Number.isFinite(estimatedCost)) { items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: observedAt, priceSourceId: selected.row.sourceId ?? null, status: 'price_unavailable', reason: 'invalid_price_value' }); continue; }
       if (estimatedCost > remaining) { items.push({ ...base, price, estimatedCost, priceObservedAt: observedAt, priceSourceId: selected.row.sourceId ?? null, status: 'over_budget', reason: 'recipe_missing_quantity_exceeds_remaining_budget' }); continue; }
-      remaining -= estimatedCost; items.push({ ...base, price, estimatedCost, priceObservedAt: observedAt, priceSourceId: selected.row.sourceId ?? null, status: 'priced', reason: 'recipe_missing_ingredient_fits_verified_budget' });
+      remaining -= estimatedCost; spent += estimatedCost; items.push({ ...base, price, estimatedCost, priceObservedAt: observedAt, priceSourceId: selected.row.sourceId ?? null, status: 'priced', reason: 'recipe_missing_ingredient_fits_verified_budget' });
     }
-    return { items, totalEstimatedCost: Number(((budget ?? 0) - (budget === undefined ? 0 : remaining)).toFixed(2)), budgetRemaining: budget === undefined ? null : Number(remaining.toFixed(2)) } as const;
+    return { items, totalEstimatedCost: Number(spent.toFixed(2)), budgetRemaining: budget === undefined ? null : Number(remaining.toFixed(2)) } as const;
   }
 }
 
