@@ -22,8 +22,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Regenerate lockfile
-        run: pnpm install --lockfile-only --no-frozen-lockfile
+      - name: Sync branch and regenerate lockfile
+        shell: bash
+        run: |
+          git fetch origin "$GITHUB_REF_NAME"
+          git reset --hard "origin/$GITHUB_REF_NAME"
+          pnpm install --lockfile-only --no-frozen-lockfile
       - name: Commit lockfile and remove temporary workflow
         shell: bash
         run: |
