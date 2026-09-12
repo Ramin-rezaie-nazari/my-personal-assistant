@@ -1,9 +1,9 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-12
-Review status: APPENDIX REMEDIATION COMPLETE; CI VERIFIED ON REMEDIATION TREE
+Review status: APPENDIX REMEDIATION COMPLETE; MASTER PROMPT PRODUCT FINDINGS TRACKED
 
-This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit. The original `OPEN` labels represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
+This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit and subsequent evidence-driven Master Prompt development. The original `OPEN` labels represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
 
 ## Current status — PB-156 through PB-257
 
@@ -112,14 +112,20 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-256 | WITHDRAWN | Current-main/package source confirms the nutrition/recommendation scripts exist; PB-199/PB-200/PB-204 remain the independent quality findings and are now remediated. |
 | PB-257 | CLOSED — REMEDIATED | `Workout(userId, performedAt)` and `UserBehavior(userId, createdAt)` composite indexes are present in the Prisma schema. |
 
+## Master Prompt product-development findings
+
+| Finding | Current status | Evidence / resolution |
+|---|---|---|
+| PB-258 | CLOSED — REMEDIATED; CI VERIFIED | Circular module dependency was introduced while wiring Shopping Intelligence to the canonical Shopping domain: `InventoryModule → ShoppingIntelligenceModule → ShoppingModule → InventoryModule`. The pure `HouseholdInventoryIntelligenceService` was moved to `apps/backend/src/modules/inventory/household-inventory-intelligence.service.ts`; `InventoryModule` now owns and exports it, and the Shopping Intelligence module consumes the canonical export. Compatibility re-export remains for legacy imports. |
+| PB-259 | CLOSED — REMEDIATED; CI VERIFIED | Active `GET /shopping-intelligence` previously returned a placeholder and had no authenticated user boundary. It now delegates to `ShoppingService.smartList(userId)` and `ShoppingService.listBasket(userId)` through an authenticated controller using `req.user.id`. Direct service and controller specs were added. |
+| PB-260 | CLOSED — REMEDIATED; CI VERIFIED | Shopping budget calculations could mix currencies and could consume the full initial budget repeatedly across basket items. Currency compatibility, remaining-budget sequencing, and non-committed `wait/compare_more` semantics are now enforced; regression tests cover mismatch and remaining-budget behavior. |
+
 ## Historical catalog boundary
 
 The exact prose of PB-001 through PB-155 is not recoverable from the repository history exposed to the remediation environment. `docs/project-brain/12_OPEN_WORK.md` preserves the historical ID/index information, but missing historical text is not reconstructed or invented. This is an evidence limitation, not a silently omitted finding.
 
 ## Verification boundary
 
-GitHub Actions verification has passed on remediation commit `46614b36040cb839d6062dae726dc74e51ab3b96` for both Backend CI and Mobile CI. Backend coverage included dependency installation, Prisma validation/generation, migrations/idempotence, food-intelligence self-test, build, unit tests and API E2E. Mobile coverage included dependency installation, TypeScript typecheck, source tests, committed Jest specs, Expo validation and Android JS bundling.
-
-The branch head is now `d23fcad22daec065a8fb7c3804de7a8362f1c6e5`, a documentation-only synchronization after the verified application tree. This documentation change does not extend application-code verification beyond `46614b36040cb839d6062dae726dc74e51ab3b96`.
+The remediation tree and subsequent Master Prompt changes have been validated through GitHub Actions where runs exist for the corresponding HEADs. Latest fully successful product validation before the current queued HEAD included Backend and Mobile CI with Prisma validation/generation, migrations/idempotence, food-intelligence self-test, backend build, unit tests, API E2E, mobile typecheck, source/Jest tests, Expo validation and Android JavaScript bundling. The current HEAD continues to trigger fresh CI after the latest refactor and test additions.
 
 Local repository execution is unavailable because direct GitHub network access is blocked in the container environment. Production database/RLS/storage state, external service quotas, push delivery and real-device UX remain outside the available runtime boundary.
