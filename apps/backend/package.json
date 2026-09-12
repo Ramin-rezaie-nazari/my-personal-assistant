@@ -32,6 +32,7 @@
     "recipe-intelligence:ingredients": "node ./scripts/recipe-ingredient-intelligence.mjs",
     "recipe-intelligence:nutrition": "node ./scripts/recipe-nutrition-estimate.mjs",
     "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs",
+    "food-intelligence:self-test": "node ./scripts/food-intelligence-final-self-test.mjs",
     "recipe:content:import": "node ./scripts/recipe-content-import.mjs",
     "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs"
   },
@@ -77,7 +78,7 @@
     "prisma": "7.9.1",
     "source-map-support": "^0.5.21",
     "ts-jest": "29.4.12",
-    "ts-loader": "^9.5.2",
+    "ts-loader": "^9.5.0",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
     "typescript-eslint": "^8.20.0"
