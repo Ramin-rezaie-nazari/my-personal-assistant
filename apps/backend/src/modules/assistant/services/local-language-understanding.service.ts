@@ -101,7 +101,7 @@ export class LocalLanguageUnderstandingService {
   }
 
   private extractHouseholdSize(text: string): number | undefined {
-    const match = text.match(/\b(\d{1,2})\s*(?:نفر|person|people)\b/i);
+    const match = text.match(/(?:^|\s)(\d{1,2})\s*(?:نفر|person|people)(?:\s|$)/i);
     return match ? Number(match[1]) : undefined;
   }
 
@@ -131,16 +131,16 @@ export class LocalLanguageUnderstandingService {
 
   private extractTargetNumber(text: string, labels: string[]): number | undefined {
     const label = labels.map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
-    const afterLabel = text.match(new RegExp(`(?:${label})\\s*(?:[:=]\\s*)?(\\d{1,5}(?:\\.\\d+)?)\\s*(?:گرم|g)?\\b`, 'i'));
+    const afterLabel = text.match(new RegExp(`(?:${label})\\s*(?:[:=]\\s*)?(\\d{1,5}(?:\\.\\d+)?)\\s*(?:گرم|g)?(?=\\s|$)`, 'i'));
     if (afterLabel) return Number(afterLabel[1]);
-    const beforeLabel = text.match(new RegExp(`\\b(\\d{1,5}(?:\\.\\d+)?)\\s*(?:${label})\\b`, 'i'));
+    const beforeLabel = text.match(new RegExp(`(?:^|\\s)(\\d{1,5}(?:\\.\\d+)?)\\s*(?:${label})(?=\\s|$)`, 'i'));
     return beforeLabel ? Number(beforeLabel[1]) : undefined;
   }
 
   private extractTime(text: string): string | undefined {
-    const clock = text.match(/\b([01]?\d|2[0-3])\s*(?::|\.)([0-5]\d)\b/);
+    const clock = text.match(/(?:^|\s)([01]?\d|2[0-3])\s*(?::|\.)([0-5]\d)(?=\s|$)/);
     if (clock) return `${clock[1].padStart(2, '0')}:${clock[2]}`;
-    const hour = text.match(/(?:ساعت|at)\s*(\d{1,2})\b/);
+    const hour = text.match(/(?:ساعت|at)\s*(\d{1,2})(?=\s|$)/);
     if (hour && Number(hour[1]) <= 23) return `${hour[1].padStart(2, '0')}:00`;
     return undefined;
   }
@@ -178,7 +178,7 @@ export class LocalLanguageUnderstandingService {
 
   private findAllergies(text: string): string[] {
     const aliases: Array<[string, string]> = [
-      ['حساسیت به شیر', 'milk'], ['حساسیت به لبنیات', 'dairy'], ['حساسیت به تخم مرغ', 'eggs'],
+      ['حساسیت به شیر و لبنیات', 'dairy'], ['حساسیت به شیر', 'milk'], ['حساسیت به لبنیات', 'dairy'], ['حساسیت به تخم مرغ', 'eggs'],
       ['حساسیت به بادام زمینی', 'peanuts'], ['peanut allergy', 'peanuts'], ['dairy allergy', 'dairy'],
     ];
     return [...new Set(aliases.filter(([phrase]) => text.includes(phrase)).map(([, value]) => value))];
