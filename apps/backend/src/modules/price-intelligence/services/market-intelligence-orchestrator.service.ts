@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { MarketAnalysisService } from './market-analysis.service';
-import {
-  MarketBudgetImpactService,
-  PlannedPurchase,
-} from './market-budget-impact.service';
+import { MarketBudgetImpactService, PlannedPurchase } from './market-budget-impact.service';
 import { NightlyMarketIntelligenceService } from './nightly-market-intelligence.service';
 import { PriceSourceService } from './price-source.service';
 
@@ -16,19 +13,11 @@ export class MarketIntelligenceOrchestratorService {
     private readonly budget: MarketBudgetImpactService,
   ) {}
 
-  async runNightly(input: {
-    productKeys: string[];
-    sourceIds?: string[];
-    scheduledFor?: Date;
-  }) {
-    return this.nightly.run(
-      input.productKeys,
-      input.sourceIds,
-      input.scheduledFor,
-    );
+  async runNightly(input: { productKeys: string[]; sourceIds?: string[]; scheduledFor?: Date }) {
+    return this.nightly.run(input.productKeys, input.sourceIds, input.scheduledFor);
   }
 
-  insight(productKey: string, now = new Date()) {
+  async insight(productKey: string, now = new Date()) {
     return this.analysis.analyze(productKey, now);
   }
 
