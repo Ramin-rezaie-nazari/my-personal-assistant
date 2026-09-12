@@ -10,9 +10,6 @@ on:
       - 'pnpm-lock.yaml'
       - '.github/workflows/backend-ci.yml'
 
-permissions:
-  contents: write
-
 jobs:
   backend:
     runs-on: ubuntu-latest
@@ -48,8 +45,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -63,23 +58,6 @@ jobs:
           node-version: 22
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-
-      - name: Refresh lockfile
-        run: pnpm install --lockfile-only --ignore-scripts
-        working-directory: .
-
-      - name: Commit regenerated lockfile
-        shell: bash
-        run: |
-          if git diff --quiet -- pnpm-lock.yaml; then
-            echo "Lockfile already matches manifests."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add pnpm-lock.yaml
-            git commit -m "chore: refresh pnpm lockfile"
-            git push origin HEAD:${{ github.head_ref || github.ref_name }}
-          fi
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
