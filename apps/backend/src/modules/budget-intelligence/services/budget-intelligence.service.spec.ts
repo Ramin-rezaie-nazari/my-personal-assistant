@@ -41,6 +41,14 @@ describe('BudgetIntelligenceService', () => {
     expect(result.items[0]).toMatchObject({ status: 'priced', estimatedCost: 4, priceSourceId: 'fresh-chicken' }); expect(result.items[1]).toMatchObject({ status: 'currency_mismatch', price: null, estimatedCost: null }); expect(result.totalEstimatedCost).toBe(4); expect(result.budgetRemaining).toBe(6);
   });
 
+  it('reports actual priced spend when no budget limit is supplied', async () => {
+    const prices = { latest: jest.fn().mockResolvedValue([{ currency: 'USD', unit: 'kg', unitPrice: 5, observedAt: new Date(), sourceId: 'fresh-source' }]) };
+    const service = new BudgetIntelligenceService({ list: jest.fn() } as never, prices as never, { fromFoodName: jest.fn(() => 'rice') } as never);
+    const result = await service.quoteItems([{ foodId: 'food-1', name: 'Rice', quantity: 2, unit: 'kg' }, { foodId: 'food-2', name: 'Rice', quantity: 1, unit: 'kg' }], 'USD');
+    expect(result.totalEstimatedCost).toBe(15);
+    expect(result.budgetRemaining).toBeNull();
+  });
+
   it('rejects invalid quote quantities', async () => {
     const service = new BudgetIntelligenceService({ list: jest.fn() } as never, { latest: jest.fn() } as never, { fromFoodName: jest.fn(() => 'x') } as never);
     await expect(service.quoteItems([{ foodId: 'food-1', name: 'Milk', quantity: 0, unit: 'L' }], 'USD', 10)).rejects.toThrow();
