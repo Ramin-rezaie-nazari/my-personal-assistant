@@ -2,11 +2,18 @@
 
 Last updated: 2026-09-12
 Review status: SOURCE-LEVEL AUDIT RECONCILED; MASTER PROMPT DEVELOPMENT IN PROGRESS; APPENDIX REMEDIATION VERIFIED THROUGH PB-270; ENVIRONMENTAL VALIDATION BLOCKED
-Scope actually read: baseline + Core + complete Prisma schema and all 39 migrations + complete recorded Assistant/Brain/Food/Shopping/Life/Health/Fitness/Platform/Test/CI/Mobile source scopes + route/consumer/DTO/guard/database reconciliation + operational scripts + historical Appendix reconciliation + focused Inventory/Recipe → Shopping unit reconciliation + remediation verification.
+Scope actually read: baseline + Core + complete Prisma schema and all 39 migrations + complete recorded Assistant/Brain/Food/Shopping/Life/Health/Fitness/Platform/Test/CI/Mobile source scopes + route/consumer/DTO/guard/database reconciliation + operational scripts + historical Appendix reconciliation + focused Inventory/Recipe → Shopping unit reconciliation + focused Mobile Shopping basket transport reconciliation + remediation verification.
 Scope not yet read: no known recoverable source gap remains in the recorded audit baseline; deployed runtime/device/external-provider validation remains unavailable.
 Evidence roots: `docs/project-brain/`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; `apps/backend/prisma/`; GitHub Actions evidence.
 Confidence level: HIGH for recorded source-level audit and remediation evidence; MEDIUM for deployment/runtime conclusions.
 Open questions: production database/RLS/Storage/Auth configuration, physical-device behavior, external provider quotas and unrecoverable PB-001..PB-155 historical prose.
+
+## 2026-09-12 — BATCH-0033 — Mobile Shopping basket transport reconciliation
+- Revalidated the canonical mobile transport contract across `api.ts`, `shopping-api.ts`, `shopping-basket-api.ts` and the Shopping screen.
+- Found the residual PB-205 surface: `shopping-basket-api.ts` still implemented its own access-token/refresh path even though the other Shopping/Price clients had moved to the canonical `api.ts` request helper.
+- Replaced the duplicate basket request helper with the shared `request()` transport for basket listing and completion, eliminating divergent 401/refresh behavior inside the Shopping journey.
+- Backend CI `34691283317` and Mobile CI `34691283280` passed on code commit `c0c31b8733649b306247550377ff682bb85f5803`.
+- Updated `deep-read/08-mobile-deep-read.md` and `READING_CHECKPOINTS.md`; the existing PB-205 Appendix closure is now fully verified against the residual basket client.
 
 ## 2026-09-12 — BATCH-0032 — Inventory/Recipe → Shopping unit reconciliation
 - Revalidated the Inventory → Shopping and Recipe → Shopping quantity/unit boundary after the Budget → Shopping vertical was connected.
