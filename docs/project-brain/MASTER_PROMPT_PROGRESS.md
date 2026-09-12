@@ -61,42 +61,36 @@ Validation:
 - Mobile CI `34686577182`: SUCCESS.
 
 ### MASTER-0004 — Nutrition/Food → Pantry/Inventory → Shopping → Budget
-Status: BACKEND SLICE VERIFIED_BY_CI; FULL VERTICAL IN PROGRESS.
+Status: CORE RECIPE→BUDGET→SHOPPING JOURNEY VERIFIED_BY_CI; FULL VERTICAL IN PROGRESS.
 
-Verified code tree: `975cdf1ef8c51f33f34634a7f9cdbeec0e8c9651`.
+Verified code tree: `c493e3fb470f391d3b21cad28788046a57f5e570`.
 
 Completed and verified:
 - active Shopping Intelligence facade delegates to canonical user-scoped ShoppingService;
-- `GET /shopping-intelligence` is JWT protected;
-- direct Shopping Intelligence service/controller tests;
+- JWT/user scoping for Shopping Intelligence and Budget Plan routes;
 - currency-safe shopping budget semantics;
-- sequential remaining-budget accounting;
-- only committed `buy_now` selections consume committed basket cost;
-- Inventory intelligence owned by Inventory domain, removing the real module cycle;
-- canonical `PriceProductKeyService` for deterministic `FoodItem.name → PriceTrackedProduct.productKey` mapping using the existing locale-aware contract;
-- deterministic `BudgetIntelligenceService.createPlan()` using user-scoped inventory and compatible price snapshots;
-- exact unit/currency compatibility checks;
-- seven-day price freshness boundary;
-- explicit price provenance (`priceSourceId`, `priceObservedAt`);
-- explicit `price_unavailable`, `currency_mismatch`, `unit_mismatch`, `stale_price`, and `over_budget` states;
-- authenticated `/budget-intelligence/plan` route;
-- local `PLAN_FOOD_BUDGET` intent and Brain execution action wiring through the Assistant/local provider path;
-- authenticated and unauthenticated API E2E coverage for Shopping Intelligence and Budget Plan;
-- regression coverage for the budget status semantics and canonical price-key normalization.
+- sequential remaining-budget accounting and committed `buy_now` semantics;
+- Inventory intelligence owned by Inventory domain, removing the module cycle;
+- deterministic FoodItem-name → PriceTrackedProduct product-key normalization through `PriceProductKeyService`;
+- deterministic Budget plan and arbitrary recipe-item quote engine;
+- exact currency/unit compatibility, seven-day freshness, price provenance and explicit blocked evidence states;
+- canonical `deriveBudgetStatus()` with `within_budget`, `over_budget`, `partial_price_evidence`, `insufficient_price_data` semantics;
+- Food Operating Loop consumes canonical scaled recipe quantities, resolves inventory gaps, quotes missing ingredients deterministically, and sends only verified `priced` items into Shopping;
+- authenticated recipe budget and budget-qualified-shopping endpoints with direct controller/API E2E coverage;
+- Mobile Recipe Budget journey with servings/budget/currency inputs, evidence-aware result states, loading/error handling, RTL/i18n and Smart Basket handoff;
+- Mobile Shopping/Price clients reuse canonical authenticated transport with locale-aligned product-key normalization;
+- mobile source-smoke and Jest coverage for the new Budget route/transport contract.
 
 Validation on the verified code tree:
-- Backend CI `34688334661`: SUCCESS — dependency install, Prisma validate/generate, migrations/idempotence, food self-test, backend build, unit tests, API E2E.
-- Mobile CI `34688334655`: SUCCESS — dependency install, typecheck, source tests, committed Jest specs, Expo validation, Android JS bundle.
-
-Post-verification documentation reconciliation is intentionally tracked separately; code readiness remains tied to the verified code tree above until the documentation-only HEAD receives its normal CI validation.
+- Backend CI `34689456388`: SUCCESS — dependency install, Prisma validate/generate, migrations/idempotence, food self-test, build, unit tests, API E2E and diagnostics.
+- Mobile CI `34689456439`: SUCCESS — dependency install, typecheck, source tests, committed Jest specs, Expo validation, Android JS bundle.
 
 Current remaining work inside MASTER-0004:
-- connect recipe scaled/missing ingredients directly to deterministic budget costing;
-- connect budget results to shopping generation as one coherent domain journey;
-- broaden price coverage and multi-source freshness handling;
-- remove remaining stale/placeholder-level Budget/Shopping artifacts where they are not active consumers;
-- complete Mobile Budget/Shopping UX and offline states;
-- add richer end-user explanations and actionable alternatives when price evidence is missing or budget is insufficient.
+- broaden price coverage and deterministic multi-source freshness/selection;
+- audit and remove any remaining stale non-consuming Budget/Shopping artifacts;
+- richer end-user explanations and actionable alternatives for missing/stale/incompatible price evidence;
+- complete offline/local-first behavior for Budget/Shopping and the broader Food OS journey;
+- full Pantry↔Shopping lifecycle completion, including user-visible edits and reconciliation states.
 
 ## Current architectural decisions
 
@@ -107,12 +101,14 @@ Current remaining work inside MASTER-0004:
 - Inventory owns inventory intelligence; Shopping Intelligence depends on Inventory and must not create a reverse module dependency.
 - Monetary estimates use deterministic FoodItem-name product-key mapping only; fuzzy matching is forbidden for money.
 - Price freshness is bounded to seven days for Budget planning; stale snapshots do not become current costs.
-- `PLAN_FOOD_BUDGET` is an executable local Brain action, not merely a parser label.
-- Budget/Shopping HTTP routes must pass both unauthenticated security checks and authenticated user-scoped E2E checks.
+- Recipe scaling is canonical and occurs before inventory-gap and budget calculation.
+- Budget is the pricing/evidence engine; Food Operating Loop owns recipe orchestration and Shopping integration.
+- Only verified `priced` recipe gaps may be automatically inserted into Shopping.
+- Partial price evidence is surfaced explicitly rather than presented as a complete budget result.
 
 ## Next
 
-`MASTER-0004` next slice: recipe missing-ingredient → verified price → budget impact → shopping generation, then the corresponding mobile user journey.
+`MASTER-0004` next slice: price-source breadth + freshness/selection intelligence + actionable alternatives, followed by offline/local-first Budget/Shopping states and full Pantry↔Shopping reconciliation.
 
 ## Evidence boundary
 
