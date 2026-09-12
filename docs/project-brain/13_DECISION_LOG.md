@@ -2,11 +2,11 @@
 
 Last updated: 2026-09-12
 Review status: MASTER PROMPT DEVELOPMENT IN PROGRESS
-Scope actually read: audit governance, source-audit reconciliation, remediation decisions, CI verification, and Master Prompt product development decisions through MASTER-0003.
+Scope actually read: audit governance, source-audit reconciliation, remediation decisions, CI verification, and Master Prompt product development decisions through the current MASTER-0004 Shopping/Inventory slice.
 Scope not yet read: no known recoverable source scope remains in the recorded audit baseline; future product work continues by vertical; production/deployed/device validation remains outside the environment.
 Evidence roots: `docs/project-brain/`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; GitHub Actions runs on remediation/product commits.
 Confidence level: HIGH for repository/source and completed CI evidence; MEDIUM for cross-module runtime semantics; BLOCKED for deployed/device state.
-Open questions: production database/RLS/Storage/Auth configuration, real-device behavior, external provider quotas, and unrecoverable PB-001..PB-155 historical prose.
+Open questions: production database/RLS/Storage/Auth configuration, real-device behavior, external provider quotas, unrecoverable PB-001..PB-155 historical prose, and verified FoodItem→PriceTrackedProduct mapping.
 
 | Date | Decision | Reason | Evidence |
 |---|---|---|---|
@@ -24,3 +24,9 @@ Open questions: production database/RLS/Storage/Auth configuration, real-device 
 | 2026-09-12 | Apply recipe safety filtering before recommendation scoring. | A forbidden recipe must be removed, not merely receive a lower score. | `food-operating-loop.service.ts`; `food-operating-loop.service.spec.ts` |
 | 2026-09-12 | Keep taxonomy asset packaging explicit in backend build. | The safety resolver reads repository data outside `src`; production/runtime builds must carry that asset deterministically. | `copy-food-safety-taxonomy.mjs`; backend `package.json` |
 | 2026-09-12 | Do not claim complete regulatory allergen coverage from the current taxonomy. | Existing flags are partial and ingredient-level; unknown or unmodeled semantics remain outside the verified contract. | `ingredient-taxonomy-supplement-v1.json`; `MASTER_PROMPT_PROGRESS.md` |
+| 2026-09-12 | Shopping Intelligence must reuse canonical Shopping/Inventory domains rather than maintain parallel user-data behavior. | The active domain services already own user scoping, inventory forecasting and basket persistence; the intelligence facade should orchestrate them. | `shopping-intelligence.service.ts`; `shopping.service.ts` |
+| 2026-09-12 | Protect `GET /shopping-intelligence` with JWT and derive the user from the authenticated request. | The previous facade endpoint was unguarded and could not safely produce user-specific intelligence. | `shopping-intelligence.controller.ts`; `JwtAuthGuard` |
+| 2026-09-12 | Treat currency mismatch as fail-closed in shopping/budget calculations. | A price in EUR cannot be compared directly with a USD budget; implicit FX would fabricate economics without a fresh-rate contract. | `smart-purchase-basket.service.ts`; `household-purchase-planner.service.ts`; `global-country-finance.service.ts` |
+| 2026-09-12 | Only committed `buy_now` decisions consume basket budget. | `wait` and `compare_more` are recommendations, not purchases; counting them as committed cost would distort remaining budget. | `smart-purchase-basket.service.ts`; basket spec |
+| 2026-09-12 | Inventory intelligence belongs to the Inventory domain. | The primitive has no Shopping-specific dependency, and keeping it under Shopping Intelligence created a real circular module graph when Shopping reused canonical Inventory/Shopping services. | `inventory/household-inventory-intelligence.service.ts`; `inventory.module.ts`; `shopping-intelligence.module.ts` |
+| 2026-09-12 | Do not use fuzzy FoodItem→PriceTrackedProduct matching for monetary estimates. | `FoodItem.id` and `PriceTrackedProduct.productKey` currently have no persisted verified relation; ambiguous matching could create false costs. | `schema.prisma`; `product-matching.service.ts`; `price-intelligence.model.ts` |
