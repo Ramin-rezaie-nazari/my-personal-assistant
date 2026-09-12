@@ -14,8 +14,8 @@ export class HabitsService {
 
   async getHabits(userId: string) {
     const timezone = await this.getTimezone(userId);
-    const habits = await this.prisma.habit.findMany({ where: { userId, active: true }, include: { logs: { orderBy: { dateKey: 'desc' }, take: 14 } }, orderBy: { createdAt: 'asc' } });
-    return habits.map((habit) => ({ ...habit, stats: this.stats(habit.logs.map((log) => log.dateKey), habit.targetPerWeek, timezone) }));
+    const habits = await this.prisma.habit.findMany({ where: { userId, active: true }, include: { logs: { orderBy: { dateKey: 'desc' }, take: 56 } }, orderBy: { createdAt: 'asc' } });
+    return habits.map((habit) => ({ ...habit, stats: this.stats(habit.logs.map((log) => log.dateKey), habit.targetPerWeek, habit.frequency, timezone) }));
   }
 
   async updateHabit(userId: string, id: string, dto: UpdateHabitDto) {
@@ -46,7 +46,7 @@ export class HabitsService {
       activeHabits: habits.length,
       completedCount,
       completionPercent: possible ? Math.min(100, Math.round((completedCount / possible) * 100)) : 0,
-      habits: habits.map((habit) => ({ id: habit.id, name: habit.name, targetPerWeek: habit.targetPerWeek, completedThisWeek: habit.logs.length, streak: this.stats(habit.logs.map((log) => log.dateKey), habit.targetPerWeek, timezone).streak })),
+      habits: habits.map((habit) => ({ id: habit.id, name: habit.name, targetPerWeek: habit.targetPerWeek, completedThisWeek: habit.logs.length, streak: this.stats(habit.logs.map((log) => log.dateKey), habit.targetPerWeek, habit.frequency, timezone).streak })),
     };
   }
 
@@ -57,8 +57,9 @@ export class HabitsService {
     return { deleted: true };
   }
 
-  private stats(keys: string[], targetPerWeek: number, timezone: string) {
+  private stats(keys: string[], targetPerWeek: number, frequency: string, timezone: string) {
     const set = new Set(keys);
+    if (frequency === 'weekly') return { streak: this.weekStreak(set, targetPerWeek, timezone), recentCompletions: keys.length, targetPerWeek };
     let streak = 0;
     const todayKey = getDateKeyInTimezone(new Date(), timezone);
     for (let i = 0; i < 14; i += 1) {
@@ -67,6 +68,20 @@ export class HabitsService {
       else break;
     }
     return { streak, recentCompletions: keys.length, targetPerWeek };
+  }
+
+  private weekStreak(set: Set<string>, targetPerWeek: number, timezone: string) {
+    const today = getDateKeyInTimezone(new Date(), timezone);
+    let streak = 0;
+    for (let week = 0; week < 12; week += 1) {
+      const end = this.addDays(today, -week * 7);
+      const start = this.addDays(end, -6);
+      let count = 0;
+      for (let i = 0; i < 7; i += 1) if (set.has(this.addDays(start, i))) count += 1;
+      if (count >= targetPerWeek) streak += 1;
+      else break;
+    }
+    return streak;
   }
 
   private validate(name: string, frequency: string, targetPerWeek?: number) {
