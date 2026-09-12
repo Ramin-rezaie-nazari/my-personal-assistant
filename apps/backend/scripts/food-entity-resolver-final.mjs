@@ -24,7 +24,7 @@ function numberPart(raw) {
 
 function parseAmountAndUnit(raw) {
   const normalized = String(raw || '').toLowerCase().normalize('NFKD').replace(/\p{Diacritic}/gu, '').replace(/[-_/]+/g, ' ').replace(/\s+/g, ' ').trim();
-  const quantityMatch = normalized.match(/^((?:\d+(?:\.\d+)?\s+)?(?:\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])|\d+(?:\.\d+)?)\s+(.*)$/);
+  const quantityMatch = normalized.match(/^(\d+(?:\.\d+)?(?:\s+(?:\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞]))?|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])\s+(.*)$/);
   if (!quantityMatch) return { quantity: null, unit: null };
 
   const rawQuantity = quantityMatch[1].trim();
