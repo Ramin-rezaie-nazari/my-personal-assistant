@@ -11,6 +11,7 @@ const MAX_BYTES = 60 * 1024;
 const CONCURRENCY = Math.min(Math.max(Number(process.env.RECIPE_IMAGE_CONCURRENCY || '3'), 1), 4);
 const DATASET_DIR = process.env.RECIPE_IMAGE_DATASET_DIR ? resolve(process.env.RECIPE_IMAGE_DATASET_DIR) : null;
 const RESET = process.env.RECIPE_IMAGE_RESET === '1';
+const RESET_CONFIRM = process.env.RECIPE_IMAGE_RESET_CONFIRM === 'DELETE_ALL_RECIPE_IMAGES';
 const DATASET_SLUG = 'pes12017000148/food-ingredients-and-recipe-dataset-with-images';
 const DATASET_URL = 'https://www.kaggle.com/datasets/pes12017000148/food-ingredients-and-recipe-dataset-with-images';
 const DATASET_SOURCE = 'Food Ingredients and Recipes Dataset with Images';
@@ -48,12 +49,21 @@ async function deleteStorage(key) {
   if (!r.ok && r.status !== 404) throw new Error(`Storage delete failed: ${r.status} ${await r.text()}`);
 }
 
-async function resetState() {
+async function listStorageObjects(prefix) {
   const files = [];
-  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, { method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ prefix: 'recipes', limit: 1000, offset: 0, sortBy: { column: 'name', order: 'asc' } }) });
-  const text = await r.text();
-  if (!r.ok) throw new Error(`Storage list failed: ${r.status} ${text}`);
-  for (const item of JSON.parse(text)) if (item?.name) files.push(`recipes/${item.name}`);
+  for (let offset = 0; ; offset += 1000) {
+    const r = await fetch(`${SUPABASE_URL}/storage/v1/object/list/${BUCKET}`, { method: 'POST', headers: { ...authHeaders, 'Content-Type': 'application/json' }, body: JSON.stringify({ prefix, limit: 1000, offset, sortBy: { column: 'name', order: 'asc' } }) });
+    const text = await r.text();
+    if (!r.ok) throw new Error(`Storage list failed: ${r.status} ${text}`);
+    const page = JSON.parse(text);
+    for (const item of page) if (item?.name) files.push(`${prefix}/${item.name}`);
+    if (page.length < 1000) return files;
+  }
+}
+
+async function resetState() {
+  if (!RESET_CONFIRM) throw new Error('RESET requested but destructive confirmation is missing. Set RECIPE_IMAGE_RESET_CONFIRM=DELETE_ALL_RECIPE_IMAGES explicitly.');
+  const files = await listStorageObjects('recipes');
   for (const key of files) await deleteStorage(key);
   await rest('recipe_images?image_type=eq.hero', { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
   await rest('recipe_image_import_attempts?recipe_id=not.is.null', { method: 'DELETE', headers: { Prefer: 'return=minimal' } });
@@ -80,90 +90,16 @@ function imageIndex(root) {
     for (const name of readdirSync(dir)) {
       const full = join(dir, name); const s = statSync(full);
       if (s.isDirectory()) stack.push(full);
-      else if (exts.has(extname(name).toLowerCase())) {
-        count += 1;
-        const stem = name.slice(0, -extname(name).length);
-        if (!index.has(name)) index.set(name, full);
-        if (!index.has(stem)) index.set(stem, full);
-      }
+      else if (exts.has(extname(name).toLowerCase())) { count += 1; const stem = name.slice(0, -extname(name).length); if (!index.has(name)) index.set(name, full); if (!index.has(stem)) index.set(stem, full); }
     }
   }
   return { index, count };
 }
+async function sourceRows() { const rows = []; for (let offset = 0; ; offset += 1000) { const page = await rest(`recipe_source_raw?select=recipe_id,image_name&order=created_at.asc&limit=1000&offset=${offset}`); rows.push(...(page || [])); if (!page || page.length < 1000) break; } return rows; }
+async function existingIds() { const ids = new Set(); for (let offset = 0; ; offset += 1000) { const page = await rest(`recipe_images?select=recipe_id&image_type=eq.hero&limit=1000&offset=${offset}`); for (const row of page || []) ids.add(row.recipe_id); if (!page || page.length < 1000) break; } return ids; }
+async function mark(recipeId, status, reason) { await rest('recipe_image_import_attempts', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify({ recipe_id: recipeId, status, reason, attempt_count: 1, updated_at: new Date().toISOString() }) }); }
+async function compress(input) { for (const width of [960, 880, 800, 720, 640, 576, 512, 448, 384, 320]) for (const quality of [76, 70, 64, 58, 52, 46, 40, 34, 28]) { const out = await sharp(input).rotate().resize({ width, height: width, fit: 'inside', withoutEnlargement: true }).webp({ quality, effort: 6 }).toBuffer(); if (out.byteLength <= MAX_BYTES) { const meta = await sharp(out).metadata(); return { out, width: meta.width ?? width, height: meta.height ?? width }; } } throw new Error('No WebP variant <= 60KB'); }
+async function importOne(row, file) { const input = await readFile(file); const c = await compress(input); const key = `recipes/${row.recipe_id}/hero.webp`; const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${key.split('/').map(encodeURIComponent).join('/')}`; const upload = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${key.split('/').map(encodeURIComponent).join('/')}`, { method: 'POST', headers: { ...authHeaders, 'Content-Type': 'image/webp', 'Cache-Control': '31536000', 'x-upsert': 'true' }, body: c.out }); const uploadText = await upload.text(); if (!upload.ok) throw new Error(`Storage upload ${upload.status}: ${uploadText}`); try { await rest('recipe_images', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify({ recipe_id: row.recipe_id, image_type: 'hero', step_number: null, image_url: url, width: c.width, height: c.height, byte_size: c.out.byteLength, mime_type: 'image/webp', alt_text: row.image_name, sort_order: 0, storage_key: key, source_name: DATASET_SOURCE, source_url: DATASET_URL, source_license: DATASET_LICENSE, source_attribution: `${DATASET_SOURCE}; ${DATASET_LICENSE}; exact Image_Name mapping. Transformed only by resize/recompression to WebP <= 60KB.` }) }); } catch (e) { await deleteStorage(key); throw e; } return c.out.byteLength; }
 
-async function sourceRows() {
-  const rows = [];
-  for (let offset = 0; ; offset += 1000) {
-    const page = await rest(`recipe_source_raw?select=recipe_id,image_name&order=created_at.asc&limit=1000&offset=${offset}`);
-    rows.push(...(page || []));
-    if (!page || page.length < 1000) break;
-  }
-  return rows;
-}
-
-async function existingIds() {
-  const ids = new Set();
-  for (let offset = 0; ; offset += 1000) {
-    const page = await rest(`recipe_images?select=recipe_id&image_type=eq.hero&limit=1000&offset=${offset}`);
-    for (const row of page || []) ids.add(row.recipe_id);
-    if (!page || page.length < 1000) break;
-  }
-  return ids;
-}
-
-async function mark(recipeId, status, reason) {
-  await rest('recipe_image_import_attempts', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify({ recipe_id: recipeId, status, reason, attempt_count: 1, updated_at: new Date().toISOString() }) });
-}
-
-async function compress(input) {
-  for (const width of [960, 880, 800, 720, 640, 576, 512, 448, 384, 320]) {
-    for (const quality of [76, 70, 64, 58, 52, 46, 40, 34, 28]) {
-      const out = await sharp(input).rotate().resize({ width, height: width, fit: 'inside', withoutEnlargement: true }).webp({ quality, effort: 6 }).toBuffer();
-      if (out.byteLength <= MAX_BYTES) { const meta = await sharp(out).metadata(); return { out, width: meta.width ?? width, height: meta.height ?? width }; }
-    }
-  }
-  throw new Error('No WebP variant <= 60KB');
-}
-
-async function importOne(row, file) {
-  const input = await readFile(file);
-  const c = await compress(input);
-  const key = `recipes/${row.recipe_id}/hero.webp`;
-  const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${key.split('/').map(encodeURIComponent).join('/')}`;
-  const upload = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${key.split('/').map(encodeURIComponent).join('/')}`, { method: 'POST', headers: { ...authHeaders, 'Content-Type': 'image/webp', 'Cache-Control': '31536000', 'x-upsert': 'true' }, body: c.out });
-  const uploadText = await upload.text();
-  if (!upload.ok) throw new Error(`Storage upload ${upload.status}: ${uploadText}`);
-  try {
-    await rest('recipe_images', { method: 'POST', headers: { Prefer: 'resolution=merge-duplicates,return=minimal' }, body: JSON.stringify({ recipe_id: row.recipe_id, image_type: 'hero', step_number: null, image_url: url, width: c.width, height: c.height, byte_size: c.out.byteLength, mime_type: 'image/webp', alt_text: row.image_name, sort_order: 0, storage_key: key, source_name: DATASET_SOURCE, source_url: DATASET_URL, source_license: DATASET_LICENSE, source_attribution: `${DATASET_SOURCE}; ${DATASET_LICENSE}; exact Image_Name mapping. Transformed only by resize/recompression to WebP <= 60KB.` }) });
-  } catch (e) { await deleteStorage(key); throw e; }
-  return c.out.byteLength;
-}
-
-async function main() {
-  await ensureBucket();
-  if (RESET) await resetState();
-  const root = datasetRoot();
-  const { index, count } = imageIndex(root);
-  const rows = await sourceRows();
-  const done = await existingIds();
-  const work = rows.filter((row) => row.image_name && !done.has(row.recipe_id));
-  const stats = { imported: 0, skipped: 0, failed: 0, alreadyDone: rows.length - work.length, total: work.length };
-  console.log(JSON.stringify({ datasetRoot: root, discoveredImages: count, sourceRows: rows.length, todo: work.length, concurrency: CONCURRENCY }, null, 2));
-  let cursor = 0;
-  async function worker() {
-    while (true) {
-      const i = cursor++;
-      if (i >= work.length) return;
-      const row = work[i];
-      const file = index.get(row.image_name) || index.get(`${row.image_name}.jpg`) || index.get(`${row.image_name}.jpeg`) || index.get(`${row.image_name}.png`);
-      if (!file) { stats.skipped += 1; await mark(row.recipe_id, 'skipped', `Dataset image not found for Image_Name=${row.image_name}`); continue; }
-      try { const bytes = await importOne(row, file); stats.imported += 1; if ((stats.imported + stats.skipped + stats.failed) % 25 === 0) console.log(JSON.stringify({ progress: stats.imported + stats.skipped + stats.failed, ...stats, lastBytes: bytes }, null, 2)); }
-      catch (e) { stats.failed += 1; const reason = e instanceof Error ? e.message : String(e); await mark(row.recipe_id, 'failed', reason); console.error(`[FAILED] ${row.recipe_id} ${row.image_name}: ${reason}`); }
-    }
-  }
-  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, work.length) }, () => worker()));
-  console.log(JSON.stringify({ status: 'complete', ...stats }, null, 2));
-  if (stats.failed > 0) process.exitCode = 1;
-}
-
+async function main() { await ensureBucket(); if (RESET) await resetState(); const root = datasetRoot(); const { index, count } = imageIndex(root); const rows = await sourceRows(); const done = await existingIds(); const work = rows.filter((row) => row.image_name && !done.has(row.recipe_id)); const stats = { imported: 0, skipped: 0, failed: 0, alreadyDone: rows.length - work.length, total: work.length }; console.log(JSON.stringify({ datasetRoot: root, discoveredImages: count, sourceRows: rows.length, todo: work.length, concurrency: CONCURRENCY }, null, 2)); let cursor = 0; async function worker() { while (true) { const i = cursor++; if (i >= work.length) return; const row = work[i]; const file = index.get(row.image_name) || index.get(`${row.image_name}.jpg`) || index.get(`${row.image_name}.jpeg`) || index.get(`${row.image_name}.png`); if (!file) { stats.skipped += 1; await mark(row.recipe_id, 'skipped', `Dataset image not found for Image_Name=${row.image_name}`); continue; } try { const bytes = await importOne(row, file); stats.imported += 1; if ((stats.imported + stats.skipped + stats.failed) % 25 === 0) console.log(JSON.stringify({ progress: stats.imported + stats.skipped + stats.failed, ...stats, lastBytes: bytes }, null, 2)); } catch (e) { stats.failed += 1; const reason = e instanceof Error ? e.message : String(e); await mark(row.recipe_id, 'failed', reason); console.error(`[FAILED] ${row.recipe_id} ${row.image_name}: ${reason}`); } } } await Promise.all(Array.from({ length: Math.min(CONCURRENCY, work.length) }, () => worker())); console.log(JSON.stringify({ status: 'complete', ...stats }, null, 2)); if (stats.failed > 0) process.exitCode = 1; }
 main().catch((e) => { console.error(e); process.exit(1); });
