@@ -45,7 +45,7 @@ describe('LocalLanguageUnderstandingService', () => {
     const result = service.understand(
       'برای ۴ نفر بودجه غذا حداکثر ۱۵ میلیون تومان و پروتئین ۱۲۰ گرم برای شام میخوام، بدون شیر وگان نباشه',
     );
-    expect(result.intent).toBe('RECOMMEND_MEAL');
+    expect(result.intent).toBe('PLAN_FOOD_BUDGET');
     expect(result.entities.householdSize).toBe(4);
     expect(result.entities.budgetAmount).toBe(15_000_000);
     expect(result.entities.budgetCurrency).toBe('IRT');
@@ -59,6 +59,7 @@ describe('LocalLanguageUnderstandingService', () => {
     const result = service.understand('حداکثر بودجه 500 USD برای غذا');
     expect(result.entities.budgetAmount).toBe(500);
     expect(result.entities.budgetCurrency).toBe('USD');
+    expect(result.intent).toBe('PLAN_FOOD_BUDGET');
   });
 
   it('extracts allergy constraints as hard safety-relevant context', () => {
