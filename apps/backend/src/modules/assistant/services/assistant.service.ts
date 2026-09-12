@@ -128,6 +128,7 @@ export class AssistantService {
       ADD_TO_BASKET: { intent: 'shopping', nextAction: 'add_to_basket', message: 'باشه، به سبد خرید اضافه‌اش می‌کنم.' },
       REMOVE_FROM_BASKET: { intent: 'shopping', nextAction: 'remove_from_basket', message: 'باشه، از سبد خرید حذفش می‌کنم.' },
       RECOMMEND_MEAL: { intent: 'nutrition', nextAction: 'recommend_meal', message: 'حتماً، بر اساس اطلاعات خودت یک گزینه مناسب پیدا می‌کنم.' },
+      PLAN_FOOD_BUDGET: { intent: 'shopping', nextAction: 'plan_food_budget', message: 'حتماً، بودجه غذا رو با توجه به اطلاعات و قیمت‌های موجود برنامه‌ریزی می‌کنم.' },
       GET_NUTRITION_SUMMARY: { intent: 'nutrition', nextAction: 'get_nutrition_summary', message: 'حتماً، خلاصه تغذیه امروزت رو بررسی می‌کنم.' },
       CREATE_REMINDER: { intent: 'reminder', nextAction: 'create_reminder', message: 'حتماً، یادآوری رو برایت آماده می‌کنم.' },
       UPDATE_REQUEST: { intent: 'assistant', nextAction: 'update_contextual_request', message: 'باشه، درخواست قبلی رو با تغییر جدیدت به‌روزرسانی می‌کنم.' },
@@ -184,7 +185,8 @@ export class AssistantService {
     if (text.includes('habit')) return 'habit';
     if (text.includes('supplement') || text.includes('vitamin')) return 'supplement';
     if (text.includes('notification')) return 'notification';
-    if (text.includes('basket')) return 'shopping';
+    if (text.includes('basket') || text.includes('food_budget')) return 'shopping';
     return undefined;
   }
+
 }
