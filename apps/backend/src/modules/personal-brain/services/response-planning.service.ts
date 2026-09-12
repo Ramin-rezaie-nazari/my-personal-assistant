@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { ConversationStyleService } from '../../conversation-engine/services/conversation-style.service';
 
 import { ResponsePlan, ResponsePlanningInput } from '../types';
+import { ConversationLanguage } from '../../conversation-engine/types';
 
 @Injectable()
 export class ResponsePlanningService {
@@ -11,13 +12,13 @@ export class ResponsePlanningService {
   ) {}
 
   createPlan(input: ResponsePlanningInput): ResponsePlan {
-    const style = this.conversationStyleService.getDefaultStyle();
+    const requestedLanguage = input.reasoningContext.userContext.preferences?.language;
+    const language: ConversationLanguage = requestedLanguage === 'fa' || requestedLanguage === 'en' ? requestedLanguage : 'en';
+    const style = this.conversationStyleService.getDefaultStyle(language);
 
     const message = input.decision.canDecide
-      ? (input.decision.recommendation ??
-        'I can provide goal-specific guidance')
-      : (input.decision.nextAction ??
-        'I need more information to help you better');
+      ? (input.decision.recommendation ?? (language === 'fa' ? 'می‌توانم بر اساس هدف تو راهنمایی بدهم.' : 'I can provide goal-specific guidance.'))
+      : (input.decision.nextAction ?? (language === 'fa' ? 'برای کمک دقیق‌تر به اطلاعات بیشتری نیاز دارم.' : 'I need more information to help you better.'));
 
     return {
       tone: style.tone,
