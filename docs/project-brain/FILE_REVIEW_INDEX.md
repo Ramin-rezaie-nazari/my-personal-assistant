@@ -1,13 +1,13 @@
 # File Review Index
 
 Last updated: 2026-09-12
-Review status: SOURCE-LEVEL AUDIT RECONCILED; APPENDIX REMEDIATION VERIFIED; ENVIRONMENTAL VALIDATION BLOCKED
+Review status: SOURCE-LEVEL AUDIT RECONCILED; APPENDIX REMEDIATION VERIFIED THROUGH PB-270; ENVIRONMENTAL VALIDATION BLOCKED
 
 ## Source scope closed
 
-The audit records direct/reconciled coverage across the complete enumerated backend Core, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget, Shopping/Inventory/Price, Life/Health, Fitness/Workout/Calisthenics/Gym/Yoga, Platform/Test/CI and recorded Mobile source scopes; complete Prisma schema + all 39 migration SQL files; route/controller/DTO/guard and consumer reconciliation; operational recipe scripts; account-erasure/ownership/index checks; DB raw-SQL/migration-only/index/transaction matrix; Project Brain findings/reconciliation artifacts; and historical Appendix recovery attempts.
+The audit records direct/reconciled coverage across the complete enumerated backend Core, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget, Shopping/Inventory/Price, Life/Health, Fitness/Workout/Calisthenics/Gym/Yoga, Platform/Test/CI and recorded Mobile source scopes; complete Prisma schema + all 39 migration SQL files; route/controller/DTO/guard and consumer reconciliation; operational recipe scripts; account-erasure/ownership/index checks; DB raw-SQL/migration-only/index/transaction matrix; Project Brain findings/reconciliation artifacts; historical Appendix recovery attempts; and focused Inventory/Recipe → Shopping unit semantics.
 
-The source-level findings catalog is canonically reconciled through PB-257 in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`. The separate Appendix remediation phase is complete for the recoverable finding set and has green Backend/Mobile CI evidence on remediation commit `46614b36040cb839d6062dae726dc74e51ab3b96`.
+The source-level findings catalog is canonically reconciled through PB-270 in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`. The separate Appendix remediation phase is complete for the recoverable finding set and the PB-270 remediation has green Backend/Mobile CI evidence on `1f3f73601183779fbef865a82ce2ea3dee3f8c33`.
 
 ## Explicit source-level closure controls
 
@@ -15,7 +15,7 @@ The source-level findings catalog is canonically reconciled through PB-257 in `d
 - DB schema/migration/raw-SQL/reader/writer/relation/transaction/index reconciliation: CLOSED FOR SOURCE EVIDENCE.
 - Security/ownership/auth/session/account-erasure source review: CLOSED FOR SOURCE EVIDENCE.
 - CI/workflow/package/operational entrypoint review: CLOSED FOR SOURCE EVIDENCE.
-- Canonical Appendix reconciliation: CLOSED through PB-257; withdrawn/reclassified findings remain explicitly recorded.
+- Canonical Appendix reconciliation: CLOSED through PB-270; withdrawn/reclassified findings remain explicitly recorded.
 - Historical PB-001..PB-155 exact prose: NOT RECOVERABLE from exposed Git history; no history fabricated.
 
 ## Batches
@@ -50,6 +50,7 @@ The source-level findings catalog is canonically reconciled through PB-257 in `d
 | BATCH-0029 | CI/workflow/package gate recheck | COMPLETE | Backend/Mobile/branch validation separation |
 | BATCH-0030 | Canonical Appendix + DB matrix + source closure | COMPLETE | Appendix reconciled through PB-257 |
 | BATCH-0031 | Project Brain reconciliation after Appendix CI closure | COMPLETE | Current-state, overview, architecture, core/brain/food/shopping/life/fitness/platform/mobile deep-read documents, checkpoints, gaps and decision log synchronized |
+| BATCH-0032 | Inventory/Recipe → Shopping unit reconciliation | COMPLETE | PB-270; unit-safe basket merge conversion/rejection plus direct regression coverage; Backend/Mobile CI green |
 
 ## Database
 
