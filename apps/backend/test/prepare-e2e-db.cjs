@@ -1,4 +1,3 @@
-const { spawnSync } = require('node:child_process');
 const path = require('node:path');
 const dotenv = require('dotenv');
 
@@ -10,10 +9,8 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const result = spawnSync('pnpm', ['prisma', 'db', 'push'], {
-  cwd: path.resolve(__dirname, '..'),
-  stdio: 'inherit',
-  env: process.env,
-});
-
-process.exit(result.status ?? 1);
+// The CI workflow is responsible for applying the committed Prisma migration
+// history before E2E starts. This preparation step must not call `prisma db push`,
+// because schema-push can hide migration drift and mutate the migration-tested DB.
+console.log(`E2E database prepared by committed Prisma migrations: ${process.env.DATABASE_URL.replace(/:\/\/[^@]+@/, '://***@')}`);
+process.exit(0);
