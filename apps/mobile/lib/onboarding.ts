@@ -1,55 +1,26 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiRequest } from './api';
 
 export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
 export type WorkoutPlace = 'home' | 'gym' | 'both';
 
 export type OnboardingState = {
-  completed: boolean;
-  fullName: string;
-  gender: Gender | '';
-  birthDate: string;
-  heightCm: string;
-  weightKg: string;
+  completed: boolean; fullName: string; gender: Gender | ''; birthDate: string; heightCm: string; weightKg: string;
   goal: 'fat_loss' | 'body_sculpt' | 'strength' | 'general_fitness';
   fitnessLevel: 'beginner' | 'foundation' | 'intermediate' | 'advanced';
   diet: 'balanced' | 'high_protein' | 'vegetarian' | 'vegan' | 'halal';
-  workoutPlace: WorkoutPlace;
-  trainingDaysPerWeek: 2 | 3 | 4 | 5 | 6;
-  equipment: 'none' | 'home' | 'gym';
-  sessionMinutes: 20 | 30 | 45 | 60;
+  workoutPlace: WorkoutPlace; trainingDaysPerWeek: 2 | 3 | 4 | 5 | 6; equipment: 'none' | 'home' | 'gym'; sessionMinutes: 20 | 30 | 45 | 60;
   detectedCountry: string;
-  permissions: {
-    location: boolean;
-    notifications: boolean;
-    camera: boolean;
-    microphone: boolean;
-  };
+  permissions: { location: boolean; notifications: boolean; camera: boolean; microphone: boolean };
 };
 
 export const ONBOARDING_STORAGE_KEY = '@my-personal-assistant/onboarding';
 export const ONBOARDING_VERSION = 3;
 
 export const DEFAULT_ONBOARDING: OnboardingState = {
-  completed: false,
-  fullName: '',
-  gender: '',
-  birthDate: '',
-  heightCm: '',
-  weightKg: '',
-  goal: 'general_fitness',
-  fitnessLevel: 'beginner',
-  diet: 'balanced',
-  workoutPlace: 'home',
-  trainingDaysPerWeek: 3,
-  equipment: 'none',
-  sessionMinutes: 30,
-  detectedCountry: '',
-  permissions: {
-    location: false,
-    notifications: false,
-    camera: false,
-    microphone: false,
-  },
+  completed: false, fullName: '', gender: '', birthDate: '', heightCm: '', weightKg: '', goal: 'general_fitness',
+  fitnessLevel: 'beginner', diet: 'balanced', workoutPlace: 'home', trainingDaysPerWeek: 3, equipment: 'none', sessionMinutes: 30,
+  detectedCountry: '', permissions: { location: false, notifications: false, camera: false, microphone: false },
 };
 
 export async function getOnboardingState(): Promise<OnboardingState> {
@@ -58,33 +29,31 @@ export async function getOnboardingState(): Promise<OnboardingState> {
   try {
     const parsed = JSON.parse(raw) as Partial<OnboardingState> & { version?: number };
     if (parsed.version !== ONBOARDING_VERSION) return DEFAULT_ONBOARDING;
-    return {
-      ...DEFAULT_ONBOARDING,
-      ...parsed,
-      permissions: {
-        ...DEFAULT_ONBOARDING.permissions,
-        ...(parsed.permissions ?? {}),
-      },
-    };
-  } catch {
-    return DEFAULT_ONBOARDING;
-  }
+    return { ...DEFAULT_ONBOARDING, ...parsed, permissions: { ...DEFAULT_ONBOARDING.permissions, ...(parsed.permissions ?? {}) } };
+  } catch { return DEFAULT_ONBOARDING; }
 }
 
 export async function setOnboardingState(state: OnboardingState): Promise<void> {
-  await AsyncStorage.setItem(
-    ONBOARDING_STORAGE_KEY,
-    JSON.stringify({ ...state, version: ONBOARDING_VERSION }),
-  );
+  await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ ...state, version: ONBOARDING_VERSION }));
+  if (!state.completed) return;
+  const heightCm = Number(state.heightCm);
+  const weightKg = Number(state.weightKg);
+  const payload = {
+    fullName: state.fullName.trim() || undefined,
+    gender: state.gender || undefined,
+    birthDate: /^\d{4}-\d{2}-\d{2}/.test(state.birthDate) ? state.birthDate : undefined,
+    heightCm: Number.isInteger(heightCm) ? heightCm : undefined,
+    weightKg: Number.isInteger(weightKg) ? weightKg : undefined,
+    goal: state.goal,
+    fitnessLevel: state.fitnessLevel,
+    diet: state.diet,
+    currentStep: 'completed',
+  };
+  await apiRequest('/onboarding/complete', { method: 'POST', body: JSON.stringify(payload) });
 }
 
-export async function hasCompletedOnboarding(): Promise<boolean> {
-  const state = await getOnboardingState();
-  return state.completed;
-}
-
+export async function hasCompletedOnboarding(): Promise<boolean> { return (await getOnboardingState()).completed; }
 export function calculateBMI(heightCm: number, weightKg: number): number | null {
   if (!Number.isFinite(heightCm) || !Number.isFinite(weightKg) || heightCm <= 0 || weightKg <= 0) return null;
-  const meters = heightCm / 100;
-  return Number((weightKg / (meters * meters)).toFixed(1));
+  const meters = heightCm / 100; return Number((weightKg / (meters * meters)).toFixed(1));
 }
