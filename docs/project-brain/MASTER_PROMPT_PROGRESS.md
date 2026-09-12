@@ -9,10 +9,10 @@ This document tracks post-Appendix product-development work against the MYPA Mas
 
 ## Baseline
 
-- Appendix remediation: complete for the recoverable PB-156..PB-257 catalog; new product-development findings are now tracked in the Appendix as PB-258+.
-- Backend and Mobile CI have repeatedly passed through the Master-0003 tree; the latest HEAD continues through fresh validation after subsequent changes.
-- Project Brain source-level audit: reconciled to available repository evidence.
-- Product readiness is not 100%; remaining work includes deeper mobile journeys, central/local Brain orchestration, full nutrition/food budget loop, global intelligence depth, offline behavior, voice/action UX, production validation and future integrations.
+- Appendix remediation is complete for the recoverable PB-156..PB-257 catalog; new product-development findings are tracked in the same Appendix from PB-258 onward.
+- Backend and Mobile CI have passed on the currently verified product tree.
+- Project Brain source-level audit is reconciled to available repository evidence.
+- Product readiness is not 100%; remaining work includes the rest of the Food OS vertical, deeper central/local Brain orchestration, full mobile journeys, offline behavior, voice/action UX, global intelligence depth, production validation and future integrations.
 
 ## Product workstream order
 
@@ -34,67 +34,79 @@ Status: COMPLETE.
 ### MASTER-0002 — deterministic local Brain context
 Status: VERIFIED_BY_TEST.
 
-Changes:
-- `LocalLanguageUnderstandingService` extracts household size, budget amount/currency, protein target, calorie target, dietary preferences, allergy context, time/duration, food and core assistant intents.
-- Persian numeric normalization and label-first numeric target parsing are covered.
-- `PlanningService` propagates structured local entities into actionable plan steps.
-- `AssistantService` merges contextual-command and local-understanding entities before planning and passes local understanding/plan context into execution.
-- `DecisionActionAdapter` type-checks advertised action capability metadata.
-- `LocalMealRecommendationActionAdapter` exposes `recommend_meal`, passes supported nutrition constraints into `FoodOperatingLoopService`, and enforces fail-closed behavior where verified safety data is insufficient.
-
-Validation:
-- Backend CI `34686237627`: SUCCESS — migrations/idempotence, food-intelligence self-test, backend build, 427/427 unit tests and API E2E passed.
-- Mobile CI `34686237631`: SUCCESS — install, typecheck, source tests, Jest specs, Expo validation and Android JS bundle passed.
+Completed:
+- local Persian/English normalization;
+- core intent classification;
+- household size, budget amount/currency, protein, calorie, time/duration extraction;
+- dietary preference and allergy detection;
+- local/contextual entity merge into PlanningService and executable steps;
+- central recommendation action registration;
+- Brain → Food Operating Loop connection;
+- fail-closed unsupported allergy/diet handling.
 
 ### MASTER-0003 — recipe/ingredient safety taxonomy
 Status: VERIFIED_BY_TEST.
 
-Changes:
-- Added `FoodSafetyTaxonomyService` backed by the canonical ingredient taxonomy's names, aliases and deterministic flags.
-- Added explicit `known`/`unknown` resolution state and fail-closed evaluation when constrained recipes contain unknown safety ingredients.
-- Implemented supported hard filters for milk/dairy, peanuts, tree nuts, fish, shellfish, vegan, vegetarian and gluten-free semantics where canonical flags exist.
-- Integrated safety evaluation into `FoodOperatingLoopService.recommend()` before inventory/nutrition scoring so blocked recipes are not merely down-ranked.
-- Connected the safety-aware recommendation path to the local Brain `recommend_meal` adapter.
-- Added deterministic build packaging for the taxonomy asset and direct resolver/service test coverage.
-- Preserved the boundary that this is not a claim of complete allergen coverage for every possible ingredient or production dataset.
+Completed:
+- taxonomy-backed canonical ingredient safety resolver;
+- explicit known/unknown semantics;
+- supported hard filters where canonical evidence exists;
+- fail-closed unknown behavior;
+- safety filtering before scoring;
+- deterministic build asset packaging;
+- direct resolver/service coverage.
 
 Validation:
-- Backend CI `34686577253`: SUCCESS — dependency installation, Prisma validation/generation, migrations/idempotence, food-intelligence self-test, build, unit tests and API E2E passed.
-- Mobile CI `34686577182`: SUCCESS — dependency installation, typecheck, source tests, committed Jest specs, Expo validation and Android JS bundle passed.
+- Backend CI `34686577253`: SUCCESS.
+- Mobile CI `34686577182`: SUCCESS.
 
 ### MASTER-0004 — Nutrition/Food → Pantry/Inventory → Shopping → Budget
-Status: IN_PROGRESS.
+Status: BACKEND SLICE VERIFIED_BY_CI; FULL VERTICAL IN PROGRESS.
 
-Completed in this slice:
-- Shopping Intelligence facade is now connected to the canonical user-scoped `ShoppingService.smartList()` and `ShoppingService.listBasket()` instead of returning a placeholder empty plan.
-- `GET /shopping-intelligence` is now protected by `JwtAuthGuard` and passes `req.user.id` into the service.
-- Direct Shopping Intelligence service/controller tests were added.
-- Shopping budget calculations now preserve a requested budget currency, ignore mismatched quotes, and keep incompatible prices out of returned budget values.
-- Basket decisions now apply the remaining budget sequentially across items.
-- `wait`/`compare_more` decisions do not consume committed basket budget; only `buy_now` selections become `selectedPrice`/cost.
-- Inventory intelligence was moved to the Inventory domain to break a real module cycle; the old path remains a compatibility re-export.
-- Canonical Inventory intelligence is registered/exported once and consumed by Shopping Intelligence through `InventoryModule`.
+Completed and verified on tree `9c0b31cfcd310d75eda68de80e739cc29d6e3d19`:
+- active Shopping Intelligence facade delegates to canonical user-scoped ShoppingService;
+- `GET /shopping-intelligence` is JWT protected;
+- direct Shopping Intelligence service/controller tests;
+- currency-safe shopping budget semantics;
+- sequential remaining-budget accounting;
+- only committed `buy_now` selections consume committed basket cost;
+- Inventory intelligence owned by Inventory domain, removing the real module cycle;
+- canonical `PriceProductKeyService` for deterministic `FoodItem.name → PriceTrackedProduct.productKey` mapping using the existing locale-aware contract;
+- deterministic `BudgetIntelligenceService.createPlan()` using user-scoped inventory and compatible price snapshots;
+- exact unit/currency compatibility checks;
+- seven-day price freshness boundary;
+- explicit price provenance (`priceSourceId`, `priceObservedAt`);
+- explicit `price_unavailable`, `currency_mismatch`, `unit_mismatch`, `stale_price`, and `over_budget` states;
+- authenticated `/budget-intelligence/plan` route;
+- local `PLAN_FOOD_BUDGET` intent and Brain execution action wiring;
+- authenticated and unauthenticated API E2E coverage for Shopping Intelligence and Budget Plan.
 
-Current blocker / next contract:
-- Price data is keyed by `PriceTrackedProduct.productKey` while recipe ingredients reference `FoodItem.id`; no persisted verified mapping currently exists between those domains. Budget estimation must not use fuzzy matching. A small explicit FoodItem→PriceTrackedProduct mapping contract is the next data-model step before end-to-end recipe-cost budgeting can be claimed complete.
+Validation on this verified tree:
+- Backend CI `34688191807`: SUCCESS — dependency install, Prisma validate/generate, migrations/idempotence, food self-test, build, unit tests, API E2E.
+- Mobile CI `34688191731`: SUCCESS — dependency install, typecheck, source tests, committed Jest specs, Expo validation, Android JS bundle.
 
-Validation:
-- Latest completed product validation before the newest documentation-only changes is recorded in the CI history above.
-- Fresh CI for the current HEAD is required after the latest Shopping Intelligence/module-graph changes before this batch can be marked VERIFIED_BY_TEST.
+Current remaining work inside MASTER-0004:
+- connect recipe scaled/missing ingredients directly to deterministic budget costing;
+- connect budget results to shopping generation as one coherent domain journey;
+- broaden price coverage and multi-source freshness handling;
+- remove remaining placeholder-level Budget/Shopping intelligence artifacts where they are not active consumers;
+- complete Mobile Budget/Shopping UX and offline states;
+- add richer end-user explanations and actionable alternatives when price evidence is missing or budget is insufficient.
 
 ## Current architectural decisions
 
-- Deterministic local Brain context remains provider-independent and cloud-AI-free.
-- Hard allergy/diet filtering is allowed only when canonical ingredient safety evidence exists; unknown ingredient safety remains a hard stop.
-- Safety taxonomy is an ingredient-level evidence layer, not a substitute for complete regulatory/allergen coverage.
-- Shopping Intelligence must reuse the canonical Shopping/Inventory domains rather than maintain a parallel user-data implementation.
-- Currency mismatch is fail-closed for budget calculations; no implicit FX conversion occurs unless an explicit fresh-rate contract is present.
-- Module ownership follows domain direction: Inventory owns inventory intelligence; Shopping Intelligence orchestrates shopping behavior and may depend on Inventory, but Inventory must not depend back on Shopping Intelligence.
+- Deterministic local Brain remains provider-independent and cloud-AI-free.
+- Hard allergy/diet filtering is permitted only from canonical safety evidence; unknowns block constrained recommendations.
+- Shopping Intelligence reuses canonical Shopping/Inventory data services rather than maintaining parallel persistence logic.
+- Currency mismatch is fail-closed; no implicit FX conversion without an explicit fresh-rate contract.
+- Inventory owns inventory intelligence; Shopping Intelligence depends on Inventory and must not create a reverse module dependency.
+- Monetary estimates use deterministic FoodItem-name product-key mapping only; fuzzy matching is forbidden for money.
+- Price freshness is bounded to seven days for Budget planning; stale snapshots do not become current costs.
 
 ## Next
 
-`MASTER-0004` continues with an explicit FoodItem→PriceTrackedProduct mapping contract, then recipe missing-ingredient costing, budget planning, shopping generation, and finally the mobile user journey with loading/empty/error/offline states.
+`MASTER-0004` next slice: recipe missing-ingredient → verified price → budget impact → shopping generation, then the corresponding mobile user journey.
 
 ## Evidence boundary
 
-The repository is being modified on `audit/project-brain-2026-09-11`. No automatic merge to `main` is performed. Production/deployed infrastructure and physical-device behavior remain outside the available runtime unless explicitly validated.
+Repository/source and the cited GitHub Actions runs are verified. Production/deployed database/RLS/storage state, physical-device UX, push delivery, external provider quotas and store-release validation remain outside the current runtime boundary.
