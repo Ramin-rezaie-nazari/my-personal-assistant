@@ -16,7 +16,7 @@ describe('BudgetIntelligenceService', () => {
   it('converts compatible price evidence into the recipe quantity unit before costing', async () => {
     const service = new BudgetIntelligenceService({ list: jest.fn() } as never, { latest: jest.fn().mockResolvedValue([{ currency: 'USD', unit: 'L', unitPrice: 4, observedAt: new Date(), sourceId: 'per-liter' }]) } as never, { fromFoodName: jest.fn(() => 'milk') } as never);
     const result = await service.quoteItems([{ foodId: 'food-1', name: 'Milk', quantity: 500, unit: 'ml' }], 'USD', 10);
-    expect(result.items[0]).toMatchObject({ status: 'priced', price: 0.01, estimatedCost: 2, priceSourceId: 'per-liter' });
+    expect(result.items[0]).toMatchObject({ status: 'priced', price: 4, estimatedCost: 2, priceSourceId: 'per-liter' });
     expect(result.budgetRemaining).toBe(8);
   });
 
