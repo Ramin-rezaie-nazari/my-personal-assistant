@@ -6,13 +6,16 @@ on:
       - audit/final-verification-2026-09-12
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   repair:
+    if: github.event.head_commit.message != 'chore(audit): sync pnpm lockfile'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 11.18.0
@@ -24,6 +27,15 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - name: Regenerate lockfile in workspace
         run: pnpm install --no-frozen-lockfile --ignore-scripts
-      - name: Print exact lockfile diff
+      - name: Commit generated lockfile only
         run: |
-          git diff -- pnpm-lock.yaml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add pnpm-lock.yaml
+          if git diff --cached --quiet; then
+            echo 'Lockfile already synchronized.'
+            exit 0
+          fi
+          git diff --cached --stat
+          git commit -m 'chore(audit): sync pnpm lockfile'
+          git push origin HEAD:audit/final-verification-2026-09-12
