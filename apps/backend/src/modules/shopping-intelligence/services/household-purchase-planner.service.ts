@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   HouseholdInventoryIntelligenceService,
   InventoryItem,
-} from './household-inventory-intelligence.service';
+} from '../../inventory/household-inventory-intelligence.service';
 
 export type HouseholdPrice = {
   productKey: string;
