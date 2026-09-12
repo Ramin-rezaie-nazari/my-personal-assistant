@@ -1,27 +1,29 @@
 # MYPA Project Brain — Overview
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
-Scope actually read: current `main` repository metadata, root/backend/mobile package manifests, `apps/backend/src/app.module.ts`, and 47 current-`main` source files across the defined Core scopes (Auth, Users, Profile, Preferences, Onboarding, Settings, Context Engine, Device Intelligence, User Intelligence).
-Scope not yet read: complete repository source beyond Core; deterministic repository-wide inventory/line counts; Prisma schema/migrations; Brain/Food/Shopping/Life/Health/Fitness/Platform/Mobile internals; CI/runtime validation.
-Evidence roots: `package.json`; `apps/backend/package.json`; `apps/mobile/package.json`; `apps/backend/src/app.module.ts`; `apps/backend/src/modules/auth/`; `users/`; `profile/`; `preferences/`; `onboarding/`; `settings/`; `context-engine/`; `device-intelligence/`; `user-intelligence/`.
-Confidence level: MEDIUM for the read Core implementation; LOW for repository-wide completeness.
-Open questions: exact source-file count/line counts; local dirty/process state; full route/mobile/DB mapping; all remaining scopes.
+Last updated: 2026-09-12
+Review status: SOURCE-LEVEL AUDIT RECONCILED; RUNTIME/DEPLOYED VALIDATION BLOCKED
+Scope actually read: the repository audit is recorded through BATCH-0030 with complete enumerated Core/Brain/Food/Shopping/Life-Health/Fitness/Platform/Mobile source scopes, Prisma schema plus 39 migrations, route/controller/DTO/guard and consumer reconciliation, operational recipe scripts, CI/workflows, and canonical findings reconciliation. See `FILE_REVIEW_INDEX.md` and `READING_CHECKPOINTS.md` for batch evidence and boundaries.
+Scope not yet read: no known in-scope source gap remains in the recorded audit scope; production/deployed infrastructure, real-device behavior, external service quotas and exact historical PB-001..PB-155 prose remain outside the available environment.
+Evidence roots: `apps/backend/src/`; `apps/backend/prisma/`; `apps/backend/test/`; `apps/mobile/`; `.github/workflows/`; `tools/`; `docs/project-brain/`.
+Confidence level: HIGH for recorded source-level reads and current remediation evidence; MEDIUM for some cross-module semantic conclusions; LOW only where runtime/deployed evidence is inherently unavailable.
+Open questions: production database/RLS/storage state, real-device notification/voice/offline behavior, external provider configuration/quotas, and historical PB-001..PB-155 text recovery.
 
-## Baseline architecture
+## Current architecture
 
-The current `AppModule` wires a broad modular NestJS backend including authentication, user/account foundations, assistant/personal-brain, food/nutrition/recipes, shopping/inventory, life execution, fitness, device intelligence, decision/adaptive learning, dashboards/command centers and content. Evidence: `apps/backend/src/app.module.ts:4-86`.
+The backend is a modular NestJS application with authenticated account foundations plus assistant/brain, food/nutrition/recipes, shopping/inventory/price, life/health, fitness disciplines, intelligence engines, dashboard/command center and content/runtime modules. Evidence: `apps/backend/src/app.module.ts` and the reconciled module catalog.
 
-The current mobile package is Expo/React Native with Expo Router, AsyncStorage and notifications and exposes a typecheck command. Evidence: `apps/mobile/package.json`.
+The mobile app is Expo/React Native with shared authenticated transport, localization/RTL, notifications and voice/TTS contracts, and CI validation for typecheck, source/Jest tests, Expo validation and Android JS bundling. Evidence: `apps/mobile/` and `.github/workflows/mobile-ci.yml`.
 
-## Core audit findings
+The persistence layer is Prisma/PostgreSQL with the schema and 39 migration files reconciled in the audit. Ownership, transaction, index and migration-only concerns are captured in the DB audit artifacts and canonical Appendix.
 
-Authentication is implemented as controller -> AuthService -> Users/Session services, with Argon2 password handling and separate access/refresh JWT secrets. Evidence: `apps/backend/src/modules/auth/auth.service.ts:21-112`; `apps/backend/src/modules/auth/utils/token.utils.ts:4-28`.
+## Appendix remediation status
 
-User/profile/settings/preferences/onboarding are separate Prisma-backed modules, but onboarding completion has two apparent responsibility paths (`OnboardingService` versus any broader user onboarding persistence if discovered later). This is kept as an open contract question until the rest of the repository is read.
+The canonical `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` is closed for the currently recoverable source-level finding set through PB-257. Concrete findings were remediated or explicitly reclassified/withdrawn; PB-230 remains a historical-evidence limitation rather than a code defect. Latest Backend and Mobile CI runs on the verified remediation tree are green.
 
-Context Engine now has real fusion and priority logic, while `ContextBuilderService` returns a minimal empty snapshot and its controller exposes no HTTP methods. Evidence: `apps/backend/src/modules/context-engine/services/context-builder.service.ts:1-14`; `apps/backend/src/modules/context-engine/controllers/context-engine.controller.ts:1-8`.
+## Engineering boundary
 
-Device Intelligence currently exposes placeholder values/messages rather than a native health provider bridge. Evidence: `apps/backend/src/modules/device-intelligence/services/device-intelligence.service.ts:1-15`; `apps/backend/src/modules/device-intelligence/services/activity-tracking.service.ts:1-14`; `apps/backend/src/modules/device-intelligence/services/health-sync.service.ts:1-14`.
+Source audit completion is not equivalent to production readiness or final MYPA product completion. The Vision remains broader than the audited implementation: local/offline AI brain, comprehensive voice actioning, global recommendation depth, camera coaching, health/wearable integrations, subscription enforcement and polished end-to-end mobile journeys remain product work rather than evidence of completion simply because their architectural placeholders or contracts exist.
 
-User Intelligence contains deterministic behavior learning over up to 1000 recent events, but `UserProfileService` remains a placeholder. Evidence: `apps/backend/src/modules/user-intelligence/services/learning.service.ts:15-120`; `apps/backend/src/modules/user-intelligence/services/user-profile.service.ts:1-16`.
+## Next phase
+
+Continue under the MYPA Master Prompt by using the reconciled Project Brain as the baseline, then prioritize product-completion work by dependency and user journey. Do not reopen already-closed Appendix findings without new evidence.
