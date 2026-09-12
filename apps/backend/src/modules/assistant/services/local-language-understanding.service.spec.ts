@@ -32,10 +32,29 @@ describe('LocalLanguageUnderstandingService', () => {
     expect(result.entities.time).toBe('18:30');
   });
 
-  it('prefers specific food phrases', () => {
-    const result = service.understand('ماست کم چرب بخر');
-    expect(result.intent).toBe('ADD_TO_BASKET');
-    expect(result.entities.food).toBe('yogurt');
+  it('extracts meal-planning constraints without requiring cloud AI', () => {
+    const result = service.understand(
+      'برای ۴ نفر بودجه غذا حداکثر ۱۵ میلیون تومان و پروتئین ۱۲۰ گرم برای شام میخوام، بدون شیر و وگان نباشه',
+    );
+    expect(result.intent).toBe('RECOMMEND_MEAL');
+    expect(result.entities.householdSize).toBe(4);
+    expect(result.entities.budgetAmount).toBe(15_000_000);
+    expect(result.entities.budgetCurrency).toBe('IRT');
+    expect(result.entities.proteinGrams).toBe(120);
+    expect(result.entities.mealType).toBe('dinner');
+    expect(result.entities.excludedFoods).toContain('milk');
+    expect(result.entities.dietaryPreferences).toContain('vegan');
+  });
+
+  it('recognizes non-IRT budget currencies instead of relabeling them', () => {
+    const result = service.understand('حداکثر بودجه 500 USD برای غذا');
+    expect(result.entities.budgetAmount).toBe(500);
+    expect(result.entities.budgetCurrency).toBe('USD');
+  });
+
+  it('extracts allergy constraints as hard safety-relevant context', () => {
+    const result = service.understand('برای من حساسیت به شیر و لبنیات مهمه');
+    expect(result.entities.allergies).toEqual(['milk', 'dairy']);
   });
 
   it('understands meal and nutrition requests', () => {
