@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, TooManyRequestsException } from '@nestjs/common';
+import { CanActivate, ExecutionContext, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import type { Request } from 'express';
 
 type Bucket = { count: number; resetAt: number };
@@ -31,7 +31,10 @@ export class AuthRateLimitGuard implements CanActivate {
 
     if (current.count >= AuthRateLimitGuard.MAX_REQUESTS) {
       const retryAfter = Math.max(1, Math.ceil((current.resetAt - now) / 1000));
-      throw new TooManyRequestsException(`Too many authentication requests. Retry after ${retryAfter} seconds.`);
+      throw new HttpException(
+        `Too many authentication requests. Retry after ${retryAfter} seconds.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     current.count += 1;
