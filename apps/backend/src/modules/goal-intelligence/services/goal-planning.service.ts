@@ -15,14 +15,16 @@ export class GoalPlanningService {
     const goal = rows[0];
     if (!goal) return null;
     const remaining = Math.max(0, 100 - Number(goal.progressPercent));
-    const days = goal.targetDate ? Math.max(1, Math.ceil((goal.targetDate.getTime() - Date.now()) / 86400000)) : null;
+    const targetMs = goal.targetDate?.getTime() ?? null;
+    const rawDays = targetMs === null ? null : Math.ceil((targetMs - Date.now()) / 86400000);
+    const days = rawDays === null ? null : Math.max(1, rawDays);
     return {
       goalId: goal.id,
       title: goal.title,
       targetDate: goal.targetDate,
       remainingPercent: remaining,
       dailyProgressTarget: days ? Number((remaining / days).toFixed(2)) : null,
-      urgency: days === null ? 'open' : days <= 3 ? 'urgent' : days <= 14 ? 'soon' : 'normal',
+      urgency: days === null ? 'open' : rawDays !== null && rawDays < 0 ? 'overdue' : days <= 3 ? 'urgent' : days <= 14 ? 'soon' : 'normal',
     };
   }
 }
