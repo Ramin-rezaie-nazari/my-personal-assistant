@@ -26,8 +26,23 @@ describe('BudgetIntelligenceService', () => {
       { fromFoodName: jest.fn(() => 'milk') } as never,
     );
     const result = await service.createPlan('user-1', 10, 'USD');
-    expect(result.items[0]).toMatchObject({ price: null, estimatedCost: null, status: 'stale_price', reason: 'price_snapshot_older_than_7_days', priceSourceId: 'source-a' });
+    expect(result.items[0]).toMatchObject({ price: null, estimatedCost: null, status: 'stale_price', reason: 'all_compatible_price_snapshots_older_than_7_days', priceSourceId: 'source-a' });
     expect(result.totalEstimatedCost).toBe(0);
+  });
+
+  it('prefers a fresh compatible source over a newer-but-stale source', async () => {
+    const now = Date.now();
+    const service = new BudgetIntelligenceService(
+      { list: jest.fn() } as never,
+      { latest: jest.fn().mockResolvedValue([
+        { currency: 'USD', unit: 'kg', unitPrice: 8, observedAt: new Date(now - 8 * 24 * 60 * 60 * 1000), sourceId: 'stale-newer' },
+        { currency: 'USD', unit: 'kg', unitPrice: 10, observedAt: new Date(now - 2 * 24 * 60 * 60 * 1000), sourceId: 'fresh-source' },
+      ]) } as never,
+      { fromFoodName: jest.fn(() => 'rice') } as never,
+    );
+    const result = await service.quoteItems([{ foodId: 'food-1', name: 'Rice', quantity: 2, unit: 'kg' }], 'USD', 30);
+    expect(result.items[0]).toMatchObject({ status: 'priced', price: 10, estimatedCost: 20, priceSourceId: 'fresh-source' });
+    expect(result.budgetRemaining).toBe(10);
   });
 
   it('reports over-budget when a priced requirement cannot fit within the remaining budget', async () => {
