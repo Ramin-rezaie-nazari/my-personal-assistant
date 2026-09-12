@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { PrismaModule } from '../../common/database/prisma.module';
 import { PersonalBrainModule } from '../personal-brain/personal-brain.module';
 import { RecipesModule } from '../recipes/recipes.module';
+import { BudgetIntelligenceModule } from '../budget-intelligence/budget-intelligence.module';
 import { AssistantController } from './controllers/assistant.controller';
 import { AssistantService } from './services/assistant.service';
 import { PlanningService } from './services/planning.service';
@@ -16,11 +17,40 @@ import { LocalLanguageUnderstandingService } from './services/local-language-und
 import { LocalIntelligenceProvider } from './providers/local-intelligence.provider';
 import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter';
 import { LocalMealRecommendationActionAdapter } from './adapters/local-meal-recommendation-action.adapter';
+import { LocalFoodBudgetActionAdapter } from './adapters/local-food-budget-action.adapter';
 
 @Module({
-  imports: [PrismaModule, PersonalBrainModule, RecipesModule],
+  imports: [
+    PrismaModule,
+    PersonalBrainModule,
+    RecipesModule,
+    BudgetIntelligenceModule,
+  ],
   controllers: [AssistantController],
-  providers: [KnowledgeService, RuleEngineService, PlanningService, AssistantService, NaturalActionExecutionService, ConversationHistoryService, ConversationContextService, ContextualCommandService, AiProviderRouterService, LocalLanguageUnderstandingService, LocalIntelligenceProvider, LocalBasketActionAdapter, LocalMealRecommendationActionAdapter],
-  exports: [AssistantService, NaturalActionExecutionService, ConversationHistoryService, ConversationContextService, ContextualCommandService, AiProviderRouterService, LocalLanguageUnderstandingService],
+  providers: [
+    KnowledgeService,
+    RuleEngineService,
+    PlanningService,
+    AssistantService,
+    NaturalActionExecutionService,
+    ConversationHistoryService,
+    ConversationContextService,
+    ContextualCommandService,
+    AiProviderRouterService,
+    LocalLanguageUnderstandingService,
+    LocalIntelligenceProvider,
+    LocalBasketActionAdapter,
+    LocalMealRecommendationActionAdapter,
+    LocalFoodBudgetActionAdapter,
+  ],
+  exports: [
+    AssistantService,
+    NaturalActionExecutionService,
+    ConversationHistoryService,
+    ConversationContextService,
+    ContextualCommandService,
+    AiProviderRouterService,
+    LocalLanguageUnderstandingService,
+  ],
 })
 export class AssistantModule {}
