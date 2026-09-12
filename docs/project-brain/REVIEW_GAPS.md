@@ -1,7 +1,7 @@
 # Review Gaps
 
 Last updated: 2026-09-12
-Review status: SOURCE-LEVEL REVIEW GAPS CLOSED FOR RECORDED SCOPE; ENVIRONMENTAL VALIDATION BOUNDARIES EXPLICIT
+Review status: SOURCE-LEVEL REVIEW GAPS CLOSED FOR RECORDED SCOPE THROUGH PB-286; ENVIRONMENTAL VALIDATION BOUNDARIES EXPLICIT
 
 ## Final status
 
@@ -10,9 +10,9 @@ The repository-review gap list is reconciled against the canonical Audit Finding
 ## Closed controls
 
 - Controller/path/guard inventory reconciled to current source in `docs/project-brain/05_API_CATALOG.md`.
-- PB-279..PB-284 are registered and closed in the canonical Appendix.
-- DTO/runtime validation, ownership, currency/unit semantics, transaction boundaries and placeholder cleanup were re-verified by CI.
-- Project Brain checkpoint/index synchronization is current through BATCH-0043.
+- PB-279..PB-286 are registered and closed in the canonical Appendix.
+- DTO/runtime validation, ownership, currency/unit semantics, transaction boundaries, safety-stock purchase semantics and placeholder cleanup were re-verified by CI.
+- Project Brain checkpoint/index synchronization is current through BATCH-0046.
 
 ## Explicit boundaries
 
@@ -26,7 +26,11 @@ These are environmental/product-boundary items, not unexplained source-review ga
 
 ## Verification boundary
 
-Latest implementation code head verified by Backend CI `34693061066` and Mobile CI `34693061017`. Subsequent commits are documentation-only. Validation PR #70 remains open, mergeable, unmerged, and validation-only.
+Latest verified runtime implementation head: `c1af40ddd8b7d6af03308b4fb78301d6fc11ad1d`.
+- Backend CI `34704215875`: SUCCESS.
+- Mobile CI `34704215862`: SUCCESS.
+
+Documentation synchronization commits after that runtime head do not alter runtime implementation behavior. Validation PR #70 remains open, unmerged, and validation-only.
 
 ## Boundary rule
 
