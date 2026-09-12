@@ -1,8 +1,8 @@
 # Project Brain Changelog
 
 Last updated: 2026-09-12
-Review status: SOURCE-LEVEL AUDIT RECONCILED; MASTER PROMPT HARDENING NEAR COMPLETE; ENVIRONMENT GATES EXPLICIT
-Scope actually read: baseline + Core + Prisma schema/migrations + recorded Assistant/Brain/Food/Shopping/Life/Health/Fitness/Platform/Test/CI/Mobile scopes + route/consumer/DTO/guard/database reconciliation + operational scripts + historical findings reconciliation + Shopping/Inventory/Price/Budget remediation through PB-284.
+Review status: SOURCE-LEVEL AUDIT RECONCILED; MASTER PROMPT HARDENING THROUGH PB-286; RUNTIME CI VERIFIED; ENVIRONMENT GATES EXPLICIT
+Scope actually read: baseline + Core + Prisma schema/migrations + recorded Assistant/Brain/Food/Shopping/Life/Health/Fitness/Platform/Test/CI/Mobile scopes + route/consumer/DTO/guard/database reconciliation + operational scripts + historical findings reconciliation + Shopping/Inventory/Price/Budget remediation through PB-286.
 Scope not yet directly verifiable: deployed runtime/device/external-provider behavior and exact historical PB-001..PB-155 prose.
 Evidence roots: `docs/project-brain/`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; `apps/backend/prisma/`.
 Confidence level: HIGH for source/CI evidence; MEDIUM for deployed/runtime conclusions.
@@ -21,11 +21,13 @@ Open questions: deployed acceptance and product-level scope choice for durable h
 - PB-280/PB-281: Budget meal-plan validation and placeholder method retirement.
 - PB-282/PB-283: Food loop serving validation and unbounded quote total correctness.
 - PB-284: API Catalog route/guard reconciliation.
+- PB-285: centralized quantity conversion; Budget now consumes compatible price evidence across mass/volume/count units while preserving source price semantics.
+- PB-286: Household Purchase Planner no longer conflates safety stock with purchase quantity; budget remains the explicit purchase limiter.
 
 ## Verification
 
-Runtime code head `56d29953e83ead705eb57b39e7681b1793e97bcd` passed Backend CI `34693061066` and Mobile CI `34693061017`. Subsequent commits are Project Brain/documentation synchronization only.
+Runtime implementation head `c1af40ddd8b7d6af03308b4fb78301d6fc11ad1d` passed Backend CI `34704215875` and Mobile CI `34704215862`. Later commits are Project Brain/documentation synchronization only and do not alter runtime implementation behavior.
 
 ## Environment boundary
 
-The available environment cannot directly validate deployed PostgreSQL/RLS/Storage/Auth state, real Android/iOS behavior, external provider quotas/health, production push delivery or store release acceptance. These remain explicitly unverified.
+The available environment cannot directly validate deployed PostgreSQL/RLS/Storage/Auth state, real Android/iOS behavior, external provider quotas/health, production scheduler/push delivery or store release acceptance. These remain explicitly unverified.
