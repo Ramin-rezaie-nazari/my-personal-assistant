@@ -3,8 +3,6 @@ import { PrismaService } from '../../../common/database/prisma.service';
 import { getDateKeyInTimezone } from '../../../common/utils/user-time';
 import { CreateHabitDto, UpdateHabitDto } from '../dto/habit.dto';
 
-type HabitFrequency = 'daily' | 'weekly';
-
 @Injectable()
 export class HabitsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -17,15 +15,13 @@ export class HabitsService {
   async getHabits(userId: string) {
     const timezone = await this.getTimezone(userId);
     const habits = await this.prisma.habit.findMany({ where: { userId, active: true }, include: { logs: { orderBy: { dateKey: 'desc' }, take: 56 } }, orderBy: { createdAt: 'asc' } });
-    return habits.map((habit) => ({ ...habit, stats: this.stats(habit.logs.map((log) => log.dateKey), habit.targetPerWeek, habit.frequency as HabitFrequency, timezone) }));
+    return habits.map((habit) => ({ ...habit, stats: this.stats(habit.logs.map((log) => log.dateKey), habit.targetPerWeek, habit.frequency, timezone) }));
   }
 
   async updateHabit(userId: string, id: string, dto: UpdateHabitDto) {
     const habit = await this.prisma.habit.findFirst({ where: { id, userId } });
     if (!habit) throw new NotFoundException('Habit not found');
-    if (dto.name !== undefined || dto.frequency !== undefined || dto.targetPerWeek !== undefined) {
-      this.validate(dto.name ?? habit.name, dto.frequency ?? (habit.frequency as HabitFrequency), dto.targetPerWeek ?? habit.targetPerWeek);
-    }
+    if (dto.name !== undefined || dto.frequency !== undefined || dto.targetPerWeek !== undefined) this.validate(dto.name ?? habit.name, dto.frequency ?? habit.frequency, dto.targetPerWeek ?? habit.targetPerWeek);
     return this.prisma.habit.update({ where: { id }, data: { ...(dto.name !== undefined ? { name: dto.name.trim() } : {}), ...(dto.frequency !== undefined ? { frequency: dto.frequency } : {}), ...(dto.targetPerWeek !== undefined ? { targetPerWeek: dto.targetPerWeek } : {}), ...(dto.active !== undefined ? { active: dto.active } : {}) } });
   }
 
@@ -42,22 +38,15 @@ export class HabitsService {
     const resolvedDateKey = dateKey ?? getDateKeyInTimezone(new Date(), timezone);
     this.assertDateKey(resolvedDateKey);
     const startKey = this.addDays(resolvedDateKey, -6);
-    const streakStartKey = this.addDays(resolvedDateKey, -55);
-    const habits = await this.prisma.habit.findMany({ where: { userId, active: true }, include: { logs: { where: { dateKey: { gte: streakStartKey, lte: resolvedDateKey } } } } });
-    const completedCount = habits.reduce((sum, habit) => sum + habit.logs.filter((log) => log.dateKey >= startKey && log.dateKey <= resolvedDateKey).length, 0);
+    const habits = await this.prisma.habit.findMany({ where: { userId, active: true }, include: { logs: { where: { dateKey: { gte: startKey, lte: resolvedDateKey } } } } });
+    const completedCount = habits.reduce((sum, habit) => sum + habit.logs.length, 0);
     const possible = habits.reduce((sum, habit) => sum + Math.min(habit.targetPerWeek, 7), 0);
     return {
       dateKey: resolvedDateKey,
       activeHabits: habits.length,
       completedCount,
       completionPercent: possible ? Math.min(100, Math.round((completedCount / possible) * 100)) : 0,
-      habits: habits.map((habit) => ({
-        id: habit.id,
-        name: habit.name,
-        targetPerWeek: habit.targetPerWeek,
-        completedThisWeek: habit.logs.filter((log) => log.dateKey >= startKey && log.dateKey <= resolvedDateKey).length,
-        streak: this.stats(habit.logs.map((log) => log.dateKey), habit.targetPerWeek, habit.frequency as HabitFrequency, timezone, resolvedDateKey).streak,
-      })),
+      habits: habits.map((habit) => ({ id: habit.id, name: habit.name, targetPerWeek: habit.targetPerWeek, completedThisWeek: habit.logs.length, streak: this.stats(habit.logs.map((log) => log.dateKey), habit.targetPerWeek, habit.frequency, timezone).streak })),
     };
   }
 
@@ -68,40 +57,31 @@ export class HabitsService {
     return { deleted: true };
   }
 
-  private stats(keys: string[], targetPerWeek: number, frequency: HabitFrequency, timezone: string, anchorDateKey = getDateKeyInTimezone(new Date(), timezone)) {
+  private stats(keys: string[], targetPerWeek: number, frequency: string, timezone: string) {
     const set = new Set(keys);
-    const streak = frequency === 'weekly' ? this.weeklyStreak(set, targetPerWeek, anchorDateKey) : this.dailyStreak(set, anchorDateKey);
-    return { streak, recentCompletions: keys.length, targetPerWeek };
-  }
-
-  private dailyStreak(set: Set<string>, anchorDateKey: string) {
+    if (frequency === 'weekly') return { streak: this.weekStreak(set, targetPerWeek, timezone), recentCompletions: keys.length, targetPerWeek };
     let streak = 0;
-    for (let i = 0; i < 56; i += 1) {
-      const key = this.addDays(anchorDateKey, -i);
+    const todayKey = getDateKeyInTimezone(new Date(), timezone);
+    for (let i = 0; i < 14; i += 1) {
+      const key = this.addDays(todayKey, -i);
       if (set.has(key)) streak += 1;
       else break;
     }
-    return streak;
+    return { streak, recentCompletions: keys.length, targetPerWeek };
   }
 
-  private weeklyStreak(set: Set<string>, targetPerWeek: number, anchorDateKey: string) {
+  private weekStreak(set: Set<string>, targetPerWeek: number, timezone: string) {
+    const today = getDateKeyInTimezone(new Date(), timezone);
     let streak = 0;
-    const currentWeekStart = this.startOfWeek(anchorDateKey);
-    for (let week = 0; week < 8; week += 1) {
-      const weekStart = this.addDays(currentWeekStart, week * -7);
-      const completed = Array.from({ length: 7 }, (_, day) => this.addDays(weekStart, day)).filter((key) => set.has(key)).length;
-      if (completed >= targetPerWeek) streak += 1;
+    for (let week = 0; week < 12; week += 1) {
+      const end = this.addDays(today, -week * 7);
+      const start = this.addDays(end, -6);
+      let count = 0;
+      for (let i = 0; i < 7; i += 1) if (set.has(this.addDays(start, i))) count += 1;
+      if (count >= targetPerWeek) streak += 1;
       else break;
     }
     return streak;
-  }
-
-  private startOfWeek(key: string) {
-    const date = new Date(`${key}T00:00:00.000Z`);
-    const day = date.getUTCDay();
-    const diff = (day + 6) % 7;
-    date.setUTCDate(date.getUTCDate() - diff);
-    return date.toISOString().slice(0, 10);
   }
 
   private validate(name: string, frequency: string, targetPerWeek?: number) {

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InventoryService } from '../inventory/inventory.service';
 import { PrismaService } from '../../common/database/prisma.service';
+
 export type SmartShoppingItem = {
   foodId: string;
   name: string;
@@ -12,12 +13,14 @@ export type SmartShoppingItem = {
   reason: string;
   essential: boolean;
 };
+
 @Injectable()
 export class ShoppingService {
   constructor(
     private readonly inventory: InventoryService,
     private readonly prisma: PrismaService,
   ) {}
+
   async smartList(userId: string): Promise<SmartShoppingItem[]> {
     const inventory = await this.inventory.list(userId);
     return inventory
@@ -47,6 +50,7 @@ export class ShoppingService {
           a.name.localeCompare(b.name),
       );
   }
+
   async listBasket(userId: string) {
     return this.prisma.shoppingItem.findMany({
       where: { userId, completed: false },
@@ -58,6 +62,7 @@ export class ShoppingService {
       ],
     });
   }
+
   async addToBasket(
     userId: string,
     item: {
@@ -71,6 +76,7 @@ export class ShoppingService {
   ) {
     if (!Number.isFinite(item.quantity) || item.quantity <= 0)
       throw new NotFoundException('Quantity must be positive');
+
     const food = await this.prisma.foodItem.findFirst({
       where: {
         id: item.foodId,
@@ -78,6 +84,7 @@ export class ShoppingService {
       },
     });
     if (!food) throw new NotFoundException('Food item not found');
+
     const existing = await this.prisma.shoppingItem.findFirst({
       where: { userId, foodId: item.foodId, completed: false },
     });
@@ -90,6 +97,7 @@ export class ShoppingService {
           priority: item.priority ?? existing.priority,
         },
       });
+
     return this.prisma.shoppingItem.create({
       data: {
         userId,
@@ -102,6 +110,7 @@ export class ShoppingService {
       },
     });
   }
+
   async addRecipeMissing(
     userId: string,
     recipeId: string,
@@ -112,6 +121,7 @@ export class ShoppingService {
       include: { ingredients: true },
     });
     if (!recipe) throw new NotFoundException('Recipe not found');
+
     const allowed = new Set(recipe.ingredients.map((i) => i.foodId));
     const valid = items.filter(
       (i) => allowed.has(i.foodId) && Number.isFinite(i.quantity) && i.quantity > 0,
@@ -163,12 +173,14 @@ export class ShoppingService {
 
     return { recipeId, added: valid.length };
   }
+
   async complete(userId: string, id: string) {
     return this.prisma.shoppingItem.updateMany({
       where: { id, userId, completed: false },
       data: { completed: true },
     });
   }
+
   private priority(u: SmartShoppingItem['urgency']) {
     return u === 'critical' ? 3 : u === 'soon' ? 2 : u === 'normal' ? 1 : 0;
   }
