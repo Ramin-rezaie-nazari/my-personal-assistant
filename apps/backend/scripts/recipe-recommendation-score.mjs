@@ -65,7 +65,6 @@ function ingredientFit(ingredientNames = [], user = {}) {
 
 function dietaryFit(flags = {}, user = {}) {
   const diets = new Set((user.diets || user.dietary_preferences || []).map(norm));
-  const reasons = [];
   if (diets.has('vegan') && !flags.vegan_possible) return { score: 0, reason: 'not vegan-compatible' };
   if (diets.has('vegetarian') && !flags.vegetarian_possible) return { score: 0, reason: 'not vegetarian-compatible' };
   if (diets.has('dairy-free') && flags.contains_dairy) return { score: 0, reason: 'contains dairy' };
@@ -114,7 +113,8 @@ function scoreRecipe(recipe, profile, relations, user) {
   const nutrition = (targetFit(kcal, kcalTarget, 150) + targetFit(protein, proteinTarget, 10)) / 2;
   const difficultyPref = user.difficulty ? norm(user.difficulty) : null;
   const difficulty = difficultyPref && recipe.difficulty ? (norm(recipe.difficulty) === difficultyPref ? 1 : 0.55) : 0.6;
-  const quality = Number(recipe.quality_score) > 0 ? clamp(Number(recipe.quality_score) / 100) : 0.6;
+  const rawQuality = Number(recipe.quality_score);
+  const quality = rawQuality > 0 ? clamp(rawQuality <= 1 ? rawQuality : rawQuality / 100) : 0.6;
   const repeatPenalty = (user.recent_recipe_ids || []).includes(recipe.id) ? 1 : 0;
   const recentPenalty = repeatPenalty ? 0 : 1;
   const weights = { nutrition: 0.24, ingredients: 0.22, dietary: 0.18, cuisine: 0.10, culture: 0.08, time: 0.08, difficulty: 0.04, quality: 0.04, novelty: 0.02 };
