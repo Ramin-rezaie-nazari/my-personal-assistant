@@ -1,18 +1,24 @@
 # MYPA Master Prompt Progress
 
 Last updated: 2026-09-12
-Review status: IN_PROGRESS
+Review status: IN_PROGRESS — SOURCE AUDIT RECONCILED; ACTIVE VERTICAL HARDENING CONTINUING
 
 ## Purpose
 
 This document tracks post-Appendix product-development work against the MYPA Master Prompt vision. It does not override `docs/05_CURRENT_STATE.md` or the canonical findings register.
 
+## Current progress
+
+Overall engineering/product completion estimate: **~95%** for the repository source scope plus implemented Master Prompt vertical work reviewed so far. This is an evidence-weighted engineering index, not a claim of production/device readiness or 100% feature completeness.
+
+MASTER-0004 completion estimate: **~96%** for the reviewed Nutrition/Food → Pantry/Inventory → Shopping → Budget/Price vertical; remaining work is primarily deeper lifecycle semantics, broader active feature coverage and environmental validation.
+
 ## Baseline
 
-- Appendix remediation is complete for the recoverable PB-156..PB-257 catalog; new product-development findings are tracked in the same Appendix from PB-258 onward.
-- Backend and Mobile CI have passed on the verified MASTER-0004 code tree.
+- Recoverable Appendix remediation is complete through PB-278; historical PB-001..PB-155 remains evidence-limited.
+- Backend/Mobile CI has repeatedly passed through PB-274; latest PB-275..PB-278 head is awaiting its fresh CI completion.
 - Project Brain source-level audit is reconciled to available repository evidence.
-- Product readiness is not 100%; remaining work includes the rest of the Food OS vertical, deeper central/local Brain orchestration, full mobile journeys, offline behavior, voice/action UX, global intelligence depth, production validation and future integrations.
+- Product readiness is not 100%; production database/configuration, physical-device validation, external provider health/quotas and store release remain environmental gates.
 
 ## Product workstream order
 
@@ -38,36 +44,43 @@ Status: VERIFIED_BY_TEST.
 Status: VERIFIED_BY_TEST.
 
 ### MASTER-0004 — Nutrition/Food → Pantry/Inventory → Shopping → Budget
-Status: RECIPE→BUDGET→SHOPPING JOURNEY + PRICE EVIDENCE CORE VERIFIED_BY_CI; FULL VERTICAL IN PROGRESS.
+Status: CORE RECIPE→BUDGET→SHOPPING + PRICE-EVIDENCE PATH VERIFIED; HARDENING CONTINUES.
 
-Verified code tree: `83fb230d1491240743edded9716f69e8475bc23c`.
-
-Completed and verified:
+Completed in the continuation stream:
 - active Shopping Intelligence facade delegates to canonical user-scoped ShoppingService and is JWT protected;
 - shopping budget preserves explicit currency, sequential remaining-budget accounting, and committed `buy_now` semantics;
 - Inventory intelligence is owned by Inventory, removing the real module cycle;
 - deterministic FoodItem-name → PriceTrackedProduct product-key mapping is centralized;
 - Budget quote engine enforces exact currency/unit compatibility, seven-day freshness, provenance and explicit blocked evidence states;
-- multi-source selection chooses the freshest compatible evidence that is still fresh, so a stale provider cannot mask a fresh provider;
+- multi-source selection chooses the freshest compatible evidence that is still fresh;
 - deterministic `deriveBudgetStatus()` exposes `within_budget`, `over_budget`, `partial_price_evidence`, and `insufficient_price_data`;
 - deterministic `deriveBudgetNextActions()` exposes safe remediation actions without fabricating price alternatives;
 - canonical recipe scaling feeds inventory-gap calculation, budget costing and budget-qualified shopping insertion;
 - authenticated recipe budget and budget-shopping endpoints have direct controller/API E2E coverage;
 - Mobile Recipe Budget journey has servings/budget/currency inputs, evidence-aware result states, loading/error handling, RTL/i18n and Smart Basket handoff;
-- Mobile Shopping/Price clients reuse canonical authenticated transport and backend-aligned Persian key normalization;
-- Mobile Jest native-storage mocks and source smoke coverage protect the Budget transport/route contract.
+- Mobile Shopping/Price/basket clients reuse canonical authenticated transport;
+- Shopping basket merges convert compatible units and reject incompatible units;
+- Shopping completion synchronizes purchased quantities to Inventory transactionally and idempotently;
+- Price history is durable, price analysis is canonicalized, source capabilities/health are explicit, quantity-aware product matching is enforced and incompatible currencies are rejected;
+- obsolete Price Intelligence and Shopping Intelligence placeholder facades were retired after consumer review;
+- PurchasePlan rejects cross-currency item evidence;
+- Shopping invalid quantities map to Bad Request semantics;
+- Shopping request bodies now use validated DTO classes with nested recipe-item validation;
+- Recipe→Shopping requests reject invalid/non-recipe items rather than silently dropping them.
 
-Validation:
-- Backend CI `34689696683`: SUCCESS — Prisma validation/generation, migrations/idempotence, food self-test, build, unit tests, API E2E and diagnostics.
-- Mobile CI `34689696652`: SUCCESS — typecheck, source tests, committed Jest specs, Expo validation and Android JS bundle.
+### BATCH-0032..0039
+Status: COMPLETE FOR SOURCE/IMPLEMENTATION; LATEST-HEAD CI GATE IN PROGRESS.
 
-## Current remaining work inside MASTER-0004
+Batches cover unit-safe Shopping merge, canonical Mobile basket transport, purchase→Inventory lifecycle, Price Intelligence hardening/canonicalization, placeholder cleanup, PurchasePlan currency integrity, and Shopping request DTO/input semantics. Each batch is recorded under `docs/project-brain/15_AUDIT_CONTINUATION_BATCH_*.md` and reconciled into the canonical Appendix.
 
-- richer end-user rendering of deterministic `nextActions` on Mobile Budget UI;
-- audit and remove any remaining stale non-consuming Budget/Shopping artifacts;
-- broader Pantry↔Shopping lifecycle reconciliation and user-visible edits;
-- offline/local-first cache and explicit stale/offline states for Budget/Shopping;
-- broader price-source coverage beyond the current persistence/selection contract.
+## Remaining work inside MASTER-0004
+
+- complete broader Pantry↔Shopping lifecycle semantics where current product behavior still has no explicit event/source contract;
+- decide/implement the long-term durable household consumption-learning model before presenting that subsystem as persistent learning;
+- broader live price-source coverage and external-provider reliability beyond in-process capability/health telemetry;
+- richer end-user explanations/UX for blocked evidence and lifecycle actions;
+- final cross-file consistency pass across all Project Brain documents;
+- fresh latest-head CI after PB-275..PB-278 and current final reconciliation.
 
 ## Current architectural decisions
 
@@ -75,7 +88,7 @@ Validation:
 - Hard allergy/diet filtering is permitted only from canonical safety evidence; unknowns block constrained recommendations.
 - Shopping Intelligence reuses canonical Shopping/Inventory data services rather than maintaining parallel persistence logic.
 - Currency mismatch is fail-closed; no implicit FX conversion without an explicit fresh-rate contract.
-- Inventory owns inventory intelligence; Shopping Intelligence depends on Inventory and must not create a reverse module dependency.
+- Inventory owns inventory intelligence; Shopping Intelligence must not introduce a reverse module dependency.
 - Monetary estimates use deterministic FoodItem-name product-key mapping only; fuzzy matching is forbidden for money.
 - Price freshness is bounded to seven days for Budget planning; stale snapshots do not become current costs.
 - When multiple compatible price sources exist, the freshest source inside the freshness window is preferred; if none is fresh, the result is stale rather than fabricated.
@@ -84,11 +97,8 @@ Validation:
 - Only verified `priced` recipe gaps may be automatically inserted into Shopping.
 - Partial price evidence is surfaced explicitly rather than presented as a complete budget result.
 - Next-action suggestions are deterministic remediation codes, not guessed alternatives.
-
-## Next
-
-`MASTER-0004` next slice: render deterministic next actions on Mobile, then implement offline/local-first Budget/Shopping state and Pantry↔Shopping reconciliation, followed by broader price-source coverage.
+- Request DTOs at Shopping boundaries are runtime-validated rather than represented only by TypeScript structural types.
 
 ## Evidence boundary
 
-Repository/source and the cited GitHub Actions runs are verified. Production/deployed database/RLS/storage state, physical-device UX, push delivery, external provider quotas and store-release validation remain outside the current runtime boundary.
+Repository/source and GitHub Actions evidence are verified where explicitly recorded. Production/deployed database/RLS/storage state, physical-device UX, push delivery, external provider quotas and store-release validation remain outside the available runtime boundary.
