@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { JwtService } from '@nestjs/jwt';
 import { AppConfigService } from '../../../common/config/app-config/app-config.service';
 
@@ -9,6 +10,7 @@ export function createAccessToken(
   return jwtService.sign(
     {
       sub: userId,
+      jti: randomUUID(),
     },
     {
       secret: appConfigService.jwtAccessSecret,
@@ -27,6 +29,7 @@ export function createRefreshToken(
     {
       sub: userId,
       type: 'refresh',
+      jti: randomUUID(),
     },
     {
       secret: appConfigService.jwtRefreshSecret,
