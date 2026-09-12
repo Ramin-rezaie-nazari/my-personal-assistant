@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 
 import { PrismaModule } from '../../common/database/prisma.module';
 import { PersonalBrainModule } from '../personal-brain/personal-brain.module';
+import { NutritionModule } from '../nutrition/nutrition.module';
+import { DailyModule } from '../daily/daily.module';
 import { AssistantController } from './controllers/assistant.controller';
 import { AssistantService } from './services/assistant.service';
 import { MemoryService } from './services/memory.service';
@@ -19,9 +21,11 @@ import { AiProviderRouterService } from './services/ai-provider-router.service';
 import { LocalLanguageUnderstandingService } from './services/local-language-understanding.service';
 import { LocalIntelligenceProvider } from './providers/local-intelligence.provider';
 import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter';
+import { LocalNutritionActionAdapter } from './adapters/local-nutrition-action.adapter';
+import { LocalWaterActionAdapter } from './adapters/local-water-action.adapter';
 
 @Module({
-  imports: [PrismaModule, PersonalBrainModule],
+  imports: [PrismaModule, PersonalBrainModule, NutritionModule, DailyModule],
   controllers: [AssistantController],
   providers: [
     KnowledgeService,
@@ -40,6 +44,8 @@ import { LocalBasketActionAdapter } from './adapters/local-basket-action.adapter
     LocalLanguageUnderstandingService,
     LocalIntelligenceProvider,
     LocalBasketActionAdapter,
+    LocalNutritionActionAdapter,
+    LocalWaterActionAdapter,
   ],
   exports: [
     AssistantService,

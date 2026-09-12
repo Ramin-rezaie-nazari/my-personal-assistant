@@ -29,6 +29,29 @@ describe('NaturalActionExecutionService', () => {
     );
   });
 
+  it('surfaces a structured action result message when the adapter provides one', async () => {
+    const coordinator = {
+      execute: jest.fn().mockResolvedValue({
+        status: 'completed',
+        action: 'get_nutrition_summary',
+        result: { message: 'خلاصه تغذیه امروزت آماده‌ست.', summary: { dateKey: '2026-08-17' } },
+      }),
+    };
+    const service = new NaturalActionExecutionService(coordinator as any);
+
+    await expect(
+      service.execute('امروز چقدر خوردم؟', 'u1', {
+        ...response,
+        intent: 'nutrition',
+        nextAction: 'get_nutrition_summary',
+      }),
+    ).resolves.toMatchObject({
+      executed: true,
+      action: 'get_nutrition_summary',
+      message: 'خلاصه تغذیه امروزت آماده‌ست.',
+    });
+  });
+
   it('returns a blocked result without pretending the action completed', async () => {
     const coordinator = {
       execute: jest.fn().mockResolvedValue({ status: 'blocked' }),

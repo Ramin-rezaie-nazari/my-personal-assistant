@@ -25,6 +25,23 @@ describe('LocalLanguageUnderstandingService', () => {
     expect(result.confidence).toBeGreaterThan(0.85);
   });
 
+  it('understands natural water logging with explicit milliliters', () => {
+    const result = service.understand('۵۰۰ میلی‌لیتر آب خوردم');
+    expect(result.intent).toBe('ADD_WATER');
+    expect(result.entities.waterAmountMl).toBe(500);
+    expect(result.confidence).toBeGreaterThan(0.9);
+  });
+
+  it('understands water logging by glasses', () => {
+    const result = service.understand('دو لیوان آب نوشیدم');
+    expect(result.intent).toBe('ADD_WATER');
+    expect(result.entities.waterAmountMl).toBe(500);
+  });
+
+  it('does not confuse a water reminder with water logging', () => {
+    expect(service.understand('یادم بنداز آب بخورم').intent).toBe('CREATE_REMINDER');
+  });
+
   it('normalizes Persian digits for quantities and times', () => {
     const result = service.understand('۲ تا شیر اضافه کن ساعت ۱۸:۳۰');
     expect(result.intent).toBe('ADD_TO_BASKET');
@@ -39,12 +56,8 @@ describe('LocalLanguageUnderstandingService', () => {
   });
 
   it('understands meal and nutrition requests', () => {
-    expect(service.understand('برای شام چی بخورم؟').intent).toBe(
-      'RECOMMEND_MEAL',
-    );
-    expect(service.understand('پروتئین و کالری امروزمو بگو').intent).toBe(
-      'GET_NUTRITION_SUMMARY',
-    );
+    expect(service.understand('برای شام چی بخورم؟').intent).toBe('RECOMMEND_MEAL');
+    expect(service.understand('پروتئین و کالری امروزمو بگو').intent).toBe('GET_NUTRITION_SUMMARY');
   });
 
   it('keeps ambiguous requests unknown instead of guessing', () => {
