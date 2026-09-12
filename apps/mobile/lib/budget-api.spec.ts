@@ -5,7 +5,7 @@ describe('recipe budget API contract', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    global.fetch = fetchMock as never;
+    globalThis.fetch = fetchMock as never;
     fetchMock.mockResolvedValue({ ok: true, status: 200, json: async () => ({ items: [] }) });
   });
 
