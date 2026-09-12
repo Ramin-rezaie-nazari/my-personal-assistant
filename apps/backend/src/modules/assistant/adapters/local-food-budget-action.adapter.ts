@@ -27,12 +27,12 @@ export class LocalFoodBudgetActionAdapter implements OnModuleInit {
       | undefined;
     const entities = local?.entities ?? {};
     const budget = this.readPositiveNumber(entities.budgetAmount);
-    const currency = this.readString(entities.currency);
+    const currency = this.readString(entities.budgetCurrency);
 
     if (budget === undefined || !currency) {
       return {
         status: 'blocked_missing_budget_context',
-        required: ['budgetAmount', 'currency'],
+        required: ['budgetAmount', 'budgetCurrency'],
       };
     }
 
