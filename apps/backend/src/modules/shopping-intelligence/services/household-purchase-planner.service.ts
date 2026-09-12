@@ -31,6 +31,7 @@ export class HouseholdPurchasePlannerService {
     items: InventoryItem[],
     prices: HouseholdPrice[],
     budgetRemaining: number,
+    budgetCurrency?: string,
   ): {
     items: HouseholdPurchasePlanItem[];
     totalEstimatedCost: number;
@@ -58,7 +59,11 @@ export class HouseholdPurchasePlannerService {
         continue;
       }
 
-      const unitPrice = price?.available ? price.price : null;
+      const currencyMatches =
+        !budgetCurrency || !price || price.currency === budgetCurrency;
+      const unitPrice =
+        price?.available && currencyMatches ? price.price : null;
+
       let purchaseQuantity = quantity;
       if (
         item.urgency === 'critical' &&
@@ -108,13 +113,15 @@ export class HouseholdPurchasePlannerService {
         urgency: item.urgency,
         action,
         reason:
-          action === 'buy'
-            ? 'inventory_need_and_budget_align'
-            : action === 'watch'
-              ? 'monitor_price_or_stock'
-              : estimatedCost === null
-                ? 'price_unavailable'
-                : 'budget_constraint',
+          !currencyMatches
+            ? 'price_currency_mismatch'
+            : action === 'buy'
+              ? 'inventory_need_and_budget_align'
+              : action === 'watch'
+                ? 'monitor_price_or_stock'
+                : estimatedCost === null
+                  ? 'price_unavailable'
+                  : 'budget_constraint',
       });
     }
 
