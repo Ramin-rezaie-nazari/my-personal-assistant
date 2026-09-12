@@ -10,7 +10,7 @@ if (!process.env.DATABASE_URL) {
   process.exit(1);
 }
 
-const result = spawnSync('pnpm', ['prisma', 'db', 'push'], {
+const result = spawnSync('pnpm', ['prisma', 'migrate', 'deploy'], {
   cwd: path.resolve(__dirname, '..'),
   stdio: 'inherit',
   env: process.env,
