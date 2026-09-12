@@ -8,6 +8,8 @@ const PRICE_FRESHNESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 export type BudgetQuoteInput = { foodId: string; name: string; quantity: number; unit: string; urgency?: 'critical' | 'soon' | 'normal' | 'none' };
 export type BudgetQuoteItem = { foodId: string; name: string; productKey: string; recommendedQuantity: number; unit: string; price: number | null; estimatedCost: number | null; currency: string; priceObservedAt: Date | null; priceSourceId: string | null; status: 'priced' | 'price_unavailable' | 'currency_mismatch' | 'unit_mismatch' | 'stale_price' | 'over_budget'; urgency: 'critical' | 'soon' | 'normal' | 'none'; reason: string };
 
+type PriceEvidenceRow = { currency?: string; unit?: string | null; unitPrice?: number | null; observedAt?: Date | string; sourceId?: string };
+
 @Injectable()
 export class BudgetIntelligenceService {
   constructor(private readonly inventory: InventoryService, private readonly prices: PricePersistenceService, private readonly productKeys: PriceProductKeyService) {}
@@ -24,18 +26,22 @@ export class BudgetIntelligenceService {
     for (const candidate of input) {
       if (!Number.isFinite(candidate.quantity) || candidate.quantity <= 0) throw new BadRequestException('quote item quantity must be a positive finite number');
       const productKey = this.productKeys.fromFoodName(candidate.name);
-      const rows = (await this.prices.latest(productKey)) as Array<{ currency?: string; unit?: string | null; unitPrice?: number | null; observedAt?: Date | string; sourceId?: string }>;
+      const rows = (await this.prices.latest(productKey)) as PriceEvidenceRow[];
       const urgency = candidate.urgency ?? 'normal'; const base = { foodId: candidate.foodId, name: candidate.name, productKey, recommendedQuantity: candidate.quantity, unit: candidate.unit, currency: normalizedCurrency, urgency };
       const compatibleCurrency = rows.filter((row) => row.currency === normalizedCurrency);
       if (!compatibleCurrency.length) { items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: null, priceSourceId: null, status: rows.length ? 'currency_mismatch' : 'price_unavailable', reason: rows.length ? 'no_price_in_budget_currency' : 'no_price_snapshot' }); continue; }
-      const compatibleUnit = compatibleCurrency.filter((row) => row.unit === candidate.unit && row.unitPrice != null).sort((a, b) => new Date(b.observedAt ?? 0).getTime() - new Date(a.observedAt ?? 0).getTime())[0];
-      if (!compatibleUnit) { const hasUnitEvidence = compatibleCurrency.some((row) => row.unit); items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: null, priceSourceId: null, status: hasUnitEvidence ? 'unit_mismatch' : 'price_unavailable', reason: hasUnitEvidence ? 'price_unit_does_not_match_recipe_unit' : 'price_unit_missing' }); continue; }
-      const observedAt = new Date(compatibleUnit.observedAt ?? 0); if (!Number.isFinite(observedAt.getTime())) { items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: null, priceSourceId: compatibleUnit.sourceId ?? null, status: 'price_unavailable', reason: 'invalid_observed_at' }); continue; }
-      if (now - observedAt.getTime() > PRICE_FRESHNESS_WINDOW_MS) { items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: observedAt, priceSourceId: compatibleUnit.sourceId ?? null, status: 'stale_price', reason: 'price_snapshot_older_than_7_days' }); continue; }
-      const price = Number(compatibleUnit.unitPrice); const estimatedCost = price * candidate.quantity;
-      if (!Number.isFinite(price) || price < 0 || !Number.isFinite(estimatedCost)) { items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: null, priceSourceId: null, status: 'price_unavailable', reason: 'invalid_price_value' }); continue; }
-      if (estimatedCost > remaining) { items.push({ ...base, price, estimatedCost, priceObservedAt: observedAt, priceSourceId: compatibleUnit.sourceId ?? null, status: 'over_budget', reason: 'recipe_missing_quantity_exceeds_remaining_budget' }); continue; }
-      remaining -= estimatedCost; items.push({ ...base, price, estimatedCost, priceObservedAt: observedAt, priceSourceId: compatibleUnit.sourceId ?? null, status: 'priced', reason: 'recipe_missing_ingredient_fits_verified_budget' });
+      const compatibleUnitRows = compatibleCurrency.filter((row) => row.unit === candidate.unit && row.unitPrice != null);
+      if (!compatibleUnitRows.length) { const hasUnitEvidence = compatibleCurrency.some((row) => row.unit); items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: null, priceSourceId: null, status: hasUnitEvidence ? 'unit_mismatch' : 'price_unavailable', reason: hasUnitEvidence ? 'price_unit_does_not_match_recipe_unit' : 'price_unit_missing' }); continue; }
+      const evidences = compatibleUnitRows.map((row) => ({ row, observedAt: new Date(row.observedAt ?? 0) })).filter(({ observedAt }) => Number.isFinite(observedAt.getTime())).sort((a, b) => b.observedAt.getTime() - a.observedAt.getTime());
+      if (!evidences.length) { items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: null, priceSourceId: compatibleUnitRows[0].sourceId ?? null, status: 'price_unavailable', reason: 'invalid_observed_at' }); continue; }
+      const fresh = evidences.find(({ observedAt }) => now - observedAt.getTime() <= PRICE_FRESHNESS_WINDOW_MS);
+      const selected = fresh ?? evidences[0];
+      const observedAt = selected.observedAt;
+      if (!fresh) { items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: observedAt, priceSourceId: selected.row.sourceId ?? null, status: 'stale_price', reason: 'all_compatible_price_snapshots_older_than_7_days' }); continue; }
+      const price = Number(selected.row.unitPrice); const estimatedCost = price * candidate.quantity;
+      if (!Number.isFinite(price) || price < 0 || !Number.isFinite(estimatedCost)) { items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: observedAt, priceSourceId: selected.row.sourceId ?? null, status: 'price_unavailable', reason: 'invalid_price_value' }); continue; }
+      if (estimatedCost > remaining) { items.push({ ...base, price, estimatedCost, priceObservedAt: observedAt, priceSourceId: selected.row.sourceId ?? null, status: 'over_budget', reason: 'recipe_missing_quantity_exceeds_remaining_budget' }); continue; }
+      remaining -= estimatedCost; items.push({ ...base, price, estimatedCost, priceObservedAt: observedAt, priceSourceId: selected.row.sourceId ?? null, status: 'priced', reason: 'recipe_missing_ingredient_fits_verified_budget' });
     }
     return { items, totalEstimatedCost: Number(((budget ?? 0) - (budget === undefined ? 0 : remaining)).toFixed(2)), budgetRemaining: budget === undefined ? null : Number(remaining.toFixed(2)) } as const;
   }
