@@ -1,8 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PriceIntelligenceController } from './controllers/price-intelligence.controller';
 import { PriceIntelligenceService } from './services/price-intelligence.service';
-import { PriceHistoryService } from './services/price-history.service';
-import { PriceAnalysisService } from './services/price-analysis.service';
 import { PriceSourceService } from './services/price-source.service';
 import { PriceSourceRegistryService } from './services/price-source-registry.service';
 import { PricePersistenceService } from './services/price-persistence.service';
@@ -21,8 +19,6 @@ import { PrismaModule } from '../../common/database/prisma.module';
   controllers: [PriceIntelligenceController],
   providers: [
     PriceIntelligenceService,
-    PriceHistoryService,
-    PriceAnalysisService,
     PriceSourceService,
     PriceSourceRegistryService,
     PricePersistenceService,
@@ -37,8 +33,6 @@ import { PrismaModule } from '../../common/database/prisma.module';
   ],
   exports: [
     PriceIntelligenceService,
-    PriceHistoryService,
-    PriceAnalysisService,
     PriceSourceService,
     PriceSourceRegistryService,
     PricePersistenceService,
