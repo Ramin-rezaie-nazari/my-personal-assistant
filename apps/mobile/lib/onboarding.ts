@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getStoredAccessToken } from './api';
 
 export type Gender = 'male' | 'female' | 'other' | 'prefer_not_to_say';
 export type WorkoutPlace = 'home' | 'gym' | 'both';
@@ -31,25 +32,9 @@ export const ONBOARDING_VERSION = 3;
 
 export const DEFAULT_ONBOARDING: OnboardingState = {
   completed: false,
-  fullName: '',
-  gender: '',
-  birthDate: '',
-  heightCm: '',
-  weightKg: '',
-  goal: 'general_fitness',
-  fitnessLevel: 'beginner',
-  diet: 'balanced',
-  workoutPlace: 'home',
-  trainingDaysPerWeek: 3,
-  equipment: 'none',
-  sessionMinutes: 30,
-  detectedCountry: '',
-  permissions: {
-    location: false,
-    notifications: false,
-    camera: false,
-    microphone: false,
-  },
+  fullName: '', gender: '', birthDate: '', heightCm: '', weightKg: '', goal: 'general_fitness', fitnessLevel: 'beginner', diet: 'balanced', workoutPlace: 'home',
+  trainingDaysPerWeek: 3, equipment: 'none', sessionMinutes: 30, detectedCountry: '',
+  permissions: { location: false, notifications: false, camera: false, microphone: false },
 };
 
 export async function getOnboardingState(): Promise<OnboardingState> {
@@ -58,33 +43,33 @@ export async function getOnboardingState(): Promise<OnboardingState> {
   try {
     const parsed = JSON.parse(raw) as Partial<OnboardingState> & { version?: number };
     if (parsed.version !== ONBOARDING_VERSION) return DEFAULT_ONBOARDING;
-    return {
-      ...DEFAULT_ONBOARDING,
-      ...parsed,
-      permissions: {
-        ...DEFAULT_ONBOARDING.permissions,
-        ...(parsed.permissions ?? {}),
-      },
-    };
-  } catch {
-    return DEFAULT_ONBOARDING;
-  }
+    return { ...DEFAULT_ONBOARDING, ...parsed, permissions: { ...DEFAULT_ONBOARDING.permissions, ...(parsed.permissions ?? {}) } };
+  } catch { return DEFAULT_ONBOARDING; }
+}
+
+async function syncCompletedOnboarding(state: OnboardingState) {
+  const token = await getStoredAccessToken();
+  if (!token) throw new Error('AUTH_REQUIRED');
+  const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+  const body = {
+    currentStep: 'completed',
+    gender: state.gender || undefined,
+    birthDate: state.birthDate || undefined,
+    heightCm: state.heightCm ? Number(state.heightCm) : undefined,
+    weightKg: state.weightKg ? Number(state.weightKg) : undefined,
+    primaryGoal: state.goal || undefined,
+    dietType: state.diet,
+    workoutPlace: state.workoutPlace,
+    rhythm: `${state.trainingDaysPerWeek} days/week · ${state.sessionMinutes} min`,
+  };
+  const response = await fetch(`${API_URL}/onboarding/complete`, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify(body) });
+  if (!response.ok) throw new Error((await response.text()) || `Onboarding sync failed (${response.status})`);
 }
 
 export async function setOnboardingState(state: OnboardingState): Promise<void> {
-  await AsyncStorage.setItem(
-    ONBOARDING_STORAGE_KEY,
-    JSON.stringify({ ...state, version: ONBOARDING_VERSION }),
-  );
+  if (state.completed) await syncCompletedOnboarding(state);
+  await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ ...state, version: ONBOARDING_VERSION }));
 }
 
-export async function hasCompletedOnboarding(): Promise<boolean> {
-  const state = await getOnboardingState();
-  return state.completed;
-}
-
-export function calculateBMI(heightCm: number, weightKg: number): number | null {
-  if (!Number.isFinite(heightCm) || !Number.isFinite(weightKg) || heightCm <= 0 || weightKg <= 0) return null;
-  const meters = heightCm / 100;
-  return Number((weightKg / (meters * meters)).toFixed(1));
-}
+export async function hasCompletedOnboarding(): Promise<boolean> { const state = await getOnboardingState(); return state.completed; }
+export function calculateBMI(heightCm: number, weightKg: number): number | null { if (!Number.isFinite(heightCm) || !Number.isFinite(weightKg) || heightCm <= 0 || weightKg <= 0) return null; const meters = heightCm / 100; return Number((weightKg / (meters * meters)).toFixed(1)); }
