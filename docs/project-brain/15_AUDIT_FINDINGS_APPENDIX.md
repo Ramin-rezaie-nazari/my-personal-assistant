@@ -1,9 +1,9 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-12
-Review status: REMEDIATION RECONCILED; FINAL CI RECHECK IN PROGRESS
+Review status: APPENDIX REMEDIATION COMPLETE; CI VERIFIED ON REMEDIATION TREE
 
-This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit. The original `OPEN` labels below represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
+This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit. The original `OPEN` labels represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
 
 ## Current status — PB-156 through PB-257
 
@@ -118,6 +118,8 @@ The exact prose of PB-001 through PB-155 is not recoverable from the repository 
 
 ## Verification boundary
 
-Recent GitHub Actions evidence has verified the Mobile pipeline end-to-end and has verified Backend dependency installation, Prisma schema validation/generation, migration application/idempotence, and the food-intelligence self-test. The latest retention-service compatibility changes have triggered another Backend CI cycle; the branch must remain unmarked as production-green until that cycle completes successfully.
+GitHub Actions verification has passed on remediation commit `46614b36040cb839d6062dae726dc74e51ab3b96` for both Backend CI and Mobile CI. Backend coverage included dependency installation, Prisma validation/generation, migrations/idempotence, food-intelligence self-test, build, unit tests and API E2E. Mobile coverage included dependency installation, TypeScript typecheck, source tests, committed Jest specs, Expo validation and Android JS bundling.
 
-Local repository execution is unavailable because direct GitHub network access is blocked in the container environment. Production Supabase/Auth/Storage state, RLS configuration, push delivery and real-device UX remain outside the available runtime boundary.
+The branch head is now `d23fcad22daec065a8fb7c3804de7a8362f1c6e5`, a documentation-only synchronization after the verified application tree. This documentation change does not extend application-code verification beyond `46614b36040cb839d6062dae726dc74e51ab3b96`.
+
+Local repository execution is unavailable because direct GitHub network access is blocked in the container environment. Production database/RLS/storage state, external service quotas, push delivery and real-device UX remain outside the available runtime boundary.
