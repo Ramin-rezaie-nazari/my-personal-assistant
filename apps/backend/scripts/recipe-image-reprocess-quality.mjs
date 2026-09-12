@@ -10,6 +10,7 @@ const MAX_BYTES = 60 * 1024;
 const CONCURRENCY = Math.min(Math.max(Number(process.env.RECIPE_IMAGE_CONCURRENCY || '2'), 1), 4);
 const DATASET_DIR = process.env.RECIPE_IMAGE_DATASET_DIR ? resolve(process.env.RECIPE_IMAGE_DATASET_DIR) : null;
 const LIMIT = Math.max(Number(process.env.RECIPE_IMAGE_REPROCESS_LIMIT || '0'), 0);
+const AFTER_RECIPE_ID = process.env.RECIPE_IMAGE_REPROCESS_AFTER_RECIPE_ID?.trim() || '';
 
 if (!SUPABASE_URL || !SERVICE_KEY) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
 const authHeaders = { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` };
@@ -56,11 +57,14 @@ function imageIndex(root) {
 async function existingRows() {
   const rows = [];
   for (let offset = 0; ; offset += 1000) {
-    const page = await rest(`recipe_images?select=id,recipe_id,image_type,storage_key,byte_size,width,height&image_type=eq.hero&order=recipe_id.asc&limit=1000&offset=${offset}`);
+    const after = AFTER_RECIPE_ID ? `&recipe_id=gt.${encodeURIComponent(AFTER_RECIPE_ID)}` : '';
+    const pageSize = LIMIT > 0 ? Math.min(1000, LIMIT - rows.length) : 1000;
+    if (pageSize <= 0) break;
+    const page = await rest(`recipe_images?select=id,recipe_id,image_type,storage_key,byte_size,width,height&image_type=eq.hero${after}&order=recipe_id.asc&limit=${pageSize}&offset=${offset}`);
     rows.push(...(page || []));
-    if (!page || page.length < 1000) break;
+    if (!page || page.length < pageSize || (LIMIT > 0 && rows.length >= LIMIT)) break;
   }
-  return LIMIT > 0 ? rows.slice(0, LIMIT) : rows;
+  return rows;
 }
 
 async function sourceRows() {
@@ -77,19 +81,12 @@ async function bestWebp(input) {
   const meta = await sharp(input).metadata();
   const sourceWidth = meta.width || 0;
   const maxWidth = Math.min(sourceWidth || 960, 1200);
-  const widths = [...new Set([maxWidth, 1080, 1024, 960, 900, 840, 800, 720, 640, 576, 512, 448, 384])]
-    .filter((w) => w > 0 && w <= maxWidth)
-    .sort((a, b) => b - a);
+  const widths = [...new Set([maxWidth, 1080, 1024, 960, 900, 840, 800, 720, 640, 576, 512, 448, 384])].filter((w) => w > 0 && w <= maxWidth).sort((a, b) => b - a);
   const qualities = [90, 88, 86, 84, 82, 80, 78, 76, 74, 72, 70, 68, 66, 64, 62, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40];
-
   let best = null;
   for (const width of widths) {
     for (const quality of qualities) {
-      const out = await sharp(input)
-        .rotate()
-        .resize({ width, height: width, fit: 'inside', withoutEnlargement: true })
-        .webp({ quality, effort: 6 })
-        .toBuffer();
+      const out = await sharp(input).rotate().resize({ width, height: width, fit: 'inside', withoutEnlargement: true }).webp({ quality, effort: 6 }).toBuffer();
       if (out.byteLength <= MAX_BYTES) {
         const score = width * 1_000_000 + quality * 1_000 - out.byteLength / 1_000;
         if (!best || score > best.score) best = { out, width, quality, score };
@@ -97,7 +94,6 @@ async function bestWebp(input) {
       }
     }
   }
-
   if (!best) throw new Error(`Cannot produce WebP <= 60KB (source=${sourceWidth})`);
   const outMeta = await sharp(best.out).metadata();
   return { buffer: best.out, width: outMeta.width || best.width, height: outMeta.height || meta.height || best.width, quality: best.quality };
@@ -105,11 +101,7 @@ async function bestWebp(input) {
 
 async function upload(key, buffer) {
   const encoded = key.split('/').map(encodeURIComponent).join('/');
-  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encoded}`, {
-    method: 'POST',
-    headers: { ...authHeaders, 'Content-Type': 'image/webp', 'Cache-Control': '31536000', 'x-upsert': 'true' },
-    body: buffer,
-  });
+  const r = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encoded}`, { method: 'POST', headers: { ...authHeaders, 'Content-Type': 'image/webp', 'Cache-Control': '31536000', 'x-upsert': 'true' }, body: buffer });
   const text = await r.text();
   if (!r.ok) throw new Error(`Storage upload ${r.status}: ${text}`);
 }
@@ -120,11 +112,7 @@ async function processOne(row, imageName, index) {
   const original = await readFile(file);
   const c = await bestWebp(original);
   await upload(row.storage_key, c.buffer);
-  await rest(`recipe_images?id=eq.${encodeURIComponent(row.id)}`, {
-    method: 'PATCH',
-    headers: { Prefer: 'return=minimal' },
-    body: JSON.stringify({ byte_size: c.buffer.byteLength, width: c.width, height: c.height, mime_type: 'image/webp' }),
-  });
+  await rest(`recipe_images?id=eq.${encodeURIComponent(row.id)}`, { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ byte_size: c.buffer.byteLength, width: c.width, height: c.height, mime_type: 'image/webp' }) });
   return { bytes: c.buffer.byteLength, width: c.width, height: c.height, quality: c.quality };
 }
 
@@ -134,7 +122,7 @@ async function main() {
   const src = await sourceRows();
   const rows = await existingRows();
   const stats = { processed: 0, failed: 0, beforeBytes: 0, afterBytes: 0, maxBytes: 0, minBytes: Number.MAX_SAFE_INTEGER };
-  console.log(JSON.stringify({ datasetDir: DATASET_DIR, candidates: rows.length, concurrency: CONCURRENCY }, null, 2));
+  console.log(JSON.stringify({ datasetDir: DATASET_DIR, candidates: rows.length, concurrency: CONCURRENCY, afterRecipeId: AFTER_RECIPE_ID || null, limit: LIMIT || null }, null, 2));
 
   let cursor = 0;
   async function worker() {
@@ -149,7 +137,7 @@ async function main() {
         stats.afterBytes += result.bytes;
         stats.maxBytes = Math.max(stats.maxBytes, result.bytes);
         stats.minBytes = Math.min(stats.minBytes, result.bytes);
-        if (stats.processed % 10 === 0) console.log(JSON.stringify({ progress: stats.processed, ...stats, last: result }, null, 2));
+        if (stats.processed % 10 === 0) console.log(JSON.stringify({ progress: stats.processed, ...stats, last: result, cursor: row.recipe_id }, null, 2));
       } catch (e) {
         stats.failed += 1;
         console.error(`[FAILED] ${row.recipe_id}: ${e instanceof Error ? e.message : String(e)}`);
@@ -159,7 +147,7 @@ async function main() {
 
   await Promise.all(Array.from({ length: Math.min(CONCURRENCY, rows.length) }, () => worker()));
   const avg = stats.processed ? stats.afterBytes / stats.processed : 0;
-  console.log(JSON.stringify({ status: 'complete', ...stats, avgBytes: Math.round(avg) }, null, 2));
+  console.log(JSON.stringify({ status: 'complete', ...stats, avgBytes: Math.round(avg), nextAfterRecipeId: rows.length ? rows[rows.length - 1].recipe_id : AFTER_RECIPE_ID || null }, null, 2));
   if (stats.failed > 0) process.exitCode = 1;
 }
 
