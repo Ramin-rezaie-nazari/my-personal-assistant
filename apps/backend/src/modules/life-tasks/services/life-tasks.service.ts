@@ -44,7 +44,10 @@ export class LifeTasksService {
     if (dto.status && !['pending', 'in_progress', 'completed', 'cancelled', 'snoozed'].includes(dto.status)) throw new BadRequestException('Invalid task status');
 
     const status = dto.status ?? task.status;
-    const completedAt = status !== 'completed' ? null : task.status === 'completed' ? task.completedAt ?? new Date() : new Date();
+    const statusChanged = dto.status !== undefined && dto.status !== task.status;
+    const completedAt = status === 'completed'
+      ? statusChanged ? new Date() : task.completedAt ?? new Date()
+      : null;
 
     await this.prisma.$executeRaw`UPDATE "LifeTask" SET "title"=${dto.title?.trim() ?? task.title},"description"=${dto.description === undefined ? task.description : dto.description?.trim() || null},"status"=${status},"priority"=${dto.priority ?? task.priority},"estimatedMinutes"=${dto.estimatedMinutes ?? task.estimatedMinutes},"energyLevel"=${dto.energyLevel ?? task.energyLevel},"dueAt"=${dto.dueAt === undefined ? task.dueAt : this.date(dto.dueAt)},"scheduledAt"=${dto.scheduledAt === undefined ? task.scheduledAt : this.date(dto.scheduledAt)},"completedAt"=${completedAt},"updatedAt"=CURRENT_TIMESTAMP WHERE "id"=${id} AND "userId"=${userId}`;
     if (dto.status) await this.recordEvent(userId, id, { eventType: dto.status === 'completed' ? 'completed' : dto.status === 'snoozed' ? 'snoozed' : dto.status === 'cancelled' ? 'cancelled' : dto.status === 'in_progress' ? 'started' : 'skipped' });
