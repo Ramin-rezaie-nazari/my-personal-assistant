@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-const root = resolve(new URL('..', import.meta.url).pathname, '..');
+const root = resolve(new URL('..', import.meta.url).pathname);
 const pkg = JSON.parse(await readFile(resolve(root, 'package.json'), 'utf8'));
 const api = await readFile(resolve(root, 'lib/api.ts'), 'utf8');
 const assistant = await readFile(resolve(root, 'app/assistant.tsx'), 'utf8');
