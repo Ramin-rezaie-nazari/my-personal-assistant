@@ -9,6 +9,7 @@ export type DecisionActionResult = {
 };
 
 export interface DecisionActionAdapter {
+  actions?: string[];
   supports(candidate: DecisionCandidate): boolean;
   execute(
     candidate: DecisionCandidate,
@@ -58,9 +59,7 @@ export class DecisionActionAdapterService {
   }
 
   private getAdapterActions(adapter: DecisionActionAdapter): string[] {
-    const advertised = (
-      adapter as DecisionActionAdapter & { actions?: unknown }
-    ).actions;
+    const advertised = adapter.actions;
     if (!Array.isArray(advertised)) return [];
     return advertised.filter(
       (action): action is string =>
