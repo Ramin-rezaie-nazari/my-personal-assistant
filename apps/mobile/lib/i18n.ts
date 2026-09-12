@@ -10,12 +10,16 @@ export const translations = {
     welcome: 'Welcome 👋', signIn: 'Sign in', createAccount: 'Create account', email: 'Email', password: 'Password', firstName: 'First name', lastName: 'Last name',
     today: 'Today', quickActions: 'Quick actions', calories: 'Calories', protein: 'Protein', water: 'Water', training: 'Training', recentMeals: 'Recent meals', notifications: 'Notifications',
     goal: 'Goal', habits: 'Habits', reminders: 'Reminders', supplements: 'Supplements', workout: 'Workout', progress: 'Progress', settings: 'Settings', logOut: 'Log out', retry: 'Retry',
+    back: 'Back', meals: 'Meals', mealDetails: 'MEAL DETAILS', mealUnavailable: 'Meal unavailable', mealNotFound: 'Meal not found', backToMeals: 'Back to meals', ingredients: 'Ingredients', serving: 'serving', servings: 'servings', logAnotherMeal: 'Log another meal',
+    yogaCoach: 'YOGA COACH', calmSteady: 'Calm, steady, with your coach', trainingMode: 'TRAINING MODE', startCamera: 'Start camera training', stopCamera: 'Turn camera off', live: 'LIVE', onDeviceAnalysis: 'On-device analysis', noRecording: 'No recording or upload', keepInFrame: 'Keep your body in frame and follow the coach voice.', sessionComplete: 'Session complete', greatSession: 'Great work. The session is complete.', end: 'End', next: 'Next',
   },
   fa: {
     languageTitle: 'زبان خودت را انتخاب کن', languageSubtitle: 'دستیار تو همه‌جا با همین زبان با تو صحبت می‌کند.', persian: 'فارسی', english: 'English', continue: 'ادامه',
     welcome: 'خوش اومدی 👋', signIn: 'ورود', createAccount: 'ساخت حساب', email: 'ایمیل', password: 'رمز عبور', firstName: 'نام', lastName: 'نام خانوادگی',
     today: 'امروز', quickActions: 'دسترسی‌های سریع', calories: 'کالری', protein: 'پروتئین', water: 'آب', training: 'تمرین', recentMeals: 'غذاهای اخیر', notifications: 'اعلان‌ها',
     goal: 'هدف', habits: 'عادت‌ها', reminders: 'یادآوری‌ها', supplements: 'مکمل‌ها', workout: 'ورزش', progress: 'پیشرفت', settings: 'تنظیمات', logOut: 'خروج', retry: 'تلاش دوباره',
+    back: 'برگشت', meals: 'غذاها', mealDetails: 'جزئیات غذا', mealUnavailable: 'غذا در دسترس نیست', mealNotFound: 'غذا پیدا نشد', backToMeals: 'بازگشت به غذاها', ingredients: 'مواد تشکیل‌دهنده', serving: 'سرو', servings: 'سرو', logAnotherMeal: 'ثبت یک غذای دیگر',
+    yogaCoach: 'مربی یوگا', calmSteady: 'آرام، پیوسته، با مربی', trainingMode: 'حالت تمرین', startCamera: 'شروع تمرین با دوربین', stopCamera: 'خاموش کردن دوربین', live: 'زنده', onDeviceAnalysis: 'تحلیل روی دستگاه', noRecording: 'بدون ضبط و آپلود', keepInFrame: 'بدنت را در کادر نگه دار و با صدای مربی جلو برو.', sessionComplete: 'جلسه تمام شد', greatSession: 'عالی بود. جلسه تمام شد.', end: 'پایان', next: 'ادامه',
   },
 } as const;
 
