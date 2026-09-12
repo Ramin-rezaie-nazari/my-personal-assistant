@@ -167,13 +167,16 @@ export function getEntityRelations(canonicalId) {
 }
 
 function isRelatedAlias(idA, idB) {
-  const a = knowledgeById.get(idA);
-  const b = knowledgeById.get(idB);
+  const a = knowledgeById.get(idA) || byId.get(idA);
+  const b = knowledgeById.get(idB) || byId.get(idB);
+  const aName = normalize(a?.name);
+  const bName = normalize(b?.name);
   return Boolean(
-    a?.parent_id === idB ||
-    b?.parent_id === idA ||
-    a?.relations?.some((r) => r?.type === 'variant_of' && r.target === idB) ||
-    b?.relations?.some((r) => r?.type === 'variant_of' && r.target === idA),
+    knowledgeById.get(idA)?.parent_id === idB ||
+    knowledgeById.get(idB)?.parent_id === idA ||
+    knowledgeById.get(idA)?.relations?.some((r) => r?.type === 'variant_of' && r.target === idB) ||
+    knowledgeById.get(idB)?.relations?.some((r) => r?.type === 'variant_of' && r.target === idA) ||
+    (a?.category && a.category === b?.category && ((aName && bName.includes(aName)) || (bName && aName.includes(bName)))),
   );
 }
 
