@@ -130,9 +130,11 @@ export class LocalLanguageUnderstandingService {
   }
 
   private extractTargetNumber(text: string, labels: string[]): number | undefined {
-    const escaped = labels.map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    const match = text.match(new RegExp(`\\b(\\d{1,5}(?:\\.\\d+)?)\\s*(?:${escaped.join('|')})\\b`, 'i'));
-    return match ? Number(match[1]) : undefined;
+    const label = labels.map((value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|');
+    const afterLabel = text.match(new RegExp(`(?:${label})\\s*(?:[:=]\\s*)?(\\d{1,5}(?:\\.\\d+)?)\\s*(?:گرم|g)?\\b`, 'i'));
+    if (afterLabel) return Number(afterLabel[1]);
+    const beforeLabel = text.match(new RegExp(`\\b(\\d{1,5}(?:\\.\\d+)?)\\s*(?:${label})\\b`, 'i'));
+    return beforeLabel ? Number(beforeLabel[1]) : undefined;
   }
 
   private extractTime(text: string): string | undefined {
