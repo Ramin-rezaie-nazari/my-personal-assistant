@@ -3,8 +3,6 @@ import { InventoryModule } from '../inventory/inventory.module';
 import { ShoppingModule } from '../shopping/shopping.module';
 import { ShoppingIntelligenceController } from './controllers/shopping-intelligence.controller';
 import { ShoppingIntelligenceService } from './services/shopping-intelligence.service';
-import { ShoppingListService } from './services/shopping-list.service';
-import { PurchaseAnalysisService } from './services/purchase-analysis.service';
 import { SmartPurchaseDecisionService } from './services/smart-purchase-decision.service';
 import { SmartPurchaseBasketService } from './services/smart-purchase-basket.service';
 import { PurchasePlanService } from './services/purchase-plan.service';
@@ -17,8 +15,6 @@ import { HouseholdReorderForecastService } from './services/household-reorder-fo
   controllers: [ShoppingIntelligenceController],
   providers: [
     ShoppingIntelligenceService,
-    ShoppingListService,
-    PurchaseAnalysisService,
     SmartPurchaseDecisionService,
     SmartPurchaseBasketService,
     PurchasePlanService,
@@ -28,8 +24,6 @@ import { HouseholdReorderForecastService } from './services/household-reorder-fo
   ],
   exports: [
     ShoppingIntelligenceService,
-    ShoppingListService,
-    PurchaseAnalysisService,
     SmartPurchaseDecisionService,
     SmartPurchaseBasketService,
     PurchasePlanService,
