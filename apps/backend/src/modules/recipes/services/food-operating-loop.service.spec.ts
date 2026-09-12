@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { FoodOperatingLoopService } from './food-operating-loop.service';
 
 describe('FoodOperatingLoopService', () => {
@@ -11,6 +12,14 @@ describe('FoodOperatingLoopService', () => {
 
   const service = new FoodOperatingLoopService(prisma as never, scaling as never, shopping as never, budget as never, countryFood as never, countryFinance as never, safetyTaxonomy as never);
   beforeEach(() => jest.clearAllMocks());
+
+  it('rejects invalid target servings as a bad request', async () => {
+    await expect(service.buildPlan('user-1', 'recipe-1', 0)).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.buildBudgetPlan('user-1', 'recipe-1', Number.NaN, 100, 'IRR')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.recommend('user-1', 1.5)).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.recipe.findFirst).not.toHaveBeenCalled();
+    expect(prisma.recipe.findMany).not.toHaveBeenCalled();
+  });
 
   it('builds a target-serving plan and compares inventory using scaled quantities', async () => {
     prisma.recipe.findFirst.mockResolvedValue({ id: 'recipe-1', name: 'Example', servings: 2, userId: null, verified: true, calories: 800, protein: 60, carbs: 90, fat: 20, ingredients: [{ foodId: 'food-1', quantity: 200, unit: 'g', food: { name: 'Chicken' } }] });
