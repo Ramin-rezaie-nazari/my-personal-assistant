@@ -16,7 +16,7 @@ describe('FoodSafetyTaxonomyService', () => {
     });
   });
 
-  it('fails closed when an ingredient is not present in the safety taxonomy', () => {
+  it('fails closed for an unknown ingredient when safety constraints exist', () => {
     const result = service.evaluate(['ingredient-never-seen'], { allergies: ['milk'] });
     expect(result.allowed).toBe(false);
     expect(result.reason).toBe('unknown_food_safety:ingredient-never-seen');
@@ -47,10 +47,15 @@ describe('FoodSafetyTaxonomyService', () => {
     expect(result.allowed).toBe(true);
   });
 
-  it('normalizes Persian food names before resolving', () => {
+  it('normalizes Persian aliases', () => {
     expect(service.resolve('سماق')).toMatchObject({
       status: 'known',
       canonicalId: 'sumac',
     });
+  });
+
+  it('does not invent restrictions when no safety constraints exist', () => {
+    const result = service.evaluate(['ingredient-never-seen'], {});
+    expect(result.allowed).toBe(true);
   });
 });
