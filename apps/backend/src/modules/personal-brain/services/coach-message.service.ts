@@ -7,6 +7,10 @@ export type SupportedLanguage = 'fa' | 'en';
 export class CoachMessageService {
   constructor(private readonly coach: ProactiveCoachService) {}
 
+  async build(input: { userId: string; message?: string; language?: SupportedLanguage }) {
+    return this.getMessage(input.userId, input.language ?? 'en');
+  }
+
   async getMessage(
     userId: string,
     language: SupportedLanguage = 'en',
@@ -23,18 +27,12 @@ export class CoachMessageService {
   private translate(action: CoachAction, language: SupportedLanguage) {
     if (language === 'en') return action.message;
     const fa: Record<string, string> = {
-      'overdue scheduled item':
-        'این کار از زمان برنامه‌ریزی‌شده گذشته و بهتر است همین حالا شروع شود.',
-      'capacity exceeded':
-        'ظرفیت تمرکز امروز پر شده؛ بهتر است ادامه برنامه را دوباره تنظیم کنیم.',
-      'schedule conflict':
-        'در برنامه تداخل وجود دارد و بهتر است برنامه باقی‌مانده دوباره چیده شود.',
-      'low remaining capacity':
-        'ظرفیت مفید باقی‌مانده امروز کم است؛ کار سنگین جدید اضافه نکن.',
-      'smart planner recommendation':
-        'این کار در حال حاضر بهترین گزینه پیشنهادی برای ادامه روز است.',
-      'no urgent intervention required':
-        'فعلاً کاری نیاز به مداخله فوری ندارد؛ برنامه فعلی را ادامه بده.',
+      'overdue scheduled item': 'این کار از زمان برنامه‌ریزی‌شده گذشته و بهتر است همین حالا شروع شود.',
+      'capacity exceeded': 'ظرفیت تمرکز امروز پر شده؛ بهتر است ادامه برنامه را دوباره تنظیم کنیم.',
+      'schedule conflict': 'در برنامه تداخل وجود دارد و بهتر است برنامه باقی‌مانده دوباره چیده شود.',
+      'low remaining capacity': 'ظرفیت مفید باقی‌مانده امروز کم است؛ کار سنگین جدید اضافه نکن.',
+      'smart planner recommendation': 'این کار در حال حاضر بهترین گزینه پیشنهادی برای ادامه روز است.',
+      'no urgent intervention required': 'فعلاً کاری نیاز به مداخله فوری ندارد؛ برنامه فعلی را ادامه بده.',
     };
     return fa[action.reason] ?? action.message;
   }
