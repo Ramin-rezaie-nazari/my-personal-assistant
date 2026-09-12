@@ -1,7 +1,13 @@
 name: _tmp Refresh Lockfile
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [audit/project-brain-2026-09-11]
+    paths:
+      - '.github/workflows/_tmp-refresh-lockfile.yml'
+      - 'apps/backend/package.json'
+      - 'apps/mobile/package.json'
+      - 'pnpm-lock.yaml'
 
 jobs:
   refresh:
