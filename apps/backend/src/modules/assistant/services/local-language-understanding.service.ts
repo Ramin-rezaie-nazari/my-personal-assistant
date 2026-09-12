@@ -4,6 +4,7 @@ export type LocalIntent =
   | 'ADD_TO_BASKET'
   | 'REMOVE_FROM_BASKET'
   | 'RECOMMEND_MEAL'
+  | 'PLAN_FOOD_BUDGET'
   | 'GET_NUTRITION_SUMMARY'
   | 'CREATE_REMINDER'
   | 'UPDATE_REQUEST'
@@ -35,7 +36,7 @@ export class LocalLanguageUnderstandingService {
     if (protein !== undefined) entities.proteinGrams = protein;
     const time = this.extractTime(normalizedText);
     if (time) entities.time = time;
-    const duration = normalizedText.match(/\b(\d{1,3})\s*(?:دقیقه|min|mins|minute|minutes)\b/i);
+    const duration = normalizedText.match(/(?:^|\s)(\d{1,3})\s*(?:دقیقه|min|mins|minute|minutes)(?=\s|$)/i);
     if (duration) entities.durationMinutes = Number(duration[1]);
     const calories = this.extractTargetNumber(normalizedText, ['کالری', 'cal', 'calories']);
     if (calories !== undefined) entities.calories = calories;
@@ -62,6 +63,8 @@ export class LocalLanguageUnderstandingService {
       return this.result('ADD_TO_BASKET', entities, 0.97, normalizedText);
     if (food && this.matches(normalizedText, ['حذف', 'بردار', 'پاک', 'remove', 'delete']))
       return this.result('REMOVE_FROM_BASKET', entities, 0.97, normalizedText);
+    if (this.matches(normalizedText, ['بودجه غذا', 'بودجه غذایی', 'خرج غذا', 'هزینه غذا', 'برای غذا', 'budget for food', 'food budget', 'food spending', 'meal budget']))
+      return this.result('PLAN_FOOD_BUDGET', entities, budget ? 0.98 : 0.9, normalizedText);
     if (this.matches(normalizedText, ['یادم بنداز', 'یادآوری', 'یادآور', 'یادم نره', 'یادآوری کن', 'remind', 'reminder']))
       return this.result('CREATE_REMINDER', entities, time ? 0.97 : 0.9, normalizedText);
     if (this.matches(normalizedText, ['چی بخور', 'چه بخور', 'شام', 'ناهار', 'صبحانه', 'غذا پیشنهاد', 'پیشنهاد غذا', 'غذا چی', 'meal', 'dinner', 'lunch']))
