@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { RecipeServingScalingService } from '../../nutrition/recipe-intelligence/recipe-serving-scaling.service';
 import { ShoppingService } from '../../shopping/shopping.service';
@@ -75,7 +75,7 @@ export class FoodOperatingLoopService {
   }
 
   async buildBudgetPlan(userId: string, recipeId: string, targetServings: number, budget: number, currency: string, countryCode = '') {
-    if (!Number.isFinite(budget) || budget < 0) throw new NotFoundException('budget must be a non-negative number');
+    if (!Number.isFinite(budget) || budget < 0) throw new BadRequestException('budget must be a non-negative number');
     const plan = await this.buildPlan(userId, recipeId, targetServings, countryCode);
     const quote = await this.budget.quoteItems(
       plan.inventory.missing.map((item) => ({ ...item, urgency: 'soon' as const })),
@@ -132,10 +132,7 @@ export class FoodOperatingLoopService {
     const rankIndex = new Map(ranked.map((recipe, index) => [recipe.name, index]));
     return recipes.map((recipe) => {
       const scaled = this.buildScaledRecipe(recipe, targetServings);
-      const safety = this.safetyTaxonomy.evaluate(
-        recipe.ingredients.map((ingredient) => ingredient.food?.name ?? ''),
-        safetyConstraints,
-      );
+      const safety = this.safetyTaxonomy.evaluate(recipe.ingredients.map((ingredient) => ingredient.food?.name ?? ''), safetyConstraints);
       if (!safety.allowed) return null;
       const { missing } = this.matchScaledIngredients(recipe.ingredients, scaled.ingredients, inventoryByFood);
       const coveragePercent = scaled.ingredients.length === 0 ? 0 : Math.round(((scaled.ingredients.length - missing.length) / scaled.ingredients.length) * 100);
@@ -185,26 +182,9 @@ export class FoodOperatingLoopService {
       id: recipe.id,
       canonicalName: recipe.name,
       localizedNames: {}, countryCodes: [], regionIds: [], cuisineIds: [], mealTypes: [], dietaryTags: [],
-      ingredients: recipe.ingredients.map((ingredient) => ({
-        ingredientId: ingredient.foodId,
-        role: 'other',
-        quantity: ingredient.quantity,
-        unit: ingredient.unit,
-        measurementKind: ingredient.measurementKind as any,
-        scalingPolicy: ingredient.scalingPolicy as any,
-        scalingExponent: ingredient.scalingExponent ?? undefined,
-        batchSize: ingredient.batchSize ?? undefined,
-        maxLinearMultiplier: ingredient.maxLinearMultiplier ?? undefined,
-      })),
-      nutritionPerServing: {
-        calories: recipe.calories / recipe.servings,
-        proteinGrams: recipe.protein / recipe.servings,
-        carbohydratesGrams: recipe.carbs / recipe.servings,
-        fatGrams: recipe.fat / recipe.servings,
-      },
-      servings: recipe.servings,
-      prepMinutes: 0, cookMinutes: 0, difficulty: 'medium',
-      status: recipe.verified ? 'verified' : 'draft', sourceType: recipe.userId ? 'user' : 'internal', version: 1,
+      ingredients: recipe.ingredients.map((ingredient) => ({ ingredientId: ingredient.foodId, role: 'other', quantity: ingredient.quantity, unit: ingredient.unit, measurementKind: ingredient.measurementKind as any, scalingPolicy: ingredient.scalingPolicy as any, scalingExponent: ingredient.scalingExponent ?? undefined, batchSize: ingredient.batchSize ?? undefined, maxLinearMultiplier: ingredient.maxLinearMultiplier ?? undefined })),
+      nutritionPerServing: { calories: recipe.calories / recipe.servings, proteinGrams: recipe.protein / recipe.servings, carbohydratesGrams: recipe.carbs / recipe.servings, fatGrams: recipe.fat / recipe.servings },
+      servings: recipe.servings, prepMinutes: 0, cookMinutes: 0, difficulty: 'medium', status: recipe.verified ? 'verified' : 'draft', sourceType: recipe.userId ? 'user' : 'internal', version: 1,
     }, { targetServings, kitchenFriendlyRounding: true });
   }
 }
