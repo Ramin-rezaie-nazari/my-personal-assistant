@@ -55,7 +55,6 @@ export class BudgetIntelligenceService {
         currency?: string;
         unit?: string | null;
         unitPrice?: number | null;
-        amount?: number | null;
         observedAt?: Date | string;
         sourceId?: string;
       }>;
@@ -214,6 +213,7 @@ export class BudgetIntelligenceService {
 
     const totalEstimatedCost = Number((budget - remaining).toFixed(2));
     const pricedItems = items.filter((item) => item.status === 'priced');
+    const hasOverBudgetItems = items.some((item) => item.status === 'over_budget');
 
     return {
       userId,
@@ -224,7 +224,7 @@ export class BudgetIntelligenceService {
       pricedItemCount: pricedCount,
       itemCount: items.length,
       budgetStatus:
-        totalEstimatedCost > budget
+        hasOverBudgetItems
           ? 'over_budget'
           : pricedItems.length === 0 && items.length > 0
             ? 'insufficient_price_data'
