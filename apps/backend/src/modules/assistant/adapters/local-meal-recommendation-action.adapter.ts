@@ -26,6 +26,15 @@ export class LocalMealRecommendationActionAdapter implements OnModuleInit {
       | { entities?: Record<string, unknown> }
       | undefined;
     const entities = local?.entities ?? {};
+    const unsupportedHardConstraints = this.readStringArray(entities.allergies).concat(
+      this.readStringArray(entities.dietaryPreferences),
+    );
+    if (unsupportedHardConstraints.length) {
+      throw new Error(
+        `unsupported_hard_constraints:${unsupportedHardConstraints.join(',')}`,
+      );
+    }
+
     const targetServings = this.readPositiveInteger(entities.householdSize) ?? 1;
     const maxCalories = this.readPositiveNumber(entities.calories);
     const minProteinGrams = this.readPositiveNumber(entities.proteinGrams);
@@ -41,14 +50,7 @@ export class LocalMealRecommendationActionAdapter implements OnModuleInit {
 
     return {
       targetServings,
-      constraints: {
-        maxCalories,
-        minProteinGrams,
-        countryCode: countryCode || undefined,
-        unsupportedHardConstraints: this.readStringArray(entities.allergies).concat(
-          this.readStringArray(entities.dietaryPreferences),
-        ),
-      },
+      constraints: { maxCalories, minProteinGrams, countryCode: countryCode || undefined },
       recommendations,
     };
   }
