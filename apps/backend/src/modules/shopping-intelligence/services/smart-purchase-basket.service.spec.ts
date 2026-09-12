@@ -118,4 +118,53 @@ describe('SmartPurchaseBasketService', () => {
     });
     expect(result.items[0].selectedPrice).toBeNull();
   });
+
+  it('applies the remaining budget to each subsequent basket item', () => {
+    const service = new SmartPurchaseBasketService(
+      new SmartPurchaseDecisionService(),
+    );
+    const result = service.optimize(
+      [
+        {
+          productKey: 'rice',
+          quantity: 1,
+          candidates: [
+            {
+              id: 'rice-1',
+              productKey: 'rice',
+              price: 8,
+              currency: 'USD',
+              availability: 'in_stock',
+              priceVs30dAverage: -0.2,
+              stockUrgency: 0.8,
+            },
+          ],
+        },
+        {
+          productKey: 'oil',
+          quantity: 2,
+          candidates: [
+            {
+              id: 'oil-1',
+              productKey: 'oil',
+              price: 6,
+              currency: 'USD',
+              availability: 'in_stock',
+              priceVs30dAverage: -0.2,
+              stockUrgency: 0.8,
+            },
+          ],
+        },
+      ],
+      10,
+      'USD',
+    );
+
+    expect(result.items[0].decision.action).toBe('buy_now');
+    expect(result.items[0].selectedPrice).toBe(8);
+    expect(result.items[1].decision.action).toBe('avoid');
+    expect(result.items[1].decision.reasons).toEqual(['over_budget']);
+    expect(result.total).toBe(8);
+    expect(result.feasible).toBe(false);
+  });
 });
