@@ -1,7 +1,12 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '../../../common/database/prisma.service';
 
 export type HistoryRetention =
-  '1_month' | '3_months' | '6_months' | '1_year' | 'unlimited';
+  | '1_month'
+  | '3_months'
+  | '6_months'
+  | '1_year'
+  | 'unlimited';
 export type HistoryRetentionPolicy = {
   retention: HistoryRetention;
   deleteRecentActivityHours?: number;
@@ -14,34 +19,49 @@ const VALID_RETENTION = new Set<HistoryRetention>([
   '1_year',
   'unlimited',
 ]);
+const FACT_CATEGORY = 'privacy';
+const FACT_KEY = 'history_retention';
 
 @Injectable()
 export class DecisionHistoryRetentionService {
-  private readonly policy: HistoryRetentionPolicy = {
-    retention: this.readRetention(),
-  };
+  constructor(private readonly prisma: PrismaService) {}
 
-  getPolicy(_userId: string): HistoryRetentionPolicy {
-    return this.policy;
+  async getPolicy(userId: string): Promise<HistoryRetentionPolicy> {
+    const fact = await this.prisma.userFact.findFirst({
+      where: { userId, category: FACT_CATEGORY, key: FACT_KEY },
+      orderBy: { updatedAt: 'desc' },
+      select: { value: true },
+    });
+    if (!fact) return { retention: this.readRetention() };
+    try {
+      const parsed = JSON.parse(fact.value) as Partial<HistoryRetentionPolicy>;
+      return this.normalize(parsed);
+    } catch {
+      return { retention: this.readRetention() };
+    }
   }
 
-  setPolicy(_userId: string, policy: HistoryRetentionPolicy) {
-    const normalized: HistoryRetentionPolicy = {
-      retention: VALID_RETENTION.has(policy.retention) ? policy.retention : this.policy.retention,
-      ...(policy.deleteRecentActivityHours === undefined
-        ? {}
-        : {
-            deleteRecentActivityHours: Math.min(
-              Math.max(policy.deleteRecentActivityHours, 0.25),
-              24 * 365,
-            ),
-          }),
-    };
+  async setPolicy(userId: string, policy: HistoryRetentionPolicy): Promise<HistoryRetentionPolicy> {
+    const normalized = this.normalize(policy);
+    await this.prisma.$transaction(async (tx) => {
+      await tx.userFact.deleteMany({ where: { userId, category: FACT_CATEGORY, key: FACT_KEY } });
+      await tx.userFact.create({
+        data: {
+          userId,
+          category: FACT_CATEGORY,
+          key: FACT_KEY,
+          value: JSON.stringify(normalized),
+          confidence: 1,
+          importance: 3,
+          source: 'user',
+        },
+      });
+    });
     return normalized;
   }
 
-  cutoff(userId: string, now = Date.now()): number | null {
-    const retention = this.getPolicy(userId).retention;
+  async cutoff(userId: string, now = Date.now()): Promise<number | null> {
+    const retention = (await this.getPolicy(userId)).retention;
     const days: Record<Exclude<HistoryRetention, 'unlimited'>, number> = {
       '1_month': 30,
       '3_months': 90,
@@ -52,9 +72,22 @@ export class DecisionHistoryRetentionService {
     return now - days[retention] * 86_400_000;
   }
 
-  isExpired(userId: string, recordedAt: number, now = Date.now()): boolean {
-    const cutoff = this.cutoff(userId, now);
+  async isExpired(userId: string, recordedAt: number, now = Date.now()): Promise<boolean> {
+    const cutoff = await this.cutoff(userId, now);
     return cutoff !== null && recordedAt < cutoff;
+  }
+
+  private normalize(policy: Partial<HistoryRetentionPolicy>): HistoryRetentionPolicy {
+    const retention = VALID_RETENTION.has(policy.retention as HistoryRetention)
+      ? (policy.retention as HistoryRetention)
+      : this.readRetention();
+    const hours = policy.deleteRecentActivityHours;
+    return {
+      retention,
+      ...(hours === undefined
+        ? {}
+        : { deleteRecentActivityHours: Math.min(Math.max(hours, 0.25), 24 * 365) }),
+    };
   }
 
   private readRetention(): HistoryRetention {
