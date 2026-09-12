@@ -15,7 +15,7 @@ The canonical findings catalog is `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX
 - DB schema/migration/raw-SQL/reader/writer/relation/transaction/index reconciliation: CLOSED FOR SOURCE EVIDENCE.
 - Security/ownership/auth/session/account-erasure source review: CLOSED FOR SOURCE EVIDENCE.
 - CI/workflow/package/operational entrypoint review: CLOSED FOR SOURCE EVIDENCE.
-- Canonical Appendix reconciliation: CLOSED through PB-274.
+- Canonical Appendix reconciliation: CLOSED through PB-276.
 - Historical PB-001..PB-155 exact prose: NOT RECOVERABLE from exposed Git history; no history fabricated.
 
 ## Batches
@@ -55,7 +55,8 @@ The canonical findings catalog is `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX
 | BATCH-0034 | Shopping completion → Inventory lifecycle | COMPLETE | PB-271; transactional purchase-to-inventory synchronization |
 | BATCH-0035 | Price Intelligence durability/source/package/currency | COMPLETE | PB-061/PB-064/PB-065/PB-059 |
 | BATCH-0036 | Price Intelligence canonicalization/placeholder cleanup | COMPLETE | PB-272/PB-273 |
-| BATCH-0037 | Shopping Intelligence placeholder cleanup | COMPLETE FOR SOURCE/IMPLEMENTATION | PB-274; latest-head CI pending |
+| BATCH-0037 | Shopping Intelligence placeholder cleanup | COMPLETE | PB-274; code verified on CI before later changes |
+| BATCH-0038 | PurchasePlan + Shopping HTTP contract hardening | COMPLETE FOR SOURCE/IMPLEMENTATION | PB-275/PB-276; latest-head CI pending |
 
 ## Database
 
