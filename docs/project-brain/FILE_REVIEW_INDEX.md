@@ -5,9 +5,9 @@ Review status: SOURCE-LEVEL AUDIT RECONCILED; MASTER-0004 REMEDIATION CONTINUING
 
 ## Source scope closed
 
-The audit records direct/reconciled coverage across the complete enumerated backend Core, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget, Shopping/Inventory/Price, Life/Health, Fitness/Workout/Calisthenics/Gym/Yoga, Platform/Test/CI and recorded Mobile source scopes; complete Prisma schema + all recorded migration SQL files; route/controller/DTO/guard and consumer reconciliation; operational recipe scripts; account-erasure/ownership/index checks; DB raw-SQL/migration-only/index/transaction matrix; Project Brain findings/reconciliation artifacts; historical Appendix recovery attempts; and focused Inventory/Recipe → Shopping and Price Intelligence semantic remediation.
+The audit records direct/reconciled coverage across the complete recorded backend Core, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget, Shopping/Inventory/Price, Life/Health, Fitness/Workout/Calisthenics/Gym/Yoga, Platform/Test/CI and Mobile source scopes; Prisma schema/migration reconciliation; route/controller/DTO/guard and consumer reconciliation; operational recipe scripts; account-erasure/ownership/index checks; DB raw-SQL/migration-only/index/transaction matrix; Project Brain findings/reconciliation artifacts; historical Appendix recovery attempts; and focused Shopping/Price semantic remediation.
 
-The canonical source-level findings catalog is reconciled in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`. The separate Master Prompt remediation phase is tracked by continuation batches and must be re-verified on the latest branch HEAD after material changes.
+The canonical findings catalog is `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`. Master Prompt remediation is tracked by continuation batches and must be re-verified on the latest branch HEAD after material changes.
 
 ## Explicit source-level closure controls
 
@@ -15,7 +15,7 @@ The canonical source-level findings catalog is reconciled in `docs/project-brain
 - DB schema/migration/raw-SQL/reader/writer/relation/transaction/index reconciliation: CLOSED FOR SOURCE EVIDENCE.
 - Security/ownership/auth/session/account-erasure source review: CLOSED FOR SOURCE EVIDENCE.
 - CI/workflow/package/operational entrypoint review: CLOSED FOR SOURCE EVIDENCE.
-- Canonical Appendix reconciliation: CLOSED through PB-273.
+- Canonical Appendix reconciliation: CLOSED through PB-274.
 - Historical PB-001..PB-155 exact prose: NOT RECOVERABLE from exposed Git history; no history fabricated.
 
 ## Batches
@@ -24,10 +24,10 @@ The canonical source-level findings catalog is reconciled in `docs/project-brain
 |---|---|---|---|
 | BATCH-0001 | Baseline/Auth/manifests | READ_COMPLETELY | Historical audit batch |
 | BATCH-0002 | Core | READ_COMPLETELY | Auth/Users/Profile/Preferences/Onboarding/Settings/Context/Device/User Intelligence |
-| BATCH-0003 | Prisma/migrations | READ_COMPLETELY | `schema.prisma` + migration SQL + lock |
+| BATCH-0003 | Prisma/migrations | READ_COMPLETELY | Schema + migration SQL + lock |
 | BATCH-0004 | Brain | READ_COMPLETELY | Assistant + Personal Brain + Brain Integration + Conversation + Decision + Adaptive + Goal + Memory |
 | BATCH-0005 | Food/Recipe/Nutrition/Meals/Recommendation/Budget + Shopping/Inventory/Price | READ_COMPLETELY | Enumerated source scope |
-| BATCH-0006 | Life/Health | READ_COMPLETELY | Calendar/Daily/Goals/Habits/LifeExecution/LifeTasks/Reminders/Notifications/Supplements/Health |
+| BATCH-0006 | Life/Health | READ_COMPLETELY | Calendar/Daily/Goals/Habits/LifeTasks/Reminders/Notifications/Supplements/Health |
 | BATCH-0007 | Fitness | READ_COMPLETELY | Fitness/Workout/Calisthenics/Gym/Yoga + relevant Brain consumers |
 | BATCH-0008 | Platform/Tests/CI | READ_COMPLETELY | Manifests/E2E/workflows |
 | BATCH-0009 | Mobile main route/client/native scope | READ_COMPLETELY | Enumerated high-use routes/clients/specs/config |
@@ -49,12 +49,13 @@ The canonical source-level findings catalog is reconciled in `docs/project-brain
 | BATCH-0028 | Route/DTO/mobile/test/intelligence reachability | COMPLETE | Reachability/DTO semantics revalidated |
 | BATCH-0029 | CI/workflow/package gate recheck | COMPLETE | Backend/Mobile/branch validation separation |
 | BATCH-0030 | Canonical Appendix + DB matrix + source closure | COMPLETE | Historical/source closure |
-| BATCH-0031 | Project Brain reconciliation after Appendix CI closure | COMPLETE | Brain, checkpoints, gaps and deep-read synchronization |
-| BATCH-0032 | Inventory/Recipe → Shopping unit reconciliation | COMPLETE | PB-270; unit-safe basket merge conversion/rejection + CI green |
-| BATCH-0033 | Mobile Shopping basket transport reconciliation | COMPLETE | Residual PB-205 transport duplication removed + CI green |
+| BATCH-0031 | Project Brain reconciliation after Appendix CI closure | COMPLETE | Brain/checkpoint/gaps/deep-read synchronization |
+| BATCH-0032 | Inventory/Recipe → Shopping unit reconciliation | COMPLETE | PB-270; unit-safe basket merge + CI green |
+| BATCH-0033 | Mobile Shopping basket transport reconciliation | COMPLETE | Residual PB-205 transport duplication + CI green |
 | BATCH-0034 | Shopping completion → Inventory lifecycle | COMPLETE | PB-271; transactional purchase-to-inventory synchronization |
-| BATCH-0035 | Price Intelligence durability/source/package/currency | COMPLETE | PB-061/PB-064/PB-065/PB-059 remediation |
-| BATCH-0036 | Price Intelligence canonicalization/placeholder cleanup | COMPLETE FOR SOURCE/IMPLEMENTATION | PB-272/PB-273; latest-head CI pending |
+| BATCH-0035 | Price Intelligence durability/source/package/currency | COMPLETE | PB-061/PB-064/PB-065/PB-059 |
+| BATCH-0036 | Price Intelligence canonicalization/placeholder cleanup | COMPLETE | PB-272/PB-273 |
+| BATCH-0037 | Shopping Intelligence placeholder cleanup | COMPLETE FOR SOURCE/IMPLEMENTATION | PB-274; latest-head CI pending |
 
 ## Database
 
