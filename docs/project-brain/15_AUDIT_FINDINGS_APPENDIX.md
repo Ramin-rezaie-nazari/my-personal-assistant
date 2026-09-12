@@ -1,7 +1,7 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-12
-Review status: CANONICAL FINDINGS REGISTER RECONCILED THROUGH PB-284; CODE AND DOCUMENTATION CHECKPOINT VERIFIED
+Review status: CANONICAL FINDINGS REGISTER EXTENDED THROUGH PB-286; LATEST CODE HARDENING IN CI
 
 This file is the canonical findings register for the recoverable 2026-09-11 audit plus subsequent evidence-driven Master Prompt remediation. Historical PB-001..PB-155 prose is not recoverable from the exposed repository history and is never fabricated. Later IDs are current-branch findings and remediation records.
 
@@ -147,6 +147,28 @@ This file is the canonical findings register for the recoverable 2026-09-11 audi
 | PB-282 | CLOSED — CI VERIFIED | FoodOperatingLoop invalid target servings return Bad Request. |
 | PB-283 | CLOSED — CI VERIFIED | Unbounded Budget quote reports actual priced spend. |
 | PB-284 | CLOSED — CI VERIFIED | API Catalog stale route/guard snapshot was reconciled to current controllers; retired shells are explicitly marked non-contracts. |
+| PB-285 | IN CI | Budget quote now accepts compatible mass/volume/count price units and converts source unit price into requested quantity cost; source `price` semantics preserved. Shared quantity conversion is centralized for Budget and Shopping. |
+| PB-286 | IN CI | Evidence-driven revalidation of historical PB-053: `HouseholdPurchasePlannerService` no longer caps computed reorder quantity by `safetyStock`; safety stock remains part of reorder-point calculation and budget remains the actual purchase limiter. |
+
+## PB-285 detailed evidence
+
+- Finding: Budget quote matched price evidence units by exact string equality, so semantically compatible evidence such as `L` vs `ml` or `kg` vs `g` was rejected as `unit_mismatch` even though the repository already defines compatible-unit semantics elsewhere.
+- Root cause: Budget Intelligence had no shared conversion primitive and compared price and candidate units as raw strings.
+- Impact: valid fresh price evidence could be discarded, making budget totals incomplete and potentially triggering misleading review-unit actions.
+- Severity: MEDIUM.
+- Priority: HIGH for Budget/Price contract consistency.
+- Remediation: added `apps/backend/src/common/units/quantity-conversion.ts`; Shopping imports the shared conversion helper; Budget uses `convertUnitPrice()` and preserves the source evidence `price` field.
+- Validation: direct Budget regression covers `4 USD/L` against `500 ml`, expecting source `price = 4` and `estimatedCost = 2`.
+
+## PB-286 detailed evidence
+
+- Finding: historical PB-053 semantics were still present in current source: for critical stock, planner reduced computed `recommendedQuantity` using `Math.min(..., safetyStock)`.
+- Root cause: `safetyStock` was treated as a purchase quantity cap even though `HouseholdInventoryIntelligenceService` already uses it as a reorder-threshold component and emits `recommendedQuantity` as the quantity needed to reach that threshold.
+- Impact: critical purchases could be under-ordered despite the computed reorder requirement.
+- Severity: MEDIUM.
+- Priority: HIGH for household inventory/purchase semantics.
+- Remediation: removed the safety-stock cap from `HouseholdPurchasePlannerService`; budget-limiting logic remains; regression test now expects computed quantity to be preserved until the budget constraint applies.
+- Validation: direct planner test covers the zero-stock/consumption/safety-stock case and expects quantity `3` with a `$10` budget and `$3` unit price, rather than the old capped quantity `2`.
 
 ## Historical boundary and environment limits
 
@@ -156,8 +178,9 @@ Production/deployed PostgreSQL schema/RLS/Storage/Auth configuration, real Andro
 
 ## Verification evidence
 
-Latest implementation code head verified by CI: `56d29953e83ead705eb57b39e7681b1793e97bcd`.
+Last fully verified implementation head before PB-285/PB-286: `56d29953e83ead705eb57b39e7681b1793e97bcd`.
 - Backend CI `34693061066`: SUCCESS — Prisma validation/generation, migrations/idempotence, food self-test, build, backend unit tests, API E2E and diagnostics.
 - Mobile CI `34693061017`: SUCCESS — dependency install, TypeScript, source tests, committed Jest specs, Expo validation and Android JavaScript bundle.
+- Latest PB-285/PB-286 head CI: Backend `34704215875` and Mobile `34704215862` were observed running; final conclusions must be checked before closing PB-285/PB-286.
 
-Documentation reconciliation commits followed and do not change runtime code. Validation PR #70 remains open, mergeable, unmerged, and validation-only.
+Documentation commits must not be treated as runtime verification. Validation PR #70 remains open, unmerged, and validation-only.
