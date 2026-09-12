@@ -30,6 +30,13 @@ export type PurchasePlan = {
 export class PurchasePlanService {
   build(input: PurchasePlanInput): PurchasePlan {
     const budget = Math.max(0, input.budgetRemaining);
+    const planCurrency = input.currency.trim().toUpperCase();
+    const selected: PurchasePlanItem[] = [];
+    const deferred: PurchasePlanItem[] = [];
+    const skipped: PurchasePlanItem[] = [];
+    let selectedTotal = 0;
+    let deferredTotal = 0;
+
     const ranked = input.items
       .map((item) => ({
         ...item,
@@ -45,13 +52,12 @@ export class PurchasePlanService {
           (a.urgency * 0.55 + a.score * 0.45),
       );
 
-    const selected: PurchasePlanItem[] = [];
-    const deferred: PurchasePlanItem[] = [];
-    const skipped: PurchasePlanItem[] = [];
-    let selectedTotal = 0;
-    let deferredTotal = 0;
-
     for (const item of ranked) {
+      if (item.currency.trim().toUpperCase() !== planCurrency) {
+        skipped.push({ ...item, reason: 'currency_mismatch' });
+        continue;
+      }
+
       const total = item.quantity * item.unitPrice;
       if (item.decision === 'avoid') {
         skipped.push({
