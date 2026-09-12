@@ -20,7 +20,7 @@ export type PersistedConversationTurn = {
 export class ConversationHistoryService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly retention = new DecisionHistoryRetentionService(),
+    private readonly retention: DecisionHistoryRetentionService,
   ) {}
 
   async append(
@@ -97,7 +97,7 @@ export class ConversationHistoryService {
   }
 
   private async purgeExpired(userId: string, now = Date.now()) {
-    const cutoff = this.retention.cutoff(userId, now);
+    const cutoff = await this.retention.cutoff(userId, now);
     if (cutoff === null) return { deleted: 0 };
     const result = await this.prisma.$executeRaw`DELETE FROM "ConversationTurn" WHERE "userId"=${userId} AND "createdAt" < ${new Date(cutoff)}`;
     return { deleted: Number(result) };
