@@ -17,13 +17,29 @@ describe('LifeTasksService', () => {
 
   it('preserves completedAt on metadata-only updates', async () => {
     const completedAt = new Date('2026-09-01T10:00:00Z');
-    prisma.$queryRaw.mockResolvedValueOnce([{ id: 'task-1', status: 'completed', completedAt, title: 'Done', description: null, priority: 2, estimatedMinutes: 10, energyLevel: 'medium', dueAt: null, scheduledAt: null }]);
+    const task = {
+      id: 'task-1',
+      status: 'completed',
+      completedAt,
+      title: 'Done',
+      description: null,
+      priority: 2,
+      estimatedMinutes: 10,
+      energyLevel: 'medium',
+      dueAt: null,
+      scheduledAt: null,
+    };
+    prisma.$queryRaw
+      .mockResolvedValueOnce([task])
+      .mockResolvedValueOnce([task])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
     prisma.$executeRaw.mockResolvedValueOnce(1);
-    prisma.$queryRaw.mockResolvedValueOnce([]).mockResolvedValueOnce([]);
 
     await service.update('user-1', 'task-1', { priority: 2 } as any);
 
     expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
     expect(prisma.$executeRaw.mock.calls[0]).toContain(completedAt);
+    expect(prisma.$queryRaw).toHaveBeenCalledTimes(4);
   });
 });
