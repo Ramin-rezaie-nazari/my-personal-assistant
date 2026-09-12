@@ -34,6 +34,8 @@ export class BudgetIntelligenceController {
     @Query('countryCode') countryCode = '',
   ) {
     const servings = servingsText?.trim() ? Number(servingsText) : 1;
+    if (!Number.isInteger(servings) || servings <= 0 || servings > 10000)
+      throw new BadRequestException('servings must be an integer between 1 and 10000');
     return this.mealPlanning.createMealPlan(req.user.id, servings, countryCode);
   }
 
