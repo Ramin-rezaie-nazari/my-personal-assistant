@@ -1,76 +1,46 @@
 # MYPA Current State
 
 Last updated: 2026-09-12
-Review status: MASTER PROMPT DEVELOPMENT IN PROGRESS; SHOPPING/PRICE REMEDIATION EXTENDED THROUGH PB-276; LATEST-HEAD CI PENDING
+Review status: SOURCE-LEVEL AUDIT RECONCILED; MASTER PROMPT HARDENING NEAR COMPLETE; ENVIRONMENT GATES EXPLICIT
 
 ## Canonical ownership
 
-This root file is the canonical repository-wide current-state document. `apps/backend/docs/05_CURRENT_STATE.md` is a compatibility pointer and must not contain a competing project-state snapshot.
+This root file is the canonical repository-wide current-state document. `apps/backend/docs/05_CURRENT_STATE.md` is only a compatibility pointer.
 
 ## Repository state
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
-- Working branch: `audit/project-brain-2026-09-11`
-- Latest implementation tree before this documentation reconciliation: `5dc577d0d2ce2ed3aed59bc631cc0adb50a46546`
-- Validation PR: #70 (validation-only; do not merge automatically)
-- Base: `main`
+- Branch: `audit/project-brain-2026-09-11`
+- Runtime code head verified by CI: `56d29953e83ead705eb57b39e7681b1793e97bcd`
+- Validation PR: #70, validation-only, unmerged
 
-## Appendix/remediation status
+## Remediation state
 
-The canonical Appendix now tracks the recoverable audit findings through PB-276. PB-271..PB-276 are the latest Master Prompt continuation findings: Shopping completion→Inventory lifecycle, Price Intelligence durability/source/package/currency hardening, Price placeholder cleanup/canonical analysis, Shopping Intelligence placeholder cleanup, PurchasePlan currency integrity and Shopping invalid-quantity HTTP semantics.
+Canonical Audit Findings Appendix: PB-156..PB-284 reconciled; PB-230 remains explicitly evidence-limited for unrecoverable PB-001..PB-155 historical prose.
 
-Historical PB-001..PB-155 prose remains evidence-limited and is not fabricated.
-
-## Master Prompt development progress
-
-`MASTER-0001` baseline reconciliation: COMPLETE.
-`MASTER-0002` deterministic local Brain context: VERIFIED BY CI.
-`MASTER-0003` recipe/ingredient safety-taxonomy contract: VERIFIED BY CI.
-`MASTER-0004` Nutrition/Food → Pantry/Inventory → Shopping → Budget: CORE RECIPE→BUDGET→SHOPPING + PRICE-EVIDENCE PATH VERIFIED; FULL VERTICAL IN PROGRESS.
-
-Completed/remediated in the current continuation:
-- canonical user-scoped Shopping Intelligence behind JWT;
-- explicit currency compatibility, sequential remaining-budget accounting and committed `buy_now` semantics;
-- Inventory ownership of inventory intelligence with the real module cycle removed;
-- deterministic `PriceProductKeyService` mapping with no fuzzy monetary matching;
-- deterministic recipe-item budget quoting with exact currency/unit compatibility, seven-day freshness and provenance;
-- multi-source price selection prefers the freshest compatible source that is still fresh and fails closed when all compatible evidence is stale;
-- explicit `within_budget`, `over_budget`, `partial_price_evidence`, `insufficient_price_data` states;
-- deterministic next-action codes for blocked evidence without fabricated prices;
-- recipe scaling → inventory gaps → budget quote → budget-qualified Shopping insertion;
-- authenticated recipe budget and budget-shopping routes with controller/API E2E coverage;
-- Mobile Recipe Budget journey with loading/error/RTL/i18n handling and Smart Basket handoff;
-- Mobile Shopping/Price/basket clients reuse the canonical authenticated transport;
-- user-scoped offline Budget cache with fail-closed Shopping handoff while offline;
-- Shopping basket merges convert compatible units and reject incompatible unit kinds;
-- Shopping completion synchronizes purchases into user inventory transactionally and idempotently;
-- Price analysis uses durable snapshots, explicit source capability/health metadata, quantity-aware product matching and compatible-currency evidence;
-- obsolete Price History/Analysis placeholder providers retired;
-- public Price Intelligence analysis delegates to canonical `MarketAnalysisService`;
-- obsolete Shopping Intelligence list/purchase-analysis placeholder facades retired;
-- PurchasePlan rejects currency mismatches instead of mixing monetary units;
-- Shopping invalid quantities return HTTP 400 semantics via `BadRequestException`.
+Latest hardening completed:
+- Shopping unit-safe merges and purchase→Inventory transactional synchronization;
+- canonical mobile authenticated transport;
+- Price Intelligence durable history, source metadata/health, package matching, currency integrity and canonical analysis;
+- retirement of unused Price/Budget/Shopping placeholder facades;
+- PurchasePlan cross-currency rejection;
+- Shopping invalid-input and recipe-membership validation;
+- runtime-validated Shopping request DTOs;
+- Budget meal-plan servings validation;
+- FoodOperatingLoop invalid-serving semantics;
+- Budget unbounded-quote total correctness;
+- current API Catalog route/guard reconciliation.
 
 ## Verification evidence
 
-Verified prior code head `103452b92321023445a0cd9aa317675b095f10e2`:
-- Backend CI `34692506118`: SUCCESS — Prisma validation/generation, migrations/idempotence, food self-test, build, unit tests, API E2E, diagnostics.
-- Mobile CI `34692506067`: SUCCESS — install, TypeScript typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
+Backend CI `34693061066`: SUCCESS.
+Mobile CI `34693061017`: SUCCESS.
+The verified runtime code head is `56d29953e83ead705eb57b39e7681b1793e97bcd`; subsequent commits are documentation-only and do not change runtime behavior.
 
-The subsequent PB-275/PB-276 code/test changes advanced the implementation tree and therefore require fresh latest-head CI before those findings are marked CI-verified.
+## Remaining work / acceptance boundary
 
-## Remaining MASTER-0004 work
+Source-review gaps are closed for the recorded repository scope. The remaining non-code gates are deployed PostgreSQL/RLS/Storage/Auth verification, real Android/iOS execution, physical-device notification/voice/offline UX, production scheduler/push delivery, external price/AI provider credentials/quotas/health and deployment/store-release acceptance. Household consumption learning is deliberately not represented as a durable production feature without a persisted event contract.
 
-- finish Pantry↔Shopping lifecycle reconciliation beyond the already-fixed purchase-to-inventory boundary;
-- continue targeted consumer/contract audit where current source demonstrates a concrete mismatch;
-- resolve any remaining user-scoping, currency/unit, transaction or stale-artifact findings in the active vertical;
-- richer consumer-facing explanations after blocked evidence;
-- final cross-file Project Brain consistency pass and explicit environment-gate accounting.
+## Progress
 
-## Architecture boundary
-
-No implicit FX conversion, fuzzy monetary matching, stale-price-as-current behavior, guessed costs, or incompatible quantity-unit merging is permitted on the remediated paths. Production provider health, deployed data/configuration, device UX, push delivery and store release remain outside available verification.
-
-## Environment boundary
-
-The local container cannot clone the repository because direct GitHub network access is unavailable. GitHub connector evidence is used for repository inspection and CI state. Production/deployed DB/RLS/storage configuration, physical-device UX, push delivery, external provider quotas and store-release validation are not claimed verified.
+Current evidence-weighted engineering completion: ~98%. 100% is intentionally not claimed because the environment cannot directly verify the external/deployed acceptance gates above and the historical PB-001..PB-155 prose is irrecoverable.
