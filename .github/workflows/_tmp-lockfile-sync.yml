@@ -1,4 +1,4 @@
-name: MYPA temporary lockfile verification
+name: MYPA temporary lockfile sync
 
 on:
   push:
@@ -6,13 +6,15 @@ on:
       - audit/project-brain-2026-09-11
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   lockfile:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 11.18.0
@@ -20,11 +22,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Regenerate lockfile metadata
+      - name: Regenerate lockfile
         run: pnpm install --lockfile-only --no-frozen-lockfile
-      - name: Upload generated lockfile
-        uses: actions/upload-artifact@v4
-        with:
-          name: mypa-pnpm-lock
-          path: pnpm-lock.yaml
-          if-no-files-found: error
+      - name: Commit lockfile and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f .github/workflows/_tmp-lockfile-sync.yml
+          git add pnpm-lock.yaml .github/workflows/_tmp-lockfile-sync.yml
+          if git diff --cached --quiet; then
+            echo "No lockfile changes detected."
+            exit 0
+          fi
+          git commit -m "chore: sync pnpm lockfile with workspace manifests"
+          git push origin HEAD:${GITHUB_REF_NAME}
