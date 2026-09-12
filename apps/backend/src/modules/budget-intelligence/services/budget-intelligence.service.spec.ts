@@ -28,7 +28,7 @@ describe('BudgetIntelligenceService', () => {
             currency: 'USD',
             unit: 'L',
             unitPrice: 3,
-            observedAt: '2026-09-12T10:00:00.000Z',
+            observedAt: new Date(),
             sourceId: 'source-a',
           },
         ])
@@ -37,7 +37,7 @@ describe('BudgetIntelligenceService', () => {
             currency: 'EUR',
             unit: 'kg',
             unitPrice: 2,
-            observedAt: '2026-09-12T10:05:00.000Z',
+            observedAt: new Date(),
             sourceId: 'source-b',
           },
         ]),
@@ -79,6 +79,48 @@ describe('BudgetIntelligenceService', () => {
       estimatedCost: null,
       status: 'currency_mismatch',
     });
+  });
+
+  it('rejects stale price snapshots instead of treating them as current', async () => {
+    const inventory = {
+      list: jest.fn().mockResolvedValue([
+        {
+          foodId: 'food-1',
+          food: { name: 'Milk' },
+          recommendedQuantity: 2,
+          unit: 'L',
+          urgency: 'critical',
+        },
+      ]),
+    };
+    const prices = {
+      latest: jest.fn().mockResolvedValue([
+        {
+          currency: 'USD',
+          unit: 'L',
+          unitPrice: 3,
+          observedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000),
+          sourceId: 'source-a',
+        },
+      ]),
+    };
+    const productKeys = { fromFoodName: jest.fn(() => 'milk') };
+    const service = new BudgetIntelligenceService(
+      inventory as never,
+      prices as never,
+      productKeys as never,
+    );
+
+    const result = await service.createPlan('user-1', 10, 'USD');
+
+    expect(result.items[0]).toMatchObject({
+      price: null,
+      estimatedCost: null,
+      status: 'stale_price',
+      reason: 'price_snapshot_older_than_7_days',
+      priceSourceId: 'source-a',
+    });
+    expect(result.totalEstimatedCost).toBe(0);
   });
 
   it('rejects invalid budget and currency inputs', async () => {
