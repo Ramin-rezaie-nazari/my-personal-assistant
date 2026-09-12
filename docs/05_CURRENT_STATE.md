@@ -11,7 +11,7 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Working branch: `audit/project-brain-2026-09-11`
-- Current branch head at last verified product tree: `9c0b31cfcd310d75eda68de80e739cc29d6e3d19`
+- Current branch head at last verified product tree: `975cdf1ef8c51f33f34634a7f9cdbeec0e8c9651`
 - Validation PR: #70 (validation-only; do not merge automatically)
 - Base: `main`
 
@@ -36,27 +36,29 @@ Completed in MASTER-0004 on the verified tree:
 - shopping/budget quote handling preserves explicit budget currency and fails closed on mismatched quotes;
 - Smart Purchase Basket applies remaining budget sequentially and only committed `buy_now` decisions consume committed cost;
 - Inventory intelligence is owned by the Inventory domain, removing the real Inventory ↔ Shopping Intelligence module cycle;
-- `PriceProductKeyService` centralizes deterministic `FoodItem.name → PriceTrackedProduct.productKey` normalization using the verified locale-aware contract;
-- `BudgetIntelligenceService.createPlan()` uses user inventory plus compatible price snapshots, exact unit compatibility, price provenance and a 7-day freshness boundary;
+- `PriceProductKeyService` centralizes deterministic `FoodItem.name → PriceTrackedProduct.productKey` normalization using the existing locale-aware contract;
+- `BudgetIntelligenceService.createPlan()` uses user inventory plus compatible price snapshots, exact unit compatibility, explicit price provenance and a 7-day freshness boundary;
 - `/budget-intelligence/plan` is authenticated and user-scoped;
 - `PLAN_FOOD_BUDGET` is recognized by local language understanding and mapped through the Assistant execution path to the deterministic budget action;
 - API E2E covers authenticated Shopping Intelligence and Budget Plan endpoints in addition to unauthenticated rejection.
 
 ## Validation evidence
 
-Verified tree `9c0b31cfcd310d75eda68de80e739cc29d6e3d19`:
-- Backend CI `34688191807`: SUCCESS — dependency installation, Prisma validation/generation, migrations/idempotence, food-intelligence self-test, backend build, unit tests and API E2E.
-- Mobile CI `34688191731`: SUCCESS — dependency installation, TypeScript typecheck, mobile source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
+Verified tree `975cdf1ef8c51f33f34634a7f9cdbeec0e8c9651`:
+- Backend CI `34688334661`: SUCCESS.
+- Mobile CI `34688334655`: SUCCESS.
+- The successful backend validation includes dependency installation, Prisma validation/generation, migrations/idempotence, food-intelligence self-test, backend build, unit tests and API E2E.
+- The successful mobile validation includes dependency installation, TypeScript typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
 
 ## Current architectural boundary
 
-The Brain can now recognize a food-budget request, carry structured budget/currency entities into planning, route the request to `plan_food_budget`, and execute a deterministic budget plan against user-scoped inventory and verified compatible price snapshots.
+The Brain can now recognize a food-budget request, carry structured budget/currency entities into planning, route the request to `plan_food_budget`, and execute a deterministic budget plan against user-scoped inventory and compatible fresh price snapshots.
 
-The current price contract is deterministic: `FoodItem.name` is normalized by `PriceProductKeyService` to the same canonical product-key shape used by price persistence. No fuzzy monetary matching is used.
+The current monetary contract is deterministic: `FoodItem.name` is normalized by `PriceProductKeyService` to the same canonical product-key shape used by price persistence. No fuzzy monetary matching is used.
 
 The budget plan deliberately refuses implicit FX conversion, stale prices, incompatible units and missing price evidence. It reports those conditions explicitly rather than fabricating cost.
 
-The full Food OS vertical is not complete yet: recipe-to-budget costing, shopping generation orchestration, broader price coverage, mobile Budget UX, offline behavior and end-user completion flows remain.
+The full Food OS vertical is not complete yet: recipe-to-budget costing, shopping generation orchestration, broader price coverage, mobile Budget/Shopping UX, offline behavior and end-user completion flows remain.
 
 ## Next workstream
 
