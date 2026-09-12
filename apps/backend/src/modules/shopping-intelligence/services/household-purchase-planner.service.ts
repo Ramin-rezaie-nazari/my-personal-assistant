@@ -47,10 +47,14 @@ export class HouseholdPurchasePlannerService {
       );
       const quantity = item.recommendedQuantity;
       if (quantity <= 0) {
+        const zeroQuantityPrice =
+          price && (!budgetCurrency || price.currency === budgetCurrency)
+            ? price.price
+            : null;
         plan.push({
           productKey: item.productKey,
           quantity: 0,
-          price: price?.price ?? null,
+          price: zeroQuantityPrice,
           estimatedCost: 0,
           urgency: item.urgency,
           action: 'skip',
@@ -108,7 +112,7 @@ export class HouseholdPurchasePlannerService {
       plan.push({
         productKey: item.productKey,
         quantity: purchaseQuantity,
-        price: price?.price ?? null,
+        price: unitPrice,
         estimatedCost,
         urgency: item.urgency,
         action,
