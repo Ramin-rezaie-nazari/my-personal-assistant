@@ -123,6 +123,47 @@ describe('BudgetIntelligenceService', () => {
     expect(result.totalEstimatedCost).toBe(0);
   });
 
+  it('reports over-budget when a priced requirement cannot fit within the remaining budget', async () => {
+    const inventory = {
+      list: jest.fn().mockResolvedValue([
+        {
+          foodId: 'food-1',
+          food: { name: 'Milk' },
+          recommendedQuantity: 10,
+          unit: 'L',
+          urgency: 'critical',
+        },
+      ]),
+    };
+    const prices = {
+      latest: jest.fn().mockResolvedValue([
+        {
+          currency: 'USD',
+          unit: 'L',
+          unitPrice: 2,
+          observedAt: new Date(),
+          sourceId: 'source-a',
+        },
+      ]),
+    };
+    const productKeys = { fromFoodName: jest.fn(() => 'milk') };
+    const service = new BudgetIntelligenceService(
+      inventory as never,
+      prices as never,
+      productKeys as never,
+    );
+
+    const result = await service.createPlan('user-1', 10, 'USD');
+
+    expect(result.items[0]).toMatchObject({
+      status: 'over_budget',
+      price: 2,
+      estimatedCost: 20,
+    });
+    expect(result.totalEstimatedCost).toBe(0);
+    expect(result.budgetStatus).toBe('over_budget');
+  });
+
   it('rejects invalid budget and currency inputs', async () => {
     const service = new BudgetIntelligenceService(
       { list: jest.fn() } as never,
