@@ -1,13 +1,13 @@
 # File Review Index
 
 Last updated: 2026-09-12
-Review status: SOURCE-LEVEL AUDIT RECONCILED; APPENDIX REMEDIATION VERIFIED THROUGH PB-270; ENVIRONMENTAL VALIDATION BLOCKED
+Review status: SOURCE-LEVEL AUDIT RECONCILED; MASTER-0004 REMEDIATION CONTINUING; LATEST-HEAD CI PENDING
 
 ## Source scope closed
 
-The audit records direct/reconciled coverage across the complete enumerated backend Core, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget, Shopping/Inventory/Price, Life/Health, Fitness/Workout/Calisthenics/Gym/Yoga, Platform/Test/CI and recorded Mobile source scopes; complete Prisma schema + all 39 migration SQL files; route/controller/DTO/guard and consumer reconciliation; operational recipe scripts; account-erasure/ownership/index checks; DB raw-SQL/migration-only/index/transaction matrix; Project Brain findings/reconciliation artifacts; historical Appendix recovery attempts; and focused Inventory/Recipe → Shopping unit semantics.
+The audit records direct/reconciled coverage across the complete enumerated backend Core, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget, Shopping/Inventory/Price, Life/Health, Fitness/Workout/Calisthenics/Gym/Yoga, Platform/Test/CI and recorded Mobile source scopes; complete Prisma schema + all recorded migration SQL files; route/controller/DTO/guard and consumer reconciliation; operational recipe scripts; account-erasure/ownership/index checks; DB raw-SQL/migration-only/index/transaction matrix; Project Brain findings/reconciliation artifacts; historical Appendix recovery attempts; and focused Inventory/Recipe → Shopping and Price Intelligence semantic remediation.
 
-The source-level findings catalog is canonically reconciled through PB-270 in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`. The separate Appendix remediation phase is complete for the recoverable finding set and the PB-270 remediation has green Backend/Mobile CI evidence on `1f3f73601183779fbef865a82ce2ea3dee3f8c33`.
+The canonical source-level findings catalog is reconciled in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`. The separate Master Prompt remediation phase is tracked by continuation batches and must be re-verified on the latest branch HEAD after material changes.
 
 ## Explicit source-level closure controls
 
@@ -15,7 +15,7 @@ The source-level findings catalog is canonically reconciled through PB-270 in `d
 - DB schema/migration/raw-SQL/reader/writer/relation/transaction/index reconciliation: CLOSED FOR SOURCE EVIDENCE.
 - Security/ownership/auth/session/account-erasure source review: CLOSED FOR SOURCE EVIDENCE.
 - CI/workflow/package/operational entrypoint review: CLOSED FOR SOURCE EVIDENCE.
-- Canonical Appendix reconciliation: CLOSED through PB-270; withdrawn/reclassified findings remain explicitly recorded.
+- Canonical Appendix reconciliation: CLOSED through PB-273.
 - Historical PB-001..PB-155 exact prose: NOT RECOVERABLE from exposed Git history; no history fabricated.
 
 ## Batches
@@ -24,7 +24,7 @@ The source-level findings catalog is canonically reconciled through PB-270 in `d
 |---|---|---|---|
 | BATCH-0001 | Baseline/Auth/manifests | READ_COMPLETELY | Historical audit batch |
 | BATCH-0002 | Core | READ_COMPLETELY | Auth/Users/Profile/Preferences/Onboarding/Settings/Context/Device/User Intelligence |
-| BATCH-0003 | Prisma/migrations | READ_COMPLETELY | `schema.prisma` + all 39 migration SQL + lock |
+| BATCH-0003 | Prisma/migrations | READ_COMPLETELY | `schema.prisma` + migration SQL + lock |
 | BATCH-0004 | Brain | READ_COMPLETELY | Assistant + Personal Brain + Brain Integration + Conversation + Decision + Adaptive + Goal + Memory |
 | BATCH-0005 | Food/Recipe/Nutrition/Meals/Recommendation/Budget + Shopping/Inventory/Price | READ_COMPLETELY | Enumerated source scope |
 | BATCH-0006 | Life/Health | READ_COMPLETELY | Calendar/Daily/Goals/Habits/LifeExecution/LifeTasks/Reminders/Notifications/Supplements/Health |
@@ -48,16 +48,20 @@ The source-level findings catalog is canonically reconciled through PB-270 in `d
 | BATCH-0027 | DB index/query + lifecycle/security closure | COMPLETE | PB-257 and account-erasure checks |
 | BATCH-0028 | Route/DTO/mobile/test/intelligence reachability | COMPLETE | Reachability/DTO semantics revalidated |
 | BATCH-0029 | CI/workflow/package gate recheck | COMPLETE | Backend/Mobile/branch validation separation |
-| BATCH-0030 | Canonical Appendix + DB matrix + source closure | COMPLETE | Appendix reconciled through PB-257 |
-| BATCH-0031 | Project Brain reconciliation after Appendix CI closure | COMPLETE | Current-state, overview, architecture, core/brain/food/shopping/life/fitness/platform/mobile deep-read documents, checkpoints, gaps and decision log synchronized |
-| BATCH-0032 | Inventory/Recipe → Shopping unit reconciliation | COMPLETE | PB-270; unit-safe basket merge conversion/rejection plus direct regression coverage; Backend/Mobile CI green |
+| BATCH-0030 | Canonical Appendix + DB matrix + source closure | COMPLETE | Historical/source closure |
+| BATCH-0031 | Project Brain reconciliation after Appendix CI closure | COMPLETE | Brain, checkpoints, gaps and deep-read synchronization |
+| BATCH-0032 | Inventory/Recipe → Shopping unit reconciliation | COMPLETE | PB-270; unit-safe basket merge conversion/rejection + CI green |
+| BATCH-0033 | Mobile Shopping basket transport reconciliation | COMPLETE | Residual PB-205 transport duplication removed + CI green |
+| BATCH-0034 | Shopping completion → Inventory lifecycle | COMPLETE | PB-271; transactional purchase-to-inventory synchronization |
+| BATCH-0035 | Price Intelligence durability/source/package/currency | COMPLETE | PB-061/PB-064/PB-065/PB-059 remediation |
+| BATCH-0036 | Price Intelligence canonicalization/placeholder cleanup | COMPLETE FOR SOURCE/IMPLEMENTATION | PB-272/PB-273; latest-head CI pending |
 
 ## Database
 
 | Scope | Status | Notes |
 |---|---|---|
 | `apps/backend/prisma/schema.prisma` | READ_COMPLETELY | Final model set and ownership/cascade surface revalidated |
-| `apps/backend/prisma/migrations/` | READ_COMPLETELY | All 39 migration SQL files previously inspected |
+| `apps/backend/prisma/migrations/` | READ_COMPLETELY | Recorded migration SQL scope previously inspected |
 | `migration_lock.toml` | READ_COMPLETELY / identified | Provider lock recorded |
 | Raw SQL / migration-only runtime surfaces | RECONCILED | Canonical findings mapped in DB matrix |
 | Index/transaction/ownership patterns | RECONCILED | Composite indexes and atomicity findings reconciled |
@@ -68,4 +72,4 @@ The exposed Git history for `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` b
 
 ## Environmental boundary
 
-`READ_COMPLETELY` and `RECONCILED` describe source evidence only. Runtime HTTP execution, physical-device execution, deployed PostgreSQL/Supabase schema/RLS/storage inspection, external Auth configuration, production notification delivery and external provider quotas remain unavailable in this connector environment and are explicitly UNVERIFIED/BLOCKED, never PASS.
+`READ_COMPLETELY` and `RECONCILED` describe source evidence only. Runtime HTTP execution, physical-device execution, deployed PostgreSQL/RLS/storage inspection, external Auth configuration, production notification delivery and external provider quotas remain unavailable in this connector environment and are explicitly UNVERIFIED/BLOCKED, never PASS.
