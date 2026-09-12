@@ -20,32 +20,27 @@ model User {
   authAccounts AuthAccount[]
   sessions Session[]
   settings UserSettings?
-  preferences UserPreference?
   profile UserProfile?
   onboarding UserOnboarding?
   assistantProfile AssistantProfile?
   healthProfile HealthProfile?
   nutritionProfile NutritionProfile?
   dailyLogs DailyLog[]
-  nutritionLogs NutritionLog[]
-  foodItems FoodItem[]
+  foods FoodItem[]
   meals Meal[]
   recipes Recipe[]
   inventoryItems InventoryItem[]
-  shoppingItems ShoppingItem[]
-  workouts Workout[]
-  reminders Reminder[]
+  shoppingLists ShoppingList[]
+  goals Goal[]
+  goalCheckins GoalCheckin[]
+  calendarEvents CalendarEvent[]
   habits Habit[]
   habitLogs HabitLog[]
-  supplements Supplement[]
-  supplementLogs SupplementLog[]
-  notifications Notification[]
-  userFacts UserFact[]
+  workouts Workout[]
+  reminders Reminder[]
   userBehaviors UserBehavior[]
   userInsights UserInsight[]
-  planExecutionStates PlanExecutionState[]
-  fitnessProfileState FitnessProfileState?
-  decisionAudits DecisionAuditEntry[]
+  notificationDevices NotificationDevice[]
 }
 
 model AuthAccount {
@@ -79,26 +74,14 @@ model UserSettings {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model UserPreference {
-  id String @id @default(uuid())
-  userId String @unique
-  onboardingCompleted Boolean @default(false)
-  notificationsEnabled Boolean @default(true)
-  reminderEnabled Boolean @default(true)
-  theme String @default("system")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
 model UserProfile {
   id String @id @default(uuid())
   userId String @unique
+  age Int?
   gender String?
-  birthDate DateTime?
   heightCm Float?
   weightKg Float?
-  primaryGoal String?
+  activityLevel String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -108,8 +91,8 @@ model UserOnboarding {
   id String @id @default(uuid())
   userId String @unique
   completed Boolean @default(false)
-  currentStep String @default("welcome")
-  completedAt DateTime?
+  step String?
+  data Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -118,13 +101,9 @@ model UserOnboarding {
 model AssistantProfile {
   id String @id @default(uuid())
   userId String @unique
-  healthGoal String?
-  fitnessGoal String?
-  nutritionGoal String?
-  smokingHabit String?
-  waterGoalMl Int?
-  sleepGoalHours Float?
-  exerciseGoal String?
+  name String?
+  personality String?
+  preferences Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -133,12 +112,10 @@ model AssistantProfile {
 model HealthProfile {
   id String @id @default(uuid())
   userId String @unique
-  heightCm Int?
-  weightKg Float?
-  age Int?
-  gender String?
-  activityLevel String?
-  targetWeightKg Float?
+  conditions Json?
+  medications Json?
+  allergies Json?
+  notes String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -147,10 +124,11 @@ model HealthProfile {
 model NutritionProfile {
   id String @id @default(uuid())
   userId String @unique
-  dailyCaloriesGoal Int?
-  proteinGoalGrams Int?
-  waterGoalMl Int?
-  dietType String?
+  calorieTarget Int?
+  proteinTarget Float?
+  carbsTarget Float?
+  fatTarget Float?
+  waterTargetMl Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -163,97 +141,53 @@ model DailyLog {
   waterMl Int @default(0)
   calories Int @default(0)
   protein Float @default(0)
+  carbs Float @default(0)
+  fat Float @default(0)
+  mood Int?
+  energy Int?
+  notes String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([userId, dateKey])
 }
 
-model NutritionLog {
-  id String @id @default(uuid())
-  userId String
-  dateKey String
-  mealType String
-  title String
-  calories Int @default(0)
-  protein Float @default(0)
-  carbs Float @default(0)
-  fat Float @default(0)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([userId, dateKey])
-}
-
 model FoodItem {
   id String @id @default(uuid())
   userId String?
   name String
-  category String
-  calories Int @default(0)
+  brand String?
+  category String?
+  calories Float @default(0)
   protein Float @default(0)
   carbs Float @default(0)
   fat Float @default(0)
-  imageUrl String?
-  imageSource String?
-  verified Boolean @default(false)
+  servingSize Float @default(100)
+  servingUnit String @default("g")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mealItems MealItem[]
+  meals Meal[]
   recipeIngredients RecipeIngredient[]
-  inventoryItems InventoryItem[]
-  shoppingItems ShoppingItem[]
 }
 
 model Meal {
   id String @id @default(uuid())
   userId String
+  foodId String?
   name String
-  type String
-  eatenAt DateTime @default(now())
-  calories Int @default(0)
+  calories Float @default(0)
   protein Float @default(0)
   carbs Float @default(0)
   fat Float @default(0)
+  quantity Float @default(1)
+  unit String @default("g")
+  eatenAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items MealItem[]
-}
-
-model MealItem {
-  id String @id @default(uuid())
-  mealId String
-  foodId String
-  quantity Float @default(1)
-  calories Int @default(0)
-  protein Float @default(0)
-  carbs Float @default(0)
-  fat Float @default(0)
-  createdAt DateTime @default(now())
-  meal Meal @relation(fields: [mealId], references: [id], onDelete: Cascade)
-  food FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
-}
-
-model RecipeIngredient {
-  id String @id @default(uuid())
-  recipeId String
-  foodId String
-  quantity Float @default(1)
-  unit String @default("g")
-  measurementKind String @default("unitless")
-  scalingPolicy String @default("linear")
-  scalingExponent Float?
-  batchSize Float?
-  maxLinearMultiplier Float?
-  calories Int @default(0)
-  protein Float @default(0)
-  carbs Float @default(0)
-  fat Float @default(0)
-  createdAt DateTime @default(now())
-  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  food FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  food FoodItem? @relation(fields: [foodId], references: [id], onDelete: SetNull)
+  @@index([userId, eatenAt])
 }
 
 model Recipe {
@@ -265,9 +199,9 @@ model Recipe {
   imageSource String?
   servings Int @default(2)
   calories Int @default(0)
-  protein Int @default(0)
-  carbs Int @default(0)
-  fat Int @default(0)
+  protein Float @default(0)
+  carbs Float @default(0)
+  fat Float @default(0)
   verified Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -278,68 +212,81 @@ model Recipe {
 model InventoryItem {
   id String @id @default(uuid())
   userId String
-  foodId String
+  name String
   quantity Float @default(0)
   unit String @default("g")
-  dailyConsumption Float @default(0)
-  safetyStock Float @default(0)
-  essential Boolean @default(false)
   expiresAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  food FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
-  @@unique([userId, foodId])
-  @@index([userId, essential])
-  @@index([userId, expiresAt])
 }
 
-model ShoppingItem {
+model ShoppingList {
   id String @id @default(uuid())
   userId String
-  foodId String
+  name String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ShoppingListItem[]
+}
+
+model ShoppingListItem {
+  id String @id @default(uuid())
+  shoppingListId String
   name String
   quantity Float @default(1)
-  unit String @default("g")
-  source String @default("manual")
-  sourceRecipeId String?
-  priority String @default("normal")
-  completed Boolean @default(false)
+  unit String @default("item")
+  checked Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  food FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
-  @@unique([userId, foodId, completed])
-  @@index([userId, completed, priority])
-  @@index([userId, createdAt])
+  shoppingList ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
 }
 
-model Workout {
-  id String @id @default(uuid())
-  userId String
-  name String
-  type String
-  durationMinutes Int @default(0)
-  caloriesBurned Int @default(0)
-  performedAt DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([userId, performedAt])
-}
-
-model Reminder {
+model Goal {
   id String @id @default(uuid())
   userId String
   title String
-  type String @default("general")
-  scheduledAt DateTime
-  endsAt DateTime?
-  completed Boolean @default(false)
+  description String?
+  targetValue Float?
+  currentValue Float @default(0)
+  unit String?
+  status String @default("active")
+  targetDateKey String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([userId, scheduledAt])
+  checkins GoalCheckin[]
+  @@index([userId, status])
+}
+
+model GoalCheckin {
+  id String @id @default(uuid())
+  userId String
+  goalId String
+  dateKey String
+  value Float
+  note String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  @@unique([goalId, dateKey])
+  @@index([userId, dateKey])
+}
+
+model CalendarEvent {
+  id String @id @default(uuid())
+  userId String
+  title String
+  description String?
+  startsAt DateTime
+  endsAt DateTime?
+  allDay Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, startsAt])
 }
 
 model Habit {
@@ -347,7 +294,7 @@ model Habit {
   userId String
   name String
   frequency String @default("daily")
-  targetPerWeek Int @default(7)
+  targetCount Int @default(1)
   active Boolean @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -358,79 +305,52 @@ model Habit {
 
 model HabitLog {
   id String @id @default(uuid())
-  userId String
   habitId String
+  userId String
   dateKey String
-  completedAt DateTime @default(now())
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  count Int @default(0)
+  completed Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([habitId, dateKey])
   @@index([userId, dateKey])
 }
 
-model Supplement {
+model Workout {
   id String @id @default(uuid())
   userId String
-  name String
-  dosage String?
-  frequency String @default("daily")
-  scheduledTime String @default("09:00")
-  active Boolean @default(true)
+  type String
+  durationMinutes Int @default(0)
+  caloriesBurned Int @default(0)
+  performedAt DateTime
+  metadata Json?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  logs SupplementLog[]
-  @@index([userId, active])
+  @@index([userId, performedAt])
 }
 
-model SupplementLog {
-  id String @id @default(uuid())
-  userId String
-  supplementId String
-  dateKey String
-  takenAt DateTime @default(now())
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  supplement Supplement @relation(fields: [supplementId], references: [id], onDelete: Cascade)
-  @@unique([supplementId, dateKey])
-  @@index([userId, dateKey])
-}
-
-model Notification {
+model Reminder {
   id String @id @default(uuid())
   userId String
   title String
-  body String?
-  type String @default("general")
-  scheduledAt DateTime?
-  readAt DateTime?
-  dedupeKey String
-  priority Int @default(2)
-  createdAt DateTime @default(now())
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([userId, readAt, createdAt])
-  @@index([userId, scheduledAt])
-  @@unique([userId, dedupeKey])
-}
-
-model UserFact {
-  id String @id @default(uuid())
-  userId String
-  category String
-  key String
-  value String
-  confidence Float @default(1)
-  importance Int @default(1)
-  source String @default("user")
+  description String?
+  remindAt DateTime
+  repeatRule String?
+  completed Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, remindAt])
 }
 
 model UserBehavior {
   id String @id @default(uuid())
   userId String
-  action String
-  context String?
+  type String
+  value String?
   metadata Json?
   createdAt DateTime @default(now())
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -440,53 +360,44 @@ model UserBehavior {
 model UserInsight {
   id String @id @default(uuid())
   userId String
-  title String
-  description String
-  confidence Float @default(0.5)
-  importance Int @default(1)
-  lastUsedAt DateTime?
+  key String
+  value Json
+  generatedAt DateTime @default(now())
+  expiresAt DateTime?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, key])
+  @@index([userId, generatedAt])
 }
 
-model PlanExecutionState {
+model NotificationDevice {
   id String @id @default(uuid())
   userId String
-  planId String
-  status String
-  stepIds Json
-  completed Json
-  blocked Json
-  failed Json
-  currentStep String?
+  expoPushToken String @unique
+  platform String
+  language String @default("en")
+  timezone String @default("UTC")
+  projectId String?
+  enabled Boolean @default(true)
+  lastSeenAt DateTime @default(now())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@unique([userId, planId])
-  @@index([userId, status, updatedAt])
+  @@index([userId, enabled])
 }
 
-model DecisionAuditEntry {
+model RecipeIngredient {
   id String @id @default(uuid())
-  userId String
-  decisionId String
-  selectedIds Json
-  rejectedIds Json
-  blockedIds Json
-  reason String
-  createdAt DateTime @default(now())
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([userId, createdAt])
-  @@index([userId, decisionId])
-}
-
-model FitnessProfileState {
-  id String @id @default(uuid())
-  userId String @unique
-  profile Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@index([updatedAt])
+  recipeId String
+  foodId String
+  quantity Float @default(1)
+  unit String @default("g")
+  protein Float?
+  carbs Float?
+  fat Float?
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  food FoodItem @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  @@index([recipeId])
+  @@index([foodId])
 }
