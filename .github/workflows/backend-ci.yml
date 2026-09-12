@@ -43,6 +43,7 @@ jobs:
       JWT_REFRESH_EXPIRES_IN: 30d
 
     steps:
+      # Deliberately keep the full verification pipeline on every backend PR.
       - name: Checkout
         uses: actions/checkout@v4
 
