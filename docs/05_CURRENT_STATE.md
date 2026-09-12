@@ -11,7 +11,7 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Working branch: `audit/project-brain-2026-09-11`
-- Current branch head: `cc66daecfbe07e4cb7f2d6a398e7cad0f777d854`
+- Current branch head: `9c09a6948d403a0a981e4581d5ce4cf8fe9f195f`
 - Validation PR: #70 (validation-only; do not merge automatically)
 - Base: `main`
 
@@ -21,17 +21,17 @@ The canonical Appendix finding set is reconciled through PB-257. Recoverable con
 
 ## Master Prompt development progress
 
-`MASTER-0001` baseline reconciliation is complete. The first implementation slice is now in progress/completed at source level: deterministic local-language understanding was enriched with household size, budget amount/currency, protein target, dietary preferences and allergy context; the planner now carries these local entities into executable plan steps; direct unit coverage was added for local understanding and planner propagation.
+`MASTER-0001` baseline reconciliation is complete. `MASTER-0002` is implemented at source level with validation pending: deterministic local-language understanding now extracts household size, budget amount/currency, protein target, dietary preferences and allergy context; the planner carries these entities into executable plan steps; AssistantService merges contextual-command and local-understanding entities before planning; direct unit coverage was added for local constraint extraction and planner propagation.
 
 This slice intentionally remains provider-independent and cloud-AI-free. It improves the central Brain's structured context without claiming that the full meal-planning or budgeting loop is already implemented.
 
 ## Validation status
 
-The latest source changes have triggered a fresh Backend CI run through PR #70. The run is not yet complete at the time of this update, so this commit is not marked CI-green. Prior Backend and Mobile validation on the remediation tree remain green evidence for the unchanged portions of that tree.
+Fresh Backend and Mobile GitHub Actions runs have been triggered for the latest product changes through PR #70. At the latest observed checkpoint, those fresh runs were still in progress, so this head is not yet marked CI-green. Prior remediation-tree Backend and Mobile runs remain green evidence for the previously tested source tree.
 
 ## Next workstream
 
-Continue the central Brain vertical journey: structured local entities → contextual state → decision/planning → safe tool execution → explanation/memory. Then integrate the Food/Nutrition/Inventory/Shopping loop and complete the mobile journey around those capabilities.
+Complete verification for `MASTER-0002`, then continue the central Brain vertical journey: structured local entities → contextual state → decision/planning → safe tool execution → explanation/memory. After that, integrate the Food/Nutrition/Inventory/Shopping budget loop and complete the corresponding Mobile journey.
 
 ## Environment boundary
 
