@@ -200,7 +200,10 @@ export class NaturalActionExecutionService {
       return {
         executed: true,
         action: candidate.action,
-        message: 'Done. I completed that action.',
+        message:
+          typeof receipt.result?.message === 'string'
+            ? receipt.result.message
+            : 'Done. I completed that action.',
         intent,
         receipt,
       };
