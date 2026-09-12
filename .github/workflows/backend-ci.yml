@@ -59,6 +59,16 @@ jobs:
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
 
+      - name: Refresh lockfile in CI for diagnosis
+        run: pnpm install --lockfile-only --ignore-scripts
+        working-directory: .
+
+      - name: Upload refreshed lockfile for diagnosis
+        uses: actions/upload-artifact@v4
+        with:
+          name: refreshed-pnpm-lock
+          path: pnpm-lock.yaml
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         working-directory: .
