@@ -2,9 +2,9 @@
 
 Last updated: 2026-09-12
 Review status: SOURCE-LEVEL RECONCILED; APPENDIX REMEDIATION VERIFIED; DEVICE RUNTIME BLOCKED
-Scope actually read: the recorded audit inventory covers `apps/mobile/package.json`, `app.json`, Expo Router routes and audited feature screens, API/domain clients, auth/onboarding, localization/RTL, notification and TTS helpers, yoga camera/pose contracts, design/motion/branding components, mobile scripts, committed specs and CI workflows. Subsequent remediation rechecks are recorded in the canonical Appendix and validation ledger.
+Scope actually read: the recorded audit inventory covers `apps/mobile/package.json`, `app.json`, Expo Router routes and audited feature screens, API/domain clients, auth/onboarding, localization/RTL, notification and TTS helpers, yoga camera/pose contracts, design/motion/branding components, mobile scripts, committed specs and CI workflows. Subsequent remediation rechecks include the Budget/offline journey and focused Shopping basket transport reconciliation.
 Scope not yet read: production/device execution, native permission behavior on physical hardware, deployed API reachability, external provider behavior and any generated/native artifacts that cannot be meaningfully validated from the connector runtime.
-Evidence roots: `apps/mobile/`; `.github/workflows/mobile-ci.yml`; canonical Appendix; `FILE_REVIEW_INDEX.md`.
+Evidence roots: `apps/mobile/`; `.github/workflows/mobile-ci.yml`; `apps/mobile/lib/api.ts`; `apps/mobile/lib/shopping-api.ts`; `apps/mobile/lib/shopping-basket-api.ts`; canonical Appendix; `FILE_REVIEW_INDEX.md`.
 Confidence level: HIGH for recorded source-level audit/reconciliation; MEDIUM for end-to-end device behavior.
 Open questions: real-device UX/performance, native notification/voice behavior, offline reliability and production API configuration.
 
@@ -16,6 +16,8 @@ Voice/TTS dependencies and consumer wiring were reconciled, and TTS model prepar
 
 Price history presentation now respects the snapshot currency and derives observed bounds without a fabricated zero. Duplicate legacy branding/animation artifacts were retired where they competed with canonical contracts.
 
+The Shopping basket client (`shopping-basket-api.ts`) now uses the same canonical `request()` transport as the other remediated Shopping/Price clients rather than carrying its own token/refresh implementation. This completes the residual PB-205 transport surface for the basket list/complete actions and prevents divergent 401/refresh behavior inside the same Shopping journey.
+
 Mobile CI now validates dependency installation, TypeScript including committed test files, source tests, committed Jest specs, Expo validation and Android JS bundle generation.
 
 ## Historical findings boundary
@@ -26,4 +28,4 @@ The remaining product-level gaps are broader than the Appendix: full offline/loc
 
 ## Verification boundary
 
-Mobile CI passed on remediation commit `46614b36040cb839d6062dae726dc74e51ab3b96`. This confirms the committed automated validation pipeline, not real Android/iOS device behavior or production service connectivity.
+Mobile CI `34691283280` and Backend CI `34691283317` both passed on code commit `c0c31b8733649b306247550377ff682bb85f5803`. This confirms the committed automated validation pipeline, not real Android/iOS device behavior or production service connectivity.
