@@ -1,4 +1,4 @@
-import { resolveFoodEntity as baseResolve, getEntityById, getEntityRelations, resolverIntegrity as baseIntegrity, FOOD_ENTITY_RESOLVER_VERSION as BASE_VERSION } from './food-entity-resolver-v2.mjs';
+import { resolveFoodEntity as baseResolve, getEntityById as baseGetEntityById, getEntityRelations as baseGetEntityRelations, resolverIntegrity as baseIntegrity, FOOD_ENTITY_RESOLVER_VERSION as BASE_VERSION } from './food-entity-resolver-v2.mjs';
 
 export const FOOD_ENTITY_RESOLVER_VERSION = 'food-entity-resolver-v3-final';
 
@@ -37,6 +37,14 @@ function parseAmountAndUnit(raw) {
     if (re.test(remainder)) return { quantity, unit };
   }
   return { quantity, unit: null };
+}
+
+export function getEntityById(id) {
+  return baseGetEntityById(id);
+}
+
+export function getEntityRelations(id) {
+  return baseGetEntityRelations(id);
 }
 
 export function resolveFoodEntity(input) {
