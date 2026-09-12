@@ -126,6 +126,8 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-265 | CLOSED — REMEDIATED; CI VERIFIED | Recipe budget results were not connected to shopping generation as one coherent journey. `addBudgetQualifiedMissingToShopping()` now inserts only `priced` missing items into the canonical ShoppingService, with unit/quantity derived from the verified recipe-budget plan. |
 | PB-266 | CLOSED — REMEDIATED; CI VERIFIED | Mobile Shopping/Price API clients duplicated authenticated refresh/transport logic instead of using the canonical `api.ts` request path. Both clients now reuse the shared authenticated transport; canonical Persian key normalization is aligned with backend `PriceProductKeyService`. |
 | PB-267 | CLOSED — REMEDIATED; CI VERIFIED | Budget status semantics could overstate success when only part of a recipe's missing-price evidence was available. `deriveBudgetStatus()` now distinguishes `within_budget`, `over_budget`, `partial_price_evidence`, and `insufficient_price_data`; the Food Loop and mobile consumer preserve the fail-closed meaning. |
+| PB-268 | CLOSED — REMEDIATED; CI VERIFIED | Multi-source price selection could treat the newest stale compatible source as the effective latest price and hide an older still-fresh source. Budget quoting now considers all compatible unit/currency evidence, chooses the freshest evidence within the seven-day freshness window, and reports `stale_price` only when all compatible snapshots are stale; regression coverage locks the rule. |
+| PB-269 | CLOSED — REMEDIATED; CI VERIFIED | Blocked budget evidence had no deterministic consumer-facing remediation contract. Budget now emits `refresh_prices`, `review_currency`, `review_units`, `increase_budget`, and `review_price_evidence` codes, and the Food Operating Loop propagates those actions while preserving fail-closed cost semantics. |
 
 ## Historical catalog boundary
 
@@ -133,6 +135,6 @@ The exact prose of PB-001 through PB-155 is not recoverable from the repository 
 
 ## Verification boundary
 
-Repository/source and corresponding GitHub Actions validation are verified for the recorded product trees. Latest verified code slice includes Backend Prisma validation/generation, migrations/idempotence, food-intelligence self-test, build, unit tests, API E2E and diagnostics, plus Mobile typecheck, source/Jest specs, Expo validation and Android JavaScript bundling. Production database/RLS/storage state, external provider quotas, push delivery and real-device UX remain outside the available runtime boundary.
+Latest verified code tree: `83fb230d1491240743edded9716f69e8475bc23c`. Backend CI `34689696683` and Mobile CI `34689696652` completed successfully, including backend Prisma validation/generation, migrations/idempotence, food-intelligence self-test, build, unit tests, API E2E and diagnostics, plus mobile typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling. Production database/RLS/storage state, external provider quotas, push delivery and real-device UX remain outside the available runtime boundary.
 
 Local repository execution is unavailable because direct GitHub network access is blocked in the container environment.
