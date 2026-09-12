@@ -12,6 +12,7 @@ export class LocalMealRecommendationActionAdapter implements OnModuleInit {
 
   onModuleInit() {
     this.adapters.register({
+      actions: ['recommend_meal'],
       supports: (candidate) => candidate.action === 'recommend_meal',
       execute: (candidate, context) => this.execute(candidate, context),
     });
