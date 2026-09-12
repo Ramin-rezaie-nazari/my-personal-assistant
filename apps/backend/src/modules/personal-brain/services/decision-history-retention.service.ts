@@ -7,25 +7,37 @@ export type HistoryRetentionPolicy = {
   deleteRecentActivityHours?: number;
 };
 
+const VALID_RETENTION = new Set<HistoryRetention>([
+  '1_month',
+  '3_months',
+  '6_months',
+  '1_year',
+  'unlimited',
+]);
+
 @Injectable()
 export class DecisionHistoryRetentionService {
-  private readonly policies = new Map<string, HistoryRetentionPolicy>();
-  private readonly defaults: HistoryRetentionPolicy = { retention: '3_months' };
+  private readonly policy: HistoryRetentionPolicy = {
+    retention: this.readRetention(),
+  };
 
-  setPolicy(userId: string, policy: HistoryRetentionPolicy) {
-    const normalized = { ...policy };
-    if (normalized.deleteRecentActivityHours !== undefined) {
-      normalized.deleteRecentActivityHours = Math.min(
-        Math.max(normalized.deleteRecentActivityHours, 0.25),
-        24 * 365,
-      );
-    }
-    this.policies.set(userId, normalized);
-    return normalized;
+  getPolicy(_userId: string): HistoryRetentionPolicy {
+    return this.policy;
   }
 
-  getPolicy(userId: string): HistoryRetentionPolicy {
-    return this.policies.get(userId) ?? this.defaults;
+  setPolicy(_userId: string, policy: HistoryRetentionPolicy) {
+    const normalized: HistoryRetentionPolicy = {
+      retention: VALID_RETENTION.has(policy.retention) ? policy.retention : this.policy.retention,
+      ...(policy.deleteRecentActivityHours === undefined
+        ? {}
+        : {
+            deleteRecentActivityHours: Math.min(
+              Math.max(policy.deleteRecentActivityHours, 0.25),
+              24 * 365,
+            ),
+          }),
+    };
+    return normalized;
   }
 
   cutoff(userId: string, now = Date.now()): number | null {
@@ -43,5 +55,10 @@ export class DecisionHistoryRetentionService {
   isExpired(userId: string, recordedAt: number, now = Date.now()): boolean {
     const cutoff = this.cutoff(userId, now);
     return cutoff !== null && recordedAt < cutoff;
+  }
+
+  private readRetention(): HistoryRetention {
+    const configured = process.env.MYPA_HISTORY_RETENTION?.trim() as HistoryRetention | undefined;
+    return configured && VALID_RETENTION.has(configured) ? configured : '3_months';
   }
 }
