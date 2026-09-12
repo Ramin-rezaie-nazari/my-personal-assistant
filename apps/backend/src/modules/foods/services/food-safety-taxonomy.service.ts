@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import taxonomy from '../../../data/ingredient-taxonomy-supplement-v1.json';
+import taxonomy from '../../../../data/ingredient-taxonomy-supplement-v1.json';
 
 export type FoodSafetyFlags = {
   dairy?: boolean;
