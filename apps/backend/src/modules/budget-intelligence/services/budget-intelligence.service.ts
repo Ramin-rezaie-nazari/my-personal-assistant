@@ -3,6 +3,8 @@ import { InventoryService } from '../../inventory/inventory.service';
 import { PricePersistenceService } from '../../price-intelligence/services/price-persistence.service';
 import { PriceProductKeyService } from '../../price-intelligence/services/price-product-key.service';
 
+const PRICE_FRESHNESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+
 export type MealBudgetPlanItem = {
   foodId: string;
   name: string;
@@ -14,7 +16,7 @@ export type MealBudgetPlanItem = {
   currency: string;
   priceObservedAt: Date | null;
   priceSourceId: string | null;
-  status: 'priced' | 'price_unavailable' | 'currency_mismatch' | 'unit_mismatch' | 'over_budget';
+  status: 'priced' | 'price_unavailable' | 'currency_mismatch' | 'unit_mismatch' | 'stale_price' | 'over_budget';
   urgency: 'critical' | 'soon' | 'normal' | 'none';
   reason: string;
 };
@@ -43,6 +45,7 @@ export class BudgetIntelligenceService {
     const items: MealBudgetPlanItem[] = [];
     let remaining = budget;
     let pricedCount = 0;
+    const now = Date.now();
 
     for (const item of candidates) {
       const foodId = String(item.foodId);
@@ -111,6 +114,45 @@ export class BudgetIntelligenceService {
         continue;
       }
 
+      const observedAt = new Date(compatibleUnit.observedAt ?? 0);
+      if (!Number.isFinite(observedAt.getTime())) {
+        items.push({
+          foodId,
+          name,
+          productKey,
+          recommendedQuantity: item.recommendedQuantity,
+          unit: item.unit,
+          price: null,
+          estimatedCost: null,
+          currency: normalizedCurrency,
+          priceObservedAt: null,
+          priceSourceId: compatibleUnit.sourceId ?? null,
+          status: 'price_unavailable',
+          urgency: item.urgency,
+          reason: 'invalid_observed_at',
+        });
+        continue;
+      }
+
+      if (now - observedAt.getTime() > PRICE_FRESHNESS_WINDOW_MS) {
+        items.push({
+          foodId,
+          name,
+          productKey,
+          recommendedQuantity: item.recommendedQuantity,
+          unit: item.unit,
+          price: null,
+          estimatedCost: null,
+          currency: normalizedCurrency,
+          priceObservedAt: observedAt,
+          priceSourceId: compatibleUnit.sourceId ?? null,
+          status: 'stale_price',
+          urgency: item.urgency,
+          reason: 'price_snapshot_older_than_7_days',
+        });
+        continue;
+      }
+
       const price = Number(compatibleUnit.unitPrice);
       const estimatedCost = price * Number(item.recommendedQuantity);
       if (!Number.isFinite(price) || price < 0 || !Number.isFinite(estimatedCost)) {
@@ -142,9 +184,7 @@ export class BudgetIntelligenceService {
           price,
           estimatedCost,
           currency: normalizedCurrency,
-          priceObservedAt: compatibleUnit.observedAt
-            ? new Date(compatibleUnit.observedAt)
-            : null,
+          priceObservedAt: observedAt,
           priceSourceId: compatibleUnit.sourceId ?? null,
           status: 'over_budget',
           urgency: item.urgency,
@@ -164,9 +204,7 @@ export class BudgetIntelligenceService {
         price,
         estimatedCost,
         currency: normalizedCurrency,
-        priceObservedAt: compatibleUnit.observedAt
-          ? new Date(compatibleUnit.observedAt)
-          : null,
+        priceObservedAt: observedAt,
         priceSourceId: compatibleUnit.sourceId ?? null,
         status: 'priced',
         urgency: item.urgency,
