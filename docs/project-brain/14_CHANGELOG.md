@@ -1,12 +1,19 @@
 # Project Brain Changelog
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
-Scope actually read: baseline + Core + complete Prisma schema and all 39 migrations + complete Assistant/Brain enumerated source/test scope + Food/Shopping/Life/Health/Fitness enumerated scopes + Platform/Test/CI enumerated manifests/E2E/workflows + substantial Mobile routes/clients/specs/native config + Mobile components/motion/scripts + residual Mobile library contracts/tests + continued BATCH-0013 operational recipe/food scripts + backend common/config/auth/fitness cross-contract review + historical branch/PR reconciliation + extended Mobile app/lib screen/domain-client consumer mapping + CI/release workflow and database raw-SQL ownership sweep.
-Scope not yet read: remaining repository source outside current audited trees; remaining Fitness-adjacent source; exhaustive common/platform/test inventory; exhaustive repository-wide route/consumer/database matrices; full automated validation; full security/privacy closure; historical docs/branches beyond inspected high-value branches/PRs; remaining legacy/duplicate operational scripts.
-Evidence roots: Project Brain documents; `apps/backend/src/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`.
-Confidence level: HIGH for completed file-level reads; MEDIUM for cross-module conclusions; no repository runtime execution claim.
-Open questions: exact repository-wide inventory/line counts, live DB drift, complete model/table consumer graph, transaction boundaries, complete route/mobile mappings, full CI validation and device behavior, operational ownership of remaining legacy variants.
+Last updated: 2026-09-12
+Review status: SOURCE-LEVEL AUDIT RECONCILED; APPENDIX REMEDIATION VERIFIED; ENVIRONMENTAL VALIDATION BLOCKED
+Scope actually read: baseline + Core + complete Prisma schema and all 39 migrations + complete recorded Assistant/Brain/Food/Shopping/Life/Health/Fitness/Platform/Test/CI/Mobile source scopes + route/consumer/DTO/guard/database reconciliation + operational scripts + historical Appendix reconciliation + remediation verification.
+Scope not yet read: no known recoverable source gap remains in the recorded audit baseline; deployed runtime/device/external-provider validation remains unavailable.
+Evidence roots: `docs/project-brain/`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; `apps/backend/prisma/`; GitHub Actions evidence.
+Confidence level: HIGH for recorded source-level audit and remediation evidence; MEDIUM for deployment/runtime conclusions.
+Open questions: production database/RLS/Storage/Auth configuration, physical-device behavior, external provider quotas and unrecoverable PB-001..PB-155 historical prose.
+
+## 2026-09-12 — BATCH-0031 — Project Brain reconciliation after Appendix verification
+- Synchronized `05_CURRENT_STATE.md` with the successful Backend/Mobile CI verification on remediation commit `46614b36040cb839d6062dae726dc74e51ab3b96`.
+- Updated canonical Appendix verification boundary to record Backend CI and Mobile CI as green while preserving production/device limits.
+- Reconciled `00_PROJECT_OVERVIEW.md`, `01_ARCHITECTURE_MAP.md`, `FILE_REVIEW_INDEX.md`, `READING_CHECKPOINTS.md`, `REVIEW_GAPS.md` and `13_DECISION_LOG.md` so they no longer present pre-remediation findings as current defects.
+- Reconciled Core, Brain, Food, Shopping, Life/Health, Fitness, Platform/Test and Mobile deep-read documents with the current remediation baseline.
+- Added the explicit distinction between source-audit completion, Appendix remediation completion and final MYPA product readiness.
 
 ## 2026-09-11 — BATCH-0001
 - Initialized durable Project Brain on `audit/project-brain-2026-09-11` without modifying `main`.
@@ -53,38 +60,9 @@ Open questions: exact repository-wide inventory/line counts, live DB drift, comp
 - Completed the currently inventoried `app/`, `lib/`, `components/`, and `scripts/` Mobile source boundary to the extent exposed by the current Git tree snapshots. No native `apps/mobile/android` or `apps/mobile/ios` directory was present at those paths in the audited branch.
 - Updated `FILE_REVIEW_INDEX.md`, `READING_CHECKPOINTS.md`, `REVIEW_GAPS.md`, `12_OPEN_WORK.md`, `deep-read/08-mobile-deep-read.md`, and this changelog. No production code changes made.
 
-## 2026-09-11 — BATCH-0012 continuation checkpoint
-- Re-opened the canonical Project Brain state and continued the backend route/API and operational-script reconciliation from the existing checkpoint rather than rebuilding already-read green work.
-- Confirmed PB-186..PB-190 are present in the canonical `15_AUDIT_FINDINGS_APPENDIX.md`.
-- Created the required root-level `docs/05_CURRENT_STATE.md` because the protocol-mandated path was absent while a legacy/operational `apps/backend/docs/05_CURRENT_STATE.md` existed. The two documents still require deliberate reconciliation; this is tracked as PB-191.
+## 2026-09-11 — BATCH-0012 through BATCH-0030
+- Historical batch records retained in repository history. Final reconciliation is controlled by `FILE_REVIEW_INDEX.md`, `READING_CHECKPOINTS.md`, `REVIEW_GAPS.md` and the canonical Appendix.
 
-## 2026-09-11 — BATCH-0013
-- Started with the package-wired operational scripts in `apps/backend/package.json`, then inspected their legacy/duplicate recipe and food variants.
-- Inspected `recipe-content-import.mjs` against the final Prisma schema and the `RecipeStep` / `RecipeMedia` migrations; PB-188 was confirmed and the importer restartability/transaction findings PB-192/PB-193 were recorded.
-- Inspected recipe image import, dataset import, reprocess-quality, retry, and legacy image variants; recorded PB-194, PB-196 and PB-197 around the 60KB asset contract, positional limit batching, and conflicting `primary`/`hero` image contracts.
-- Inspected country-intelligence version family and confirmed PB-195 operational drift between multiple executable historical variants and the package-wired final implementation.
-- Inspected Food Entity Resolver v1/v2/final and the available final self-test. Corrected the earlier assumption that the final self-test was absent; PB-198 now records the narrower issue that the final self-test is not exposed through package/CI automation observed in the inspected scope.
-- Inspected recipe recommendation scoring and recipe ingest together; recorded PB-199 because the producer stores quality as a 0..1 fraction while the consumer divides it by 100.
-- Inspected nutrition estimation; recorded PB-200 for missing source/version provenance on hard-coded nutrient constants and household-unit conversions. The estimator is explicitly marked as `estimated`, so this is a provenance/traceability issue rather than a claim of hidden verified data.
-- Found two additional image-state issues: PB-201 (RESET only enumerates first 1000 Storage objects but globally deletes DB rows) and PB-202 (wired image importer only paginates recipe rows, not existing image/skip sets).
-- Inspected local guaranteed image pipeline v7/v8 and verified PB-203: v8 references three script files that do not exist in the audited branch, causing a concrete broken orchestration path.
-- Recorded PB-204 for country preference scoring reading fields that its own relation query does not select.
-- Reviewed `apps/backend/src/common/` config/bootstrap/database boundaries and confirmed the environment validator requires `JWT_ACCESS_SECRET` and `JWT_REFRESH_SECRET`; getter defaults are therefore development fallbacks rather than an observed production secret-bypass.
-- Re-checked Fitness↔Auth contract and confirmed `JwtStrategy.validate()` returns the loaded user object while the active Fitness controller reads `req.user.sub`; PB-171 remains a valid cross-contract finding.
-- Reconciled high-value historical branches/PRs: PR #48 remains open/unmergeable, PR #49 is open/mergeable from the same Global Market workstream, and PR #66 is a draft autonomous control-plane/local-media workstream. None should be treated as merged into `main` without explicit merge evidence.
-- Inspected PR #66 and confirmed its declared local media target (1–4 verified images per recipe, 20–150KB) is a branch-scoped design, not current `main` behavior; this reinforces the existing PB-194 contract-drift finding rather than creating a duplicate.
-- Inspected `apps/mobile/lib/api.ts` again and confirmed the currently observed mobile auth/session implementation still stores access and refresh tokens in AsyncStorage and refreshes through the unauthenticated `/auth/refresh` path; existing PB-182 and PB-187 remain the canonical related findings.
-- Reviewed current audit-branch CI status for the latest audit commit; no commit status checks are attached, so this session makes no new CI-green claim.
-- Inspected `.github/workflows/mypa-mobile-typecheck-repair-once.yml`; it is an old self-mutating one-time workflow that can write/commit `apps/mobile/app/reminders-localized.tsx` and delete its own workflow file. It is not treated as a production defect yet because it targets `agent/mypa-autonomous-control-plane`, but it remains part of the historical/CI control-plane reconciliation scope.
-- Extended the route↔mobile consumer pass across Brain, Meals/Nutrition, Calendar, Notifications, Habits, Supplements, Inventory, Shopping and Recipe Match screens; direct consumers were added to `CONTRACT_MATRIX.md` rather than inferred from helper names.
-- Compared Mobile transport clients and found a concrete shared-contract defect: `recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `inventory-api.ts`, and `assistant-api.ts` bypass the canonical 401→refresh→retry behavior implemented by `api.ts`, `calendar-api.ts`, `price-api.ts`, and `brain-execution.ts`. Recorded as PB-205 and kept as one cross-client root cause.
-- Rechecked `apps/mobile/app/index.tsx` and `command-center.tsx`: both are deliberate re-export shims to the active `command-center-v2` screen; they are not treated as orphan features.
-- Inspected `.github/workflows/recipe-content-release.yml` against `apps/backend/package.json`; workflow steps call `pnpm recipe:content:import` and `pnpm recipe:content:audit`, but those package scripts are not defined in the audited backend manifest. Recorded as PB-206, distinct from PB-188 because it is the workflow-to-package entrypoint contract itself.
-- Swept raw-SQL consumers including GoalCheckin, TaskDependency, ConversationTurn, WorkoutPerformance and PriceTrackedProduct paths; existing PB-004..PB-007/PB-056..PB-061 remain canonical data-model/ownership findings, and no additional distinct root cause was added from the sampled consumers.
-- Inspected remaining high-use Mobile domain screens (`auth.tsx`, `assistant.tsx`, `onboarding.tsx`, `daily.tsx`, `price-history.tsx`) and found no new independent correctness defect beyond existing localization, transport, price-history and auth findings.
+## Verification boundary
 
-## Next
-- Continue Master Prompt with exhaustive database reader/writer/transaction/relation/index reconciliation and remaining backend↔mobile DTO/test mapping.
-- Continue remaining common/platform/test and legacy operational source closure, plus security/privacy retention/deletion reconciliation.
-- Close historical reconciliation only after remaining production-affecting divergence has been mapped against `main`.
-- Only after the Master Prompt audit scope is fully closed begin the separate correction/remediation phase using the final canonical findings catalog.
+The source-audit record and Appendix remediation closure do not imply production readiness. Runtime HTTP execution, deployed PostgreSQL/RLS/Storage/Auth state, physical-device UX, push delivery and external provider quotas remain environmental validation work.
