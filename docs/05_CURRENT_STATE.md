@@ -11,13 +11,13 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Working branch: `audit/project-brain-2026-09-11`
-- Current branch head: `19eceeb3f7af8aa253b3aff2666f2cd738fb67fc`
+- Current branch head: `9c0ec10a8ff3786325b559c7ebaa6a31f1f31a09`
 - Validation PR: #70 (validation-only; do not merge automatically)
 - Base: `main`
 
 ## Appendix/remediation status
 
-The canonical Appendix finding set is reconciled through PB-257. Recoverable concrete findings have been remediated/reclassified and the historical PB-001..PB-155 limitation is explicitly preserved without fabricated text. Prior full Backend and Mobile remediation CI was green.
+The canonical Appendix finding set is reconciled through PB-257. Recoverable concrete findings have been remediated/reclassified and the historical PB-001..PB-155 limitation is explicitly preserved without fabricated text. The verified remediation/product tree also passes the current Backend and Mobile CI gates.
 
 ## Master Prompt development progress
 
@@ -25,32 +25,35 @@ The canonical Appendix finding set is reconciled through PB-257. Recoverable con
 
 `MASTER-0002` deterministic local Brain context: VERIFIED BY CI.
 
-Implemented and verified:
-- local Persian/English normalization;
-- intent classification for core assistant actions;
-- quantity, household-size, budget amount/currency, protein, calorie, time and duration extraction;
+`MASTER-0003` recipe/ingredient safety-taxonomy contract: VERIFIED BY CI.
+
+Implemented and verified across the current development chain:
+- local Persian/English normalization and core intent/entity extraction;
+- household size, budget amount/currency, protein, calorie, time and duration extraction;
 - dietary preference and allergy detection;
-- local/contextual entity merge into PlanningService;
-- propagation of structured entities into executable plan steps;
+- local/contextual entity merge into PlanningService and propagation into executable plan steps;
 - recommendation action registration in the central decision-action adapter registry;
-- Brain→Food Operating Loop connection for supported nutrition constraints;
-- fail-closed behavior when allergy/diet constraints cannot yet be proven safe from canonical recipe data;
-- direct unit coverage for local understanding, planner propagation and recommendation adapter behavior.
+- Brain→Food Operating Loop connection for nutrition recommendation;
+- deterministic Food Safety Taxonomy resolution using canonical names, aliases and safety flags;
+- hard-filter evaluation for supported allergy/diet semantics;
+- explicit fail-closed behavior when ingredient safety evidence is unknown;
+- explicit backend build packaging for the safety taxonomy asset;
+- direct unit coverage for local understanding, planner propagation, adapter registration, safety resolution and recommendation filtering.
 
 ## Validation evidence
 
-Backend CI run `34686237627` completed successfully: dependency installation, Prisma validation/generation, all migrations plus idempotence, food-intelligence self-test, backend build, 427/427 backend unit tests and API E2E all passed.
+Backend CI run `34686577253` completed successfully for the latest safety-taxonomy/dependency-alignment tree: dependency installation, Prisma validation/generation, migrations plus idempotence, food-intelligence self-test, backend build, backend unit tests and API E2E all passed.
 
-Mobile CI run `34686237631` completed successfully: dependency installation, TypeScript typecheck, mobile source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
+Mobile CI run `34686577182` completed successfully for the same product tree: dependency installation, TypeScript typecheck, mobile source tests, committed Jest specs, Expo validation and Android JavaScript bundling all passed.
 
 ## Current architectural boundary
 
-The Brain can now carry structured nutrition constraints into the Food Operating Loop, but allergy/dietary hard filtering is intentionally not claimed complete because the canonical recipe/ingredient data model does not yet provide sufficient verified allergen/diet semantics for every recommendation. Unsupported hard constraints therefore stop recommendation execution rather than being silently ignored.
+The Brain can now pass structured nutrition constraints into the Food Operating Loop, and the recipe recommendation path can enforce the subset of allergy/diet semantics represented by the canonical ingredient taxonomy. Unknown ingredient safety remains fail-closed. This is a verified source/runtime contract, but it is not equivalent to claiming complete allergen coverage for every possible ingredient or every production recipe dataset.
 
 ## Next workstream
 
-`MASTER-0003`: establish a verified recipe/ingredient safety-taxonomy contract that can support hard allergy/diet filters without weakening correctness. This requires mapping canonical `FoodItem`/`RecipeIngredient` records to deterministic safety flags with explicit unknown-state behavior, then integrating those flags into Food Operating Loop filtering and tests. Schema changes will only be made if source evidence shows the existing contract cannot represent the required data safely.
+`MASTER-0004`: complete the Nutrition/Food → Pantry/Inventory → Shopping → Budget vertical journey. The next slice should connect recommendation outputs and missing-ingredient quantities to a coherent user-scoped meal/shopping/budget flow, with deterministic money/currency semantics and explicit empty/error/offline states. Do not expand schema unless the existing domain contract cannot represent the required ownership or provenance safely.
 
 ## Environment boundary
 
-The local container cannot clone the repository because direct GitHub network access is unavailable. GitHub connector evidence is used for repository inspection and CI state. Production/deployed DB/RLS/storage configuration, physical-device UX, push delivery and external provider quotas are not claimed verified.
+The local container cannot clone the repository because direct GitHub network access is unavailable. GitHub connector evidence is used for repository inspection and CI state. Production/deployed DB/RLS/storage configuration, physical-device UX, push delivery, external provider quotas and store-release validation are not claimed verified.
