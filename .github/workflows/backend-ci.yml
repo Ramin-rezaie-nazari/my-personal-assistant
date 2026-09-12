@@ -77,6 +77,12 @@ jobs:
           pnpm exec prisma migrate status
           pnpm exec prisma migrate deploy
 
+      - name: Typecheck backend
+        run: pnpm typecheck
+
+      - name: Lint backend
+        run: pnpm lint
+
       - name: Build backend
         run: pnpm build
 
