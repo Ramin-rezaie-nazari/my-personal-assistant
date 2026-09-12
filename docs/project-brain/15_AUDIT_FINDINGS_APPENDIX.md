@@ -1,7 +1,7 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-12
-Review status: CANONICAL FINDINGS REGISTER RECONCILED; PB-271..PB-276 ADDED; LATEST-HEAD CI PENDING
+Review status: CANONICAL FINDINGS REGISTER RECONCILED; PB-271..PB-278 ADDED; LATEST-HEAD CI PENDING
 
 This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit and subsequent evidence-driven Master Prompt development. The original `OPEN` labels represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
 
@@ -134,11 +134,13 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-064 | CLOSED — REMEDIATED; PRIOR CI VERIFIED | Price sources now expose explicit capability/trust metadata plus runtime attempt/success/failure health telemetry; detailed collection reports failed and attempted source IDs. Static trust/capability metadata is heuristic and runtime health is process-local rather than durable external-provider monitoring. |
 | PB-065 | CLOSED — REMEDIATED; PRIOR CI VERIFIED | Product matching now normalizes compatible mass/volume/count units and penalizes materially different or incompatible quantities, preventing misleading near-matches. Strong identifiers remain prioritized. |
 | PB-059 | CLOSED — REMEDIATED; PRIOR CI VERIFIED | Price Intelligence analysis now filters out incompatible currencies (currently IRT is the supported analysis currency) and uses `unitPrice` when available, avoiding direct USD/IRT aggregation. Further durable package normalization remains constrained by source evidence. |
-| PB-272 | CLOSED — REMEDIATED; PRIOR CI VERIFIED | Two active Price Intelligence placeholder providers (`PriceHistoryService`, `PriceAnalysisService`) had no consumers and only returned placeholder messages. After repository-wide consumer search, both were retired and their module registrations/exports removed; durable persistence and `MarketAnalysisService` remain canonical. |
+| PB-272 | CLOSED — REMEDIATED; CI VERIFIED | Two active Price Intelligence placeholder providers (`PriceHistoryService`, `PriceAnalysisService`) had no consumers and only returned placeholder messages. After repository-wide consumer search, both were retired and their module registrations/exports removed; durable persistence and `MarketAnalysisService` remain canonical. |
 | PB-273 | CLOSED — REMEDIATED; CI VERIFIED | `PriceIntelligenceService.analyze()` duplicated a separate market-analysis implementation with different scoring/time semantics. The public analysis entrypoint now delegates to canonical `MarketAnalysisService`, so analysis logic has one source of truth and direct delegation coverage. |
 | PB-274 | CLOSED — REMEDIATED; CI VERIFIED | Shopping Intelligence still registered unused placeholder facades `ShoppingListService` and `PurchaseAnalysisService`. Consumer search found no active runtime use beyond their module registration; both files were retired and removed from module providers/exports, leaving the deterministic `ShoppingIntelligenceService` and active purchase-planning services as the runtime path. |
 | PB-275 | CLOSED — REMEDIATED; LATEST-HEAD CI PENDING | `PurchasePlanService` could accept items whose `currency` differed from the plan currency and still include them in ranking/budget selection. The planner now normalizes the plan/item currency codes and skips mismatched items with deterministic `currency_mismatch` reasoning. Regression coverage was added. |
 | PB-276 | CLOSED — REMEDIATED; LATEST-HEAD CI PENDING | `ShoppingService.addToBasket()` treated invalid/non-positive/non-finite quantity as `NotFoundException` (404), which misclassified a malformed request as a missing resource. The service now returns `BadRequestException` (400), with direct regression coverage. |
+| PB-277 | CLOSED — REMEDIATED; LATEST-HEAD CI PENDING | Shopping basket and recipe-missing endpoints used inline body object types, so runtime class-validator metadata was absent. Concrete `AddShoppingItemDto`, `AddShoppingFromRecipeDto` and nested item validation were added, with direct DTO tests. |
+| PB-278 | CLOSED — REMEDIATED; LATEST-HEAD CI PENDING | `ShoppingService.addRecipeMissing()` silently discarded request items not belonging to the selected recipe or with invalid quantity/unit values. It now rejects the request before opening the transaction with `BadRequestException`, preserving fail-closed request semantics and atomicity. |
 
 ## Historical catalog boundary
 
@@ -146,6 +148,6 @@ The exact prose of PB-001 through PB-155 is not recoverable from the repository 
 
 ## Verification boundary
 
-Latest implementation head: `5dc577d0d2ce2ed3aed59bc631cc0adb50a46546`. Mobile CI `34692506067` and Backend CI `34692506118` passed on the prior code head through PB-274; subsequent PB-275/PB-276 code/test changes advance the branch and require a fresh latest-head CI result. Production database/RLS/storage state, external provider quotas, push delivery and real-device UX remain outside the available runtime boundary.
+Latest implementation head: `435816060842a26c7f51e0b1959c5c3e2b5eaa86`. Earlier PB-272..PB-274 code had successful Backend/Mobile CI on `103452b92321023445a0cd9aa317675b095f10e2`. Fresh Backend CI `34692774149` and Mobile CI `34692774199` are running for the PB-275..PB-278 implementation head. Production database/RLS/storage state, external provider quotas, push delivery and real-device UX remain outside the available runtime boundary.
 
 Local repository execution is unavailable because direct GitHub network access is blocked in the container environment.
