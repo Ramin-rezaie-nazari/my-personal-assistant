@@ -1,12 +1,12 @@
 # API Catalog
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
-Scope actually read: exhaustive controller inventory at the audited `main` commit for active AppModule modules plus source-only controller shells; controller-to-service wiring inspected for Auth, Assistant, Brain Integration, Recommendation Intelligence, Goals, Life Execution, Foods, Meals, Recipes, Nutrition, Daily, Inventory, Shopping, Shopping Intelligence, Budget Intelligence, Price Intelligence, Calendar, Habits, Reminders, Notifications, Supplements, Health, Workout, Fitness, Yoga, Calisthenics, User Intelligence, Decision Engine, Adaptive Learning, Context Engine, Device Intelligence, Dashboard, Daily Command Center and Personal Brain.
-Scope not yet closed: route-by-route DTO/output/error/test/mobile-consumer reconciliation; runtime HTTP verification; final duplicate/legacy controller reconciliation.
-Evidence roots: `apps/backend/src/app.module.ts`; `apps/backend/src/modules/**/controllers/`; selected services/DTOs/tests; `apps/mobile/lib/**`; `apps/mobile/app/**`.
-Confidence level: HIGH for controller route/path/guard inventory in the read snapshot; MEDIUM for cross-layer consumer/response contracts; no runtime verification claim.
-Open questions: exact mobile consumer per route, response/error contracts not captured by shared DTOs, historical/legacy consumer overlap, live deployment prefix/gateway behavior.
+Last updated: 2026-09-12
+Review status: RECONCILED FOR CURRENT SOURCE ROUTES; LATEST DOCUMENTATION SYNC IN PROGRESS
+Scope actually read: active backend controller inventory and current guard/path/service wiring for Auth, Users/Profile/Preferences/Onboarding/Settings, Assistant/Personal Brain/User Intelligence/Decision Engine/Adaptive Learning, Foods/Meals/Nutrition/Recipes, Inventory/Shopping/Shopping Intelligence/Budget/Price Intelligence, Daily/Habits/Calendar/Reminders/Notifications/Supplements/Goals/Life, Health/Dashboard/Command Center/Device Intelligence and Fitness/Workout/Calisthenics/Yoga. Historical controller-shell findings were cross-checked against current module registration.
+Scope not yet fully verified here: deployed gateway prefixes, runtime HTTP execution outside CI, per-endpoint device behavior and full response-schema documentation.
+Evidence roots: `apps/backend/src/app.module.ts`; `apps/backend/src/modules/**/controllers/`; selected DTOs/services/specs; `apps/mobile/lib/**`; `apps/mobile/app/**`.
+Confidence level: HIGH for current controller path/guard/service wiring; MEDIUM for runtime gateway/consumer behavior.
+Open questions: deployed base path/prefix and live device/runtime behavior.
 
 ## Route inventory
 
@@ -16,8 +16,8 @@ Open questions: exact mobile consumer per route, response/error contracts not ca
 | POST | `/auth/register` | Public | AuthController -> AuthService.register |
 | POST | `/auth/login` | Public | AuthController -> AuthService.login |
 | GET | `/auth/me` | JWT | AuthController -> request user |
-| POST | `/auth/refresh` | Public controller; token/session checked in service | AuthController -> AuthService.refreshToken |
-| POST | `/auth/logout` | Public controller; refresh session revoked in service | AuthController -> AuthService.logout |
+| POST | `/auth/refresh` | Public; refresh session validated in service | AuthController -> AuthService.refreshToken |
+| POST | `/auth/logout` | Public; refresh session revoked in service | AuthController -> AuthService.logout |
 | GET | `/users/profile` | JWT | UsersController -> UsersService.getProfile |
 | PATCH | `/users/profile` | JWT | UsersController -> UsersService.updateProfile |
 | GET | `/profile` | JWT | ProfileController -> ProfileService.getProfile |
@@ -36,7 +36,7 @@ Open questions: exact mobile consumer per route, response/error contracts not ca
 | GET | `/assistant/history` | JWT | AssistantController -> AssistantService.getHistory |
 | POST | `/assistant` | JWT | AssistantController -> AssistantService.process |
 | POST | `/assistant/confirm` | JWT | AssistantController -> AssistantService.confirm |
-| GET | `/personal-brain` | Public | PersonalBrainController -> static status |
+| GET | `/personal-brain` | Public status only | PersonalBrainController -> static status |
 | GET | `/personal-brain/overview` | JWT | PersonalBrainController -> Brain/plan/coach/health services |
 | GET | `/personal-brain/plan` | JWT | PersonalBrainController -> SmartPlanningService |
 | GET | `/personal-brain/plan/history` | JWT | PersonalBrainController -> PersistentPlanStateService |
@@ -81,10 +81,15 @@ Open questions: exact mobile consumer per route, response/error contracts not ca
 | GET | `/decision-engine` | JWT | DecisionEngineController -> ActionDecisionService.generate |
 | GET | `/adaptive-learning` | JWT | AdaptiveLearningController -> AdaptiveLearningService.getStatus |
 | GET | `/adaptive-learning/insights` | JWT | AdaptiveLearningController -> AdaptiveLearningService.getInsights |
-| `/context-engine` | none | No route methods | Empty ContextEngineController |
-| `/brain-integration` | none | No route methods | Empty BrainIntegrationController |
-| `/recommendation-intelligence` | none | No route methods | Empty RecommendationIntelligenceController |
-| `/goal-intelligence` | none | No route methods | Empty GoalIntelligenceController |
+
+### Retired/non-HTTP controller shells
+| Path | Status |
+|---|---|
+| `/context-engine` | No active HTTP methods; controller shell not an exposed contract |
+| `/brain-integration` | No active HTTP methods; module is transitively used by Personal Brain |
+| `/recommendation-intelligence` | No active HTTP contract in current module graph |
+| `/goal-intelligence` | No active HTTP contract in current module graph |
+| `/tasks` | Source-only/legacy LifeTasks controller path; not an active AppModule route |
 
 ### Food / nutrition / recipe / commerce
 | Method | Path | Guard | Controller -> service |
@@ -102,9 +107,11 @@ Open questions: exact mobile consumer per route, response/error contracts not ca
 | GET | `/recipes/countries` | JWT | RecipesController -> GlobalCountryFoodService.getSupportedCountryCodes |
 | GET | `/recipes/match` | JWT | RecipesController -> RecipeInventoryMatcherService.match |
 | GET | `/recipes/recommendations` | JWT | RecipesController -> FoodOperatingLoopService.recommend |
-| GET | `/recipes/meal-plan` | JWT | RecipesController -> FoodOperatingLoopService.recommend + deterministic meal assignment |
+| GET | `/recipes/meal-plan` | JWT | RecipesController -> deterministic meal recommendation path |
 | GET | `/recipes/:id/food-plan` | JWT | RecipesController -> FoodOperatingLoopService.buildPlan |
+| GET | `/recipes/:id/food-plan/budget` | JWT | RecipesController -> FoodOperatingLoopService.buildBudgetPlan |
 | POST | `/recipes/:id/food-plan/shopping` | JWT | RecipesController -> FoodOperatingLoopService.addMissingToShopping |
+| POST | `/recipes/:id/food-plan/budget/shopping` | JWT | RecipesController -> FoodOperatingLoopService.addBudgetQualifiedMissingToShopping |
 | GET | `/recipes/:id/scaled` | JWT | RecipesController -> RecipesService.getScaledRecipe |
 | GET | `/recipes/:id` | JWT | RecipesController -> RecipesService.getRecipe |
 | PATCH | `/recipes/:id` | JWT | RecipesController -> RecipesService.updateRecipe |
@@ -118,20 +125,20 @@ Open questions: exact mobile consumer per route, response/error contracts not ca
 | POST | `/shopping/basket` | JWT | ShoppingController -> ShoppingService.addToBasket |
 | POST | `/shopping/from-recipe` | JWT | ShoppingController -> ShoppingService.addRecipeMissing |
 | POST | `/shopping/basket/:id/complete` | JWT | ShoppingController -> ShoppingService.complete |
-| GET | `/shopping-intelligence` | No guard | ShoppingIntelligenceController -> ShoppingIntelligenceService.createShoppingPlan |
-| GET | `/budget-intelligence` | No guard | BudgetIntelligenceController -> BudgetIntelligenceService.createPlan |
+| GET | `/shopping-intelligence` | JWT | ShoppingIntelligenceController -> ShoppingIntelligenceService.createShoppingPlan(userId) |
+| GET | `/budget-intelligence/plan` | JWT | BudgetIntelligenceController -> BudgetIntelligenceService.createPlan |
 | GET | `/budget-intelligence/meal-plan` | JWT | BudgetIntelligenceController -> MealPlanningService.createMealPlan |
-| GET | `/budget-intelligence/country` | No guard | BudgetIntelligenceController -> GlobalCountryFinanceService.getFinanceContext |
-| GET | `/budget-intelligence/countries` | No guard | BudgetIntelligenceController -> GlobalCountryFinanceService.getSupportedCountryCodes |
-| GET | `/price-intelligence` | No guard | PriceIntelligenceController -> PriceIntelligenceService.getLatestPrices |
-| GET | `/price-intelligence/sources` | No guard | PriceIntelligenceController -> PricePersistenceService.sources |
-| GET | `/price-intelligence/schedule` | No guard | PriceIntelligenceController -> PriceCollectionSchedulerService.schedule |
-| GET | `/price-intelligence/products/:productKey/history` | No guard | PriceIntelligenceController -> PriceIntelligenceService.getHistory |
-| GET | `/price-intelligence/products/:productKey/analysis` | No guard | PriceIntelligenceController -> PriceIntelligenceService.analyze |
-| POST | `/price-intelligence/match` | No guard | PriceIntelligenceController -> PriceIntelligenceService.matchProduct |
-| POST | `/price-intelligence/nightly/run` | No guard | PriceIntelligenceController -> PriceCollectionSchedulerService.collect |
-| POST | `/price-intelligence/nightly/preview` | No guard | PriceIntelligenceController -> PriceCollectionSchedulerService.shouldRun |
-| GET | `/price-intelligence/registry` | No guard | PriceIntelligenceController -> PriceSourceRegistryService.list |
+| GET | `/budget-intelligence/country` | JWT | BudgetIntelligenceController -> GlobalCountryFinanceService.getFinanceContext |
+| GET | `/budget-intelligence/countries` | JWT | BudgetIntelligenceController -> GlobalCountryFinanceService.getSupportedCountryCodes |
+| GET | `/price-intelligence` | JWT | PriceIntelligenceController -> PriceIntelligenceService.getLatestPrices |
+| GET | `/price-intelligence/sources` | JWT | PriceIntelligenceController -> PricePersistenceService.sources |
+| GET | `/price-intelligence/schedule` | JWT | PriceIntelligenceController -> PriceCollectionSchedulerService.schedule |
+| GET | `/price-intelligence/products/:productKey/history` | JWT | PriceIntelligenceController -> PriceIntelligenceService.getHistory |
+| GET | `/price-intelligence/products/:productKey/analysis` | JWT | PriceIntelligenceController -> PriceIntelligenceService.analyze |
+| POST | `/price-intelligence/match` | JWT | PriceIntelligenceController -> PriceIntelligenceService.matchProduct |
+| POST | `/price-intelligence/nightly/run` | JWT | PriceIntelligenceController -> PriceCollectionSchedulerService.collect |
+| POST | `/price-intelligence/nightly/preview` | JWT | PriceIntelligenceController -> PriceCollectionSchedulerService.shouldRun |
+| GET | `/price-intelligence/registry` | JWT | PriceIntelligenceController -> PriceSourceRegistryService.list |
 
 ### Life / health / routines
 | Method | Path | Guard | Controller -> service |
@@ -175,15 +182,14 @@ Open questions: exact mobile consumer per route, response/error contracts not ca
 | PATCH | `/goals/:id` | JWT | GoalsController -> GoalsService.update |
 | POST | `/goals/:id/checkin` | JWT | GoalsController -> GoalsService.checkin |
 | DELETE | `/goals/:id` | JWT | GoalsController -> GoalsService.remove |
-| POST | `/life/tasks` | JWT | LifeExecutionController -> LifeExecutionService.create |
+| GET | `/tasks` | Source-only/legacy | LifeTasksController not active in AppModule |
 | GET | `/life/tasks` | JWT | LifeExecutionController -> LifeExecutionService.list |
+| POST | `/life/tasks` | JWT | LifeExecutionController -> LifeExecutionService.create |
 | GET | `/life/tasks/next-best` | JWT | LifeExecutionController -> LifeExecutionService.nextBest |
 | GET | `/life/tasks/:id` | JWT | LifeExecutionController -> LifeExecutionService.one |
 | PATCH | `/life/tasks/:id` | JWT | LifeExecutionController -> LifeExecutionService.update |
 | POST | `/life/tasks/:id/events` | JWT | LifeExecutionController -> LifeExecutionService.recordEvent |
 | POST | `/life/tasks/:id/dependencies` | JWT | LifeExecutionController -> LifeExecutionService.addDependency |
-| GET | `/tasks` | Inactive/source-only | LifeTasksController exists but LifeTasksModule is not in AppModule |
-| GET/other | `/health` | Public legacy | Legacy root HealthController; active profile contract is `/health/*` below |
 | GET | `/health/profile` | JWT | HealthController -> HealthService.getProfile |
 | PATCH | `/health/profile` | JWT | HealthController -> HealthService.updateProfile |
 | GET | `/health/nutrition` | JWT | HealthController -> NutritionService.getProfile |
@@ -191,7 +197,8 @@ Open questions: exact mobile consumer per route, response/error contracts not ca
 | GET | `/dashboard/today` | JWT | DashboardController -> DashboardService.getToday |
 | GET | `/dashboard/overview` | JWT | DashboardController -> DashboardService.getOverview |
 | GET | `/daily-command-center` | JWT | DailyCommandCenterController -> DailyCommandCenterService.getToday |
-| GET | `/device-intelligence` | No guard | DeviceIntelligenceController -> DeviceIntelligenceService.getHealthData |
+| GET | `/device-intelligence` | JWT | DeviceIntelligenceController -> DeviceIntelligenceService.getHealthData |
+| GET | `/health` | Public | HealthController liveness contract |
 
 ### Fitness
 | Method | Path | Guard | Controller -> service |
@@ -211,7 +218,7 @@ Open questions: exact mobile consumer per route, response/error contracts not ca
 | GET | `/calisthenics/exercises` | JWT | CalisthenicsController -> CalisthenicsLibraryService.list |
 | POST | `/calisthenics/session` | JWT | CalisthenicsController -> CalisthenicsSessionGeneratorService.generate |
 | POST | `/calisthenics/coach/start` | JWT | CalisthenicsController -> CalisthenicsCoachService.start |
-| POST | `/calisthenics/coach/tick` | JWT | CalisthenicsController -> CalisthenicsCoachService.tick |
+| POST | `/calisthenics/coach/tick` | JWT | CalisthenicsCoachService.tick |
 | GET | `/yoga/poses` | JWT | YogaController -> YogaLibraryService.list |
 | POST | `/yoga/session` | JWT | YogaController -> YogaSessionGeneratorService.generate |
 | POST | `/yoga/coach/start` | JWT | YogaController -> YogaCoachService.start |
@@ -221,14 +228,16 @@ Open questions: exact mobile consumer per route, response/error contracts not ca
 
 ## Controller/runtime reconciliation
 
-- `AppModule` imports the active domain modules listed above. It does not import `LifeTasksModule`, `RecommendationIntelligenceModule`, or `GoalIntelligenceModule`.
-- `ContentModule` is active in `AppModule`, but the Content module snapshot has no HTTP controller; it should not be treated as an orphaned runtime module solely because there is no `/content` route.
-- `BrainIntegrationModule` is transitively imported by `PersonalBrainModule`; its empty controller is therefore source-present but not an exposed HTTP contract.
-- `ContextEngineModule` is active but its controller currently exposes no HTTP methods.
-- The legacy root `HealthController` and active nested `HealthController` share the `health` route prefix in source; exact AppModule registration must be kept in the module catalog during final duplicate-controller reconciliation.
+- Active user/data controllers are JWT-protected unless intentionally public (`/auth/register`, `/auth/login`, `/auth/refresh`, `/auth/logout`, `/health` liveness, `/assistant` status, `/personal-brain` static status).
+- Current Shopping, Shopping Intelligence, Budget Intelligence, Price Intelligence and Device Intelligence controllers all have explicit `JwtAuthGuard` boundaries.
+- The former `No guard` values from the 2026-09-11 snapshot are superseded by current controller source and must not be used as security evidence.
+- Retired/empty controller shells are documented as non-contracts rather than exposed routes.
 
 ## Route contract closure status
 
-Controller/path/guard inventory: READ_COMPLETELY at source level.
-DTO validation, response schemas, error semantics, test coverage, database effects and mobile consumer mapping: IN_PROGRESS.
-Runtime HTTP/build/device verification: NOT_STARTED in this audit session (no local clone/runtime environment available).
+Controller/path/guard inventory: RECONCILED FOR CURRENT SOURCE.
+DTO validation, response schemas, error semantics, test coverage, database effects and mobile consumer mapping: RECONCILED WHERE IDENTIFIED; runtime HTTP outside CI and deployed gateway behavior remain environment gates.
+
+## Environment boundary
+
+This catalog describes repository source and CI evidence only. It does not claim deployed base URLs, gateway rewrites, physical-device behavior, external provider availability or production authentication configuration.
