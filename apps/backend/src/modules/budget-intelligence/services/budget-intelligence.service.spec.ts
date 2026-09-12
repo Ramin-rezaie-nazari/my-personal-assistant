@@ -13,6 +13,13 @@ describe('BudgetIntelligenceService', () => {
     expect(result.items[1]).toMatchObject({ foodId: 'food-2', price: null, estimatedCost: null, status: 'currency_mismatch' });
   });
 
+  it('converts compatible price evidence into the recipe quantity unit before costing', async () => {
+    const service = new BudgetIntelligenceService({ list: jest.fn() } as never, { latest: jest.fn().mockResolvedValue([{ currency: 'USD', unit: 'L', unitPrice: 4, observedAt: new Date(), sourceId: 'per-liter' }]) } as never, { fromFoodName: jest.fn(() => 'milk') } as never);
+    const result = await service.quoteItems([{ foodId: 'food-1', name: 'Milk', quantity: 500, unit: 'ml' }], 'USD', 10);
+    expect(result.items[0]).toMatchObject({ status: 'priced', price: 0.01, estimatedCost: 2, priceSourceId: 'per-liter' });
+    expect(result.budgetRemaining).toBe(8);
+  });
+
   it('rejects stale price snapshots instead of treating them as current', async () => {
     const service = new BudgetIntelligenceService({ list: jest.fn().mockResolvedValue([{ foodId: 'food-1', food: { name: 'Milk' }, recommendedQuantity: 2, unit: 'L', urgency: 'critical' }]) } as never, { latest: jest.fn().mockResolvedValue([{ currency: 'USD', unit: 'L', unitPrice: 3, observedAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000), sourceId: 'source-a' }]) } as never, { fromFoodName: jest.fn(() => 'milk') } as never);
     const result = await service.createPlan('user-1', 10, 'USD');

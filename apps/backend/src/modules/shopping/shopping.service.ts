@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InventoryService } from '../inventory/inventory.service';
 import { PrismaService } from '../../common/database/prisma.service';
+import { convertQuantity } from '../../common/units/quantity-conversion';
 
 export type SmartShoppingItem = {
   foodId: string;
@@ -244,31 +245,4 @@ export class ShoppingService {
   private priority(u: SmartShoppingItem['urgency']) {
     return u === 'critical' ? 3 : u === 'soon' ? 2 : u === 'normal' ? 1 : 0;
   }
-}
-
-type ComparableUnitKind = 'mass' | 'volume' | 'count';
-
-type NormalizedQuantity = {
-  kind: ComparableUnitKind;
-  value: number;
-};
-
-function normalizeQuantity(quantity: number, unit: string): NormalizedQuantity | null {
-  const normalized = unit.trim().toLowerCase();
-  if (['g', 'gr', 'gram', 'grams', 'گرم'].includes(normalized)) return { kind: 'mass', value: quantity };
-  if (['kg', 'kilogram', 'kilograms', 'کیلو'].includes(normalized)) return { kind: 'mass', value: quantity * 1000 };
-  if (['mg', 'milligram', 'milligrams'].includes(normalized)) return { kind: 'mass', value: quantity / 1000 };
-  if (['oz', 'ounce', 'ounces'].includes(normalized)) return { kind: 'mass', value: quantity * 28.349523125 };
-  if (['lb', 'lbs', 'pound', 'pounds'].includes(normalized)) return { kind: 'mass', value: quantity * 453.59237 };
-  if (['ml', 'milliliter', 'milliliters'].includes(normalized)) return { kind: 'volume', value: quantity };
-  if (['l', 'liter', 'liters'].includes(normalized)) return { kind: 'volume', value: quantity * 1000 };
-  if (['piece', 'pieces', 'pcs', 'count', 'عدد'].includes(normalized)) return { kind: 'count', value: quantity };
-  return null;
-}
-
-function convertQuantity(quantity: number, fromUnit: string, toUnit: string): number | null {
-  const source = normalizeQuantity(quantity, fromUnit);
-  const target = normalizeQuantity(1, toUnit);
-  if (!source || !target || source.kind !== target.kind || target.value <= 0) return null;
-  return Number((source.value / target.value).toFixed(3));
 }
