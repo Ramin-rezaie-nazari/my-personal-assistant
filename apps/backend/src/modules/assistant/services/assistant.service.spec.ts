@@ -88,6 +88,72 @@ describe('AssistantService', () => {
     expect(processRequest).toHaveBeenCalledWith('hello', 'user-123');
   });
 
+  it('does not block natural conversation when deterministic planning has low confidence', async () => {
+    const processRequest = jest.fn().mockResolvedValue({
+      message: 'سلام! خوش اومدی.',
+      intent: 'conversation',
+      confidence: 0.85,
+      nextAction: undefined,
+    });
+    const service = makeService({
+      processRequest,
+      resolve: jest.fn().mockResolvedValue({
+        referencesPrevious: false,
+        operation: 'unknown',
+        entities: {},
+        clauses: ['سلام'],
+        intents: ['unknown'],
+        contradictions: [],
+        confidence: 0.35,
+      }),
+      understand: jest.fn().mockReturnValue({
+        intent: 'UNKNOWN',
+        confidence: 0,
+        entities: {},
+      }),
+      createPlan: jest.fn().mockResolvedValue({
+        requiresClarification: true,
+        reason: 'low_confidence',
+      }),
+    });
+
+    await expect(service.process('سلام', 'user-123')).resolves.toMatchObject({
+      message: 'سلام! خوش اومدی.',
+      intent: 'conversation',
+    });
+    expect(processRequest).toHaveBeenCalledWith('سلام', 'user-123');
+  });
+
+  it('still blocks genuinely conflicting requests for clarification', async () => {
+    const processRequest = jest.fn();
+    const service = makeService({
+      processRequest,
+      resolve: jest.fn().mockResolvedValue({
+        referencesPrevious: false,
+        operation: 'unknown',
+        entities: {},
+        clauses: ['یادآوری بساز', 'یادآوری قبلی را حذف کن'],
+        intents: ['create', 'cancel'],
+        contradictions: ['create_and_cancel_same_turn'],
+        confidence: 0.5,
+      }),
+      understand: jest.fn().mockReturnValue({
+        intent: 'UNKNOWN',
+        confidence: 0,
+        entities: {},
+      }),
+      createPlan: jest.fn().mockResolvedValue({
+        requiresClarification: true,
+        reason: 'conflicting_request',
+      }),
+    });
+
+    await expect(service.process('یادآوری بساز و قبلی را حذف کن', 'user-123')).resolves.toMatchObject({
+      message: 'یه بخش از درخواستت با بخش دیگه تناقض داره؛ قبل از انجامش باید مشخص کنی دقیقاً کدوم رو می‌خوای.',
+    });
+    expect(processRequest).not.toHaveBeenCalled();
+  });
+
   it('maps a linked workout update to update_workout', () => {
     const service = makeService() as any;
     const result = service.resolveContextualExecution(

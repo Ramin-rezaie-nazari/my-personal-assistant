@@ -261,15 +261,30 @@ Remaining:
 
 The onboarding experience must establish a persistent visual direction immediately after the user chooses language and then selects gender.
 
-- [ ] If the user selects **female**, switch the visual system immediately to a distinctly feminine, premium and friendly theme and keep that direction through the remaining onboarding questions and the main app experience.
-- [ ] The female visual direction should feel elegant, warm, playful and highly polished, using a coordinated feminine palette (for example soft pink/rose/red-accent families where appropriate), refined surfaces, illustrations/icons and micro-animations without becoming childish, cluttered or stereotypical.
-- [ ] The female theme should be attractive enough that female users can genuinely love the environment and feel that the product was thoughtfully designed for them.
-- [ ] Preserve the same product architecture, functionality and information hierarchy across genders; the theme change must be a visual/experiential layer, not a forked application.
-- [ ] If the user selects **male**, keep the existing visual environment as the default unless a later personalization system explicitly changes it.
-- [ ] Apply the selected gender theme immediately after the gender step and persist it so it remains consistent through onboarding and later app sessions.
-- [ ] Ensure the theme system remains extensible so future personalization can support more nuanced visual preferences without coupling UI components to gender-specific business logic.
-- [ ] Add focused mobile tests for theme selection, persistence, onboarding transitions and regression coverage for the existing male/default theme.
-- [ ] Validate the final female and male experiences on real iOS/Android devices for layout, typography, animations, contrast and performance before declaring the UX slice complete.
+### 2026-08-30 implementation progress on `feature/female-theme`
+
+- [x] Added an extensible visual token system in `apps/mobile/lib/branding.ts` with separate default and female palettes.
+- [x] Added persisted theme selection at app bootstrap based on the onboarding gender state.
+- [x] Added female visual direction using coordinated rose/pink, warm red accents, turquoise/mint support colors, softer surfaces and floral decoration tokens.
+- [x] Updated onboarding gender selection so choosing **female** switches the global brand theme and persists the selection immediately; choosing **male/other/prefer-not-to-say** restores the existing default visual direction.
+- [x] Updated onboarding surfaces to consume the new female-friendly palette and decorative colors.
+- [ ] Finish fully dynamic runtime style propagation for every mounted onboarding component; React Native `StyleSheet.create()` snapshots static colors, so this requires converting the remaining mounted styles to runtime theme-aware styles rather than relying only on mutable brand tokens.
+- [ ] Add focused executable mobile tests for theme selection, persistence, onboarding transition and default-theme regression; the current mobile package does not yet include a Jest test runner.
+- [ ] Validate final female/default experiences on physical iOS/Android devices for layout, typography, contrast, animation and performance.
+- [ ] After those checks are green, mark the complete UX slice as finished and update the weighted mobile progress index.
+
+Design boundary remains unchanged:
+
+```text
+same app architecture
+same business logic
+same data model
+same information hierarchy
+        +
+visual/personalization layer only
+```
+
+The female direction is intentionally premium/friendly rather than childish: a soft rose canvas, deep berry ink, rose-primary controls, turquoise/mint accents and subtle floral motifs. This is a visual system, not gender-specific business logic.
 
 ## Production hardening — incomplete
 
@@ -327,7 +342,7 @@ Remaining:
 3. Integrate the stacked Global Market workstream after conflict/dependency review.
 4. Connect verified live price data into Food Operating Loop and budget recommendations.
 5. Build the real mobile food journey around these APIs.
-6. Implement and validate the gender-aware onboarding theme requirement.
+6. Complete and validate the gender-aware onboarding theme requirement on the `feature/female-theme` branch.
 7. Add production hardening and observability.
 8. Add monetization after the core user journey is genuinely strong.
 
