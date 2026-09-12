@@ -1,0 +1,29 @@
+name: _lockfile repair helper
+
+on:
+  push:
+    branches:
+      - audit/final-verification-2026-09-12
+
+permissions:
+  contents: read
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Regenerate lockfile in workspace
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
+      - name: Print exact lockfile diff
+        run: |
+          git diff -- pnpm-lock.yaml
