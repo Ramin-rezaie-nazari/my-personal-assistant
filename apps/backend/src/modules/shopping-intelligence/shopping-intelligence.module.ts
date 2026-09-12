@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ShoppingModule } from '../shopping/shopping.module';
 import { ShoppingIntelligenceController } from './controllers/shopping-intelligence.controller';
 import { ShoppingIntelligenceService } from './services/shopping-intelligence.service';
 import { ShoppingListService } from './services/shopping-list.service';
@@ -12,6 +13,7 @@ import { HouseholdConsumptionLearningService } from './services/household-consum
 import { HouseholdReorderForecastService } from './services/household-reorder-forecast.service';
 
 @Module({
+  imports: [ShoppingModule],
   controllers: [ShoppingIntelligenceController],
   providers: [
     ShoppingIntelligenceService,
