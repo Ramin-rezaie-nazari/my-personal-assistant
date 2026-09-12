@@ -2,11 +2,11 @@
 
 Last updated: 2026-09-12
 Review status: MASTER PROMPT DEVELOPMENT IN PROGRESS
-Scope actually read: audit governance, source-audit reconciliation, remediation decisions, CI verification, and Master Prompt product development decisions through the current MASTER-0004 Shopping/Inventory slice.
+Scope actually read: audit governance, source-audit reconciliation, remediation decisions, CI verification, and Master Prompt product development decisions through the verified MASTER-0004 Shopping/Inventory/Budget slice.
 Scope not yet read: no known recoverable source scope remains in the recorded audit baseline; future product work continues by vertical; production/deployed/device validation remains outside the environment.
 Evidence roots: `docs/project-brain/`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; GitHub Actions runs on remediation/product commits.
 Confidence level: HIGH for repository/source and completed CI evidence; MEDIUM for cross-module runtime semantics; BLOCKED for deployed/device state.
-Open questions: production database/RLS/Storage/Auth configuration, real-device behavior, external provider quotas, unrecoverable PB-001..PB-155 historical prose, and verified FoodItem→PriceTrackedProduct mapping.
+Open questions: production database/RLS/Storage/Auth configuration, real-device behavior, external provider quotas, unrecoverable PB-001..PB-155 historical prose, and the remaining recipe→budget→shopping orchestration.
 
 | Date | Decision | Reason | Evidence |
 |---|---|---|---|
@@ -29,4 +29,7 @@ Open questions: production database/RLS/Storage/Auth configuration, real-device 
 | 2026-09-12 | Treat currency mismatch as fail-closed in shopping/budget calculations. | A price in EUR cannot be compared directly with a USD budget; implicit FX would fabricate economics without a fresh-rate contract. | `smart-purchase-basket.service.ts`; `household-purchase-planner.service.ts`; `global-country-finance.service.ts` |
 | 2026-09-12 | Only committed `buy_now` decisions consume basket budget. | `wait` and `compare_more` are recommendations, not purchases; counting them as committed cost would distort remaining budget. | `smart-purchase-basket.service.ts`; basket spec |
 | 2026-09-12 | Inventory intelligence belongs to the Inventory domain. | The primitive has no Shopping-specific dependency, and keeping it under Shopping Intelligence created a real circular module graph when Shopping reused canonical Inventory/Shopping services. | `inventory/household-inventory-intelligence.service.ts`; `inventory.module.ts`; `shopping-intelligence.module.ts` |
-| 2026-09-12 | Do not use fuzzy FoodItem→PriceTrackedProduct matching for monetary estimates. | `FoodItem.id` and `PriceTrackedProduct.productKey` currently have no persisted verified relation; ambiguous matching could create false costs. | `schema.prisma`; `product-matching.service.ts`; `price-intelligence.model.ts` |
+| 2026-09-12 | Use deterministic FoodItem-name product-key mapping for monetary estimates. | Existing price persistence already derives `PriceTrackedProduct.productKey` from the same normalized food name; a shared resolver removes duplicate normalization while avoiding unsafe fuzzy matching. | `price-product-key.service.ts`; `price-persistence.service.ts`; `budget-intelligence.service.ts`; `schema.prisma` |
+| 2026-09-12 | Bound Budget planning to seven-day price freshness and preserve price provenance. | Latest data is not automatically current data; stale or incompatible evidence must not become fabricated costs. | `budget-intelligence.service.ts`; budget service spec |
+| 2026-09-12 | Recognize `PLAN_FOOD_BUDGET` as a first-class local Brain intent and route it through the Assistant execution path. | Parsing budget entities alone is not sufficient; the local provider and Assistant intent map must reach the executable deterministic budget action. | `local-language-understanding.service.ts`; `local-intelligence.provider.ts`; `assistant.service.ts`; `local-food-budget-action.adapter.ts` |
+| 2026-09-12 | Validate Budget/Shopping endpoints at both security and authenticated HTTP levels. | A user-specific intelligence endpoint needs both unauthenticated rejection and a real JWT happy-path check before its API contract is considered complete. | `apps/backend/test/api.e2e-spec.ts`; Backend CI |
