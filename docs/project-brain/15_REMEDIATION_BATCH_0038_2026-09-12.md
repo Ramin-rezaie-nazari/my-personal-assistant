@@ -37,3 +37,5 @@ Frozen install passes, but mobile TypeScript verification still exposes missing 
 - Mobile typecheck: FAIL; remediation ongoing
 
 This batch does not claim project completion.
+
+Checkpoint: branch head was reconciled from the verified final-verification branch after the CI repair commits, so subsequent CI must be treated as the authoritative gate for this exact tree.
