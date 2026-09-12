@@ -1,7 +1,7 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-12
-Review status: APPENDIX REMEDIATION COMPLETE; MASTER PROMPT PRODUCT FINDINGS TRACKED
+Review status: APPENDIX REMEDIATION COMPLETE; MASTER PROMPT PRODUCT FINDINGS TRACKED; PB-270 REMEDIATED AND CI VERIFIED
 
 This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit and subsequent evidence-driven Master Prompt development. The original `OPEN` labels represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
 
@@ -128,6 +128,7 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-267 | CLOSED — REMEDIATED; CI VERIFIED | Budget status semantics could overstate success when only part of a recipe's missing-price evidence was available. `deriveBudgetStatus()` now distinguishes `within_budget`, `over_budget`, `partial_price_evidence`, and `insufficient_price_data`; the Food Loop and mobile consumer preserve the fail-closed meaning. |
 | PB-268 | CLOSED — REMEDIATED; CI VERIFIED | Multi-source price selection could treat the newest stale compatible source as the effective latest price and hide an older still-fresh source. Budget quoting now considers all compatible unit/currency evidence, chooses the freshest evidence within the seven-day freshness window, and reports `stale_price` only when all compatible snapshots are stale; regression coverage locks the rule. |
 | PB-269 | CLOSED — REMEDIATED; CI VERIFIED | Blocked budget evidence had no deterministic consumer-facing remediation contract. Budget now emits `refresh_prices`, `review_currency`, `review_units`, `increase_budget`, and `review_price_evidence` codes, and the Food Operating Loop propagates those actions while preserving fail-closed cost semantics. |
+| PB-270 | CLOSED — REMEDIATED; CI VERIFIED | Inventory/recipe quantities could be merged into an existing ShoppingItem by `foodId` without unit compatibility checks, corrupting the numeric meaning when, for example, grams and pieces were combined under one retained unit. Shopping now converts compatible mass/volume/count units into the existing basket unit and rejects incompatible unit kinds. Direct ShoppingService regression tests cover compatible conversion and fail-closed rejection in both manual basket and recipe-missing paths. Evidence: `apps/backend/src/modules/shopping/shopping.service.ts`, `apps/backend/src/modules/shopping/shopping.service.spec.ts`. |
 
 ## Historical catalog boundary
 
@@ -135,6 +136,6 @@ The exact prose of PB-001 through PB-155 is not recoverable from the repository 
 
 ## Verification boundary
 
-Latest verified code tree: `83fb230d1491240743edded9716f69e8475bc23c`. Backend CI `34689696683` and Mobile CI `34689696652` completed successfully, including backend Prisma validation/generation, migrations/idempotence, food-intelligence self-test, build, unit tests, API E2E and diagnostics, plus mobile typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling. Production database/RLS/storage state, external provider quotas, push delivery and real-device UX remain outside the available runtime boundary.
+Latest verified code tree: `1f3f73601183779fbef865a82ce2ea3dee3f8c33`. Backend CI `34691080753` and Mobile CI `34691080764` completed successfully. Backend verification included Prisma schema/generation, migrations/idempotence, food-intelligence self-test, build, unit tests, API E2E and diagnostics; Mobile verification included typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling. Production database/RLS/storage state, external provider quotas, push delivery and real-device UX remain outside the available runtime boundary.
 
 Local repository execution is unavailable because direct GitHub network access is blocked in the container environment.
