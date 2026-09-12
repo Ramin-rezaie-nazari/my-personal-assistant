@@ -1,11 +1,11 @@
 # Review Gaps
 
 Last updated: 2026-09-12
-Review status: SOURCE-LEVEL GAPS CLOSED FOR RECORDED SCOPE; APPENDIX REMEDIATION VERIFIED; ENVIRONMENTAL VALIDATION BLOCKED
+Review status: SOURCE-LEVEL GAPS CLOSED FOR RECORDED SCOPE; APPENDIX REMEDIATION VERIFIED THROUGH PB-270; ENVIRONMENTAL VALIDATION BLOCKED
 
 ## Final status
 
-The repository-review gap list is reconciled against the canonical Audit Findings Appendix, DB audit artifacts, Reading Checkpoints, File Review Index and validation evidence. No known recoverable source-review gap remains in the recorded audit scope. Appendix remediation is closed through PB-257.
+The repository-review gap list is reconciled against the canonical Audit Findings Appendix, DB audit artifacts, Reading Checkpoints, File Review Index and validation evidence. No known recoverable source-review gap remains in the recorded audit scope. Appendix remediation is closed through PB-270.
 
 ## Remaining boundaries (not source-review gaps)
 
@@ -23,12 +23,12 @@ These are explicitly BLOCKED/UNVERIFIED rather than hidden as unexplained review
 - DB reader/writer/relation/index/transaction/migration reconciliation: CLOSED FOR SOURCE EVIDENCE.
 - Security/ownership/auth/session/retention/account-erasure source review: CLOSED FOR SOURCE EVIDENCE.
 - CI/workflow/package/operational source review: CLOSED FOR SOURCE EVIDENCE.
-- Canonical findings/duplicate/false-positive reconciliation through PB-257: CLOSED.
-- Project Brain checkpoint/index/ledger synchronization: CLOSED.
+- Canonical findings/duplicate/false-positive reconciliation through PB-270: CLOSED.
+- Project Brain checkpoint/index/ledger synchronization: CLOSED for BATCH-0032.
 
 ## Appendix verification
 
-Backend CI and Mobile CI both passed on remediation commit `46614b36040cb839d6062dae726dc74e51ab3b96`. Backend included migrations/idempotence, food-intelligence self-test, build, unit tests and API E2E; Mobile included typecheck, source/Jest tests, Expo validation and Android bundle generation.
+Backend CI `34691080753` and Mobile CI `34691080764` both passed on the PB-270 verified tree `1f3f73601183779fbef865a82ce2ea3dee3f8c33`. Backend included migrations/idempotence, food-intelligence self-test, build, unit tests and API E2E; Mobile included typecheck, source/Jest tests, Expo validation and Android bundle generation.
 
 ## Boundary rule
 
