@@ -87,4 +87,26 @@ jobs:
         run: pnpm test --runInBand
 
       - name: Run backend API e2e tests
-        run: pnpm test:e2e --runInBand
+        id: e2e
+        continue-on-error: true
+        run: |
+          set +e
+          pnpm test:e2e --runInBand > e2e.log 2>&1
+          status=$?
+          cat e2e.log
+          echo "E2E_EXIT_CODE=$status" >> e2e-summary.txt
+          exit $status
+
+      - name: Upload backend e2e diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-e2e-diagnostics
+          path: |
+            apps/backend/e2e.log
+            apps/backend/e2e-summary.txt
+          if-no-files-found: ignore
+
+      - name: Fail when backend e2e tests fail
+        if: steps.e2e.outcome == 'failure'
+        run: exit 1
