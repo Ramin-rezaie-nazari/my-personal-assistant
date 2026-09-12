@@ -37,6 +37,8 @@ describe('Backend API contract (e2e)', () => {
     ['GET', '/reminders'],
     ['GET', '/notifications'],
     ['GET', '/assistant/history'],
+    ['GET', '/shopping-intelligence'],
+    ['GET', '/budget-intelligence/plan?budget=100&currency=USD'],
     ['POST', '/assistant'],
     ['POST', '/calendar'],
     ['POST', '/reminders'],
