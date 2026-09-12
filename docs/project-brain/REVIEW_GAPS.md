@@ -1,11 +1,11 @@
 # Review Gaps
 
 Last updated: 2026-09-12
-Review status: SOURCE-LEVEL GAPS CLOSED FOR RECORDED SCOPE; APPENDIX REMEDIATION VERIFIED THROUGH PB-270; ENVIRONMENTAL VALIDATION BLOCKED
+Review status: SOURCE-LEVEL GAPS CLOSED FOR RECORDED SCOPE; MASTER-0004 REMEDIATION CONTINUING; ENVIRONMENTAL VALIDATION BLOCKED
 
 ## Final status
 
-The repository-review gap list is reconciled against the canonical Audit Findings Appendix, DB audit artifacts, Reading Checkpoints, File Review Index and validation evidence. No known recoverable source-review gap remains in the recorded audit scope. Appendix remediation is closed through PB-270.
+The repository-review gap list is reconciled against the canonical Audit Findings Appendix, DB audit artifacts, Reading Checkpoints, File Review Index and current remediation evidence. No known recoverable source-review gap remains in the recorded audit scope. Active Master Prompt remediation is tracked explicitly in the Appendix (currently through PB-273).
 
 ## Remaining boundaries (not source-review gaps)
 
@@ -13,8 +13,9 @@ The repository-review gap list is reconciled against the canonical Audit Finding
 2. Production/deployed PostgreSQL schema and RLS/Storage/Auth configuration require external environment access.
 3. Physical-device notification, voice/TTS, offline behavior, performance and UX require real Android/iOS execution.
 4. External price/AI provider availability, quotas and scheduled production jobs require deployed credentials/runtime.
+5. Latest implementation/doc head still requires its own CI completion after the newest Price Intelligence refactor/documentation commits.
 
-These are explicitly BLOCKED/UNVERIFIED rather than hidden as unexplained review gaps.
+These are explicitly BLOCKED/PENDING rather than hidden as unexplained review gaps.
 
 ## Source-level closure controls
 
@@ -23,12 +24,12 @@ These are explicitly BLOCKED/UNVERIFIED rather than hidden as unexplained review
 - DB reader/writer/relation/index/transaction/migration reconciliation: CLOSED FOR SOURCE EVIDENCE.
 - Security/ownership/auth/session/retention/account-erasure source review: CLOSED FOR SOURCE EVIDENCE.
 - CI/workflow/package/operational source review: CLOSED FOR SOURCE EVIDENCE.
-- Canonical findings/duplicate/false-positive reconciliation through PB-270: CLOSED.
-- Project Brain checkpoint/index/ledger synchronization: CLOSED for BATCH-0032.
+- Canonical findings/duplicate/false-positive reconciliation: CLOSED through PB-273.
+- Project Brain checkpoint/index/ledger synchronization: ACTIVE and updated through BATCH-0036.
 
-## Appendix verification
+## Verification boundary
 
-Backend CI `34691080753` and Mobile CI `34691080764` both passed on the PB-270 verified tree `1f3f73601183779fbef865a82ce2ea3dee3f8c33`. Backend included migrations/idempotence, food-intelligence self-test, build, unit tests and API E2E; Mobile included typecheck, source/Jest tests, Expo validation and Android bundle generation.
+The immediately preceding implementation head `f52ac24c5ef394aa84ead938ae036f52d51e596c` passed Backend CI `34692215406` and Mobile CI `34692215496`. Subsequent Price Intelligence cleanup, canonicalization and documentation commits advanced the branch; latest-head CI is therefore still the controlling gate for the newest code.
 
 ## Boundary rule
 
