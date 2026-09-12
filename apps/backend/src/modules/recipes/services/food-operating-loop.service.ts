@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { RecipeServingScalingService } from '../../nutrition/recipe-intelligence/recipe-serving-scaling.service';
 import { ShoppingService } from '../../shopping/shopping.service';
+import { BudgetIntelligenceService } from '../../budget-intelligence/services/budget-intelligence.service';
 import { GlobalCountryFoodService } from './global-country-food.service';
 import { GlobalCountryFinanceService } from '../../budget-intelligence/services/global-country-finance.service';
 import { FoodSafetyTaxonomyService } from '../../foods/services/food-safety-taxonomy.service';
@@ -47,6 +48,7 @@ export class FoodOperatingLoopService {
     private readonly prisma: PrismaService,
     private readonly scaling: RecipeServingScalingService,
     private readonly shopping: ShoppingService,
+    private readonly budget: BudgetIntelligenceService,
     private readonly countryFood: GlobalCountryFoodService,
     private readonly countryFinance: GlobalCountryFinanceService,
     private readonly safetyTaxonomy: FoodSafetyTaxonomyService,
@@ -70,6 +72,43 @@ export class FoodOperatingLoopService {
       localContext: this.countryFood.getLocalRecipeGuidance(countryCode),
       financeContext: this.countryFinance.getFinanceContext(countryCode),
     };
+  }
+
+  async buildBudgetPlan(userId: string, recipeId: string, targetServings: number, budget: number, currency: string, countryCode = '') {
+    if (!Number.isFinite(budget) || budget < 0) throw new NotFoundException('budget must be a non-negative number');
+    const plan = await this.buildPlan(userId, recipeId, targetServings, countryCode);
+    const quote = await this.budget.quoteItems(
+      plan.inventory.missing.map((item) => ({ ...item, urgency: 'soon' as const })),
+      currency,
+      budget,
+    );
+    return {
+      ...plan,
+      budget: {
+        budget,
+        currency: currency.trim().toUpperCase(),
+        totalEstimatedCost: quote.totalEstimatedCost,
+        budgetRemaining: quote.budgetRemaining,
+        items: quote.items,
+        status: quote.items.some((item) => item.status === 'over_budget')
+          ? 'over_budget'
+          : quote.items.some((item) => item.status === 'priced')
+            ? 'within_budget'
+            : plan.inventory.missing.length
+              ? 'insufficient_price_data'
+              : 'no_missing_ingredients',
+        generatedDeterministically: true,
+      },
+    } as const;
+  }
+
+  async addBudgetQualifiedMissingToShopping(userId: string, recipeId: string, targetServings: number, budget: number, currency: string) {
+    const plan = await this.buildBudgetPlan(userId, recipeId, targetServings, budget, currency);
+    const eligible = plan.budget.items
+      .filter((item) => item.status === 'priced')
+      .map((item) => ({ foodId: item.foodId, quantity: item.recommendedQuantity, unit: item.unit }));
+    const shopping = await this.shopping.addRecipeMissing(userId, recipeId, eligible);
+    return { plan, shopping };
   }
 
   async recommend(
