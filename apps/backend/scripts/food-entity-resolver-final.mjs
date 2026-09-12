@@ -3,10 +3,11 @@ import { resolveFoodEntity as baseResolve, getEntityById as baseGetEntityById, g
 export const FOOD_ENTITY_RESOLVER_VERSION = 'food-entity-resolver-v3-final';
 
 const UNITS = [
-  ['milliliters', 'ml'], ['milliliter', 'ml'], ['liters', 'l'], ['liter', 'l'],
-  ['tablespoons', 'tbsp'], ['tablespoon', 'tbsp'], ['teaspoons', 'tsp'], ['teaspoon', 'tsp'],
-  ['ounces', 'oz'], ['ounce', 'oz'], ['pounds', 'lb'], ['pound', 'lb'], ['grams', 'g'], ['gram', 'g'],
-  ['kilograms', 'kg'], ['kilogram', 'kg'], ['cups', 'cup'], ['cup', 'cup'], ['pieces', 'piece'], ['piece', 'piece'],
+  ['milliliters', 'ml'], ['milliliter', 'ml'], ['ml', 'ml'], ['liters', 'l'], ['liter', 'l'], ['l', 'l'],
+  ['tablespoons', 'tbsp'], ['tablespoon', 'tbsp'], ['tbsp', 'tbsp'], ['teaspoons', 'tsp'], ['teaspoon', 'tsp'], ['tsp', 'tsp'],
+  ['ounces', 'oz'], ['ounce', 'oz'], ['oz', 'oz'], ['pounds', 'lb'], ['pound', 'lb'], ['lb', 'lb'],
+  ['grams', 'g'], ['gram', 'g'], ['g', 'g'], ['kilograms', 'kg'], ['kilogram', 'kg'], ['kg', 'kg'],
+  ['cups', 'cup'], ['cup', 'cup'], ['pieces', 'piece'], ['piece', 'piece'],
   ['pinches', 'pinch'], ['pinch', 'pinch'], ['cloves', 'clove'], ['clove', 'clove'],
 ];
 
