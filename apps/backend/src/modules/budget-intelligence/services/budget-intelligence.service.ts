@@ -5,7 +5,15 @@ import { PriceProductKeyService } from '../../price-intelligence/services/price-
 
 const PRICE_FRESHNESS_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
-export type MealBudgetPlanItem = {
+export type BudgetQuoteInput = {
+  foodId: string;
+  name: string;
+  quantity: number;
+  unit: string;
+  urgency?: 'critical' | 'soon' | 'normal' | 'none';
+};
+
+export type BudgetQuoteItem = {
   foodId: string;
   name: string;
   productKey: string;
@@ -32,25 +40,59 @@ export class BudgetIntelligenceService {
   async createPlan(userId: string, budget: number, currency: string) {
     if (!Number.isFinite(budget) || budget < 0)
       throw new BadRequestException('budget must be a non-negative number');
-
-    const normalizedCurrency = currency.trim().toUpperCase();
-    if (!/^[A-Z]{3}$/.test(normalizedCurrency))
-      throw new BadRequestException('currency must be a 3-letter ISO currency code');
-
+    const normalizedCurrency = normalizeCurrency(currency);
     const inventory = await this.inventory.list(userId);
-    const candidates = inventory.filter(
-      (item) => Number(item.recommendedQuantity ?? 0) > 0 && item.food?.name,
-    );
+    const candidates = inventory
+      .filter((item) => Number(item.recommendedQuantity ?? 0) > 0 && item.food?.name)
+      .map((item) => ({
+        foodId: String(item.foodId),
+        name: item.food!.name,
+        quantity: item.recommendedQuantity,
+        unit: item.unit,
+        urgency: item.urgency as BudgetQuoteInput['urgency'],
+      }));
 
-    const items: MealBudgetPlanItem[] = [];
-    let remaining = budget;
-    let pricedCount = 0;
+    const quote = await this.quoteItems(candidates, normalizedCurrency, budget);
+    const pricedItems = quote.items.filter((item) => item.status === 'priced');
+    const hasOverBudgetItems = quote.items.some((item) => item.status === 'over_budget');
+
+    return {
+      userId,
+      budget,
+      currency: normalizedCurrency,
+      totalEstimatedCost: quote.totalEstimatedCost,
+      budgetRemaining: quote.budgetRemaining,
+      pricedItemCount: pricedItems.length,
+      itemCount: quote.items.length,
+      budgetStatus:
+        hasOverBudgetItems
+          ? 'over_budget'
+          : pricedItems.length === 0 && quote.items.length > 0
+            ? 'insufficient_price_data'
+            : 'within_budget',
+      generatedDeterministically: true,
+      items: quote.items,
+    } as const;
+  }
+
+  async quoteItems(
+    input: BudgetQuoteInput[],
+    currency: string,
+    budget?: number,
+  ) {
+    const normalizedCurrency = normalizeCurrency(currency);
+    if (budget !== undefined && (!Number.isFinite(budget) || budget < 0))
+      throw new BadRequestException('budget must be a non-negative number');
+
     const now = Date.now();
+    let remaining = budget ?? Number.POSITIVE_INFINITY;
+    const items: BudgetQuoteItem[] = [];
 
-    for (const item of candidates) {
-      const foodId = String(item.foodId);
-      const name = item.food!.name;
-      const productKey = this.productKeys.fromFoodName(name);
+    for (const candidate of input) {
+      if (!Number.isFinite(candidate.quantity) || candidate.quantity <= 0)
+        throw new BadRequestException('quote item quantity must be a positive finite number');
+
+      const productKey = this.productKeys.fromFoodName(candidate.name);
       const rows = (await this.prices.latest(productKey)) as Array<{
         currency?: string;
         unit?: string | null;
@@ -58,179 +100,84 @@ export class BudgetIntelligenceService {
         observedAt?: Date | string;
         sourceId?: string;
       }>;
+      const urgency = candidate.urgency ?? 'normal';
+      const base = {
+        foodId: candidate.foodId,
+        name: candidate.name,
+        productKey,
+        recommendedQuantity: candidate.quantity,
+        unit: candidate.unit,
+        currency: normalizedCurrency,
+        urgency,
+      };
 
-      const compatibleCurrency = rows.filter(
-        (row) => row.currency === normalizedCurrency,
-      );
+      const compatibleCurrency = rows.filter((row) => row.currency === normalizedCurrency);
       if (!compatibleCurrency.length) {
         items.push({
-          foodId,
-          name,
-          productKey,
-          recommendedQuantity: item.recommendedQuantity,
-          unit: item.unit,
+          ...base,
           price: null,
           estimatedCost: null,
-          currency: normalizedCurrency,
           priceObservedAt: null,
           priceSourceId: null,
           status: rows.length ? 'currency_mismatch' : 'price_unavailable',
-          urgency: item.urgency,
-          reason: rows.length
-            ? 'no_price_in_budget_currency'
-            : 'no_price_snapshot',
+          reason: rows.length ? 'no_price_in_budget_currency' : 'no_price_snapshot',
         });
         continue;
       }
 
       const compatibleUnit = compatibleCurrency
-        .filter((row) => row.unit === item.unit && row.unitPrice != null)
-        .sort(
-          (a, b) =>
-            new Date(b.observedAt ?? 0).getTime() -
-            new Date(a.observedAt ?? 0).getTime(),
-        )[0];
+        .filter((row) => row.unit === candidate.unit && row.unitPrice != null)
+        .sort((a, b) => new Date(b.observedAt ?? 0).getTime() - new Date(a.observedAt ?? 0).getTime())[0];
       if (!compatibleUnit) {
+        const hasUnitEvidence = compatibleCurrency.some((row) => row.unit);
         items.push({
-          foodId,
-          name,
-          productKey,
-          recommendedQuantity: item.recommendedQuantity,
-          unit: item.unit,
+          ...base,
           price: null,
           estimatedCost: null,
-          currency: normalizedCurrency,
           priceObservedAt: null,
           priceSourceId: null,
-          status: compatibleCurrency.some((row) => row.unit)
-            ? 'unit_mismatch'
-            : 'price_unavailable',
-          urgency: item.urgency,
-          reason: compatibleCurrency.some((row) => row.unit)
-            ? 'price_unit_does_not_match_inventory_unit'
-            : 'price_unit_missing',
+          status: hasUnitEvidence ? 'unit_mismatch' : 'price_unavailable',
+          reason: hasUnitEvidence ? 'price_unit_does_not_match_recipe_unit' : 'price_unit_missing',
         });
         continue;
       }
 
       const observedAt = new Date(compatibleUnit.observedAt ?? 0);
       if (!Number.isFinite(observedAt.getTime())) {
-        items.push({
-          foodId,
-          name,
-          productKey,
-          recommendedQuantity: item.recommendedQuantity,
-          unit: item.unit,
-          price: null,
-          estimatedCost: null,
-          currency: normalizedCurrency,
-          priceObservedAt: null,
-          priceSourceId: compatibleUnit.sourceId ?? null,
-          status: 'price_unavailable',
-          urgency: item.urgency,
-          reason: 'invalid_observed_at',
-        });
+        items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: null, priceSourceId: compatibleUnit.sourceId ?? null, status: 'price_unavailable', reason: 'invalid_observed_at' });
         continue;
       }
-
       if (now - observedAt.getTime() > PRICE_FRESHNESS_WINDOW_MS) {
-        items.push({
-          foodId,
-          name,
-          productKey,
-          recommendedQuantity: item.recommendedQuantity,
-          unit: item.unit,
-          price: null,
-          estimatedCost: null,
-          currency: normalizedCurrency,
-          priceObservedAt: observedAt,
-          priceSourceId: compatibleUnit.sourceId ?? null,
-          status: 'stale_price',
-          urgency: item.urgency,
-          reason: 'price_snapshot_older_than_7_days',
-        });
+        items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: observedAt, priceSourceId: compatibleUnit.sourceId ?? null, status: 'stale_price', reason: 'price_snapshot_older_than_7_days' });
         continue;
       }
 
       const price = Number(compatibleUnit.unitPrice);
-      const estimatedCost = price * Number(item.recommendedQuantity);
+      const estimatedCost = price * candidate.quantity;
       if (!Number.isFinite(price) || price < 0 || !Number.isFinite(estimatedCost)) {
-        items.push({
-          foodId,
-          name,
-          productKey,
-          recommendedQuantity: item.recommendedQuantity,
-          unit: item.unit,
-          price: null,
-          estimatedCost: null,
-          currency: normalizedCurrency,
-          priceObservedAt: null,
-          priceSourceId: null,
-          status: 'price_unavailable',
-          urgency: item.urgency,
-          reason: 'invalid_price_value',
-        });
+        items.push({ ...base, price: null, estimatedCost: null, priceObservedAt: null, priceSourceId: null, status: 'price_unavailable', reason: 'invalid_price_value' });
         continue;
       }
-
       if (estimatedCost > remaining) {
-        items.push({
-          foodId,
-          name,
-          productKey,
-          recommendedQuantity: item.recommendedQuantity,
-          unit: item.unit,
-          price,
-          estimatedCost,
-          currency: normalizedCurrency,
-          priceObservedAt: observedAt,
-          priceSourceId: compatibleUnit.sourceId ?? null,
-          status: 'over_budget',
-          urgency: item.urgency,
-          reason: 'recommended_quantity_exceeds_remaining_budget',
-        });
+        items.push({ ...base, price, estimatedCost, priceObservedAt: observedAt, priceSourceId: compatibleUnit.sourceId ?? null, status: 'over_budget', reason: 'recipe_missing_quantity_exceeds_remaining_budget' });
         continue;
       }
 
       remaining -= estimatedCost;
-      pricedCount += 1;
-      items.push({
-        foodId,
-        name,
-        productKey,
-        recommendedQuantity: item.recommendedQuantity,
-        unit: item.unit,
-        price,
-        estimatedCost,
-        currency: normalizedCurrency,
-        priceObservedAt: observedAt,
-        priceSourceId: compatibleUnit.sourceId ?? null,
-        status: 'priced',
-        urgency: item.urgency,
-        reason: 'inventory_need_and_budget_align',
-      });
+      items.push({ ...base, price, estimatedCost, priceObservedAt: observedAt, priceSourceId: compatibleUnit.sourceId ?? null, status: 'priced', reason: 'recipe_missing_ingredient_fits_verified_budget' });
     }
 
-    const totalEstimatedCost = Number((budget - remaining).toFixed(2));
-    const pricedItems = items.filter((item) => item.status === 'priced');
-    const hasOverBudgetItems = items.some((item) => item.status === 'over_budget');
-
     return {
-      userId,
-      budget,
-      currency: normalizedCurrency,
-      totalEstimatedCost,
-      budgetRemaining: Number(remaining.toFixed(2)),
-      pricedItemCount: pricedCount,
-      itemCount: items.length,
-      budgetStatus:
-        hasOverBudgetItems
-          ? 'over_budget'
-          : pricedItems.length === 0 && items.length > 0
-            ? 'insufficient_price_data'
-            : 'within_budget',
-      generatedDeterministically: true,
       items,
+      totalEstimatedCost: Number(((budget ?? 0) - (budget === undefined ? 0 : remaining)).toFixed(2)),
+      budgetRemaining: budget === undefined ? null : Number(remaining.toFixed(2)),
     } as const;
   }
+}
+
+function normalizeCurrency(currency: string) {
+  const normalizedCurrency = currency.trim().toUpperCase();
+  if (!/^[A-Z]{3}$/.test(normalizedCurrency))
+    throw new BadRequestException('currency must be a 3-letter ISO currency code');
+  return normalizedCurrency;
 }
