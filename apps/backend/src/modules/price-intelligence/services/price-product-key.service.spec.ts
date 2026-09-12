@@ -3,11 +3,11 @@ import { PriceProductKeyService } from './price-product-key.service';
 describe('PriceProductKeyService', () => {
   const service = new PriceProductKeyService();
 
-  it('preserves the canonical lower-case separator contract', () => {
+  it('preserves the canonical locale-aware lower-case separator contract', () => {
     expect(service.fromFoodName('  Extra Virgin  Olive Oil  ')).toBe(
       'extra-virgin-olive-oil',
     );
-    expect(service.fromFoodName('شیر  کم‌چرب')).toBe('شیر-کم‌چرب');
+    expect(service.fromFoodName('شیر  کم‌چرب')).toBe('شیر-کم-چرب');
   });
 
   it('strips punctuation but preserves letters, numbers and separators', () => {
