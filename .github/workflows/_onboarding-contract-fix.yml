@@ -1,0 +1,44 @@
+name: _onboarding contract fix
+on:
+  push:
+    branches:
+      - audit/final-verification-2026-09-12
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Patch onboarding APIs
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('apps/mobile/app/onboarding.tsx')
+          s = p.read_text()
+          s = s.replace("import * as Camera from 'expo-camera';", "import { useCameraPermissions, useMicrophonePermissions } from 'expo-camera';")
+          s = s.replace("  const [detectedCountry, setDetectedCountry] = useState('');", "  const [detectedCountry, setDetectedCountry] = useState('');\n  const [, requestCameraPermission] = useCameraPermissions();\n  const [, requestMicrophonePermission] = useMicrophonePermissions();")
+          s = s.replace("const result = await Camera.requestCameraPermissionsAsync();\n        updatePermission(key, result.status === 'granted');", "const result = await requestCameraPermission();\n        updatePermission(key, result.granted);")
+          s = s.replace("const result = await Camera.requestMicrophonePermissionsAsync();\n        updatePermission(key, result.status === 'granted');", "const result = await requestMicrophonePermission();\n        updatePermission(key, result.granted);")
+          s = s.replace('name=\"sparkles\"', 'name=\"star\"')
+          p.write_text(s)
+          PY
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - name: Sync lockfile
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
+      - name: Commit fixes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/mobile/app/onboarding.tsx pnpm-lock.yaml
+          git diff --cached --quiet && exit 0
+          git commit -m 'chore(audit): sync mobile Expo contracts'
+          git push origin HEAD:audit/final-verification-2026-09-12
