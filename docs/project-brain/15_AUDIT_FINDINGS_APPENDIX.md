@@ -1,7 +1,7 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-12
-Review status: CANONICAL FINDINGS REGISTER RECONCILED THROUGH PB-283; LATEST CODE CI VERIFIED
+Review status: CANONICAL FINDINGS REGISTER RECONCILED THROUGH PB-284; LATEST CODE CI VERIFIED; DOC RECONCILIATION CONTINUING
 
 This file is the canonical findings register for the recoverable 2026-09-11 audit plus subsequent evidence-driven Master Prompt remediation. Historical PB-001..PB-155 prose is not recoverable from the exposed repository history and is never fabricated. Later IDs are current-branch findings and remediation records.
 
@@ -141,11 +141,12 @@ This file is the canonical findings register for the recoverable 2026-09-11 audi
 | PB-276 | CLOSED — CI VERIFIED | Invalid Shopping basket quantity returns Bad Request semantics. |
 | PB-277 | CLOSED — CI VERIFIED | Shopping basket/from-recipe bodies use runtime-validated DTO classes. |
 | PB-278 | CLOSED — CI VERIFIED | Recipe→Shopping requests reject non-recipe/invalid items instead of silently dropping. |
-| PB-279 | CLOSED — CI VERIFIED | DTO test imports `reflect-metadata` before decorator-dependent modules. |
+| PB-279 | CLOSED — CI VERIFIED | DTO test loads `reflect-metadata` before decorator-dependent modules; isolated Jest bootstrap fixed. |
 | PB-280 | CLOSED — CI VERIFIED | Budget meal-plan servings validated as integer 1..10000 before service invocation. |
 | PB-281 | CLOSED — CI VERIFIED | Unused `createMealBudgetPlan()` placeholder removed. |
 | PB-282 | CLOSED — CI VERIFIED | FoodOperatingLoop invalid target servings now return Bad Request, with direct tests. |
 | PB-283 | CLOSED — CI VERIFIED | Unbounded Budget quote reports actual priced spend; `budgetRemaining` is null without a limit. |
+| PB-284 | OPEN — DOCUMENTATION CONSISTENCY | `docs/project-brain/05_API_CATALOG.md` still contains stale `No guard`/route rows for active Budget, Shopping Intelligence and Price Intelligence controllers. Current source has JWT guards and current route wiring. This must be reconciled without losing the historical route inventory. |
 
 ## Historical boundary and environment limits
 
@@ -159,4 +160,4 @@ Latest implementation code head verified by CI: `56d29953e83ead705eb57b39e7681b1
 - Backend CI `34693061066`: SUCCESS — Prisma validation/generation, migrations/idempotence, food self-test, build, backend unit tests, API E2E and diagnostics.
 - Mobile CI `34693061017`: SUCCESS — dependency install, TypeScript, source tests, committed Jest specs, Expo validation and Android JavaScript bundle.
 
-Later commits after this code head are documentation-only reconciliation commits. They do not change runtime code. Validation PR #70 remains open, mergeable, unmerged, and is explicitly validation-only.
+Later commits are documentation-only reconciliation commits and do not change runtime code. Validation PR #70 remains open, mergeable, unmerged, and validation-only.
