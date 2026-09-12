@@ -18,13 +18,7 @@ describe('Backend API contract (e2e)', () => {
 
   async function registerUser() {
     const email = `api-contract-${Date.now()}-${Math.random().toString(36).slice(2)}@example.com`;
-    const response = await httpRequest(baseUrl, 'POST', '/auth/register', {
-      body: {
-        email,
-        password: 'StrongPassword123!',
-        firstName: 'Test',
-      },
-    });
+    const response = await httpRequest(baseUrl, 'POST', '/auth/register', { body: { email, password: 'StrongPassword123!', firstName: 'Test' } });
     expect(response.status).toBe(201);
     return response.body as { accessToken: string; user: { id: string; email: string } };
   }
@@ -32,9 +26,7 @@ describe('Backend API contract (e2e)', () => {
   it('serves the public health endpoint', async () => {
     const response = await httpRequest(baseUrl, 'GET', '/health');
     expect(response.status).toBe(200);
-    expect(response.body).toEqual(
-      expect.objectContaining({ status: 'ok' }),
-    );
+    expect(response.body).toEqual(expect.objectContaining({ status: 'ok' }));
   });
 
   it('does not expose the obsolete public root Hello World endpoint', async () => {
@@ -43,87 +35,41 @@ describe('Backend API contract (e2e)', () => {
   });
 
   it.each([
-    ['GET', '/users/profile'],
-    ['GET', '/settings'],
-    ['GET', '/profile'],
-    ['GET', '/calendar'],
-    ['GET', '/reminders'],
-    ['GET', '/notifications'],
-    ['GET', '/assistant/history'],
-    ['GET', '/shopping-intelligence'],
-    ['GET', '/budget-intelligence/plan?budget=100&currency=USD'],
-    ['POST', '/assistant'],
-    ['POST', '/calendar'],
-    ['POST', '/reminders'],
-    ['POST', '/notifications'],
+    ['GET', '/users/profile'], ['GET', '/settings'], ['GET', '/profile'], ['GET', '/calendar'],
+    ['GET', '/reminders'], ['GET', '/notifications'], ['GET', '/assistant/history'], ['GET', '/shopping-intelligence'],
+    ['GET', '/budget-intelligence/plan?budget=100&currency=USD'], ['GET', '/recipes/recipe-1/food-plan?servings=2'],
+    ['GET', '/recipes/recipe-1/food-plan/budget?servings=2&budget=10&currency=USD'],
+    ['POST', '/recipes/recipe-1/food-plan/shopping?servings=2'],
+    ['POST', '/recipes/recipe-1/food-plan/budget-shopping?servings=2&budget=10&currency=USD'],
+    ['POST', '/assistant'], ['POST', '/calendar'], ['POST', '/reminders'], ['POST', '/notifications'],
   ])('rejects unauthenticated %s %s', async (method, path) => {
-    const response = await httpRequest(baseUrl, method, path, {
-      body: method === 'GET' ? undefined : {},
-    });
+    const response = await httpRequest(baseUrl, method, path, { body: method === 'GET' ? undefined : {} });
     expect(response.status).toBe(401);
   });
 
   it('serves the authenticated shopping intelligence plan for the current user', async () => {
     const auth = await registerUser();
-    const response = await httpRequest(baseUrl, 'GET', '/shopping-intelligence', {
-      headers: { Authorization: `Bearer ${auth.accessToken}` },
-    });
+    const response = await httpRequest(baseUrl, 'GET', '/shopping-intelligence', { headers: { Authorization: `Bearer ${auth.accessToken}` } });
     expect(response.status).toBe(200);
-    expect(response.body).toEqual(
-      expect.objectContaining({
-        userId: auth.user.id,
-        generatedDeterministically: true,
-        counts: expect.objectContaining({
-          recommended: expect.any(Number),
-          openBasket: expect.any(Number),
-        }),
-      }),
-    );
+    expect(response.body).toEqual(expect.objectContaining({ userId: auth.user.id, generatedDeterministically: true, counts: expect.objectContaining({ recommended: expect.any(Number), openBasket: expect.any(Number) }) }));
   });
 
   it('serves the authenticated budget plan for the current user', async () => {
     const auth = await registerUser();
-    const response = await httpRequest(
-      baseUrl,
-      'GET',
-      '/budget-intelligence/plan?budget=15000000&currency=IRT',
-      { headers: { Authorization: `Bearer ${auth.accessToken}` } },
-    );
+    const response = await httpRequest(baseUrl, 'GET', '/budget-intelligence/plan?budget=15000000&currency=IRT', { headers: { Authorization: `Bearer ${auth.accessToken}` } });
     expect(response.status).toBe(200);
-    expect(response.body).toEqual(
-      expect.objectContaining({
-        userId: auth.user.id,
-        budget: 15000000,
-        currency: 'IRT',
-        generatedDeterministically: true,
-        items: expect.any(Array),
-      }),
-    );
+    expect(response.body).toEqual(expect.objectContaining({ userId: auth.user.id, budget: 15000000, currency: 'IRT', generatedDeterministically: true, items: expect.any(Array) }));
   });
 
   it('keeps the assistant status endpoint public', async () => {
     const response = await httpRequest(baseUrl, 'GET', '/assistant');
     expect(response.status).toBe(200);
-    expect(response.body).toEqual(
-      expect.objectContaining({ status: expect.any(String) }),
-    );
+    expect(response.body).toEqual(expect.objectContaining({ status: expect.any(String) }));
   });
 
   it('rejects unknown DTO fields at the HTTP boundary', async () => {
-    const response = await httpRequest(baseUrl, 'POST', '/auth/register', {
-      body: {
-        email: `api-contract-${Date.now()}@example.com`,
-        password: 'StrongPassword123!',
-        firstName: 'Test',
-        unexpected: 'must-not-be-accepted',
-      },
-    });
-
+    const response = await httpRequest(baseUrl, 'POST', '/auth/register', { body: { email: `api-contract-${Date.now()}@example.com`, password: 'StrongPassword123!', firstName: 'Test', unexpected: 'must-not-be-accepted' } });
     expect(response.status).toBe(400);
-    expect(response.body.message).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining('property unexpected should not exist'),
-      ]),
-    );
+    expect(response.body.message).toEqual(expect.arrayContaining([expect.stringContaining('property unexpected should not exist')]));
   });
 });
