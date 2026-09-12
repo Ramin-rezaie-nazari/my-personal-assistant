@@ -1,12 +1,20 @@
 # Project Brain Changelog
 
 Last updated: 2026-09-12
-Review status: SOURCE-LEVEL AUDIT RECONCILED; APPENDIX REMEDIATION VERIFIED; ENVIRONMENTAL VALIDATION BLOCKED
-Scope actually read: baseline + Core + complete Prisma schema and all 39 migrations + complete recorded Assistant/Brain/Food/Shopping/Life/Health/Fitness/Platform/Test/CI/Mobile source scopes + route/consumer/DTO/guard/database reconciliation + operational scripts + historical Appendix reconciliation + remediation verification.
+Review status: SOURCE-LEVEL AUDIT RECONCILED; MASTER PROMPT DEVELOPMENT IN PROGRESS; APPENDIX REMEDIATION VERIFIED THROUGH PB-270; ENVIRONMENTAL VALIDATION BLOCKED
+Scope actually read: baseline + Core + complete Prisma schema and all 39 migrations + complete recorded Assistant/Brain/Food/Shopping/Life/Health/Fitness/Platform/Test/CI/Mobile source scopes + route/consumer/DTO/guard/database reconciliation + operational scripts + historical Appendix reconciliation + focused Inventory/Recipe → Shopping unit reconciliation + remediation verification.
 Scope not yet read: no known recoverable source gap remains in the recorded audit baseline; deployed runtime/device/external-provider validation remains unavailable.
 Evidence roots: `docs/project-brain/`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; `apps/backend/prisma/`; GitHub Actions evidence.
 Confidence level: HIGH for recorded source-level audit and remediation evidence; MEDIUM for deployment/runtime conclusions.
 Open questions: production database/RLS/Storage/Auth configuration, physical-device behavior, external provider quotas and unrecoverable PB-001..PB-155 historical prose.
+
+## 2026-09-12 — BATCH-0032 — Inventory/Recipe → Shopping unit reconciliation
+- Revalidated the Inventory → Shopping and Recipe → Shopping quantity/unit boundary after the Budget → Shopping vertical was connected.
+- Found PB-270: active `ShoppingItem` rows are unique by user/food/completion state, so merging by `foodId` without unit compatibility could corrupt numeric meaning (for example, adding grams to an existing pieces row).
+- Remediated `ShoppingService` to convert compatible mass/volume/count units into the existing basket row's unit and reject incompatible units before update. Recipe-missing writes remain transactional.
+- Added direct `ShoppingService` regression coverage for compatible conversion and fail-closed incompatible-unit behavior in both manual basket and recipe-missing paths.
+- Backend CI `34691080753` and Mobile CI `34691080764` passed on `1f3f73601183779fbef865a82ce2ea3dee3f8c33`.
+- Reconciled `15_AUDIT_FINDINGS_APPENDIX.md`, `00_PROJECT_OVERVIEW.md`, `READING_CHECKPOINTS.md`, `05_CURRENT_STATE.md`, and `deep-read/04-shopping.md`.
 
 ## 2026-09-12 — BATCH-0031 — Project Brain reconciliation after Appendix verification
 - Synchronized `05_CURRENT_STATE.md` with the successful Backend/Mobile CI verification on remediation commit `46614b36040cb839d6062dae726dc74e51ab3b96`.
