@@ -166,12 +166,25 @@ export function getEntityRelations(canonicalId) {
   return knowledgeById.get(canonicalId)?.relations || [];
 }
 
+function isRelatedAlias(idA, idB) {
+  const a = knowledgeById.get(idA);
+  const b = knowledgeById.get(idB);
+  return Boolean(
+    a?.parent_id === idB ||
+    b?.parent_id === idA ||
+    a?.relations?.some((r) => r?.type === 'variant_of' && r.target === idB) ||
+    b?.relations?.some((r) => r?.type === 'variant_of' && r.target === idA),
+  );
+}
+
 export function resolverIntegrity() {
   const conflicts = [];
   const seen = new Map();
   for (const entry of aliasEntries) {
     const prior = seen.get(entry.key);
-    if (prior && prior.id !== entry.id) conflicts.push({ alias: entry.key, ids: [prior.id, entry.id] });
+    if (prior && prior.id !== entry.id && !isRelatedAlias(prior.id, entry.id)) {
+      conflicts.push({ alias: entry.key, ids: [prior.id, entry.id] });
+    }
     seen.set(entry.key, entry);
   }
   return {
