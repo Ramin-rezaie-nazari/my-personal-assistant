@@ -36,10 +36,44 @@ export class PriceIntelligenceService {
     const rows = (await this.persistence.history(
       productKey,
       new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-    )) as Array<{ amount: number; observedAt: Date }>;
-    const prices = rows
-      .map((row) => Number(row.amount))
-      .filter((value) => Number.isFinite(value) && value > 0);
+    )) as Array<{
+      amount: number;
+      currency: string;
+      observedAt: Date;
+    }>;
+    const chronological = rows
+      .map((row) => ({
+        ...row,
+        amount: Number(row.amount),
+        currency: String(row.currency ?? '').toUpperCase(),
+      }))
+      .filter(
+        (row) =>
+          Number.isFinite(row.amount) &&
+          row.amount > 0 &&
+          Boolean(row.currency),
+      );
+    if (!chronological.length)
+      return {
+        productKey,
+        current: null,
+        average7d: null,
+        average30d: null,
+        min30d: null,
+        max30d: null,
+        changeVs7d: null,
+        changeVs30d: null,
+        trend: 'insufficient_data',
+        buyScore: 0,
+        recommendation: 'unavailable',
+      };
+
+    // A numeric price is only comparable within the same currency. Use the
+    // currency of the latest observation and ignore incompatible historical
+    // observations instead of silently mixing, for example, USD and IRT.
+    const currency = chronological[chronological.length - 1].currency;
+    const scopedRows = chronological.filter((row) => row.currency === currency);
+    const prices = scopedRows.map((row) => row.amount);
     if (!prices.length)
       return {
         productKey,
@@ -54,20 +88,18 @@ export class PriceIntelligenceService {
         buyScore: 0,
         recommendation: 'unavailable',
       };
+
     const current = prices[prices.length - 1];
     const average = (values: number[]) =>
       values.length
         ? values.reduce((sum, value) => sum + value, 0) / values.length
         : null;
     const avg30 = average(prices);
-    const weekRows = rows.filter(
-      (row) =>
-        new Date(row.observedAt).getTime() >=
-        Date.now() - 7 * 24 * 60 * 60 * 1000,
+    const cutoff7 = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const weekRows = scopedRows.filter(
+      (row) => new Date(row.observedAt).getTime() >= cutoff7,
     );
-    const avg7 = average(
-      weekRows.map((row) => Number(row.amount)).filter(Number.isFinite),
-    );
+    const avg7 = average(weekRows.map((row) => row.amount));
     const previous7 =
       prices.length > 7
         ? average(prices.slice(0, -Math.min(7, prices.length)))
@@ -99,6 +131,7 @@ export class PriceIntelligenceService {
       buyScore >= 75 ? 'buy_now' : buyScore <= 25 ? 'wait' : 'watch';
     return {
       productKey,
+      currency,
       current,
       average7d: avg7,
       average30d: avg30,
