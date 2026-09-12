@@ -67,11 +67,11 @@ export class LifeTasksService {
       throw new BadRequestException('Invalid task status');
     const status = dto.status ?? task.status;
     const completedAt =
-      status === 'completed'
-        ? new Date()
-        : status === 'completed'
-          ? task.completedAt
-          : null;
+      status !== 'completed'
+        ? null
+        : dto.status === 'completed' && task.status !== 'completed'
+          ? new Date()
+          : task.completedAt;
     await this.prisma
       .$executeRaw`UPDATE "LifeTask" SET "title"=${dto.title?.trim() ?? task.title},"description"=${dto.description === undefined ? task.description : dto.description?.trim() || null},"status"=${status},"priority"=${dto.priority ?? task.priority},"estimatedMinutes"=${dto.estimatedMinutes ?? task.estimatedMinutes},"energyLevel"=${dto.energyLevel ?? task.energyLevel},"dueAt"=${dto.dueAt === undefined ? task.dueAt : this.date(dto.dueAt)},"scheduledAt"=${dto.scheduledAt === undefined ? task.scheduledAt : this.date(dto.scheduledAt)},"completedAt"=${completedAt},"updatedAt"=CURRENT_TIMESTAMP WHERE "id"=${id} AND "userId"=${userId}`;
     if (dto.status)
