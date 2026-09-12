@@ -1,13 +1,12 @@
 import { Injectable } from '@nestjs/common';
-
-import { ConversationStyle } from '../types';
+import { ConversationLanguage, ConversationStyle } from '../types';
 
 @Injectable()
 export class ConversationStyleService {
-  getDefaultStyle(): ConversationStyle {
+  getDefaultStyle(language: ConversationLanguage = 'en'): ConversationStyle {
     return {
       tone: 'friendly',
-      language: 'fa',
+      language,
       formality: 'informal',
     };
   }
