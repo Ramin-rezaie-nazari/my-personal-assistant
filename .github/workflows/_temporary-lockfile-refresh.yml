@@ -6,13 +6,15 @@ on:
       - audit/project-brain-2026-09-11
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 11.18.0
@@ -24,7 +26,15 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - name: Refresh lockfile
         run: pnpm install --lockfile-only --ignore-scripts
-      - uses: actions/upload-artifact@v4
-        with:
-          name: refreshed-pnpm-lock
-          path: pnpm-lock.yaml
+      - name: Commit refreshed lockfile
+        shell: bash
+        run: |
+          if git diff --quiet -- pnpm-lock.yaml; then
+            echo "Lockfile already matches manifests."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pnpm-lock.yaml
+          git commit -m "chore: refresh pnpm lockfile"
+          git push origin HEAD:audit/project-brain-2026-09-11
