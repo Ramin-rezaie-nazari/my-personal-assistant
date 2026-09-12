@@ -72,7 +72,7 @@ export class HttpPriceSourceAdapter {
         availability,
         url,
       );
-      const fingerprint = `${normalized.sourceId}|${normalized.url}|${normalized.amount}|${this.normalizeText(normalized.title)}`;
+      const fingerprint = `${normalized.sourceId}|${normalized.url}|${normalized.amount}|${normalized.currency}|${this.normalizeText(normalized.title)}`;
       if (!seen.has(fingerprint)) {
         seen.add(fingerprint);
         prices.push(normalized);
@@ -212,18 +212,23 @@ export class HttpPriceSourceAdapter {
     availability: unknown,
     url: string,
   ): NormalizedPrice {
-    const rawCurrency = String(currency ?? '').toUpperCase();
+    const rawCurrency = String(currency ?? '').trim().toUpperCase();
     const isRial =
       rawCurrency === 'IRR' ||
       rawCurrency.includes('RIAL') ||
       rawCurrency.includes('ریال');
+    const normalizedCurrency = !rawCurrency
+      ? 'IRT'
+      : rawCurrency === 'IRR' || rawCurrency.includes('RIAL') || rawCurrency.includes('ریال')
+        ? 'IRT'
+        : rawCurrency;
     return {
       productKey,
       title,
       sourceId: this.id,
       sourceKind: this.kind,
       url,
-      currency: 'IRT',
+      currency: normalizedCurrency,
       amount: isRial ? amount / 10 : amount,
       availability: this.availability(availability),
       observedAt: new Date(),
@@ -259,6 +264,7 @@ export class HttpPriceSourceAdapter {
     const window =
       index >= 0 ? html.slice(Math.max(0, index - 120), index + 120) : html;
     if (/ریال|rial/i.test(window)) return 'IRR';
+    if (/تومان|تومن|toman/i.test(window)) return 'IRT';
     return 'IRT';
   }
 
