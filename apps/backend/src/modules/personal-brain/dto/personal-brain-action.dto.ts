@@ -18,6 +18,13 @@ export class DecisionExecuteDto {
   @IsOptional() @IsObject() context?: Record<string, unknown>;
 }
 
+export class DecisionFeedbackDto {
+  @IsObject() candidate!: DecisionCandidate;
+  @IsEnum(['accepted', 'completed', 'dismissed', 'failed', 'skipped']) outcome!: 'accepted' | 'completed' | 'dismissed' | 'failed' | 'skipped';
+  @IsOptional() @IsNumber() @Min(-1) @Max(1) reward?: number;
+  @IsOptional() @IsString() @MaxLength(1000) note?: string;
+}
+
 export class DecisionConfirmTokenDto {
   @IsOptional() @IsString() @MaxLength(512) token?: string;
 }
