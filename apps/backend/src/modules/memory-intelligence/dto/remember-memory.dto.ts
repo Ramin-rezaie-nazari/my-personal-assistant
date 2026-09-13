@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsDefined, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 import { MemoryType } from '../models/memory.model';
 
 export class RememberMemoryDto {
@@ -9,8 +9,8 @@ export class RememberMemoryDto {
   @IsNotEmpty()
   key!: string;
 
-  @IsObject()
-  value!: Record<string, unknown>;
+  @IsDefined()
+  value!: unknown;
 
   @IsOptional()
   @IsNumber()
