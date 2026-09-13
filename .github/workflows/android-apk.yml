@@ -8,6 +8,7 @@ on:
       - 'apps/mobile/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
+      - '.npmrc'
       - '.github/workflows/android-apk.yml'
 
 permissions:
