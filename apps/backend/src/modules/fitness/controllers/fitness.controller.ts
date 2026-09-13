@@ -16,6 +16,13 @@ import { FitnessCatalogService } from '../services/fitness-catalog.service';
 import type { FitnessDiscipline } from '../services/fitness-catalog.service';
 import { FitnessProfileService } from '../services/fitness-profile.service';
 import { FitnessProgressService } from '../services/fitness-progress.service';
+import {
+  AddFitnessEquipmentDto,
+  AddFitnessGoalDto,
+  ParseFitnessGoalDto,
+  RecordFitnessProgressDto,
+  SaveFitnessProfileDto,
+} from '../dto/fitness.dto';
 
 type AuthenticatedRequest = { user: { id: string } };
 
@@ -57,14 +64,8 @@ export class FitnessController {
   @Post('progress/session')
   recordProgress(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { discipline: FitnessDiscipline; difficulty: number; completed: boolean; formScore?: number | null },
+    @Body() body: RecordFitnessProgressDto,
   ) {
-    if (!['gym', 'calisthenics', 'yoga'].includes(body.discipline)) {
-      throw new BadRequestException('discipline must be gym, calisthenics or yoga');
-    }
-    if (!Number.isInteger(body.difficulty) || body.difficulty < 1 || body.difficulty > 10) {
-      throw new BadRequestException('difficulty must be an integer between 1 and 10');
-    }
     return this.progress.recordSession({ userId: req.user.id, ...body });
   }
 
@@ -103,15 +104,15 @@ export class FitnessController {
   @Post('profile')
   save(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { profile: FitnessProfile },
+    @Body() body: SaveFitnessProfileDto,
   ) {
-    return this.profile.save(req.user.id, body.profile);
+    return this.profile.save(req.user.id, body.profile as FitnessProfile);
   }
 
   @Post('equipment')
   addEquipment(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { item: FitnessProfile['equipment'][number] },
+    @Body() body: AddFitnessEquipmentDto,
   ) {
     return this.profile.addEquipment(req.user.id, body.item);
   }
@@ -124,13 +125,13 @@ export class FitnessController {
   @Post('goal')
   addGoal(
     @Req() req: AuthenticatedRequest,
-    @Body() body: { goal: FitnessGoal },
+    @Body() body: AddFitnessGoalDto,
   ) {
-    return this.profile.addGoal(req.user.id, body.goal);
+    return this.profile.addGoal(req.user.id, body.goal as FitnessGoal);
   }
 
   @Post('goal/from-text')
-  parseGoal(@Body() body: { text: string }) {
+  parseGoal(@Body() body: ParseFitnessGoalDto) {
     return this.profile.parseNaturalGoal(body.text);
   }
 }
