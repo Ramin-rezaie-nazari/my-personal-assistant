@@ -44,6 +44,7 @@ import { NotificationDeviceRegistryService } from '../services/notification-devi
 import { ScenarioPlanningService } from '../services/scenario-planning.service';
 import { PersistentPlanStateService } from '../services/persistent-plan-state.service';
 import { DecisionAuditService } from '../services/decision-audit.service';
+import { DecisionExecutionCoordinatorService } from '../services/decision-execution-coordinator.service';
 
 interface AuthenticatedRequest extends Request {
   user: { id: string };
@@ -79,7 +80,7 @@ export class PersonalBrainController {
     private readonly scenarioPlanningService: ScenarioPlanningService,
     private readonly persistentPlanStateService: PersistentPlanStateService,
     private readonly decisionAuditService: DecisionAuditService,
-    private readonly decisionExecutionCoordinatorService: import('../services/decision-execution-coordinator.service').DecisionExecutionCoordinatorService,
+    private readonly decisionExecutionCoordinatorService: DecisionExecutionCoordinatorService,
   ) {}
 
   @Get() getStatus() {
