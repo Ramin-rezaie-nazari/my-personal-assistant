@@ -56,4 +56,4 @@ jobs:
       - name: Bundle Android JavaScript
         env:
           EXPO_PUBLIC_API_URL: https://ci.invalid
-        run: pnpm --filter @my-personal-assistant/mobile exec expo export --platform android --output-dir /tmp/mobile-export
+        run: pnpm --filter @my-personal-assistant/mobile exec expo export --platform android --output-dir .expo-ci-export
