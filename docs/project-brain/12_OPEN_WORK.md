@@ -7,18 +7,16 @@ This file contains only currently actionable work. Historical audit observations
 
 ## Current blockers / evidence gaps
 
-1. Verify the canonical Android APK workflow against the latest `main`. The existing APK run reached native Gradle build, but it was created before the final backend-only hardening commits and therefore is not proof for the latest commit.
-2. Verify the latest Mobile CI run after dependency/lockfile reconciliation through typecheck, source tests, committed Jest specs, Expo validation and Android JS bundle.
-3. Verify the latest Backend CI run after the final DTO/controller hardening. A prior run on the restored shopping DTO commit was fully green through API E2E; newer hardening commits require their own final green run.
-4. Real physical-device UX, notification delivery, microphone/location/speech behavior and production deployment behavior remain environment-limited until exercised in those environments.
-5. Production Supabase/Auth/RLS/Storage configuration cannot be claimed from repository-only evidence; repository-level authentication and database/session behavior are validated where CI covers them.
-6. Keep Project Brain synchronized with the latest verified commit and CI evidence; never mark device or production capabilities green without direct evidence.
+1. Verify the canonical Android APK workflow against the latest `main`. The existing APK run reached native Gradle build, but it predates the latest exact `main` verification commit, so it is not proof for that exact commit.
+2. Real physical-device UX, notification delivery, microphone/location/speech behavior and production deployment behavior remain environment-limited until exercised in those environments.
+3. Production Supabase/Auth/RLS/Storage configuration cannot be claimed from repository-only evidence; repository-level authentication and database/session behavior are validated where CI covers them.
+4. Keep Project Brain synchronized with the latest verified commit and CI evidence; never mark device or production capabilities green without direct evidence.
 
 ## Verified remediation completed
 
-- Backend Prisma schema validation/generation, migrations and migration idempotence passed in CI.
-- Backend unit tests and API E2E passed on the remediation line before the latest DTO hardening commits.
-- Mobile frozen-lockfile dependency mismatch was corrected and dependency installation passed.
+- Backend CI is green on the latest verification line through dependency installation, Prisma validation/generation, migration deployment/idempotence, food-intelligence self-test, backend build, unit tests and API E2E.
+- Mobile CI is green on the latest verification line through frozen-lockfile installation, typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
+- Frozen pnpm lockfile dependency graph is aligned.
 - Duplicate Android/EAS workflows were removed, leaving canonical workflows.
 - Fitness profile/goal/equipment controller writes use nested runtime-validated DTOs and authenticated `user.id`.
 - Shopping, inventory, daily tracking and habit write inputs have runtime validation.
@@ -26,6 +24,10 @@ This file contains only currently actionable work. Historical audit observations
 - Recipe update uses a validated update DTO.
 - Price Intelligence write endpoints use validated DTOs; HTTP price normalization preserves currency semantics and currency-aware deduplication.
 - Fitness natural-goal parsing uses UUID-compatible IDs and normalized Persian text handling.
+- Personal Brain, Yoga, Calisthenics, Calendar, User Intelligence, Recommendation Intelligence, Decision Feedback and Memory Intelligence action boundaries use runtime DTO validation.
+- Recipe inventory matching is unit-aware for compatible metric dimensions and rejects incompatible units.
+- Personal Brain application bootstrap resolves `DecisionExecutionCoordinatorService` through runtime DI metadata.
+- Mobile brain-execution credentials use `expo-secure-store` rather than AsyncStorage.
 
 ## Completion rule
 
