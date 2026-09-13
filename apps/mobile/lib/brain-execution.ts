@@ -1,10 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
 const ACCESS_TOKEN_KEY = 'mpa.accessToken';
 const REFRESH_TOKEN_KEY = 'mpa.refreshToken';
 
-type AuthResponse = { accessToken: string; refreshToken: string };
+type AuthResponse = { accessToken: string; refreshToken: string; user?: { id: string; email: string; firstName: string | null; lastName: string | null; avatarUrl: string | null } };
 
 type ExecutionReceipt = {
   userId: string;
@@ -26,21 +26,43 @@ async function rawRequest(path: string, init: RequestInit = {}, token?: string) 
   return fetch(`${API_URL}${path}`, { ...init, headers });
 }
 
+async function secureGet(key: string) {
+  try { return await SecureStore.getItemAsync(key); } catch { return null; }
+}
+
+async function secureSet(key: string, value: string) {
+  await SecureStore.setItemAsync(key, value, {
+    keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
+  });
+}
+
+async function clearAuthSession() {
+  await Promise.all(
+    [ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY].map(async (key) => {
+      try { await SecureStore.deleteItemAsync(key); } catch { /* best effort */ }
+    }),
+  );
+}
+
 async function refreshAccessToken() {
-  const refreshToken = await AsyncStorage.getItem(REFRESH_TOKEN_KEY);
+  const refreshToken = await secureGet(REFRESH_TOKEN_KEY);
   if (!refreshToken) return null;
-  const response = await rawRequest('/auth/refresh', { method: 'POST', body: JSON.stringify({ refreshToken }) });
+  const response = await rawRequest('/auth/refresh', {
+    method: 'POST',
+    body: JSON.stringify({ refreshToken }),
+  });
   if (!response.ok) {
-    await AsyncStorage.multiRemove([ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY]);
+    await clearAuthSession();
     return null;
   }
   const auth = await response.json() as AuthResponse;
-  await AsyncStorage.multiSet([[ACCESS_TOKEN_KEY, auth.accessToken], [REFRESH_TOKEN_KEY, auth.refreshToken]]);
+  await secureSet(ACCESS_TOKEN_KEY, auth.accessToken);
+  await secureSet(REFRESH_TOKEN_KEY, auth.refreshToken);
   return auth.accessToken;
 }
 
 async function request<T>(path: string, init: RequestInit = {}) {
-  let token = await AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+  let token = await secureGet(ACCESS_TOKEN_KEY);
   let response = await rawRequest(path, init, token ?? undefined);
   if (response.status === 401 && token) {
     token = await refreshAccessToken();
