@@ -69,7 +69,13 @@ export class FitnessController {
     if (!['gym', 'calisthenics', 'yoga'].includes(body.discipline)) {
       throw new BadRequestException('discipline must be gym, calisthenics or yoga');
     }
-    return this.progress.recordSession({ userId: req.user.id, ...body });
+    return this.progress.recordSession({
+      userId: req.user.id,
+      discipline: body.discipline,
+      difficulty: body.difficulty,
+      completed: body.completed,
+      formScore: body.formScore,
+    });
   }
 
   @Get('catalog')
