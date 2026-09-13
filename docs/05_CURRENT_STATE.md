@@ -1,7 +1,7 @@
 # MYPA Current State
 
-Last updated: 2026-09-12
-Review status: SOURCE-LEVEL REMEDIATION COMPLETE; FINAL CI RECHECK IN PROGRESS
+Last updated: 2026-09-13
+Review status: FINAL SOURCE REMEDIATION COMPLETE; LATEST CI RECHECKS IN PROGRESS
 
 ## Canonical ownership
 
@@ -10,44 +10,38 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 ## Repository state
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
-- Remediation branch: `audit/final-verification-2026-09-12`
-- Pull request: #71 (`audit: remediation pass for Appendix findings`)
-- Base: `main`
-- Scope: source-level remediation against `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`.
+- Branch: `main`
+- Latest source hardening commit in this session: `790a16f13367e96a43866d70588d83557468a332`
+- Scope: repository audit remediation plus final contract-hardening pass.
 
-## Remediation status
+## Remediation completed in this pass
 
-The branch contains source-level fixes and reconciliation across the Appendix finding set, including:
+- Merged the major audit remediation PR (#71) into `main`.
+- Repaired the frozen pnpm lockfile so all currently declared mobile dependencies are represented in the importer.
+- Removed duplicate Android/EAS workflow definitions, leaving canonical APK and EAS preview paths.
+- Restored the missing `shopping.dto.ts` contract exposed by CI and validated its basket/recipe-missing inputs.
+- Added runtime DTO validation for water/daily tracking, habits, inventory adjustment, fitness profile/goal/equipment, recipe update, Assistant action confirmation and Price Intelligence writes.
+- Unified Fitness authenticated identity access on `req.user.id` and kept Fitness persistence wired through Prisma.
+- Made Fitness natural-goal IDs UUID-compatible and normalized Persian text handling.
+- Hardened HTTP price normalization to preserve currency semantics and make deduplication currency-aware.
+- Preserved transactional recipe-missing shopping writes and user ownership checks.
 
-- backend module/runtime wiring and removal of stale placeholder/orphan providers;
-- LifeTasks validation, completion-state semantics and direct service coverage;
-- Goals DTO/runtime contract and transactional check-ins;
-- auth refresh-session hashing, expiry enforcement, rotation and secure mobile token storage;
-- authenticated Device/Price/Brain boundaries;
-- user-timezone propagation through Dashboard, Daily Command Center, Smart Planning, Adaptive Learning and User Intelligence;
-- mobile onboarding synchronization to the authenticated backend onboarding/profile contract;
-- authenticated account-erasure of the application database graph and session state;
-- recipe Prisma schema reconciliation, transactional/restartable content import and real orphan checks;
-- recipe image pagination, reset safety, 100–150KB target alignment and canonical hero contract;
-- legacy country/image executable variants retired from the active script surface;
-- food-intelligence resolver integrity, quantity parsing and self-test CI wiring;
-- recommendation score normalization and country-preference selection-shape fixes;
-- durable conversation-history retention enforcement through persisted per-user policy;
-- mobile localization/RTL coverage on audited command-center and secondary routes;
-- mobile notification lifecycle startup and action integration;
-- mobile CI typecheck, source tests, committed Jest specs, Expo validation and Android bundle export;
-- project-brain/current-state ownership and reconciliation updates.
+## Automated evidence
 
-## Canonical finding reconciliation
+A Backend CI run on the repaired shopping DTO commit passed dependency installation, Prisma validation/generation, all migrations and idempotence, food-intelligence self-test, backend build, unit tests and API E2E. A subsequent Backend CI run on the latest hardening line has passed through build and is rechecking the test/E2E stages.
 
-The current branch source no longer reproduces the concrete defects described by the active Appendix findings PB-156–PB-249 and PB-252/PB-257; their original OPEN labels are historical audit observations and must be treated as superseded by the current source state plus CI evidence.
+Mobile CI has passed dependency installation on the reconciled lockfile and is validating typecheck/tests/Expo/bundle on the latest mobile-triggering commit.
 
-PB-230 is retained only as a documented historical-evidence limitation: exact prose for PB-001–PB-155 was not recoverable from the exposed repository history, so no historical text was fabricated.
+The canonical Android APK workflow reached native Android project generation and Gradle debug APK build on the reconciled dependency state. Its result is tracked separately from latest backend-only commits and is not used to claim validation of those later backend changes.
 
-PB-254 is withdrawn as a false-positive integration assumption: current repository evidence shows custom Prisma/JWT authentication and recipe-focused Storage scripts, but no Supabase Auth identity binding or user-owned Supabase Storage deletion contract. Application account erasure is implemented in the database/session layer.
+## Evidence limitations
 
-## Validation status
+- Real physical-device UX remains unvalidated here.
+- Production deployment behavior, production Supabase/Auth/RLS/Storage configuration and real notification delivery remain environment-limited.
+- Local media in a user's device/gallery is not directly validated by repository CI.
 
-Recent GitHub Actions evidence has already verified the Mobile pipeline end-to-end and has verified Backend dependency installation, Prisma schema validation/generation, all migrations and migration idempotence, plus the food-intelligence self-test. The latest Backend build recheck is still required after the retention-service compatibility fix.
+These are explicit evidence limits, not silently marked green findings.
 
-The local container cannot clone the repository because direct GitHub network access is unavailable. Production/deployed Supabase Auth/RLS/Storage behavior and real-device UX remain outside this connector's runtime boundary and are not claimed as verified.
+## Project Brain
+
+`docs/project-brain/12_OPEN_WORK.md` now contains only current actionable work/evidence gaps; historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents.
