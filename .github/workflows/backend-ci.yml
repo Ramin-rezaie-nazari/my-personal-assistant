@@ -7,6 +7,7 @@ on:
     branches: [main]
     paths:
       - 'apps/backend/**'
+      - 'data/mypa-sports-catalog-expanded/**'
       - 'pnpm-lock.yaml'
       - '.github/workflows/backend-ci.yml'
 
@@ -76,6 +77,9 @@ jobs:
         run: |
           pnpm exec prisma migrate status
           pnpm exec prisma migrate deploy
+
+      - name: Reconcile committed sports catalog summaries
+        run: pnpm fitness:catalog:reconcile
 
       - name: Build backend
         run: pnpm build
