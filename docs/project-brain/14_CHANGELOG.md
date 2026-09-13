@@ -19,17 +19,18 @@ Review status: FINAL VERIFICATION / EVIDENCE-LIMITED DEPLOYMENT ITEMS REMAIN
 - Backend and Mobile CI reached green verification lines through their documented stages.
 
 ## 2026-09-13 — NATIVE ANDROID VERIFICATION PASS
-- Polled canonical Android run `34770782835` instead of assuming an in-progress run was successful.
+- Polled canonical Android run `34770782835` through failure rather than assuming an in-progress run was successful.
 - Confirmed dependency installation, mobile typecheck and Expo native prebuild completed successfully.
 - Inspected the Gradle failure and isolated the blocker to Expo SDK 53/pnpm autolinking generating legacy `expo.core.ExpoModulesPackage` in `PackageList.java`.
-- Confirmed the canonical Android workflow performs real `expo prebuild` and Gradle `assembleDebug`; this is a genuine native evidence gate.
-- The first public-hoisting-only remediation had already failed; escalated to `node-linker=hoisted` plus public hoisting patterns for Expo, React Native, `@react-native/*` and Metro.
+- Escalated from the first public-hoisting-only remediation to `node-linker=hoisted` plus public hoisting patterns for Expo, React Native, `@react-native/*` and Metro.
 - Committed the stronger `.npmrc` remediation as `fc35d0e7428b0ec19e54552eab6f91f5207f9c8b`.
-- Recorded PB-268 as OPEN — REMEDIATION IN VERIFICATION; it cannot be marked green until a fresh native run produces the APK.
-- Updated `12_OPEN_WORK.md`, `13_DECISION_LOG.md` and `15_AUDIT_FINDINGS_APPENDIX.md` with the evidence boundary and remediation decision.
+- Added `apps/mobile/react-native.config.js` to explicitly pin Expo Android `packageImportPath` to `import expo.modules.ExpoModulesPackage;`.
+- Fresh canonical Android run `34772364209` on `0d19d2b7dad5e9100505205328fbd523e544445b` completed successfully through real Gradle `assembleDebug` and APK artifact upload.
+- Closed PB-268 as CLOSED — REMEDIATED with artifact `my-personal-assistant-debug-apk`, 58,443,390 bytes, SHA-256 `622b90eeef0898ab7d3eac9af75fac6e486da46eb4f741116d601f3d727f23da`.
+- Synchronized `12_OPEN_WORK.md`, `05_CURRENT_STATE.md`, `10_SECURITY_AND_PRIVACY.md` and `15_AUDIT_FINDINGS_APPENDIX.md` with the new native evidence.
 
 ## Current evidence boundary
 - Backend CI: green on the verified remediation line.
 - Mobile CI: green on the verified remediation line.
-- Android native APK: latest attempted run reproduced PB-268; fresh verification is pending after the stronger pnpm layout fix.
+- Android native APK: green on run `34772364209` against commit `0d19d2b7dad5e9100505205328fbd523e544445b`.
 - Production Supabase/Auth/RLS/Storage/edge controls and physical-device behavior remain explicitly environment-limited.
