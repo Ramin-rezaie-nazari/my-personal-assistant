@@ -1,8 +1,9 @@
 import {
   CanActivate,
   ExecutionContext,
+  HttpException,
+  HttpStatus,
   Injectable,
-  TooManyRequestsException,
 } from '@nestjs/common';
 import type { Request } from 'express';
 
@@ -45,7 +46,10 @@ export class RequestRateLimitGuard implements CanActivate {
     }
 
     if (existing.count >= limit) {
-      throw new TooManyRequestsException('Too many requests. Please try again later.');
+      throw new HttpException(
+        { statusCode: HttpStatus.TOO_MANY_REQUESTS, message: 'Too many requests. Please try again later.' },
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
     }
 
     existing.count += 1;
@@ -53,9 +57,6 @@ export class RequestRateLimitGuard implements CanActivate {
   }
 
   private getTracker(request: Request): string {
-    // Do not trust a client-supplied X-Forwarded-For header here. If the
-    // production deployment uses a trusted reverse proxy, configure Express
-    // trust-proxy and let req.ip represent the verified client address.
     return request.ip || request.socket.remoteAddress || 'unknown';
   }
 
