@@ -19,7 +19,8 @@ This document reflects current-main source and the remediation evidence recorded
 - Mobile auth credentials are stored with `expo-secure-store`; the independent brain-execution refresh path also uses secure storage and clears both credentials on refresh failure.
 - Mobile TTS model preparation pins revisions and verifies SHA-256 checksums.
 - Mobile CI executes source tests, committed Jest specs, typecheck/config/export validation and Android JS bundling.
-- Backend CI verifies dependency installation, Prisma schema generation, migrations/idempotence, food-intelligence self-test, build, unit tests and API E2E on the verified remediation line; newer commits must retain their own green CI evidence.
+- Backend CI verifies dependency installation, Prisma schema generation, migrations/idempotence, food-intelligence self-test, build, unit tests and API E2E on the verified remediation line.
+- Canonical Android native CI now verifies Expo prebuild, real Gradle `assembleDebug`, and APK artifact upload on commit `0d19d2b7dad5e9100505205328fbd523e544445b` (run `34772364209`).
 
 ## Current verification boundary
 
@@ -27,12 +28,10 @@ Repository-level authentication, validation, ownership, persistence and CI-cover
 
 The remaining security/privacy work is evidence collection rather than an assumed production pass:
 
-1. Verify the latest Backend CI after the newest test fix through API E2E.
-2. Verify the latest canonical Android APK/native build against the latest `main`.
-3. Confirm deployed Supabase/Postgres RLS, Storage and service-role boundaries in the actual environment.
-4. Validate production edge rate limiting, CORS/security headers and abuse controls.
-5. Exercise real-device notification, microphone/location/speech behavior and privacy-sensitive UX.
-6. Perform production/runtime logging and exception-path review for accidental disclosure of credentials or private user context.
+1. Confirm deployed Supabase/Postgres RLS, Storage and service-role boundaries in the actual environment.
+2. Validate production edge rate limiting, CORS/security headers and abuse controls.
+3. Exercise real-device notification, microphone/location/speech behavior and privacy-sensitive UX.
+4. Perform production/runtime logging and exception-path review for accidental disclosure of credentials or private user context.
 
 ## Completion rule
 
