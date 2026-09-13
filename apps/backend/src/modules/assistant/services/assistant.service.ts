@@ -26,23 +26,15 @@ export class AssistantService {
 
   async getHistory(userId: string, limit = 24) {
     const safeLimit = Math.max(1, Math.min(100, Math.floor(limit)));
-    return (await this.conversationContextService.get(userId)).turns.slice(
-      -safeLimit,
-    );
+    return (await this.conversationContextService.get(userId)).turns.slice(-safeLimit);
   }
 
   async confirm(userId: string, token: string) {
-    const receipt = await this.naturalActionExecutionService.confirm(
-      userId,
-      token,
-    );
+    const receipt = await this.naturalActionExecutionService.confirm(userId, token);
     await this.conversationContextService.append({
       userId,
       role: 'assistant',
-      text:
-        receipt.status === 'completed'
-          ? 'تأیید شد و انجام شد.'
-          : receipt.reason,
+      text: receipt.status === 'completed' ? 'تأیید شد و انجام شد.' : receipt.reason,
       action: receipt.action,
       executionId: receipt.decisionId,
       resourceType: this.resourceTypeFor(receipt.action),
@@ -51,15 +43,8 @@ export class AssistantService {
   }
 
   async process(input: string, userId: string) {
-    await this.conversationContextService.append({
-      userId,
-      role: 'user',
-      text: input,
-    });
-    const contextualCommand = await this.contextualCommandService.resolve(
-      userId,
-      input,
-    );
+    await this.conversationContextService.append({ userId, role: 'user', text: input });
+    const contextualCommand = await this.contextualCommandService.resolve(userId, input);
     const local = this.localLanguageUnderstandingService?.understand(input);
     const plan = this.planningService
       ? await this.planningService.createPlan({
@@ -68,7 +53,7 @@ export class AssistantService {
           contradictions: contextualCommand.contradictions,
           confidence: contextualCommand.confidence,
         })
-      : ({ requiresClarification: false, reason: 'not_available' } as any);
+      : { steps: [], requiresClarification: false, reason: 'not_available' };
     const response = plan.requiresClarification
       ? ({
           intent: 'assistant',
@@ -82,35 +67,24 @@ export class AssistantService {
         } as BrainResponse)
       : ((local ? this.responseForLocalIntent(local) : undefined) ??
         (await this.brainOrchestratorService.processRequest(input, userId)));
-    const executionResponse = this.resolveContextualExecution(
-      response,
-      contextualCommand,
-      input,
-    );
+    const executionResponse = this.resolveContextualExecution(response, contextualCommand, input);
     const execution = executionResponse.nextAction
-      ? await this.naturalActionExecutionService.execute(
-          input,
+      ? await this.naturalActionExecutionService.execute(input, userId, executionResponse, {
           userId,
-          executionResponse,
-          {
-            userId,
-            referencesPrevious: contextualCommand.referencesPrevious,
-            previousAction: contextualCommand.targetAction,
-            previousExecutionId: contextualCommand.targetExecutionId,
-            targetResourceType: contextualCommand.targetResourceType,
-            targetResourceId: contextualCommand.targetResourceId,
-            operation: contextualCommand.operation,
-            localUnderstanding: local,
-            localPlan: plan,
-          },
-        )
+          referencesPrevious: contextualCommand.referencesPrevious,
+          previousAction: contextualCommand.targetAction,
+          previousExecutionId: contextualCommand.targetExecutionId,
+          targetResourceType: contextualCommand.targetResourceType,
+          targetResourceId: contextualCommand.targetResourceId,
+          operation: contextualCommand.operation,
+          localUnderstanding: local,
+          localPlan: plan,
+        })
       : undefined;
 
     const finalResponse = {
       ...executionResponse,
-      message: execution?.executed
-        ? execution.message
-        : (execution?.message ?? executionResponse.message),
+      message: execution?.executed ? execution.message : (execution?.message ?? executionResponse.message),
       ...(execution ? { execution } : {}),
       metadata: {
         ...(executionResponse.metadata ?? {}),
@@ -119,204 +93,41 @@ export class AssistantService {
         localPlan: plan,
       },
     };
-    const receipt = execution?.receipt;
-    const resourceId =
-      receipt &&
-      typeof receipt === 'object' &&
-      receipt !== null &&
-      'result' in receipt
-        ? this.extractExecutionEntityId(
-            (receipt as { result?: unknown }).result,
-          )
-        : undefined;
-    const executionId = this.extractDecisionId(receipt);
-    const resourceType = this.resourceTypeFor(
-      execution?.action ?? finalResponse.nextAction,
-    );
     await this.conversationContextService.append({
       userId,
       role: 'assistant',
-      text: finalResponse.message,
-      intent: finalResponse.intent,
-      action: execution?.action ?? finalResponse.nextAction,
-      executionId,
-      resourceType,
-      resourceId,
+      text: finalResponse.message ?? '',
+      action: finalResponse.nextAction?.action,
+      resourceType: contextualCommand.targetResourceType,
+      resourceId: contextualCommand.targetResourceId,
+      executionId: execution?.decisionId,
     });
     return finalResponse;
   }
 
-  private responseForLocalIntent(
-    local: ReturnType<LocalLanguageUnderstandingService['understand']>,
-  ): BrainResponse | undefined {
-    if (local.intent === 'UNKNOWN' || local.confidence < 0.7) return undefined;
-    const map: Record<
-      string,
-      { intent: string; nextAction: string; message: string }
-    > = {
-      ADD_TO_BASKET: {
-        intent: 'shopping',
-        nextAction: 'add_to_basket',
-        message: 'باشه، به سبد خرید اضافه‌اش می‌کنم.',
-      },
-      REMOVE_FROM_BASKET: {
-        intent: 'shopping',
-        nextAction: 'remove_from_basket',
-        message: 'باشه، از سبد خرید حذفش می‌کنم.',
-      },
-      RECOMMEND_MEAL: {
-        intent: 'nutrition',
-        nextAction: 'recommend_meal',
-        message: 'حتماً، بر اساس اطلاعات خودت یک گزینه مناسب پیدا می‌کنم.',
-      },
-      GET_NUTRITION_SUMMARY: {
-        intent: 'nutrition',
-        nextAction: 'get_nutrition_summary',
-        message: 'حتماً، خلاصه تغذیه امروزت رو بررسی می‌کنم.',
-      },
-      CREATE_REMINDER: {
-        intent: 'reminder',
-        nextAction: 'create_reminder',
-        message: 'حتماً، یادآوری رو برایت آماده می‌کنم.',
-      },
-      UPDATE_REQUEST: {
-        intent: 'assistant',
-        nextAction: 'update_contextual_request',
-        message: 'باشه، درخواست قبلی رو با تغییر جدیدت به‌روزرسانی می‌کنم.',
-      },
-      CANCEL_REQUEST: {
-        intent: 'assistant',
-        nextAction: 'cancel_contextual_request',
-        message: 'باشه، درخواست قبلی رو لغو می‌کنم.',
-      },
-    };
-    const selected = map[local.intent];
-    return selected
-      ? {
-          ...selected,
-          confidence: local.confidence,
-          metadata: { local: true, entities: local.entities },
-        }
-      : undefined;
-  }
-
-  private resolveContextualExecution(
-    response: BrainResponse,
-    command: Awaited<ReturnType<ContextualCommandService['resolve']>>,
-    input: string,
-  ): BrainResponse {
-    if (
-      !command.referencesPrevious ||
-      !(command.targetResourceId || command.targetExecutionId)
-    )
-      return response;
-    const entities = command.entities ?? {};
-    const previousAction = (command.targetAction ?? '').toLowerCase();
-    const previousResource = (command.targetResourceType ?? '').toLowerCase();
-    const normalizedInput = input
-      .trim()
-      .toLowerCase()
-      .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
-    const hasTime =
-      Boolean(entities.time) ||
-      /\b(?:[01]?\d|2[0-3])\s*(?::|\.)\s*[0-5]\d\b/.test(normalizedInput);
-    const hasDuration =
-      Boolean(entities.durationMinutes) ||
-      /\b\d{1,3}\s*(?:min|mins|minute|minutes|دقیقه)(?=\s|$)/i.test(
-        normalizedInput,
-      );
-    const hasCalories = /\b\d{2,5}\s*(?:cal|calories|کالری)\b/i.test(
-      normalizedInput,
-    );
-    const hasWeekTarget =
-      /\b[1-7]\s*(?:times?|x|بار|مرتبه)(?:\s*(?:per|a)?\s*week|\s*در\s*هفته)?\b/i.test(
-        normalizedInput,
-      );
-    if (
-      command.operation === 'update' &&
-      previousResource === 'calendar' &&
-      hasTime
-    )
-      return {
-        ...response,
-        intent: 'calendar',
-        nextAction: 'update_calendar_event',
-      };
-    if (command.operation === 'cancel' && previousResource === 'calendar')
-      return {
-        ...response,
-        intent: 'calendar',
-        nextAction: 'cancel_calendar_event',
-      };
-    if (
-      command.operation === 'update' &&
-      previousAction.includes('reminder') &&
-      hasTime
-    )
-      return { ...response, intent: 'reminder', nextAction: 'update_reminder' };
-    if (command.operation === 'cancel' && previousAction.includes('reminder'))
-      return { ...response, intent: 'reminder', nextAction: 'cancel_reminder' };
-    if (
-      command.operation === 'update' &&
-      previousResource === 'workout' &&
-      (hasDuration || hasCalories || hasTime)
-    )
-      return { ...response, intent: 'workout', nextAction: 'update_workout' };
-    if (command.operation === 'cancel' && previousResource === 'workout')
-      return { ...response, intent: 'workout', nextAction: 'delete_workout' };
-    if (
-      command.operation === 'update' &&
-      previousResource === 'habit' &&
-      hasWeekTarget
-    )
-      return { ...response, intent: 'habit', nextAction: 'update_habit' };
-    if (command.operation === 'cancel' && previousResource === 'habit')
-      return { ...response, intent: 'habit', nextAction: 'delete_habit' };
-    if (command.operation === 'cancel' && previousResource === 'supplement')
-      return {
-        ...response,
-        intent: 'supplement',
-        nextAction: 'delete_supplement',
-      };
-    if (
-      command.operation === 'update' &&
-      previousResource === 'supplement' &&
-      hasTime
-    )
-      return {
-        ...response,
-        intent: 'supplement',
-        nextAction: 'update_supplement',
-      };
-    return response;
-  }
-
-  private extractExecutionEntityId(result: unknown): string | undefined {
-    if (!result || typeof result !== 'object') return undefined;
-    const value = (result as { id?: unknown }).id;
-    return typeof value === 'string' && value ? value : undefined;
-  }
-  private extractDecisionId(receipt: unknown): string | undefined {
-    if (!receipt || typeof receipt !== 'object') return undefined;
-    const value = (receipt as { decisionId?: unknown }).decisionId;
-    return typeof value === 'string' && value ? value : undefined;
-  }
-  private resourceTypeFor(value?: string): string | undefined {
-    const text = (value ?? '').toLowerCase();
-    if (text.includes('reminder')) return 'reminder';
-    if (text.includes('calendar') || text.includes('schedule'))
-      return 'calendar';
-    if (
-      text.includes('workout') ||
-      text.includes('exercise') ||
-      text.includes('training')
-    )
-      return 'workout';
-    if (text.includes('habit')) return 'habit';
-    if (text.includes('supplement') || text.includes('vitamin'))
-      return 'supplement';
-    if (text.includes('notification')) return 'notification';
-    if (text.includes('basket')) return 'shopping';
+  private resourceTypeFor(action?: string) {
+    if (!action) return undefined;
+    if (action.includes('reminder')) return 'reminder';
+    if (action.includes('habit')) return 'habit';
+    if (action.includes('calendar')) return 'calendar';
+    if (action.includes('meal')) return 'meal';
+    if (action.includes('supplement')) return 'supplement';
+    if (action.includes('shopping')) return 'shopping';
     return undefined;
+  }
+
+  private responseForLocalIntent(local: { intent?: string; message?: string }): BrainResponse | undefined {
+    if (!local.intent) return undefined;
+    return {
+      intent: local.intent,
+      nextAction: undefined,
+      message: local.message ?? '',
+      confidence: 0.8,
+      metadata: { local: true },
+    } as BrainResponse;
+  }
+
+  private resolveContextualExecution(response: BrainResponse, contextualCommand: any, input: string) {
+    return response;
   }
 }
