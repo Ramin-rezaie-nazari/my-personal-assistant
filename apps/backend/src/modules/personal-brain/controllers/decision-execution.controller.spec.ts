@@ -67,10 +67,10 @@ describe('DecisionExecutionController', () => {
   it('binds confirmation execution to the authenticated user', async () => {
     coordinator.confirmAndExecute.mockResolvedValue({ status: 'completed' });
 
-    const result = await controller.confirm({
-      user: { id: 'user-1' },
-      body: { token: 'token-1' },
-    } as any);
+    const result = await controller.confirm(
+      { user: { id: 'user-1' } } as any,
+      { token: 'token-1' },
+    );
 
     expect(result).toEqual({ status: 'completed' });
     expect(coordinator.confirmAndExecute).toHaveBeenCalledWith(
