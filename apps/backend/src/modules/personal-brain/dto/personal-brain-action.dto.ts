@@ -48,7 +48,21 @@ export class CoachMessageDto {
 }
 
 export class FitnessPerformanceDto {
-  @IsObject() data!: Record<string, unknown>;
+  @IsString() @IsNotEmpty() @MaxLength(100) discipline!: string;
+  @IsOptional() @IsString() @MaxLength(200) exerciseId?: string;
+  @IsOptional() @IsString() @MaxLength(200) exerciseName?: string;
+  @IsOptional() @IsString() @MaxLength(200) sessionId?: string;
+  @IsOptional() @IsString() @MaxLength(200) workoutId?: string;
+  @IsOptional() @IsNumber() @Min(0) @Max(1) formScore?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(1) completionRate?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(10) perceivedDifficulty?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(1) recoveryScore?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(10000) reps?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(1000) sets?: number;
+  @IsOptional() @IsInt() @Min(0) @Max(86400) durationSeconds?: number;
+  @IsOptional() @IsNumber() @Min(0) @Max(10000) loadKg?: number;
+  @IsOptional() @IsObject() metadata?: Record<string, unknown>;
+  @IsOptional() @IsISO8601() performedAt?: string;
 }
 
 export class NotificationDecisionDto {
@@ -72,4 +86,14 @@ export class NotificationDeviceDto {
 
 export class NotificationDeviceDisableDto {
   @IsString() @IsNotEmpty() @MaxLength(200) deviceId!: string;
+}
+
+export class ScenarioCompareDto {
+  @IsArray() candidates!: DecisionCandidate[];
+  @IsOptional() @IsObject() baseline?: Record<string, number>;
+  @IsOptional() @IsObject() context?: {
+    budgetPressure?: boolean;
+    capacityPressure?: boolean;
+    healthConstraint?: boolean;
+  };
 }
