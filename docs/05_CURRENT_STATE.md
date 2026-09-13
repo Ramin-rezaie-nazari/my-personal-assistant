@@ -1,7 +1,7 @@
 # MYPA Current State
 
 Last updated: 2026-09-13
-Review status: SOURCE HARDENING ACTIVE; LATEST CI RECHECK IN PROGRESS
+Review status: FINAL VERIFICATION / EVIDENCE-LIMITED DEPLOYMENT ITEMS REMAIN
 
 ## Canonical ownership
 
@@ -11,37 +11,37 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Branch: `main`
-- Latest source hardening commit in this pass: `4575a2a25cbac945f0635af13a6563a19f0c92c5`
-- Scope: repository audit remediation plus final contract-hardening pass.
+- Latest source commit in this verification pass: `2cadc1d41f3da8fc2c4cb11c96c1abd12e116a2c`
+- Scope: audit remediation, contract hardening, security/privacy documentation reconciliation and final CI verification.
 
-## Remediation completed in this pass
+## Remediation completed
 
-- Merged the major audit remediation PR (#71) into `main`.
-- Repaired the frozen pnpm lockfile so all currently declared mobile dependencies are represented in the importer.
-- Removed duplicate Android/EAS workflow definitions, leaving canonical APK and EAS preview paths.
-- Restored the missing `shopping.dto.ts` contract exposed by CI and validated its basket/recipe-missing inputs.
-- Added runtime DTO validation for water/daily tracking, habits, inventory adjustment, fitness profile/goal/equipment, recipe update, Assistant action confirmation and Price Intelligence writes.
-- Unified Fitness authenticated identity access on `req.user.id` and kept Fitness persistence wired through Prisma.
-- Made Fitness natural-goal IDs UUID-compatible and normalized Persian text handling.
-- Hardened HTTP price normalization to preserve currency semantics and make deduplication currency-aware.
-- Preserved transactional recipe-missing shopping writes and user ownership checks.
-- Added and enforced runtime DTO contracts across Personal Brain, decision confirmation, User Intelligence, Recommendation Intelligence, Yoga, Calisthenics and Calendar action endpoints.
-- Removed the remaining insecure AsyncStorage credential path from `apps/mobile/lib/brain-execution.ts`; its access/refresh credentials now use SecureStore with device-only keychain accessibility.
-- Recorded new hardening findings PB-258 through PB-263 in the canonical audit appendix.
+- Major audit remediation PR #71 is merged.
+- Frozen pnpm lockfile is aligned with the workspace dependency graph.
+- Duplicate Android/EAS workflow definitions were removed; canonical APK and EAS preview paths remain.
+- Missing shopping DTO contract exposed by CI was restored.
+- Runtime DTO validation was added across the previously identified unvalidated action/write boundaries.
+- Fitness authenticated identity uses `req.user.id` and Fitness persistence is Prisma-backed.
+- Fitness natural-goal IDs are UUID-compatible and Persian text handling is normalized.
+- Price normalization preserves currency semantics and currency-aware deduplication.
+- Personal Brain, Yoga, Calisthenics, Calendar, User Intelligence and Recommendation Intelligence action boundaries have runtime DTO validation.
+- Mobile brain-execution credentials use `expo-secure-store` with device-only keychain accessibility and clear both credentials after refresh failure.
+- Security/privacy documentation was reconciled to current remediation evidence.
+- Audit findings PB-258 through PB-263 are recorded in the canonical appendix.
 
 ## Automated evidence
 
-A Backend CI run on the earlier repaired line passed dependency installation, Prisma validation/generation, all migrations and idempotence, food-intelligence self-test, backend build, unit tests and API E2E. A later hardening run exposed one TypeScript contract mismatch in the new performance DTO; that was fixed before the current CI recheck.
+Backend CI on the immediately preceding hardening commit completed dependency installation, Prisma schema validation/generation, migration deployment and idempotence, food-intelligence self-test and backend build. Its unit-test phase exposed one stale controller-spec invocation after the DTO signature hardening; the test was corrected on `main` and a fresh CI cycle was triggered.
 
-The current Backend CI run is validating the latest hardening line after that fix. It must complete successfully before the source line is marked CI-green again.
+The latest Backend CI for `2cadc1d...` is the required final automated verification and must pass through unit and API E2E before CI-green is claimed for this line.
 
-Mobile CI has previously passed dependency installation on the reconciled lockfile and validated the mobile typecheck/tests/Expo/bundle path on the remediated line. The latest mobile-auth hardening still requires a fresh mobile CI result before being treated as fully validated.
+Mobile CI has a fresh run for `2cadc1d...` in progress. The prior reconciled mobile line passed the mobile validation/test/export path.
 
-The canonical Android APK workflow previously reached native Android project generation and Gradle debug APK build on the reconciled dependency state. Its result is tracked separately from later backend/mobile commits and is not used to claim validation of those later changes.
+The canonical Android APK workflow remains the native-build evidence path. A previous run reached Android project generation and Gradle debug APK build, but it does not prove the latest source commit; physical-device behavior remains separately unvalidated.
 
 ## Evidence limitations
 
-- Real physical-device UX remains unvalidated here.
+- Real physical-device UX remains unvalidated.
 - Production deployment behavior, production Supabase/Auth/RLS/Storage configuration and real notification delivery remain environment-limited.
 - Local media in a user's device/gallery is not directly validated by repository CI.
 
@@ -49,4 +49,4 @@ These are explicit evidence limits, not silently marked green findings.
 
 ## Project Brain
 
-`docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps; historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. The appendix now also records PB-258 through PB-263 from the latest source-hardening sweep.
+`docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` is synchronized with the current remediation boundary.
