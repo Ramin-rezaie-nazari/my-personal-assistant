@@ -1,7 +1,7 @@
 # MYPA Current State
 
 Last updated: 2026-09-13
-Review status: FINAL SOURCE REMEDIATION COMPLETE; LATEST CI RECHECKS IN PROGRESS
+Review status: SOURCE HARDENING ACTIVE; LATEST CI RECHECK IN PROGRESS
 
 ## Canonical ownership
 
@@ -11,7 +11,7 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Branch: `main`
-- Latest source hardening commit in this session: `790a16f13367e96a43866d70588d83557468a332`
+- Latest source hardening commit in this pass: `4575a2a25cbac945f0635af13a6563a19f0c92c5`
 - Scope: repository audit remediation plus final contract-hardening pass.
 
 ## Remediation completed in this pass
@@ -25,14 +25,19 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Made Fitness natural-goal IDs UUID-compatible and normalized Persian text handling.
 - Hardened HTTP price normalization to preserve currency semantics and make deduplication currency-aware.
 - Preserved transactional recipe-missing shopping writes and user ownership checks.
+- Added and enforced runtime DTO contracts across Personal Brain, decision confirmation, User Intelligence, Recommendation Intelligence, Yoga, Calisthenics and Calendar action endpoints.
+- Removed the remaining insecure AsyncStorage credential path from `apps/mobile/lib/brain-execution.ts`; its access/refresh credentials now use SecureStore with device-only keychain accessibility.
+- Recorded new hardening findings PB-258 through PB-263 in the canonical audit appendix.
 
 ## Automated evidence
 
-A Backend CI run on the repaired shopping DTO commit passed dependency installation, Prisma validation/generation, all migrations and idempotence, food-intelligence self-test, backend build, unit tests and API E2E. A subsequent Backend CI run on the latest hardening line has passed through build and is rechecking the test/E2E stages.
+A Backend CI run on the earlier repaired line passed dependency installation, Prisma validation/generation, all migrations and idempotence, food-intelligence self-test, backend build, unit tests and API E2E. A later hardening run exposed one TypeScript contract mismatch in the new performance DTO; that was fixed before the current CI recheck.
 
-Mobile CI has passed dependency installation on the reconciled lockfile and is validating typecheck/tests/Expo/bundle on the latest mobile-triggering commit.
+The current Backend CI run is validating the latest hardening line after that fix. It must complete successfully before the source line is marked CI-green again.
 
-The canonical Android APK workflow reached native Android project generation and Gradle debug APK build on the reconciled dependency state. Its result is tracked separately from latest backend-only commits and is not used to claim validation of those later backend changes.
+Mobile CI has previously passed dependency installation on the reconciled lockfile and validated the mobile typecheck/tests/Expo/bundle path on the remediated line. The latest mobile-auth hardening still requires a fresh mobile CI result before being treated as fully validated.
+
+The canonical Android APK workflow previously reached native Android project generation and Gradle debug APK build on the reconciled dependency state. Its result is tracked separately from later backend/mobile commits and is not used to claim validation of those later changes.
 
 ## Evidence limitations
 
@@ -44,4 +49,4 @@ These are explicit evidence limits, not silently marked green findings.
 
 ## Project Brain
 
-`docs/project-brain/12_OPEN_WORK.md` now contains only current actionable work/evidence gaps; historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents.
+`docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps; historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. The appendix now also records PB-258 through PB-263 from the latest source-hardening sweep.
