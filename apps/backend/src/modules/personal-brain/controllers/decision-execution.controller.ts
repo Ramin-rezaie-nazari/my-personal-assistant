@@ -1,14 +1,13 @@
-import { Controller, Post, Req, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Req, UseGuards } from '@nestjs/common';
 import { Request } from 'express';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { NextBestActionService } from '../services/next-best-action.service';
 import { DecisionExecutionCoordinatorService } from '../services/decision-execution-coordinator.service';
+import { DecisionConfirmDto } from '../dto/decision-confirm.dto';
 
 interface AuthenticatedRequest extends Request {
   user: { id: string };
 }
-
-type ConfirmationBody = { token: string };
 
 @Controller('personal-brain/decision')
 export class DecisionExecutionController {
@@ -30,8 +29,10 @@ export class DecisionExecutionController {
 
   @Post('confirm')
   @UseGuards(JwtAuthGuard)
-  async confirm(@Req() req: AuthenticatedRequest) {
-    const body = req.body as ConfirmationBody;
-    return this.coordinator.confirmAndExecute(req.user.id, body?.token ?? '');
+  async confirm(
+    @Req() req: AuthenticatedRequest,
+    @Body() body: DecisionConfirmDto,
+  ) {
+    return this.coordinator.confirmAndExecute(req.user.id, body.token);
   }
 }
