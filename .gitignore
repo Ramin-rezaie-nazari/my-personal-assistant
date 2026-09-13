@@ -20,3 +20,12 @@ apps/backend/content-mirror/
 # MYPA local-first Mac recipe hero corpus (images + manifests + logs)
 data/mypa-recipe-media/
 apps/backend/data/mypa-recipe-media/
+
+# MYPA local-first fitness media corpus (images + videos + manifests)
+data/mypa-sports-media-local/
+data/mypa-sports-videos-local/
+apps/backend/data/mypa-sports-media-local/
+apps/backend/data/mypa-sports-videos-local/
+
+# Local runner state; never commit environment/state snapshots
+logs/mypa-local-state.env
