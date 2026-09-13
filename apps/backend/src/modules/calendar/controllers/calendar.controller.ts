@@ -13,6 +13,7 @@ import {
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { CalendarService } from '../services/calendar.service';
 import { CreateCalendarEventDto } from '../dto/create-calendar-event.dto';
+import { UpdateCalendarEventDto } from '../dto/update-calendar-event.dto';
 
 @Controller('calendar')
 @UseGuards(JwtAuthGuard)
@@ -40,15 +41,9 @@ export class CalendarController {
   updateEvent(
     @Request() req: { user: { id: string } },
     @Param('id') id: string,
-    @Body()
-    body: {
-      title?: string;
-      type?: string;
-      startsAt?: string;
-      endsAt?: string | null;
-    },
+    @Body() dto: UpdateCalendarEventDto,
   ) {
-    return this.calendarService.updateEvent(req.user.id, id, body);
+    return this.calendarService.updateEvent(req.user.id, id, dto);
   }
 
   @Post(':id/complete')
