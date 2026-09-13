@@ -127,6 +127,12 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-266 | CLOSED — REMEDIATED | `DecisionFeedbackController` now uses `DecisionFeedbackDto` with runtime validation for candidate, outcome, reward and note bounds. |
 | PB-267 | CLOSED — REMEDIATED | `MemoryIntelligenceController` now uses `RememberMemoryDto` with runtime validation for memory type, key, value and importance. |
 
+## New hardening finding — PB-268
+
+| Finding | Current status | Resolution / current evidence |
+|---|---|---|
+| PB-268 | OPEN — REMEDIATION IN VERIFICATION | Canonical Android native CI reproduced Expo SDK 53/pnpm autolinking generating legacy `expo.core.ExpoModulesPackage` in `PackageList.java`. The repository now strengthens pnpm hoisting with `node-linker=hoisted` plus `*expo*`, `*react-native*`, `@react-native/*`, and `metro*` public-hoist patterns. Fresh Android native CI must prove the generated import is corrected and the APK builds before this finding is closed. |
+
 ## Historical catalog boundary
 
 The exact prose of PB-001 through PB-155 is not recoverable from the repository history exposed to the remediation environment. `docs/project-brain/12_OPEN_WORK.md` preserves the historical ID/index information, but missing historical text is not reconstructed or invented. This is an evidence limitation, not a silently omitted finding.
@@ -135,6 +141,6 @@ The exact prose of PB-001 through PB-155 is not recoverable from the repository 
 
 Latest Backend CI is GREEN through dependency installation, Prisma schema validation/generation, migration application/idempotence, food-intelligence self-test, backend build, unit tests and API E2E. Latest Mobile CI is GREEN through frozen-lockfile installation, typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
 
-The canonical Android APK workflow remains the native-build evidence path. It performs Expo native project generation and a real Gradle `assembleDebug` build, but the available successful native run predates the exact latest `main` verification commit. Therefore native latest-commit evidence remains explicitly open rather than being falsely marked green.
+The canonical Android APK workflow remains the native-build evidence path. The latest attempted native run `34770782835` reached the real Gradle compile stage and reproduced PB-268; it did not produce an APK. The remediation commit `fc35d0e7428b0ec19e54552eab6f91f5207f9c8b` now changes the pnpm layout, and a fresh native run is required for closure.
 
 Local repository execution is unavailable because direct GitHub network access is blocked in the container environment. Production Supabase/Auth/Storage state, RLS configuration, push delivery and real-device UX remain outside the available runtime boundary.
