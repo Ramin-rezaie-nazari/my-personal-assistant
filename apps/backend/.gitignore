@@ -56,3 +56,7 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 .env.test
+
+# Local-first fitness media corpus (images + videos + manifests)
+data/mypa-sports-media-local/
+data/mypa-sports-videos-local/
