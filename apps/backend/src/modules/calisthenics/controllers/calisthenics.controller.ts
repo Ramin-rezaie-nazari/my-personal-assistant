@@ -36,12 +36,12 @@ export class CalisthenicsController {
   @Post('coach/start')
   @UseGuards(JwtAuthGuard)
   start(@Body() body: CalisthenicsSessionInputDto) {
-    return this.coach.start(body.session as any);
+    return this.coach.start(body.session);
   }
 
   @Post('coach/tick')
   @UseGuards(JwtAuthGuard)
   tick(@Body() body: CalisthenicsTickDto) {
-    return this.coach.tick(body.session as any, body.state as any, body.elapsedSec);
+    return this.coach.tick(body.session, body.state, body.elapsedSec);
   }
 }
