@@ -17,6 +17,7 @@ import { RecipeInventoryMatcherService } from '../services/recipe-inventory-matc
 import { GlobalCountryFoodService } from '../services/global-country-food.service';
 import { FoodOperatingLoopService } from '../services/food-operating-loop.service';
 import { CreateRecipeDto } from '../dto/create-recipe.dto';
+import { UpdateRecipeDto } from '../dto/update-recipe.dto';
 
 @Controller('recipes')
 @UseGuards(JwtAuthGuard)
@@ -127,8 +128,12 @@ export class RecipesController {
   }
 
   @Patch(':id')
-  update(@Request() req: { user: { id: string } }, @Param('id') id: string, @Body() body: Partial<CreateRecipeDto>) {
-    return this.recipesService.updateRecipe(req.user.id, id, body);
+  update(
+    @Request() req: { user: { id: string } },
+    @Param('id') id: string,
+    @Body() dto: UpdateRecipeDto,
+  ) {
+    return this.recipesService.updateRecipe(req.user.id, id, dto);
   }
 
   @Delete(':id')
