@@ -1,4 +1,4 @@
-import { IsNumber, IsOptional, IsString, Matches } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Matches, Max, Min } from 'class-validator';
 
 export class UpdateDailyDto {
   @IsOptional()
@@ -8,13 +8,19 @@ export class UpdateDailyDto {
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
+  @Max(100000)
   waterMl?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
+  @Max(100000)
   calories?: number;
 
   @IsOptional()
   @IsNumber()
+  @Min(0)
+  @Max(10000)
   protein?: number;
 }
