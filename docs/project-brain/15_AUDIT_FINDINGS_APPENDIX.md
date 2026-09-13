@@ -112,7 +112,7 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-256 | WITHDRAWN | Current-main/package source confirms the nutrition/recommendation scripts exist; PB-199/PB-200/PB-204 remain the independent quality findings and are now remediated. |
 | PB-257 | CLOSED — REMEDIATED | `Workout(userId, performedAt)` and `UserBehavior(userId, createdAt)` composite indexes are present in the Prisma schema. |
 
-## New hardening findings — PB-258 through PB-265
+## New hardening findings — PB-258 through PB-267
 
 | Finding | Current status | Resolution / current evidence |
 |---|---|---|
@@ -124,6 +124,8 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-263 | CLOSED — REMEDIATED | `apps/mobile/lib/brain-execution.ts` had its own auth refresh path and stored access/refresh tokens in AsyncStorage. It now uses `expo-secure-store` with device-only keychain accessibility for both credentials and clears both on refresh failure. |
 | PB-264 | CLOSED — REMEDIATED | Recipe inventory matching compared raw numeric quantities without considering units. It now converts compatible metric mass/volume/count units and treats incompatible dimensions as unavailable rather than making a false numeric match. Regression coverage was added for kg→g and incompatible ml→kg cases. |
 | PB-265 | CLOSED — REMEDIATED | `PersonalBrainController` used a type-only dynamic import for `DecisionExecutionCoordinatorService`, which left Nest runtime metadata undefined and broke the full E2E application bootstrap. The service now uses a normal runtime import; the coordinator is already an active provider in `PersonalBrainModule`. |
+| PB-266 | CLOSED — REMEDIATED | `DecisionFeedbackController` accepted a TypeScript-only `FeedbackBody` at a JWT-protected write boundary. `DecisionFeedbackDto` now enforces candidate object presence, bounded outcome values, reward range and note length. |
+| PB-267 | CLOSED — REMEDIATED | `MemoryIntelligenceController` accepted a TypeScript-only `RememberMemoryBody`. `RememberMemoryDto` now validates the memory type, non-empty key, defined value and 0–1 importance range. |
 
 ## Historical catalog boundary
 
@@ -131,6 +133,6 @@ The exact prose of PB-001 through PB-155 is not recoverable from the repository 
 
 ## Verification boundary
 
-Recent GitHub Actions evidence has verified the Mobile pipeline end-to-end and has verified Backend dependency installation, Prisma schema validation/generation, migration application/idempotence, food-intelligence self-test and 157 backend unit suites (421 tests) on the latest hardening line before E2E. A subsequent Backend E2E run exposed PB-265; it was fixed immediately. The latest hardening commits have triggered a fresh Backend/Mobile CI cycle; the branch must remain unmarked as production-green until the latest hardening line completes successfully.
+Recent GitHub Actions evidence has verified the Mobile pipeline end-to-end on the latest hardening commit before the final DTO sweep and has verified Backend dependency installation, Prisma schema validation/generation, migration application/idempotence, food-intelligence self-test and 157 backend unit suites (421 tests) on the latest hardening line before E2E. A subsequent Backend E2E run exposed PB-265; it was fixed immediately. PB-264 received direct regression coverage in the repository. PB-266/PB-267 are awaiting the fresh Backend CI cycle now triggered by the latest commits; the branch must remain unmarked as production-green until that cycle completes successfully.
 
 Local repository execution is unavailable because direct GitHub network access is blocked in the container environment. Production Supabase/Auth/Storage state, RLS configuration, push delivery and real-device UX remain outside the available runtime boundary.
