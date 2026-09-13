@@ -1,15 +1,11 @@
 import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
-import { YogaSession } from '../models/yoga.model';
 import type { YogaFocus, YogaLevel } from '../models/yoga.model';
-import {
-  YogaCoachService,
-  YogaCoachState,
-} from '../services/yoga-coach.service';
+import { YogaCoachService } from '../services/yoga-coach.service';
 import { YogaLibraryService } from '../services/yoga-library.service';
 import { YogaSessionGeneratorService } from '../services/yoga-session-generator.service';
 import { YogaMotionAnalysisService } from '../services/yoga-motion-analysis.service';
-import { PoseFrame } from '../models/pose-provider.model';
+import { YogaSessionDto, YogaSessionInputDto, YogaTickDto, YogaCueDto, YogaMotionDto } from '../dto/yoga.dto';
 
 @Controller('yoga')
 export class YogaController {
@@ -29,54 +25,35 @@ export class YogaController {
 
   @Post('session')
   @UseGuards(JwtAuthGuard)
-  session(
-    @Body()
-    body: {
-      durationMin: number;
-      level?: YogaLevel;
-      focus?: YogaFocus;
-      progress?: Record<string, unknown>;
-    },
-  ) {
-    return this.generator.generate({
-      durationMin: body.durationMin,
-      level: body.level,
-      focus: body.focus,
-      progress: body.progress,
-    });
+  session(@Body() body: YogaSessionDto) {
+    return this.generator.generate(body);
   }
 
   @Post('coach/start')
   @UseGuards(JwtAuthGuard)
-  start(@Body() body: { session: YogaSession }) {
+  start(@Body() body: YogaSessionInputDto) {
     return this.coach.start(body.session);
   }
 
   @Post('coach/tick')
   @UseGuards(JwtAuthGuard)
-  tick(
-    @Body()
-    body: {
-      session: YogaSession;
-      state: YogaCoachState;
-      elapsedSec?: number;
-    },
-  ) {
+  tick(@Body() body: YogaTickDto) {
     return this.coach.tick(body.session, body.state, body.elapsedSec);
   }
 
   @Post('coach/cue')
   @UseGuards(JwtAuthGuard)
-  cue(@Body() body: { state: YogaCoachState }) {
+  cue(@Body() body: YogaCueDto) {
     return this.coach.cue(body.state);
   }
 
   @Post('motion/analyze')
   @UseGuards(JwtAuthGuard)
-  analyzeMotion(@Body() body: { poseId: string; frame: PoseFrame }) {
+  analyzeMotion(@Body() body: YogaMotionDto) {
     const result = this.motion.analyze(body.poseId, body.frame);
-    if (result.confidence < 0.55)
+    if (result.confidence < 0.55) {
       return { ...result, coachReady: false, reason: 'low_pose_confidence' };
+    }
     return { ...result, coachReady: true };
   }
 }
