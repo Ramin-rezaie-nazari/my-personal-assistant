@@ -29,3 +29,14 @@ apps/backend/data/mypa-sports-videos-local/
 
 # Local runner state; never commit environment/state snapshots
 logs/mypa-local-state.env
+
+# Local-first MYPA recipe media corpus
+apps/backend/data/mypa-recipe-media-local/
+data/mypa-recipe-media-local/
+
+# Local runner state
+logs/
+
+# Local-first generated exercise step guides
+data/mypa-sports-guides-local/
+apps/backend/data/mypa-sports-guides-local/

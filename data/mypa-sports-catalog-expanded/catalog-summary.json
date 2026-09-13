@@ -1,0 +1,15 @@
+{
+  "source": "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json",
+  "sourceLicense": "Unlicense",
+  "sourceCount": 876,
+  "normalizedCount": 871,
+  "bySport": {
+    "gym": 740,
+    "calisthenics": 131
+  },
+  "withInstructions": 871,
+  "withImages": 868,
+  "output": "/Users/ramin-rezaie-nazari/My-Personal-Assistant/data/mypa-sports-catalog-expanded",
+  "generatedAt": "2026-09-12T16:23:08.833Z",
+  "note": "This public dataset substantially expands strength/bodyweight coverage. Yoga poses require a separate pose-specific catalog and are not silently mislabeled as gym exercises."
+}

@@ -1,0 +1,9 @@
+{
+  "source": "https://yoga-api-nzy4.onrender.com/v1/poses",
+  "sourceCount": 48,
+  "normalizedCount": 48,
+  "withInstructions": 48,
+  "withImages": 48,
+  "output": "/Users/ramin-rezaie-nazari/My-Personal-Assistant/data/mypa-sports-catalog-expanded",
+  "generatedAt": "2026-09-12T16:56:07.876Z"
+}

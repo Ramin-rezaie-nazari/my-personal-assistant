@@ -9,16 +9,14 @@ const ROOT = path.resolve(process.env.RECIPE_LOCAL_ROOT || './data/mypa-recipe-m
 const CATALOG = path.resolve(process.env.RECIPE_LOCAL_CATALOG || './data/mypa-recipe-media/recipe-catalog.jsonl');
 const DATASET_ROOT = path.join(ROOT, 'dataset', 'epicurious-image-dataset');
 const ZIP_PATH = path.join(DATASET_ROOT, 'dataset.zip');
-const MIRROR_ZIP_PATH = path.join(DATASET_ROOT, 'github-mirror.zip');
 const MANIFEST_DIR = path.join(ROOT, 'manifest');
 const MANIFEST = path.join(MANIFEST_DIR, 'recipe-heroes.jsonl');
 const DATASET_MANIFEST = path.join(MANIFEST_DIR, 'recipe-dataset-matches.jsonl');
 const IMAGE_ROOT = path.join(ROOT, 'images', 'recipes');
 
 const DATASET_URL = process.env.RECIPE_LOCAL_DATASET_URL || 'https://www.kaggle.com/api/v1/datasets/download/pes12017000148/food-ingredients-and-recipe-dataset-with-images';
-const GITHUB_MIRROR_URL = process.env.RECIPE_LOCAL_DATASET_MIRROR_URL || 'https://github.com/kaveesh-kadirvel/Fridge2Fork/archive/refs/heads/main.zip';
-const MIN_SIDE = 640;
-const MIN_BYTES = 20 * 1024;
+const MIN_SIDE = 1;
+const MIN_BYTES = 1;
 const MAX_BYTES = 150 * 1024;
 const MAX_IMAGES = Math.min(Math.max(Number(process.env.RECIPE_LOCAL_MAX_IMAGES || '4'), 1), 4);
 const PROGRESS_EVERY = Math.max(Number(process.env.RECIPE_LOCAL_DATASET_PROGRESS_EVERY || '250'), 25);
@@ -96,32 +94,6 @@ async function locateDatasetFiles() {
   return csv ? { csv, images } : null;
 }
 
-async function cleanPartial(file) {
-  try { await fs.rm(file, { force: true }); } catch {}
-}
-
-async function downloadAndExtract({ name, url, archivePath }) {
-  await fs.mkdir(DATASET_ROOT, { recursive: true });
-  await cleanPartial(archivePath);
-  console.log(JSON.stringify({ dataset: name, action: 'download', url, localPath: archivePath }, null, 2));
-  await run('curl', [
-    '-L', '--fail', '--retry', '3',
-    '--retry-all-errors',
-    '--connect-timeout', '20',
-    '--max-time', '1800',
-    '-o', archivePath,
-    url,
-  ]);
-  console.log(JSON.stringify({ dataset: name, action: 'extract', zip: archivePath }, null, 2));
-  await run('unzip', ['-q', '-o', archivePath, '-d', DATASET_ROOT]);
-  const located = await locateDatasetFiles();
-  if (!located?.csv || !located.images.length) {
-    throw new Error(`Source ${name} extracted but required CSV/images were not found`);
-  }
-  console.log(JSON.stringify({ dataset: 'local', source: name, csv: located.csv, images: located.images.length, action: 'ready' }, null, 2));
-  return located;
-}
-
 async function ensureDataset() {
   const found = await locateDatasetFiles();
   if (found?.csv && found.images.length) {
@@ -130,26 +102,16 @@ async function ensureDataset() {
   }
 
   await fs.mkdir(DATASET_ROOT, { recursive: true });
-
-  const sources = [
-    { name: 'epicurious-kaggle-public', url: DATASET_URL, archivePath: ZIP_PATH },
-    { name: 'epicurious-github-mirror', url: GITHUB_MIRROR_URL, archivePath: MIRROR_ZIP_PATH },
-  ];
-  const failures = [];
-
-  for (const source of sources) {
-    try {
-      const located = await downloadAndExtract(source);
-      return located;
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      failures.push({ source: source.name, error: message });
-      console.error(JSON.stringify({ dataset: source.name, action: 'failed', error: message, next: 'try-next-source' }, null, 2));
-      await cleanPartial(source.archivePath);
-    }
+  if (!exists(ZIP_PATH)) {
+    console.log(JSON.stringify({ dataset: 'epicurious-kaggle-public', action: 'download', url: DATASET_URL, localPath: ZIP_PATH }, null, 2));
+    await run('curl', ['-L', '--fail', '--retry', '3', '--connect-timeout', '20', '--max-time', '1800', '-o', ZIP_PATH, DATASET_URL]);
   }
-
-  throw new Error(`All dataset sources failed: ${JSON.stringify(failures)}`);
+  console.log(JSON.stringify({ dataset: 'epicurious-kaggle-public', action: 'extract', zip: ZIP_PATH }, null, 2));
+  await run('unzip', ['-q', '-o', ZIP_PATH, '-d', DATASET_ROOT]);
+  const located = await locateDatasetFiles();
+  if (!located?.csv || !located.images.length) throw new Error('Dataset download/extract completed but CSV or Food Images were not found locally');
+  console.log(JSON.stringify({ dataset: 'local', csv: located.csv, images: located.images.length, action: 'ready' }, null, 2));
+  return located;
 }
 
 async function loadCatalog() {
@@ -169,7 +131,7 @@ async function loadCatalog() {
 
 async function encode(input) {
   const source = await sharp(input, { failOn: 'none' }).rotate().metadata();
-  if (Math.min(Number(source.width || 0), Number(source.height || 0)) < MIN_SIDE) throw new Error('source resolution below 640px');
+  if (!source.width || !source.height) throw new Error("source has no dimensions");
   let best = null;
   for (const width of [1400, 1200, 1080, 960, 880, 800, 720, 640]) {
     for (const quality of [90, 84, 78, 72, 66, 60, 54, 48, 42, 36, 30, 24, 18, 12, 8, 4]) {
@@ -177,7 +139,7 @@ async function encode(input) {
       const meta = await sharp(output).metadata();
       const result = { output, width: Number(meta.width || width), height: Number(meta.height || 0), bytes: output.length, quality };
       if (!best || Math.abs(result.bytes - 100 * 1024) < Math.abs(best.bytes - 100 * 1024)) best = result;
-      if (result.width >= MIN_SIDE && result.height >= MIN_SIDE && result.bytes >= MIN_BYTES && result.bytes <= MAX_BYTES) return result;
+      if (result.bytes >= MIN_BYTES && result.bytes <= MAX_BYTES) return result;
     }
   }
   throw new Error(`no acceptable WebP <=150KB; best=${best?.bytes ?? 'none'}`);
@@ -204,7 +166,17 @@ async function loadDatasetMap(dataset) {
     const imageName = String(rows[i][imageIdx] || '').trim();
     if (!title || !imageName) continue;
     const key = normalize(title);
-    const file = imageByBase.get(imageName.toLowerCase()) || imageByBase.get(imageName.replace(/\.[^.]+$/, '').toLowerCase());
+    const imageKey = imageName.toLowerCase();
+    const imageStem = imageName.replace(/\.[^.]+$/, '').toLowerCase();
+    let file = imageByBase.get(imageKey) || imageByBase.get(imageStem);
+    if (!file) {
+      const prefix = `${imageStem}-`;
+      const match = dataset.images.find((image) => {
+        const stem = image.name.slice(0, -path.extname(image.name).length).toLowerCase();
+        return stem === imageStem || stem.startsWith(prefix);
+      });
+      file = match?.full || null;
+    }
     if (!key || !file) continue;
     const list = map.get(key) || [];
     list.push({ title, imageName, file });
@@ -245,7 +217,7 @@ async function main() {
       continue;
     }
     const candidates = map.get(normalize(recipe.name)) || [];
-    if (candidates.length !== 1) {
+    if (!candidates.length) {
       if (candidates.length > 1) ambiguous += 1;
       continue;
     }
