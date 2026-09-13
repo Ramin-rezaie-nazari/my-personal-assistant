@@ -2,43 +2,58 @@
 
 Last updated: 2026-09-11
 Review status: IN_PROGRESS
-Scope actually read: Authentication, users, profile, preferences, onboarding, settings, context-engine, device-intelligence, and user-intelligence files explicitly retrieved in the current audit batches.
-Scope not yet read: Remaining files in these modules not yet deterministically enumerated/read, plus database/migration reconciliation and unreviewed dependencies/tests.
-Evidence roots: `apps/backend/src/modules/auth/`; `apps/backend/src/modules/users/`; `apps/backend/src/modules/profile/`; `apps/backend/src/modules/preferences/`; `apps/backend/src/modules/onboarding/`; `apps/backend/src/modules/settings/`; `apps/backend/src/modules/context-engine/`; `apps/backend/src/modules/device-intelligence/`; `apps/backend/src/modules/user-intelligence/` on branch `agent/mypa-autonomous-control-plane`.
-Confidence level: MEDIUM for retrieved implementation paths; LOW for completeness of module enumeration until directory inventories are fully reconciled.
-Open questions: whether additional tests, DTOs, helpers, or nested files exist in these scopes; route-to-mobile consumer mapping; schema/migration contracts for all referenced models.
+Scope actually read: complete identified current-`main` source files under Auth, Users, Profile, Preferences, Onboarding, Settings, Context Engine, Device Intelligence and User Intelligence: 47 files.
+Scope not yet read: any additional Core files not surfaced by deterministic enumeration, plus all non-Core dependencies/tests and schema/migrations.
+Evidence roots: `apps/backend/src/modules/auth/`; `users/`; `profile/`; `preferences/`; `onboarding/`; `settings/`; `context-engine/`; `device-intelligence/`; `user-intelligence/`.
+Confidence level: MEDIUM for the 47 read files; LOW for completeness until automated inventory is available.
+Open questions: exact line counts; hidden/additional files; global validation/middleware; DB schema contracts; mobile consumers.
 
-## Retrieved evidence
+## Auth
 
-### Auth
-- Previously read authentication implementation includes Argon2 password hashing, JWT access/refresh tokens, refresh-session consumption/rotation and logout/session revocation.
-- `JwtAuthGuard` delegates to Passport's JWT strategy.
-- `JwtStrategy` validates bearer JWTs and resolves the user through `UsersService.findById`.
-- Login DTO requires a valid email and password with minimum length 8.
+Argon2 hashes passwords; registration rejects an existing email; login rejects absent/invalid credentials. Evidence: `apps/backend/src/modules/auth/auth.service.ts:21-61`.
 
-### Users / Profile / Preferences / Onboarding / Settings
-- `UsersService` reads users by email/id, exposes a basic profile, updates user identity fields, and persists onboarding data in a Prisma transaction spanning `User`, `UserProfile`, `UserPreference`, `UserOnboarding`, and ten `UserFact` entries.
-- There are two `users.controller.ts` source paths: a root-level controller with `me`/`PATCH me`, and `controllers/users.controller.ts` registered by `UsersModule`, exposing `/users/profile` and `/users/onboarding`.
-- `ProfileService` upserts `UserProfile`; its DTO accepts unbounded string fields for gender/goal and numeric height/weight without domain constraints.
-- `PreferencesService` upserts `UserPreference`; its DTO constrains only booleans/string values and does not constrain `theme`.
-- `OnboardingService` creates default onboarding state on status read and marks it complete on POST; `UsersService.saveOnboarding` separately performs broader onboarding persistence.
-- `SettingsService` auto-creates settings on read and upserts language/timezone on update; language is constrained to `fa` or `en` in the DTO.
+Access and refresh tokens use separate configured secrets; refresh tokens carry `type: 'refresh'`. Evidence: `apps/backend/src/modules/auth/utils/token.utils.ts:4-28`.
 
-### Context Engine
-- `ContextEngineService` delegates context construction to `LifeContextFusionService`.
-- `LifeContextFusionService` normalizes ten context domains, marks data fresh/stale/missing using a one-hour freshness window, and clamps confidence to `[0,1]`.
-- `ContextPriorityResolverService` ranks domains by freshness-weighted confidence and marks sources usable when non-missing with confidence >= 0.3.
-- `ContextBuilderService` currently returns an empty `userState` snapshot plus timestamp.
-- `ContextEngineController` declares `/context-engine` but contains no HTTP methods.
+Refresh checks the JWT, refresh type and persisted session before resolving the user and issuing a new token pair. A previous session is not explicitly revoked in `AuthService.refreshToken`. Evidence: `apps/backend/src/modules/auth/auth.service.ts:63-89`.
 
-### Device Intelligence
-- Health integration reports HealthKit/Health Connect as not configured and exposes a normalized metrics contract including steps, energy, distance, heart rate, sleep, workouts, body weight/fat, blood pressure, glucose and oxygen saturation.
-- Health sync returns `native_provider_required`; activity tracking currently returns a placeholder success message.
-- A device-sync DTO exists with provider/deviceId fields but was retrieved without validation decorators.
+## Users / account foundation
 
-### User Intelligence
-- `LearningService` stores behavior events in `userBehavior`, analyzes the latest 1000 events, computes hourly/weekday completion, acceptance rate, snooze rate, preferred task duration and patterns, and writes insights through `UserInsight`.
-- `UserIntelligenceService` combines facts, up to 20 insights and the adaptive behavior profile; `analyzeBehavior` writes rule-based insights for best focus windows, high snooze rate and preferred task size.
-- `UserProfileService` is currently a placeholder returning fixed messages.
+The registered controller exposes `/users/profile` GET/PATCH and requires JWT auth. A sibling `/users/me` controller file exists at the module root but is not registered by `UsersModule`. Evidence: `apps/backend/src/modules/users/controllers/users.controller.ts:1-24`; `apps/backend/src/modules/users/users.module.ts:1-12`; `apps/backend/src/modules/users/users.controller.ts:1-23`.
 
-This document intentionally remains `IN_PROGRESS` until deterministic enumeration and complete reads for every file in the defined core scope are finished.
+User profile updates constrain first/last names to 100 chars but do not constrain `avatarUrl`. Evidence: `apps/backend/src/modules/users/dto/update-profile.dto.ts:1-17`.
+
+## Profile
+
+Profile GET reads `userProfile` by `userId`; update uses `upsert` and converts `birthDate` to a Date. The DTO validates basic types only, with no domain bounds for height/weight or gender/goal values. Evidence: `apps/backend/src/modules/profile/services/profile.service.ts:1-33`; `apps/backend/src/modules/profile/dto/update-profile.dto.ts:1-21`.
+
+## Preferences / Onboarding / Settings
+
+Preferences GET auto-creates a row when missing; PATCH upserts the user preference. `theme` is only constrained to string. Evidence: `apps/backend/src/modules/preferences/services/preferences.service.ts:1-48`; `apps/backend/src/modules/preferences/dto/update-preferences.dto.ts:1-17`.
+
+Onboarding GET also auto-creates state, while POST marks it completed with timestamp/current step. Evidence: `apps/backend/src/modules/onboarding/services/onboarding.service.ts:1-31`; `apps/backend/src/modules/onboarding/controllers/onboarding.controller.ts:1-26`.
+
+Settings GET auto-creates settings; PATCH upserts language/timezone, with language constrained to `fa|en` and timezone length <=50. Evidence: `apps/backend/src/modules/settings/services/settings.service.ts:1-34`; `apps/backend/src/modules/settings/dto/update-settings.dto.ts:1-15`.
+
+## Context Engine
+
+`LifeContextFusionService` builds ten domains, marks sources missing/stale/fresh using a one-hour threshold, and clamps confidence to [0,1]. Evidence: `apps/backend/src/modules/context-engine/services/life-context-fusion.service.ts:1-72`.
+
+`ContextPriorityResolverService` ranks domains by freshness-weighted confidence and marks sources usable when non-missing and confidence >=0.3. Evidence: `apps/backend/src/modules/context-engine/services/context-priority-resolver.service.ts:1-57`.
+
+`ContextBuilderService` returns an empty `userState` snapshot and `ContextEngineController` has no HTTP method. Evidence: `apps/backend/src/modules/context-engine/services/context-builder.service.ts:1-14`; `apps/backend/src/modules/context-engine/controllers/context-engine.controller.ts:1-8`.
+
+## Device Intelligence
+
+`DeviceIntelligenceService.getHealthData()` and activity/health sync services currently return static placeholder messages/zero values. Evidence: `device-intelligence/services/device-intelligence.service.ts:1-15`; `activity-tracking.service.ts:1-14`; `health-sync.service.ts:1-14`.
+
+`CreateDeviceSyncDto` contains provider/deviceId only and has no class-validator decorators. Evidence: `device-intelligence/dto/create-device-sync.dto.ts:1-4`.
+
+## User Intelligence
+
+`LearningService` persists behavior events and analyzes at most 1000 recent events, deriving completion rates, best hours, weekdays, acceptance/snooze rates and average estimated task minutes. Evidence: `apps/backend/src/modules/user-intelligence/services/learning.service.ts:15-120`.
+
+`UserIntelligenceService.analyzeBehavior()` creates deterministic insight records for best focus window, high snooze rate and preferred task size. Evidence: `apps/backend/src/modules/user-intelligence/services/user-intelligence.service.ts:28-46`.
+
+`UserProfileService` is a placeholder returning fixed messages. Evidence: `apps/backend/src/modules/user-intelligence/services/user-profile.service.ts:1-16`.
+
+This document remains IN_PROGRESS until deterministic enumeration and non-Core reads are completed.

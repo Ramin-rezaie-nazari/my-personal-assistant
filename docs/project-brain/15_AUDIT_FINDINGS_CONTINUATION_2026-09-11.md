@@ -1,0 +1,124 @@
+# Audit Findings Continuation — 2026-09-11
+
+Temporary audit-control note. Canonical findings source remains `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`; these notes must be merged into that Appendix before audit freeze. No remediation starts before Master Prompt audit closure.
+
+## PB-244 — Backend `.env.example` omits required runtime environment variables
+Status: OPEN — CONFIG/ONBOARDING HIGH
+Location: `apps/backend/.env.example`, compared with `apps/backend/src/common/config/env.validation.ts`.
+Evidence: `env.validation.ts` marks `APP_NAME`, `DATABASE_URL`, `JWT_ACCESS_SECRET`, and `JWT_REFRESH_SECRET` as required. The committed `.env.example` contains only `NODE_ENV`, `PORT`, and `APP_NAME`; it provides no `DATABASE_URL` or JWT secret placeholders.
+Impact: a developer/operator following the repository's example environment file cannot construct a complete valid backend environment from that file alone; startup configuration will fail validation unless the missing required variables are supplied through undocumented/external setup. This is a repository onboarding/configuration contract gap, not a claim about production secret management.
+
+## PB-245 — Backend README remains a stock NestJS starter document and omits MYPA operational setup
+Status: OPEN — DOCUMENTATION/ONBOARDING MEDIUM
+Location: `apps/backend/README.md`.
+Evidence: the README still identifies the project as a generic NestJS starter repository, gives only generic `pnpm install/start/test` instructions, and contains no MYPA-specific environment setup, Prisma migration/generation workflow, required runtime variables, module architecture, or repository-specific operational scripts. The actual backend has project-specific required environment validation and a large set of Prisma/recipe-intelligence operational commands.
+Impact: a new engineer can follow the README and still fail to obtain a runnable MYPA backend or misunderstand the canonical setup/operational workflow. This is documentation/onboarding debt rather than a runtime defect; canonical project documentation exists elsewhere but is not surfaced by the backend README.
+
+## PB-246 — Mobile CI has no automated test execution despite committed mobile spec files
+Status: OPEN — TEST/CI MEDIUM-HIGH
+Locations: `.github/workflows/mobile-ci.yml`, `apps/mobile/package.json`, `apps/mobile/` `*.spec.ts`/`*.test.ts` files.
+Evidence: `apps/mobile/package.json` defines `start`, `android`, `ios`, `web`, and `typecheck`, but no test script or test runner. The mobile CI workflow runs frozen install, TypeScript typecheck, Expo config validation, and Android JS export; it does not execute any mobile unit/spec tests. The repository nevertheless contains committed mobile spec files such as `apps/mobile/lib/branding.spec.ts` and notification/yoga specs. Impact: those mobile regression tests are not part of the normal main-branch CI gate, so changes can pass the mobile CI workflow without exercising the available behavioral test suite. This is distinct from PB-179/PB-152: those findings concern the compiler excluding test files; PB-246 concerns the absence of a CI test execution path.
+
+## PB-247 — Personal Brain Smart Planning uses server-local calendar time instead of persisted user timezone
+Status: OPEN — TIMEZONE/BEHAVIOR HIGH
+Locations: `apps/backend/src/modules/personal-brain/services/smart-planning.service.ts`, `getPlan()` and `replan()`; active consumers in `apps/backend/src/modules/personal-brain/controllers/personal-brain.controller.ts`.
+Evidence: `SmartPlanningService.getPlan()` creates day boundaries with `setHours(0, 0, 0, 0)` / `setDate()` and derives `currentHour` with `getHours()`. `replan()` likewise chooses preferred hours using `new Date().getHours()` and writes a scheduled timestamp with `setHours()`. The service does not load the user's persisted `UserSettings.timezone`. The active Personal Brain controller exposes authenticated `GET /plan` and `GET /schedule/replan`, so this is not an orphaned helper. Other active backend code, such as RemindersService, explicitly reads `UserSettings.timezone`, confirming that user-local timezone is an existing application contract rather than an unavailable concept. Impact: users whose timezone differs from the backend process timezone can receive a plan for the wrong local calendar day, have scheduled-task selection cross a local midnight incorrectly, or have `replan()` choose a server-local hour rather than the user's preferred local hour. This is distinct from PB-026/PB-221/PB-238 because it is the active Smart Planning service surface.
+
+## PB-248 — Context Engine exposes an empty controller artifact while the service is used internally
+Status: OPEN — ARCHITECTURE/API SURFACE MEDIUM
+Locations: `apps/backend/src/modules/context-engine/controllers/context-engine.controller.ts`, `apps/backend/src/modules/context-engine/context-engine.module.ts`, active internal consumer `apps/backend/src/modules/personal-brain/services/brain-state.service.ts`.
+Evidence: `ContextEngineModule` is active and `ContextEngineService` is injected into Personal Brain's `BrainStateService`, so the underlying context engine is not orphaned. However, `ContextEngineController` is registered under `@Controller('context-engine')` and injects `ContextEngineService` while defining no HTTP route methods. This creates an active module with an externally mounted controller artifact that exposes no actual endpoint and has no observed API purpose. Impact: the HTTP surface suggests a Context Engine API exists when the real contract is internal service-to-service use; future consumers can infer a route that does not exist or extend the wrong layer. This is an API-surface/documentation cleanup finding, not a claim that the internal context engine is unused.
+
+## PB-249 — Active root backend route is still the generic NestJS “Hello World” starter endpoint
+Status: OPEN — API/ARCHITECTURE MEDIUM
+Locations: `apps/backend/src/app.controller.ts`, `apps/backend/src/app.service.ts`, `apps/backend/src/app.module.ts`.
+Evidence: `AppModule` registers `AppController` and `AppService`; `AppController` exposes public `GET /`, and `AppService.getHello()` returns the literal `Hello World!`. The repository's actual application APIs live under domain controllers such as Auth, Dashboard, Personal Brain, Food, Meals, Shopping, etc. The root controller is therefore not a meaningful MYPA health/readiness contract; it is a leftover Nest starter surface. Impact: the public root endpoint can be mistaken for the canonical service health/readiness endpoint and leaves a starter artifact active in the production API surface. It also reinforces the documentation/onboarding drift captured separately in PB-245. This is not being counted as a health-route security finding; the dedicated health controller remains a separate concern.
+
+## Validation correction/reconciliation notes
+
+### PB-232 — REQUIRES RECLASSIFICATION
+The earlier claim that an inline TypeScript interface body is rejected by Nest's global `ValidationPipe({ whitelist: true, forbidNonWhitelisted: true })` was too strong. Nest's ValidationPipe excludes `Object` from `toValidate()`, and Nest documentation explicitly notes that TypeScript interfaces compile to `Object` metadata. Therefore the inline `RememberMemoryBody` does not establish the claimed runtime whitelist collision by itself. Withdraw the specific runtime-blocking claim; retain only a separate API type-safety/design concern if independently justified.
+
+### PB-234 — NARROW SCOPE
+`CreateCalendarEventDto` is a real class-DTO validation surface because it has no validation decorators. The inline PATCH body should not be counted as a ValidationPipe whitelist collision solely because it is an inline object/interface type. PB-234 should therefore be narrowed to the class DTO unless separate runtime evidence proves an independent PATCH issue.
+
+### PB-237 — REQUIRES RECLASSIFICATION
+The earlier claim that the inline `@Body() body: { action: BehaviorAction; context?: BehaviorContext }` is rejected by the global whitelist/forbid policy was too strong. The inline body has `Object` metatype and Nest's ValidationPipe skips native `Object` metatypes. Withdraw the specific claim that the global pipe blocks this endpoint; retain only a separate API validation/design concern if justified by the route contract.
+
+### PB-243 — DUPLICATE/RECONCILIATION REQUIRED BEFORE FREEZE
+The grouped validation finding overlaps materially with historical findings: PB-077 covers Habit DTO validation, PB-085 covers Life Execution DTO validation, PB-089 covers Fitness controller write validation, PB-093 covers Workout write-contract validation, and PB-083 covers Supplements DTO contract drift. Do not treat PB-243 as a clean unique finding until each module's scope is mapped against those historical entries. If it adds distinct evidence for Supplements or another active class-DTO surface not covered historically, merge that evidence into the appropriate existing ID rather than retaining a duplicate umbrella ID.
+
+## Historical catalog reconciliation completed during continuation
+
+The audit branch's `docs/project-brain/12_OPEN_WORK.md` was re-read for the PB-001..PB-155 range that had previously been missing from the canonical Appendix snapshot. It confirms several apparent later duplicates are already represented historically:
+- PB-026 covers Brain daily/weekly/life-context UTC boundaries.
+- PB-043 covers Nutrition/Meals UTC dateKey defaults.
+- PB-074 covers Goal check-in UTC dateKey.
+- PB-076 covers Habit UTC today/streak/weekly window.
+- PB-079 covers Calendar inline patch/UTC semantics.
+- PB-077, PB-083, PB-085, PB-089 and PB-093 cover the major historical DTO/contract validation surfaces referenced in PB-243.
+- PB-152 covers Mobile test files being excluded from TypeScript typecheck, while PB-125 covers broader Mobile automated-test limitations; PB-246 is retained only for the distinct absence of a CI test execution path after verifying the current Mobile package/workflow.
+
+This historical catalog is an index/cross-check, not a substitute for recovering the exact historical Appendix text. The canonical Appendix still requires a safe full-file merge/recovery before freeze.
+
+## Operational-script/workflow cross-check
+
+`apps/backend/package.json` currently exposes recipe-image and recipe-intelligence scripts, but `.github/workflows/recipe-content-release.yml` invokes `pnpm recipe:content:import` and `pnpm recipe:content:audit`. Those commands are not present in the current backend package manifest. This confirms PB-206 from a fresh package/workflow comparison; it is not a new duplicate finding.
+
+## BATCH-0020 — DB transaction + ownership/security continuation
+Status: IN PROGRESS
+Scope completed: repository-wide searches for Prisma transactions, destructive `deleteMany` paths, JWT guard placement, request-user ownership accessors, and date/time serialization. Active transactional patterns were compared against known non-transactional findings rather than treating every multi-write-looking method as defective. Examples confirmed as already transactional include recipe ingredient writes, meal creation, nutrition logging, and fitness content batch updates. Ownership checks are consistently visible in the inspected active Shopping, Inventory, Meals, Users, Dashboard, Goals, Habits, Health, Recipes, Profile, Workout and Settings controller surfaces; no new canonical IDOR finding was created from this sweep. `req.user.sub` remains present in the known Users/Fitness paths and was not reclassified from existing findings without strategy/guard evidence. The broad `toISOString()` sweep also surfaced known timezone-sensitive date-key consumers (Dashboard, Daily, Habits, Workout, Daily Command Center, Personal Brain, Mobile Calendar), but these overlap existing timezone findings and were not duplicated.
+
+Important DB observations for next pass: raw SQL readers/writers remain concentrated in Goals, LifeTasks, LifeExecution, Recipe Presentation, Personal Brain, Price Intelligence and operational Fitness scripts; those surfaces still require relation/index/schema reconciliation before freeze. Destructive paths include expected user-scoped deletes in Workout, Calendar, Reminders, Decision Audit and persistent plan state, while recipe content import performs multiple child deletes and remains part of the operational atomicity/restartability review.
+
+No new canonical finding was created in BATCH-0020. No production code changed.
+
+## PB-250 — RECONCILED INTO PB-160
+The former PB-250 observation is a second manifestation of the same defective `LifeTasksService.update()` `completedAt` ternary already recorded as PB-160. It must not remain a separate canonical ID. The defect has two observable consequences from one expression: a completed task edited without a status change receives a fresh completion timestamp, while a completed task moved to a non-completed status clears `completedAt`. The canonical PB-160 evidence/impact should be expanded to cover both consequences during Appendix reconciliation. No PB-251 is created for this LifeTasks defect.
+
+## BATCH-0021 — Security/authorization + account-lifecycle continuation
+Status: IN PROGRESS
+Scope completed: active destructive controller sweep (`@Delete`), controller-level JWT guard placement, user ownership scoping in delete/update paths, auth/session lifecycle inspection, and JWT strategy/identity-shape reconciliation.
+
+Security observations:
+- Active domain controllers inspected for Inventory, Goals, Habits, Fitness, Workout, Calendar, Reminders, Supplements, Recipes, Shopping, Meals, Foods, Dashboard, Users, Health and related surfaces are JWT guarded at controller level; destructive domain calls consistently pass the authenticated user identity into service methods. Representative delete paths use predicates such as `{ id, userId }`, which is the expected IDOR-resistant ownership pattern.
+- `JwtStrategy` validates the access-token `sub` and returns the corresponding user object. The Users and Fitness controllers still read `req.user.sub`, while most active controllers read `req.user.id`. This identity-shape inconsistency remains a known contract concern and was deliberately not duplicated into a new finding because the strategy's current `validate()` behavior explains why `id` is present on the request user and `sub` is not guaranteed. Existing Fitness/identity findings remain the canonical place for that issue.
+- Auth refresh remains materially incomplete: `AuthService.refreshToken()` verifies the JWT and checks that a matching Session row exists, but does not enforce the persisted `Session.expiresAt`; it also creates a new session without revoking/rotating the presented refresh session. The 30-day session lifetime is hard-coded in `createAuthResponse()`. These observations reconfirm the existing auth/session findings and do not create duplicates.
+- `SessionService` stores the refresh token directly in the `Session.refreshToken` column and performs lookup/revocation against that plaintext value. This reconfirms the existing plaintext-refresh-token persistence finding; no new ID was created.
+- The current AuthController has public `register`, `login`, `refresh`, and `logout` routes, while only `me` is guarded. The refresh/logout routes are intentionally token-based and were not automatically classified as missing guards; their security must be evaluated through token/session semantics rather than controller-guard presence alone.
+
+Account lifecycle / deletion observations:
+- No dedicated current-main account-erasure controller/service was located by repository search. The Prisma schema/migrations provide extensive `ON DELETE CASCADE` relationships from user-owned records, and existing domain-level delete methods are scoped to the authenticated user's `userId`, but this is not equivalent to a verified end-to-end account-erasure workflow.
+- Existing `SessionService.deleteAllForUser()` provides a user-scoped session deletion primitive, but the inspected AuthController exposes no account-delete endpoint that composes it with User deletion and the broader user-sensitive data inventory.
+- This remains an audit closure item rather than a new finding until the complete account-erasure policy and every persisted user-sensitive table are reconciled against the current schema, migration-only tables, storage objects, and externally managed Auth data.
+
+No new canonical finding was created in BATCH-0021. No production code changed.
+
+## PB-251 — Package-wired recipe quality retry script is absent from current main
+Status: PROVISIONAL — OPERATIONAL/BUILD
+Location: `apps/backend/package.json` and `apps/backend/scripts/recipe-image-reprocess-retry.mjs`.
+Evidence: current main package manifest exposes `recipe-images:retry-quality` pointing to `./scripts/recipe-image-reprocess-retry.mjs`, but the referenced file is absent from current main. Direct current-main repository lookup returned Not Found. A file with the same path exists on historical branch `agent/mypa-autonomous-control-plane`, demonstrating that this is not merely a fabricated path: the executable existed in another repository lineage but is not present in the audited main tree.
+Impact: invoking the package-wired retry-quality command on current main fails because its executable target is missing. This is a concrete package-to-source contract defect, but it remains provisional until reconciled with the existing recipe image operational findings and historical branch lineage. If the command is intentionally deprecated, the package entry is stale; if it is intended to remain supported, the source is missing from main.
+
+## BATCH-0022 — CI/workflow/package/runtime-evidence continuation
+Status: IN PROGRESS
+Scope checked: current backend/mobile package manifests against CI workflow commands; recipe-content-release workflow; recipe-image workflow surfaces; actual GitHub Actions run `34613481370`; current mobile route aliases; mobile voice/TTS dependency/import surfaces.
+Evidence result: backend workflow commands are compatible with the backend package scripts under the workflow working directory; mobile workflow commands are compatible with the existing typecheck path; `recipe-content-release.yml` still invokes missing `recipe:content:import` and `recipe:content:audit` commands (PB-206); run `34613481370` is real runtime evidence for PB-242, failing at frozen dependency installation because the committed lockfile is stale relative to `apps/backend/package.json`; no additional unique CI finding was created from this pass.
+
+## BATCH-0023 — Remaining module/source spot closure: Content + Conversation Engine
+Status: IN PROGRESS
+Scope checked: `apps/backend/src/modules/content/*` and `apps/backend/src/modules/conversation-engine/*`, including module/service/type surfaces and repository-wide consumer search.
+Evidence result: `ContentModule` is runtime-wired in `AppModule`, but repository-wide consumer search found no active injection/use of `ContentRecommendationService`; the deterministic recipe/exercise ranking service is therefore dormant at the provider-consumer level despite the module being mounted. `ConversationEngineModule` is not imported directly by `AppModule`, but it is imported by `PersonalBrainModule`; repository-wide search found no active injection/use of `ConversationStyleService`. Therefore the Conversation Engine module itself is not orphaned from Nest's graph, but its exported style service appears unused. These distinctions prevent overcounting module-wiring issues.
+
+## PB-252 — Content Recommendation service is runtime-registered but not runtime-consumed
+Status: PROVISIONAL — ARCHITECTURE/INTEGRATION
+Locations: `apps/backend/src/modules/content/content.module.ts`, `apps/backend/src/modules/content/content-recommendation.service.ts`, application import/consumer graph.
+Evidence: `ContentModule` is imported by `AppModule`, and it registers/exports `ContentRecommendationService`. The service implements deterministic `rankRecipes()` and `rankExercises()` scoring, but repository-wide consumer search found no active injection/use of the service outside its module definition. Impact: the recommendation logic is compiled and registered but appears dormant; changes to its ranking rules may not affect runtime behavior. Before canonical freeze, reconcile against Project Brain claims and historical branches to determine whether this is intentional reusable infrastructure or an incomplete integration.
+
+## PB-253 — Conversation Style service is exported but not runtime-consumed
+Status: PROVISIONAL — ARCHITECTURE/INTEGRATION
+Locations: `apps/backend/src/modules/conversation-engine/conversation-engine.module.ts`, `apps/backend/src/modules/conversation-engine/services/conversation-style.service.ts`, `apps/backend/src/modules/personal-brain/personal-brain.module.ts`, consumer graph.
+Evidence: `ConversationEngineModule` is imported by `PersonalBrainModule` and therefore is part of the active Nest module graph. It registers and exports `ConversationStyleService`, whose inspected behavior returns a default friendly/Farsi/informal style. Repository-wide search found no active injection/use of `ConversationStyleService` outside the module definition. Impact: the style abstraction is currently registered but appears dormant; it cannot influence runtime conversation behavior unless another unobserved consumer exists outside the audited tree. This is narrower than an orphan-module finding and must not be conflated with module wiring.
+
+## Audit control
+No production code changed. PB-244 through PB-253 are audit evidence/control records and must be merged/reconciled into the canonical Appendix during the next safe full-file Appendix update. PB-250 is reconciled into PB-160 and must not become a separate canonical ID. PB-251 through PB-253 remain provisional until duplicate/historical/intentional-library reconciliation is complete. PB-232/PB-234/PB-237 remain reclassified/narrowed; PB-243 remains provisional and must not be treated as a final unique issue until merged against historical IDs. Runtime/build/device validation remains partially unverified where local/device/deployed infrastructure is required.

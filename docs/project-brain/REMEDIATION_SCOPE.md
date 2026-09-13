@@ -1,0 +1,1 @@
+Audit remediation work is being performed on audit/final-verification-2026-09-12. This file is informational only; canonical finding status remains in 15_AUDIT_FINDINGS_APPENDIX.md.
