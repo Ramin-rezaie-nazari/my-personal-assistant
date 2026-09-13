@@ -25,6 +25,34 @@ export type RecipeMatch = {
   score: number;
 };
 
+type UnitDimension = 'mass' | 'volume' | 'count' | 'unknown';
+
+const UNIT_FACTORS: Record<string, { dimension: UnitDimension; factor: number }> = {
+  mg: { dimension: 'mass', factor: 0.001 },
+  g: { dimension: 'mass', factor: 1 },
+  kg: { dimension: 'mass', factor: 1000 },
+  ml: { dimension: 'volume', factor: 1 },
+  l: { dimension: 'volume', factor: 1000 },
+  cl: { dimension: 'volume', factor: 10 },
+  unit: { dimension: 'count', factor: 1 },
+  units: { dimension: 'count', factor: 1 },
+  piece: { dimension: 'count', factor: 1 },
+  pieces: { dimension: 'count', factor: 1 },
+  pcs: { dimension: 'count', factor: 1 },
+  pc: { dimension: 'count', factor: 1 },
+};
+
+function normalizeUnit(unit: string): string {
+  return unit.trim().toLowerCase().replace(/\./g, '');
+}
+
+function convertQuantity(quantity: number, fromUnit: string, toUnit: string): number | null {
+  const from = UNIT_FACTORS[normalizeUnit(fromUnit)];
+  const to = UNIT_FACTORS[normalizeUnit(toUnit)];
+  if (!from || !to || from.dimension !== to.dimension) return null;
+  return (quantity * from.factor) / to.factor;
+}
+
 @Injectable()
 export class RecipeInventoryMatcherService {
   constructor(private readonly prisma: PrismaService) {}
@@ -48,21 +76,27 @@ export class RecipeInventoryMatcherService {
         const available: RecipeMatch['available'] = [];
         for (const ingredient of recipe.ingredients) {
           const item = stock.get(ingredient.foodId);
-          const quantity = item?.quantity ?? 0;
-          if (quantity >= ingredient.quantity)
+          const compatibleQuantity = item
+            ? convertQuantity(item.quantity, item.unit, ingredient.unit)
+            : null;
+          const quantity = compatibleQuantity ?? 0;
+          if (compatibleQuantity !== null && quantity >= ingredient.quantity) {
             available.push({
               foodId: ingredient.foodId,
               name: ingredient.food.name,
               quantity: ingredient.quantity,
               unit: ingredient.unit,
             });
-          else
+          } else {
             missing.push({
               foodId: ingredient.foodId,
               name: ingredient.food.name,
-              quantity: Math.max(0, ingredient.quantity - quantity),
+              quantity: compatibleQuantity === null
+                ? ingredient.quantity
+                : Math.max(0, ingredient.quantity - quantity),
               unit: ingredient.unit,
             });
+          }
         }
         const total = recipe.ingredients.length;
         const coveragePercent =
