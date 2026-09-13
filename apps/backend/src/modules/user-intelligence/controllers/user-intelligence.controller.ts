@@ -1,15 +1,8 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Request,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Post, Request, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { LearningService } from '../services/learning.service';
 import { UserIntelligenceService } from '../services/user-intelligence.service';
-import { BehaviorAction, BehaviorContext } from '../types/behavior.types';
+import { RecordBehaviorEventDto } from '../dto/record-behavior-event.dto';
 
 @Controller('user-intelligence')
 @UseGuards(JwtAuthGuard)
@@ -27,13 +20,9 @@ export class UserIntelligenceController {
   @Post('events')
   recordEvent(
     @Request() req: { user: { id: string } },
-    @Body() body: { action: BehaviorAction; context?: BehaviorContext },
+    @Body() body: RecordBehaviorEventDto,
   ) {
-    return this.learning.learnFromAction(
-      req.user.id,
-      body.action,
-      body.context ?? {},
-    );
+    return this.learning.learnFromAction(req.user.id, body.action, body.context ?? {});
   }
 
   @Post('analyze')
