@@ -1,11 +1,10 @@
-import { IsArray, IsIn, IsInt, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
 import type { YogaSession } from '../models/yoga.model';
 import type { YogaCoachState } from '../services/yoga-coach.service';
 import type { PoseFrame } from '../models/pose-provider.model';
 
 const YOGA_LEVELS = ['beginner', 'foundation', 'intermediate', 'advanced', 'expert'] as const;
 const YOGA_FOCUSES = ['mobility', 'flexibility', 'balance', 'strength', 'recovery', 'relaxation', 'stress_relief', 'morning', 'evening', 'breathing'] as const;
-const YOGA_PHASES = ['idle', 'enter', 'hold', 'exit', 'rest', 'completed'] as const;
 
 export class YogaSessionDto {
   @IsInt()
