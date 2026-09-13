@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const appDir = path.resolve(process.cwd(), 'apps/mobile/app');
-const libDir = path.resolve(process.cwd(), 'apps/mobile/lib');
+const appDir = path.resolve(process.cwd(), 'app');
+const libDir = path.resolve(process.cwd(), 'lib');
 const failures = [];
 
 function walk(dir) {
