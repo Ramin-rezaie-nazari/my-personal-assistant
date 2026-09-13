@@ -7,7 +7,7 @@ This file contains only currently actionable work. Historical audit observations
 
 ## Current blockers / evidence gaps
 
-1. Verify the canonical Android APK workflow against the latest `main`. The existing APK run reached native Gradle build, but it predates the latest exact `main` verification commit, so it is not proof for that exact commit.
+1. Verify the canonical Android APK workflow against the latest `main`. The latest verified native run reached Gradle and reproduced the same Expo SDK 53 autolinking failure: generated `PackageList.java` imports legacy `expo.core.ExpoModulesPackage`. The remediation line now strengthens pnpm hoisting with `node-linker=hoisted` plus Expo/React Native/Metro public-hoist patterns; a fresh native run is required before this item can be closed.
 2. Real physical-device UX, notification delivery, microphone/location/speech behavior and production deployment behavior remain environment-limited until exercised in those environments.
 3. Production Supabase/Auth/RLS/Storage configuration cannot be claimed from repository-only evidence; repository-level authentication and database/session behavior are validated where CI covers them.
 4. Keep Project Brain synchronized with the latest verified commit and CI evidence; never mark device or production capabilities green without direct evidence.
@@ -28,6 +28,15 @@ This file contains only currently actionable work. Historical audit observations
 - Recipe inventory matching is unit-aware for compatible metric dimensions and rejects incompatible units.
 - Personal Brain application bootstrap resolves `DecisionExecutionCoordinatorService` through runtime DI metadata.
 - Mobile brain-execution credentials use `expo-secure-store` rather than AsyncStorage.
+
+## 2026-09-13 native-build remediation pass
+
+- Polled the canonical Android run `34770782835` through completion instead of treating its in-progress state as success.
+- Confirmed Install, mobile typecheck and Expo native prebuild were green.
+- Inspected the full failed Gradle evidence and isolated the remaining native blocker to React Native autolinking generating `import expo.core.ExpoModulesPackage;` instead of Expo SDK 53's modern `expo.modules.ExpoModulesPackage`.
+- Confirmed the failure is the known Expo SDK 53/pnpm autolinking class of issue and that the Expo package's own Android React Native config explicitly supplies the modern `packageImportPath`.
+- Strengthened the repository pnpm layout from only `node-linker=hoisted` to `node-linker=hoisted` plus public hoisting for Expo, React Native, `@react-native/*`, and Metro packages so package-owned React Native configs can resolve through the standard Node module layout.
+- This remediation was committed to `main` as `fc35d0e7428b0ec19e54552eab6f91f5207f9c8b`; the resulting native workflow is now the next required evidence gate.
 
 ## Completion rule
 
