@@ -8,6 +8,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {
+  AddRecipeMissingDto,
+  AddToBasketDto,
+} from './dto/shopping.dto';
 import { ShoppingService } from './shopping.service';
 @Controller('shopping')
 @UseGuards(JwtAuthGuard)
@@ -21,30 +25,18 @@ export class ShoppingController {
   }
   @Post('basket') add(
     @Request() req: { user: { id: string } },
-    @Body()
-    body: {
-      foodId: string;
-      name?: string;
-      quantity: number;
-      unit: string;
-      source?: string;
-      priority?: string;
-    },
+    @Body() dto: AddToBasketDto,
   ) {
-    return this.shopping.addToBasket(req.user.id, body);
+    return this.shopping.addToBasket(req.user.id, dto);
   }
   @Post('from-recipe') addFromRecipe(
     @Request() req: { user: { id: string } },
-    @Body()
-    body: {
-      recipeId: string;
-      items: Array<{ foodId: string; quantity: number; unit: string }>;
-    },
+    @Body() dto: AddRecipeMissingDto,
   ) {
     return this.shopping.addRecipeMissing(
       req.user.id,
-      body.recipeId,
-      body.items ?? [],
+      dto.recipeId,
+      dto.items ?? [],
     );
   }
   @Post('basket/:id/complete') complete(
