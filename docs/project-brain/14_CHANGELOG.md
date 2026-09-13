@@ -29,6 +29,12 @@ Review status: FINAL VERIFICATION / EVIDENCE-LIMITED DEPLOYMENT ITEMS REMAIN
 - Closed PB-268 as CLOSED — REMEDIATED with artifact `my-personal-assistant-debug-apk`, 58,443,390 bytes, SHA-256 `622b90eeef0898ab7d3eac9af75fac6e486da46eb4f741116d601f3d727f23da`.
 - Synchronized `12_OPEN_WORK.md`, `05_CURRENT_STATE.md`, `10_SECURITY_AND_PRIVACY.md` and `15_AUDIT_FINDINGS_APPENDIX.md` with the new native evidence.
 
+## 2026-09-13 — FINAL MOBILE AUDIT RECONCILIATION
+- Re-audited the repository for `TODO`, `FIXME` and `@ts-ignore`; no `FIXME` or `@ts-ignore` matches remain, and the only `TODO` hit is an intentional dataset-script field name rather than an unfinished code marker.
+- Audited `AsyncStorage` usage and confirmed current authentication credentials are handled by `expo-secure-store`; remaining AsyncStorage usage is for non-credential local state such as onboarding, push-registration device state and locale persistence.
+- Reclassified `docs/project-brain/03_MOBILE_FEATURE_CATALOG.md` as a historical audit baseline so its old per-feature `OPEN_GAP` labels cannot be mistaken for current blockers, and corrected its authentication-storage note to reflect the current SecureStore implementation.
+- Checked open GitHub issues; the only open issue is the older P0 Sherpa-ONNX Android voice-crash investigation. Current `main` no longer contains the referenced `react-native-sherpa-onnx`/local Persian TTS implementation, so this remains a legacy/device-history item rather than a repository blocker and was not silently closed.
+
 ## Current evidence boundary
 - Backend CI: green on the verified remediation line.
 - Mobile CI: green on the verified remediation line.
