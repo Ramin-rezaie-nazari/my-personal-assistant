@@ -32,10 +32,6 @@ jobs:
           --health-timeout 5s
           --health-retries 20
 
-    defaults:
-      run:
-        working-directory: apps/backend
-
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/personal_assistant?schema=public
       APP_NAME: My Personal Assistant API
@@ -65,30 +61,29 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: .
 
       - name: Validate Prisma schema
-        run: pnpm exec prisma validate
+        run: pnpm --filter backend exec prisma validate
 
       - name: Generate Prisma client
-        run: pnpm exec prisma generate
+        run: pnpm --filter backend exec prisma generate
 
       - name: Apply database migrations
-        run: pnpm exec prisma migrate deploy
+        run: pnpm --filter backend exec prisma migrate deploy
 
       - name: Verify migrations are fully applied and idempotent
         run: |
-          pnpm exec prisma migrate status
-          pnpm exec prisma migrate deploy
+          pnpm --filter backend exec prisma migrate status
+          pnpm --filter backend exec prisma migrate deploy
 
       - name: Reconcile committed sports catalog summaries
-        run: pnpm fitness:catalog:reconcile
+        run: pnpm --filter backend fitness:catalog:reconcile
 
       - name: Build backend
-        run: pnpm build
+        run: pnpm --filter backend build
 
       - name: Run backend unit tests
-        run: pnpm test --runInBand
+        run: pnpm --filter backend test --runInBand
 
       - name: Run backend API e2e tests
-        run: pnpm test:e2e
+        run: pnpm --filter backend test:e2e
