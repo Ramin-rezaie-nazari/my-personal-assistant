@@ -48,6 +48,7 @@ export class CoachMessageDto {
 }
 
 export class FitnessPerformanceDto {
+  [key: string]: unknown;
   @IsString() @IsNotEmpty() @MaxLength(100) discipline!: string;
   @IsOptional() @IsString() @MaxLength(200) exerciseId?: string;
   @IsOptional() @IsString() @MaxLength(200) exerciseName?: string;
