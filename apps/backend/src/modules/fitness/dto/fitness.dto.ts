@@ -10,7 +10,6 @@ import {
   IsObject,
   IsOptional,
   IsString,
-  Matches,
   Max,
   MaxLength,
   Min,
@@ -215,9 +214,4 @@ export class RecordFitnessProgressDto {
   @Min(0)
   @Max(100)
   formScore?: number | null;
-
-  @IsOptional()
-  @IsString()
-  @Matches(/^\S[\s\S]{0,199}$/)
-  sessionId?: string;
 }
