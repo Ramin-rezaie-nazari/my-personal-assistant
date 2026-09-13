@@ -7,26 +7,16 @@ export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({
-      where: { email },
-    });
+    return this.prisma.user.findUnique({ where: { email } });
   }
 
   async findById(id: string) {
-    return this.prisma.user.findUnique({
-      where: { id },
-    });
+    return this.prisma.user.findUnique({ where: { id } });
   }
 
   async getProfile(id: string) {
-    const user = await this.prisma.user.findUnique({
-      where: { id },
-    });
-
-    if (!user) {
-      return null;
-    }
-
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) return null;
     return {
       id: user.id,
       email: user.email,
@@ -38,17 +28,9 @@ export class UsersService {
 
   async updateProfile(
     id: string,
-    data: {
-      firstName?: string;
-      lastName?: string;
-      avatarUrl?: string;
-    },
+    data: { firstName?: string; lastName?: string; avatarUrl?: string },
   ) {
-    const user = await this.prisma.user.update({
-      where: { id },
-      data,
-    });
-
+    const user = await this.prisma.user.update({ where: { id }, data });
     return {
       id: user.id,
       email: user.email,
@@ -122,7 +104,7 @@ export class UsersService {
         },
       });
 
-      const facts = [
+      const facts: Array<{ key: string; value: string }> = [
         ['onboarding.fitnessLevel', data.fitnessLevel],
         ['onboarding.diet', data.diet],
         ['onboarding.workoutPlace', data.workoutPlace],
@@ -133,24 +115,31 @@ export class UsersService {
         ['onboarding.locationPermissionGranted', String(Boolean(data.locationPermissionGranted))],
         ['onboarding.cameraPermissionGranted', String(Boolean(data.cameraPermissionGranted))],
         ['onboarding.microphonePermissionGranted', String(Boolean(data.microphonePermissionGranted))],
-      ];
+      ].map(([key, value]) => ({ key, value }));
 
-      for (const [key, value] of facts) {
-        await tx.userFact.upsert({
-          where: { userId_key: { userId: id, key } },
-          create: {
-            userId: id,
-            key,
-            value,
-            source: 'onboarding',
-            confidence: 1,
-          },
-          update: {
-            value,
-            source: 'onboarding',
-            confidence: 1,
-          },
+      for (const fact of facts) {
+        const existing = await tx.userFact.findFirst({
+          where: { userId: id, key: fact.key },
+          orderBy: { updatedAt: 'desc' },
         });
+
+        if (existing) {
+          await tx.userFact.update({
+            where: { id: existing.id },
+            data: { value: fact.value, category: 'onboarding', source: 'onboarding', confidence: 1 },
+          });
+        } else {
+          await tx.userFact.create({
+            data: {
+              userId: id,
+              category: 'onboarding',
+              key: fact.key,
+              value: fact.value,
+              source: 'onboarding',
+              confidence: 1,
+            },
+          });
+        }
       }
     });
 
@@ -181,8 +170,6 @@ export class UsersService {
     firstName?: string;
     lastName?: string;
   }) {
-    return this.prisma.user.create({
-      data,
-    });
+    return this.prisma.user.create({ data });
   }
 }
