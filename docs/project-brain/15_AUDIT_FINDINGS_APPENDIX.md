@@ -1,7 +1,7 @@
 # Audit Findings Appendix
 
 Last updated: 2026-09-13
-Review status: REMEDIATION RECONCILED; FINAL CI RECHECK IN PROGRESS; SPORTS CATALOG RECONCILIATION OPEN
+Review status: REMEDIATION RECONCILED; FINAL CI RECHECK IN PROGRESS; SPORTS CATALOG RECONCILIATION CLOSED
 
 This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit and subsequent reconciliation work. The original `OPEN` labels below represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
 
@@ -117,10 +117,12 @@ This file is the canonical current status of the findings catalog covered by the
 | Finding | Current status | Resolution / current evidence |
 |---|---|---|
 | PB-259 | REMEDIATION APPLIED / RERUN PENDING | Backend CI exposed a real refresh-token rotation defect: two refresh JWTs generated in the same second could be identical because the payload contained only stable claims. `createRefreshToken()` now includes a random `jti` via `randomUUID()` on both the audit branch and autonomous branch. CI rerun is required for final runtime confirmation. |
-| PB-260 | OPEN — RECONCILIATION REQUIRED | The current sports catalog summaries report 871 normalized gym/calisthenics exercises plus 48 normalized yoga poses = 919 total records. The previously stated target of 916 therefore does not match the committed catalog summaries. Exact intended target and the three-record delta must be reconciled before declaring the sports corpus complete. |
+| PB-260 | CLOSED — RECONCILED | The committed sports summaries independently report 871 normalized strength/bodyweight records plus 48 normalized Yoga records, totaling 919. The older 916 target did not match the committed source-of-truth summaries and is retired in favor of the evidence-backed 919 contract. Backend CI now sets `FITNESS_EXPECTED_TOTAL=919` and verifies the arithmetic against both summary files. |
 | PB-261 | CLOSED — REMEDIATED | The autonomous branch had omitted most canonical Project Brain control-plane documents and the findings appendix. Missing canonical docs, deep-read files, contract/DB/feature matrices and audit records were restored from the verified audit branch into the autonomous branch without resetting or merging the divergent code history. |
 | PB-262 | CLOSED — REMEDIATED | Mobile surface audit resolved two CI false positives/contract defects: its scanner used `process.cwd()/apps/mobile/app` while pnpm runs the script from `apps/mobile`, producing a duplicated path; after correcting the root, the audit also identified a runtime hardcoded localhost fallback in `lib/brain-execution.ts`. The runtime now imports the canonical `MOBILE_API_URL` from `lib/api-base.ts`; localhost remains covered only by the API-base test fixture. |
 | PB-263 | REMEDIATION APPLIED / RERUN PENDING | Mobile bundle CI revealed two build-contract issues after the API-base hardening: production-like export requires `EXPO_PUBLIC_API_URL`, and Expo rejects an `--output-dir` outside the project. CI now supplies a non-production `https://ci.invalid` endpoint for static bundling and writes export output to a project-local `.expo-ci-export` directory. Final bundle and Android build reruns remain required. |
+| PB-264 | CLOSED — REMEDIATED | Backend CI is now triggered on pushes to the autonomous agent branch as well as `main`, so backend hardening changes receive direct branch-level Prisma/build/unit/E2E validation instead of relying only on pull-request event timing. |
+| PB-265 | CLOSED — REMEDIATED | Fitness progress DTO/controller contract was tightened to match the actual service signature: the unused `sessionId` field was removed and the controller now forwards only `discipline`, `difficulty`, `completed`, and `formScore`. Dedicated DTO validation tests cover valid payloads and rejected discipline/difficulty/form-score boundaries. |
 
 ## Historical catalog boundary
 
@@ -128,6 +130,6 @@ The exact prose of PB-001 through PB-155 is not recoverable from the repository 
 
 ## Verification boundary
 
-Recent GitHub Actions evidence has verified the Mobile pipeline through route audit, surface audit, typecheck and Expo config on the latest remediation sequence, while the latest Android workflow has reached Gradle assembly after successful dependency install, mobile typecheck and Expo prebuild. The latest Mobile JavaScript bundle and Android Gradle completion still require final reruns/evidence. The latest Backend cycle after the refresh-token uniqueness remediation is still pending its final E2E result. Production Supabase/Auth/Storage state, push delivery and real-device UX remain outside the available runtime boundary.
+Recent GitHub Actions evidence has verified the latest Mobile CI end-to-end through dependency installation, route audit, surface audit, TypeScript, Expo config validation and Android JavaScript export. The Android workflow has reached Gradle assembly after successful dependency install, mobile typecheck, Java/Android SDK setup and Expo prebuild; final Gradle/Apk artifact evidence is still pending. Backend branch-level CI is now active and includes Prisma validation/generation/migration idempotence, the committed sports catalog reconciliation gate, build, unit tests and E2E. Production Supabase/Auth/Storage state, push delivery and real-device UX remain outside the available runtime boundary.
 
 Local repository execution is unavailable from the connected environment; the user-controlled Mac remains the authoritative local execution environment. Media corpora and generated step-guide videos remain local-only and are intentionally excluded from Git.
