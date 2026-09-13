@@ -66,6 +66,9 @@ export class FitnessController {
     @Req() req: AuthenticatedRequest,
     @Body() body: RecordFitnessProgressDto,
   ) {
+    if (!['gym', 'calisthenics', 'yoga'].includes(body.discipline)) {
+      throw new BadRequestException('discipline must be gym, calisthenics or yoga');
+    }
     return this.progress.recordSession({ userId: req.user.id, ...body });
   }
 
