@@ -1,10 +1,10 @@
-import { IsArray, IsInt, IsObject, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsArray, IsIn, IsInt, IsObject, IsOptional, Max, Min } from 'class-validator';
+import type { CalisthenicsSession } from '../models/calisthenics.model';
+import type { CalisthenicsCoachState } from '../services/calisthenics-coach.service';
 
 const CALISTHENICS_LEVELS = ['beginner', 'foundation', 'intermediate', 'advanced', 'expert', 'elite'] as const;
 const CALISTHENICS_FOCUSES = ['strength', 'hypertrophy', 'conditioning', 'mobility', 'skills', 'full_body', 'upper_body', 'lower_body', 'core', 'balance'] as const;
 const EQUIPMENT = ['none', 'pull_up_bar', 'parallel_bars', 'rings', 'bench', 'resistance_band', 'dip_belt', 'wall'] as const;
-
-import { IsIn } from 'class-validator';
 
 export class CalisthenicsSessionDto {
   @IsInt()
@@ -32,15 +32,15 @@ export class CalisthenicsSessionDto {
 
 export class CalisthenicsSessionInputDto {
   @IsObject()
-  session!: Record<string, unknown>;
+  session!: CalisthenicsSession;
 }
 
 export class CalisthenicsTickDto {
   @IsObject()
-  session!: Record<string, unknown>;
+  session!: CalisthenicsSession;
 
   @IsObject()
-  state!: Record<string, unknown>;
+  state!: CalisthenicsCoachState;
 
   @IsOptional()
   @IsInt()
