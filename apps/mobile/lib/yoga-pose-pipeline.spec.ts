@@ -1,6 +1,5 @@
-import { UnconfiguredPoseProvider, YogaPosePipeline } from './yoga-pose-pipeline';
-import type { YogaCameraFrameBridge } from './yoga-camera-bridge';
-import type { CameraFrame } from './yoga-camera-bridge';
+import { UnconfiguredPoseProvider, YogaPosePipeline, type PoseFrame, type PoseProvider } from './yoga-pose-pipeline';
+import type { CameraFrame, YogaCameraFrameBridge } from './yoga-camera-bridge';
 
 test('unconfigured provider never produces pose data', async () => {
   const listeners: Array<(frame: CameraFrame) => void> = [];
@@ -20,20 +19,20 @@ test('unconfigured provider never produces pose data', async () => {
 
 test('stopped pipeline ignores an in-flight pose result', async () => {
   const listeners: Array<(frame: CameraFrame) => void> = [];
-  let resolveDetect!: (pose: any) => void;
+  let resolveDetect!: (pose: PoseFrame | null) => void;
   const bridge: YogaCameraFrameBridge = {
-    async start() { return { active: true, recording: false, uploading: false, provider: 'test' as const }; },
-    async stop() { return { active: false, recording: false, uploading: false, provider: 'test' as const }; },
+    async start() { return { active: true, recording: false, uploading: false, provider: 'unconfigured' as const }; },
+    async stop() { return { active: false, recording: false, uploading: false, provider: 'unconfigured' as const }; },
     isAvailable() { return true; },
     subscribe(listener) { listeners.push(listener); return () => undefined; },
   };
-  const provider = {
+  const provider: PoseProvider = {
     id: 'test',
     available: () => true,
-    detect: async () => await new Promise((resolve) => { resolveDetect = resolve; }),
+    detect: () => new Promise<PoseFrame | null>((resolve) => { resolveDetect = resolve; }),
   };
-  const poses: any[] = [];
-  const pipeline = new YogaPosePipeline(bridge, (pose) => poses.push(pose));
+  const poses: PoseFrame[] = [];
+  const pipeline = new YogaPosePipeline(bridge, provider);
   await pipeline.start((pose) => poses.push(pose));
   listeners[0]?.({ metadata: { width: 100, height: 100, capturedAt: 1, orientation: 'portrait' } });
   await pipeline.stop();

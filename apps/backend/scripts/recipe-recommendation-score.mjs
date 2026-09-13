@@ -100,7 +100,7 @@ function scoreRecipe(recipe, profile, relations, user) {
   const difficultyPref = user.difficulty ? norm(user.difficulty) : null;
   const difficulty = difficultyPref && recipe.difficulty ? (norm(recipe.difficulty) === difficultyPref ? 1 : 0.55) : 0.6;
   const rawQuality = Number(recipe.quality_score);
-  const quality = rawQuality > 0 ? clamp(rawQuality <= 1 ? rawQuality : rawQuality / 100) : 0.6;
+  const quality = Number.isFinite(rawQuality) && rawQuality > 0 ? clamp(rawQuality > 1 ? rawQuality / 100 : rawQuality) : 0.6;
   const recentPenalty = (user.recent_recipe_ids || []).includes(recipe.id) ? 0 : 1;
   const weights = { nutrition: 0.24, ingredients: 0.22, dietary: 0.18, cuisine: 0.10, culture: 0.08, time: 0.08, difficulty: 0.04, quality: 0.04, novelty: 0.02 };
   const score = 100 * (

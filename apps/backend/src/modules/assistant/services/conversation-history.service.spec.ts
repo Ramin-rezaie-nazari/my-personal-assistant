@@ -5,12 +5,18 @@ describe('ConversationHistoryService', () => {
     $executeRaw: jest.fn(),
     $queryRaw: jest.fn(),
   } as any;
+  const retention = {
+    cutoff: jest.fn().mockResolvedValue(null),
+  } as any;
 
-  beforeEach(() => jest.clearAllMocks());
+  beforeEach(() => {
+    jest.clearAllMocks();
+    retention.cutoff.mockResolvedValue(null);
+  });
 
   it('persists a normalized user turn', async () => {
     prisma.$executeRaw.mockResolvedValue(1);
-    const service = new ConversationHistoryService(prisma);
+    const service = new ConversationHistoryService(prisma, retention);
 
     const turn = await service.append({
       userId: 'u1',
@@ -21,6 +27,7 @@ describe('ConversationHistoryService', () => {
     expect(turn.userId).toBe('u1');
     expect(turn.text).toBe('Hello');
     expect(prisma.$executeRaw).toHaveBeenCalled();
+    expect(retention.cutoff).toHaveBeenCalledWith('u1', expect.any(Number));
   });
 
   it('returns only the authenticated user recent history in chronological order with resource links', async () => {
@@ -52,7 +59,7 @@ describe('ConversationHistoryService', () => {
         createdAt: older,
       },
     ]);
-    const service = new ConversationHistoryService(prisma);
+    const service = new ConversationHistoryService(prisma, retention);
 
     const result = await service.getRecent('u1', 24);
 
@@ -79,7 +86,7 @@ describe('ConversationHistoryService', () => {
         createdAt: new Date(),
       },
     ]);
-    const service = new ConversationHistoryService(prisma);
+    const service = new ConversationHistoryService(prisma, retention);
 
     await expect(service.getLatestAction('u1')).resolves.toMatchObject({
       action: 'create_reminder',
@@ -91,7 +98,7 @@ describe('ConversationHistoryService', () => {
 
   it('supports scoped deletion for privacy controls', async () => {
     prisma.$executeRaw.mockResolvedValue(7);
-    const service = new ConversationHistoryService(prisma);
+    const service = new ConversationHistoryService(prisma, retention);
 
     await expect(
       service.deleteSince('u1', new Date('2026-08-12T10:00:00Z')),

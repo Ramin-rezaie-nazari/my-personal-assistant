@@ -73,13 +73,10 @@ export class DecisionExecutionHistoryService {
   }
   private purgeExpired(now: number) {
     for (let i = this.entries.length - 1; i >= 0; i--)
-      if (
-        this.retention.isExpired(
-          this.entries[i].userId,
-          this.entries[i].recordedAt,
-          now,
-        )
-      )
-        this.entries.splice(i, 1);
+      if (this.retention.isExpiredSync(
+        this.entries[i].userId,
+        this.entries[i].recordedAt,
+        now,
+      )) this.entries.splice(i, 1);
   }
 }

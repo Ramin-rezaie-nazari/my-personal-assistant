@@ -8,11 +8,13 @@ import { BrainContext } from '../../brain-integration/types';
 @Injectable()
 export class UserContextService {
   build(input: {
+    userId: string;
     context: BrainContext;
     goals: BrainUserContext['goals'];
     memories: BrainMemory[];
   }): BrainUserContext {
     return {
+      userId: input.userId,
       profile: {},
       lifeAreas: [],
       preferences: {},

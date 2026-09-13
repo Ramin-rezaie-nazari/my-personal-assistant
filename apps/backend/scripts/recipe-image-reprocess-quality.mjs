@@ -6,9 +6,14 @@ import { basename, extname, join, resolve } from 'node:path';
 const SUPABASE_URL = process.env.SUPABASE_URL?.replace(/\/+$/, '');
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const BUCKET = 'recipe-images';
-const MAX_BYTES = 60 * 1024;
+const MIN_TARGET_BYTES = 100 * 1024;
+const DEFAULT_MAX_BYTES = 120 * 1024;
+const MAX_TARGET_BYTES = 150 * 1024;
+const configuredMax = Number(process.env.RECIPE_IMAGE_MAX_BYTES || DEFAULT_MAX_BYTES);
+const MAX_BYTES = Math.min(Math.max(Number.isFinite(configuredMax) ? configuredMax : DEFAULT_MAX_BYTES, MIN_TARGET_BYTES), MAX_TARGET_BYTES);
 const CONCURRENCY = Math.min(Math.max(Number(process.env.RECIPE_IMAGE_CONCURRENCY || '2'), 1), 4);
 const DATASET_DIR = process.env.RECIPE_IMAGE_DATASET_DIR ? resolve(process.env.RECIPE_IMAGE_DATASET_DIR) : null;
+const OFFSET = Math.max(Number(process.env.RECIPE_IMAGE_REPROCESS_OFFSET || '0'), 0);
 const LIMIT = Math.max(Number(process.env.RECIPE_IMAGE_REPROCESS_LIMIT || '0'), 0);
 
 if (!SUPABASE_URL || !SERVICE_KEY) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
@@ -60,7 +65,7 @@ async function existingRows() {
     rows.push(...(page || []));
     if (!page || page.length < 1000) break;
   }
-  return LIMIT > 0 ? rows.slice(0, LIMIT) : rows;
+  return LIMIT > 0 ? rows.slice(OFFSET, OFFSET + LIMIT) : rows.slice(OFFSET);
 }
 
 async function sourceRows() {
@@ -80,7 +85,7 @@ async function bestWebp(input) {
   const widths = [...new Set([maxWidth, 1080, 1024, 960, 900, 840, 800, 720, 640, 576, 512, 448, 384])]
     .filter((w) => w > 0 && w <= maxWidth)
     .sort((a, b) => b - a);
-  const qualities = [90, 88, 86, 84, 82, 80, 78, 76, 74, 72, 70, 68, 66, 64, 62, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40];
+  const qualities = [92, 90, 88, 86, 84, 82, 80, 78, 76, 74, 72, 70, 68, 66, 64, 62, 60, 58, 56, 54, 52, 50, 48, 46, 44, 42, 40];
 
   let best = null;
   for (const width of widths) {
@@ -91,14 +96,14 @@ async function bestWebp(input) {
         .webp({ quality, effort: 6 })
         .toBuffer();
       if (out.byteLength <= MAX_BYTES) {
-        const score = width * 1_000_000 + quality * 1_000 - out.byteLength / 1_000;
+        const score = width * 1_000_000 + quality * 1_000 - Math.abs(120 * 1024 - out.byteLength);
         if (!best || score > best.score) best = { out, width, quality, score };
         break;
       }
     }
   }
 
-  if (!best) throw new Error(`Cannot produce WebP <= 60KB (source=${sourceWidth})`);
+  if (!best) throw new Error(`Cannot produce WebP <= ${Math.round(MAX_BYTES / 1024)}KB (source=${sourceWidth})`);
   const outMeta = await sharp(best.out).metadata();
   return { buffer: best.out, width: outMeta.width || best.width, height: outMeta.height || meta.height || best.width, quality: best.quality };
 }
@@ -134,7 +139,7 @@ async function main() {
   const src = await sourceRows();
   const rows = await existingRows();
   const stats = { processed: 0, failed: 0, beforeBytes: 0, afterBytes: 0, maxBytes: 0, minBytes: Number.MAX_SAFE_INTEGER };
-  console.log(JSON.stringify({ datasetDir: DATASET_DIR, candidates: rows.length, concurrency: CONCURRENCY }, null, 2));
+  console.log(JSON.stringify({ datasetDir: DATASET_DIR, candidates: rows.length, offset: OFFSET, limit: LIMIT || null, concurrency: CONCURRENCY, maxBytes: MAX_BYTES }, null, 2));
 
   let cursor = 0;
   async function worker() {

@@ -29,10 +29,13 @@ export class UsersService {
   }
 
   async deleteAccount(userId: string) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
-    if (!user) throw new NotFoundException('User not found');
+    return this.prisma.$transaction(async (tx) => {
+      const user = await tx.user.findUnique({ where: { id: userId }, select: { id: true } });
+      if (!user) throw new NotFoundException('User not found');
 
-    await this.prisma.user.delete({ where: { id: userId } });
-    return { deleted: true };
+      await tx.session.deleteMany({ where: { userId } });
+      await tx.user.delete({ where: { id: userId } });
+      return { deleted: true };
+    });
   }
 }

@@ -1,12 +1,13 @@
-import { resolveFoodEntity as baseResolve, getEntityById, getEntityRelations, resolverIntegrity as baseIntegrity, FOOD_ENTITY_RESOLVER_VERSION as BASE_VERSION } from './food-entity-resolver-v2.mjs';
+import { resolveFoodEntity as baseResolve, getEntityById as baseGetEntityById, getEntityRelations as baseGetEntityRelations, resolverIntegrity as baseIntegrity, FOOD_ENTITY_RESOLVER_VERSION as BASE_VERSION } from './food-entity-resolver-v2.mjs';
 
 export const FOOD_ENTITY_RESOLVER_VERSION = 'food-entity-resolver-v3-final';
 
 const UNITS = [
-  ['milliliters', 'ml'], ['milliliter', 'ml'], ['liters', 'l'], ['liter', 'l'],
-  ['tablespoons', 'tbsp'], ['tablespoon', 'tbsp'], ['teaspoons', 'tsp'], ['teaspoon', 'tsp'],
-  ['ounces', 'oz'], ['ounce', 'oz'], ['pounds', 'lb'], ['pound', 'lb'], ['grams', 'g'], ['gram', 'g'],
-  ['kilograms', 'kg'], ['kilogram', 'kg'], ['cups', 'cup'], ['cup', 'cup'], ['pieces', 'piece'], ['piece', 'piece'],
+  ['milliliters', 'ml'], ['milliliter', 'ml'], ['ml', 'ml'], ['liters', 'l'], ['liter', 'l'], ['l', 'l'],
+  ['tablespoons', 'tbsp'], ['tablespoon', 'tbsp'], ['tbsp', 'tbsp'], ['teaspoons', 'tsp'], ['teaspoon', 'tsp'], ['tsp', 'tsp'],
+  ['ounces', 'oz'], ['ounce', 'oz'], ['oz', 'oz'], ['pounds', 'lb'], ['pound', 'lb'], ['lb', 'lb'],
+  ['grams', 'g'], ['gram', 'g'], ['g', 'g'], ['kilograms', 'kg'], ['kilogram', 'kg'], ['kg', 'kg'],
+  ['cups', 'cup'], ['cup', 'cup'], ['pieces', 'piece'], ['piece', 'piece'],
   ['pinches', 'pinch'], ['pinch', 'pinch'], ['cloves', 'clove'], ['clove', 'clove'],
 ];
 
@@ -23,8 +24,8 @@ function numberPart(raw) {
 }
 
 function parseAmountAndUnit(raw) {
-  const normalized = String(raw || '').toLowerCase().normalize('NFKD').replace(/\p{Diacritic}/gu, '').replace(/[-_/]+/g, ' ').replace(/\s+/g, ' ').trim();
-  const quantityMatch = normalized.match(/^((?:\d+(?:\.\d+)?\s+)?(?:\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])|\d+(?:\.\d+)?)\s+(.*)$/);
+  const normalized = String(raw || '').toLowerCase().normalize('NFKD').replace(/\p{Diacritic}/gu, '').replace(/[-_]+/g, ' ').replace(/\s+/g, ' ').trim();
+  const quantityMatch = normalized.match(/^(\d+(?:\.\d+)?(?:\s+(?:\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞]))?|\d+\/\d+|[¼½¾⅓⅔⅛⅜⅝⅞])\s+(.*)$/);
   if (!quantityMatch) return { quantity: null, unit: null };
 
   const rawQuantity = quantityMatch[1].trim();
@@ -37,6 +38,14 @@ function parseAmountAndUnit(raw) {
     if (re.test(remainder)) return { quantity, unit };
   }
   return { quantity, unit: null };
+}
+
+export function getEntityById(id) {
+  return baseGetEntityById(id);
+}
+
+export function getEntityRelations(id) {
+  return baseGetEntityRelations(id);
 }
 
 export function resolveFoodEntity(input) {
@@ -75,5 +84,20 @@ export function resolveCanonicalId(canonicalId, input = canonicalId) {
 
 export function resolverIntegrity() {
   const base = baseIntegrity();
-  return { ...base, version: FOOD_ENTITY_RESOLVER_VERSION, base_version: BASE_VERSION };
+  const conflictingAliases = (base.conflicting_aliases || []).filter(({ ids }) => {
+    const [aId, bId] = ids || [];
+    const a = getEntityById(aId);
+    const b = getEntityById(bId);
+    const aName = String(a?.name || aId || '').toLowerCase().trim();
+    const bName = String(b?.name || bId || '').toLowerCase().trim();
+    const explicitNameVariant = aName !== bName && (aName.includes(bName) || bName.includes(aName));
+    return !explicitNameVariant;
+  });
+  return {
+    ...base,
+    version: FOOD_ENTITY_RESOLVER_VERSION,
+    base_version: BASE_VERSION,
+    conflicting_aliases: conflictingAliases,
+    valid: conflictingAliases.length === 0,
+  };
 }

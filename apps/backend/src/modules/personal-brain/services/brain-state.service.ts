@@ -43,7 +43,7 @@ export class BrainStateService {
       workoutStatus,
       lifeContext,
     ] = await Promise.all([
-      this.brainContextService.getContext(),
+      this.brainContextService.getContext(userId),
       this.brainMemoryContextService.buildMemoryContext(query, userId),
       this.brainGoalService.getGoals(userId),
       this.brainDailyStatusService.getToday(userId),
@@ -122,6 +122,7 @@ export class BrainStateService {
         : { timestamp: new Date().toISOString(), source: 'context-engine' };
 
     const userContext = this.userContextService.build({
+      userId,
       context: brainContext,
       goals,
       memories: memoryContext.memories,

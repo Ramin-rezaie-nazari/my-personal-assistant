@@ -4,12 +4,10 @@ import { BrainContext } from '../types';
 
 @Injectable()
 export class BrainContextService {
-  async getContext(): Promise<BrainContext> {
-    await Promise.resolve();
-
+  async getContext(userId?: string): Promise<BrainContext> {
     return {
       timestamp: new Date().toISOString(),
-      source: 'brain-context',
+      source: userId ? 'brain-context:user' : 'brain-context',
     };
   }
 }

@@ -1,14 +1,15 @@
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
-import { App } from 'supertest/types';
-import { createApp } from '../src/bootstrap';
+import { createTestApp } from './helpers/create-test-app';
+import { httpRequest } from './helpers/http-request';
 
 describe('Backend API contract (e2e)', () => {
-  let app: INestApplication<App>;
+  let app: INestApplication;
+  let baseUrl: string;
 
   beforeAll(async () => {
-    app = await createApp();
-    await app.init();
+    app = await createTestApp();
+    await app.listen(0);
+    baseUrl = await app.getUrl();
   });
 
   afterAll(async () => {
@@ -16,10 +17,16 @@ describe('Backend API contract (e2e)', () => {
   });
 
   it('serves the public health endpoint', async () => {
-    await request(app.getHttpServer())
-      .get('/')
-      .expect(200)
-      .expect('Hello World!');
+    const response = await httpRequest(baseUrl, 'GET', '/health');
+    expect(response.status).toBe(200);
+    expect(response.body).toEqual(
+      expect.objectContaining({ status: 'ok' }),
+    );
+  });
+
+  it('does not expose the obsolete public root Hello World endpoint', async () => {
+    const response = await httpRequest(baseUrl, 'GET', '/');
+    expect(response.status).toBe(404);
   });
 
   it.each([
@@ -35,14 +42,14 @@ describe('Backend API contract (e2e)', () => {
     ['POST', '/reminders'],
     ['POST', '/notifications'],
   ])('rejects unauthenticated %s %s', async (method, path) => {
-    const req = request(app.getHttpServer());
-    const response =
-      method === 'GET' ? await req.get(path) : await req.post(path).send({});
+    const response = await httpRequest(baseUrl, method, path, {
+      body: method === 'GET' ? undefined : {},
+    });
     expect(response.status).toBe(401);
   });
 
   it('keeps the assistant status endpoint public', async () => {
-    const response = await request(app.getHttpServer()).get('/assistant');
+    const response = await httpRequest(baseUrl, 'GET', '/assistant');
     expect(response.status).toBe(200);
     expect(response.body).toEqual(
       expect.objectContaining({ status: expect.any(String) }),
@@ -50,14 +57,14 @@ describe('Backend API contract (e2e)', () => {
   });
 
   it('rejects unknown DTO fields at the HTTP boundary', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/auth/register')
-      .send({
+    const response = await httpRequest(baseUrl, 'POST', '/auth/register', {
+      body: {
         email: `api-contract-${Date.now()}@example.com`,
         password: 'StrongPassword123!',
         firstName: 'Test',
         unexpected: 'must-not-be-accepted',
-      });
+      },
+    });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toEqual(

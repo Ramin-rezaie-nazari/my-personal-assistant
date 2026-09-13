@@ -27,7 +27,7 @@ export class BrainOrchestratorService {
     const decision = this.brainDecisionPipelineService.run(reasoningContext);
     const scenarioIntent = this.scenarioIntentService.detect(input);
 
-    const responsePlan = this.responsePlanningService.createPlan({
+    const responsePlan = await this.responsePlanningService.createPlan({
       decision,
       reasoningContext,
     });

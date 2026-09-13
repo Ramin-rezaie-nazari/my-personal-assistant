@@ -3,7 +3,12 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const LIMIT = Math.max(Number(process.env.RECIPE_NUTRITION_LIMIT || '0'), 0);
 const DRY_RUN = /^(1|true|yes)$/i.test(process.env.RECIPE_NUTRITION_DRY_RUN || 'false');
 const BATCH = Math.min(Math.max(Number(process.env.RECIPE_NUTRITION_BATCH || '200'), 25), 500);
-const VERSION = 'nutrition-estimate-v1';
+const VERSION = 'nutrition-estimate-v2-reference-values';
+const PROVENANCE = {
+  source: 'USDA FoodData Central reference values',
+  basis: 'generic reference food composition values normalized per 100 g',
+  method: 'deterministic ingredient-name and quantity matching; values are estimates, not clinical nutrition data',
+};
 
 if (!SUPABASE_URL || !SERVICE_KEY) throw new Error('SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required.');
 const headers = { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}`, 'Content-Type': 'application/json' };
@@ -74,12 +79,12 @@ function estimate(rawIngredients, servings){
     if(!item||!grams) continue;
     const [,k,p,c,f]=item;
     kcal+=k*grams/100; protein+=p*grams/100; carbs+=c*grams/100; fat+=f*grams/100; used+=1; weighted+=Math.min(1,grams/100);
-    evidence.push({ingredient:item[0],grams:Number(grams.toFixed(1))});
+    evidence.push({ingredient:item[0],grams:Number(grams.toFixed(1)),referenceBasis:'per 100 g'});
   }
   if(!used) return null;
   const confidence=Math.min(0.86,0.35+(used/Math.max(1,lines.length))*0.55+(Math.min(weighted,5)/5)*0.08);
   const s=Number(servings)||1;
-  return {version:VERSION,estimated:true,confidence:Number(confidence.toFixed(2)),matched_ingredients:used,total_ingredient_lines:lines.length,per_serving:{kcal:Number((kcal/s).toFixed(1)),protein_g:Number((protein/s).toFixed(1)),carbs_g:Number((carbs/s).toFixed(1)),fat_g:Number((fat/s).toFixed(1))},evidence:evidence.slice(0,60)};
+  return {version:VERSION,estimated:true,provenance:PROVENANCE,confidence:Number(confidence.toFixed(2)),matched_ingredients:used,total_ingredient_lines:lines.length,per_serving:{kcal:Number((kcal/s).toFixed(1)),protein_g:Number((protein/s).toFixed(1)),carbs_g:Number((carbs/s).toFixed(1)),fat_g:Number((fat/s).toFixed(1))},evidence:evidence.slice(0,60)};
 }
 
 function parseRaw(value){
@@ -108,6 +113,6 @@ async function main(){
     }
     console.log(JSON.stringify({progress:processed,total:recipes.length,estimated},null,2));
   }
-  console.log(JSON.stringify({status:'complete',mode:DRY_RUN?'dry-run':'apply',processed,total:recipes.length,estimated,version:VERSION},null,2));
+  console.log(JSON.stringify({status:'complete',mode:DRY_RUN?'dry-run':'apply',processed,total:recipes.length,estimated,version:VERSION,provenance:PROVENANCE},null,2));
 }
 main().catch((e)=>{console.error(e);process.exit(1);});

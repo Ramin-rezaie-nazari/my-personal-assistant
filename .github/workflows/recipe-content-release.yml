@@ -3,6 +3,10 @@ name: Recipe content release gate
 on:
   workflow_dispatch:
     inputs:
+      offset:
+        description: 'Dataset row offset for this run'
+        required: false
+        default: '0'
       batch_size:
         description: 'Recipes to import in this run'
         required: false
@@ -22,6 +26,7 @@ jobs:
     timeout-minutes: 360
     env:
       DATABASE_URL: ${{ secrets.MYPA_RECIPE_DATABASE_URL }}
+      RECIPE_IMPORT_OFFSET: ${{ inputs.offset || '0' }}
       RECIPE_IMPORT_BATCH_SIZE: ${{ inputs.batch_size || '250' }}
       RECIPE_IMPORT_MEDIA: ${{ inputs.import_media && '1' || '0' }}
     steps:

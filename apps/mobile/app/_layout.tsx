@@ -10,6 +10,7 @@ import { getStoredLocale, isRTL } from '../lib/i18n';
 import { getStoredAccessToken, hasAuthSession } from '../lib/api';
 import { getOnboardingState } from '../lib/onboarding';
 import { registerForPushNotifications, listenForPushTokenRefresh } from '../lib/notifications/push-registration';
+import { consumeLastNotificationResponse, startNotificationRuntime } from '../lib/notifications/push-runtime';
 import { BRAND } from '../lib/branding';
 
 function StartupScreen() {
@@ -65,7 +66,19 @@ export default function RootLayout() {
   useEffect(() => {
     if (!bootReady || targetRoute !== '/') return;
     let mounted = true;
-    let subscription: { remove: () => void } | undefined;
+    let pushSubscription: { remove: () => void } | undefined;
+    const stopRuntime = startNotificationRuntime({
+      onResponse: (_response, payload) => {
+        if (!mounted || !payload) return;
+        if (payload.screen) router.push(payload.screen as any);
+      },
+    });
+    void consumeLastNotificationResponse({
+      onResponse: (_response, payload) => {
+        if (!mounted || !payload) return;
+        if (payload.screen) router.push(payload.screen as any);
+      },
+    });
     const registerPush = async () => {
       try {
         const [accessToken, locale] = await Promise.all([getStoredAccessToken(), getStoredLocale()]);
@@ -73,13 +86,13 @@ export default function RootLayout() {
         if (!mounted || !accessToken || !locale || !projectId) return;
         const options = { accessToken, language: locale, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, projectId } as const;
         await registerForPushNotifications(options);
-        subscription = listenForPushTokenRefresh(options);
+        pushSubscription = listenForPushTokenRefresh(options);
       } catch {
         // Notification permission/registration must never block application startup.
       }
     };
     void registerPush();
-    return () => { mounted = false; subscription?.remove(); };
+    return () => { mounted = false; stopRuntime(); pushSubscription?.remove(); };
   }, [bootReady, targetRoute]);
 
   if (!bootReady) return <StartupScreen />;

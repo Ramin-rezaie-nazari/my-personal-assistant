@@ -4,17 +4,18 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
 import { AssistantHistoryTurn, getAssistantHistory, sendAssistantMessage } from '../lib/assistant-api';
+import { speakAssistantText } from '../lib/assistant-tts';
 
 type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; meta?: string };
 
 const copy = {
   en: {
     title: 'Your Assistant', subtitle: 'Tell me what you need. I will use your context, plans and preferences.', placeholder: 'What should we do?', send: 'Send', back: 'Back',
-    welcome: 'I’m here. Ask me to plan your day, adjust a workout, track something, or help with a decision.', error: 'I could not reach the assistant right now. Check your connection and try again.', done: 'Done', understood: 'Understood', historyError: 'I could not restore the previous conversation. You can still start a new message.',
+    welcome: 'I’m here. Ask me to plan your day, adjust a workout, track something, or help with a decision.', error: 'I could not reach the assistant right now. Check your connection and try again.', done: 'Done', understood: 'Understood', historyError: 'I could not restore the previous conversation. You can still start a new message.', speak: 'Speak',
   },
   fa: {
     title: 'دستیار تو', subtitle: 'هر چیزی لازم داری بگو؛ از برنامه و عادت‌ها تا تصمیم‌های روزمره.', placeholder: 'چی کار کنیم؟', send: 'ارسال', back: 'برگشت',
-    welcome: 'من اینجام. برای برنامه‌ریزی روز، ورزش، یادآوری یا هر تصمیمی که داری ازم کمک بگیر.', error: 'الان نتونستم به دستیار وصل بشم. اتصال اینترنت رو بررسی کن و دوباره امتحان کن.', done: 'انجام شد', understood: 'متوجه شدم', historyError: 'نتونستم گفت‌وگوی قبلی رو بازیابی کنم؛ ولی می‌تونی همین الان ادامه بدی.',
+    welcome: 'من اینجام. برای برنامه‌ریزی روز، ورزش، یادآوری یا هر تصمیمی که داری ازم کمک بگیر.', error: 'الان نتونستم به دستیار وصل بشم. اتصال اینترنت رو بررسی کن و دوباره امتحان کن.', done: 'انجام شد', understood: 'متوجه شدم', historyError: 'نتونستم گفت‌وگوی قبلی رو بازیابی کنم؛ ولی می‌تونی همین الان ادامه بدی.', speak: 'پخش صدا',
   },
 };
 
@@ -33,6 +34,7 @@ export default function AssistantScreen() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [historyNotice, setHistoryNotice] = useState(false);
+  const [speakingId, setSpeakingId] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -80,6 +82,12 @@ export default function AssistantScreen() {
     }
   };
 
+  const speak = async (message: ChatMessage) => {
+    if (message.role !== 'assistant' || speakingId) return;
+    setSpeakingId(message.id);
+    try { await speakAssistantText(message.text, locale === 'fa' ? 'fa' : 'en'); } catch { setError(locale === 'fa' ? 'پخش صدا در این دستگاه در دسترس نیست.' : 'Voice playback is unavailable on this device.'); } finally { setSpeakingId(null); }
+  };
+
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={12}>
@@ -94,6 +102,7 @@ export default function AssistantScreen() {
           {messages.map((message) => (
             <View key={message.id} style={[styles.bubble, message.role === 'user' ? styles.userBubble : styles.assistantBubble, rtl && styles.rtlBubble]}>
               <Text style={[styles.bubbleText, message.role === 'user' ? styles.userText : styles.assistantText, rtl && styles.rtlText]}>{message.text}</Text>
+              {message.role === 'assistant' ? <Pressable onPress={() => void speak(message)} disabled={Boolean(speakingId)} style={styles.speakButton}><Text style={styles.speakText}>{speakingId === message.id ? '…' : `🔊 ${ui.speak}`}</Text></Pressable> : null}
               {message.meta ? <Text style={[styles.meta, rtl && styles.rtlText]}>{message.meta}</Text> : null}
             </View>
           ))}
@@ -113,5 +122,5 @@ export default function AssistantScreen() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#F7F8FA' }, flex: { flex: 1 }, header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }, rtl: { flexDirection: 'row-reverse' }, backButton: { width: 82, paddingVertical: 8 }, backText: { color: '#374151', fontWeight: '800', fontSize: 13 }, headerCenter: { flex: 1, alignItems: 'center' }, eyebrow: { color: '#9CA3AF', fontSize: 9, fontWeight: '900', letterSpacing: 1.4 }, title: { color: '#111827', fontSize: 18, fontWeight: '900', marginTop: 2 }, brainBadge: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' }, brainEmoji: { fontSize: 20 }, subHeader: { paddingHorizontal: 18, paddingVertical: 13, backgroundColor: '#FFFFFF' }, subtitle: { color: '#6B7280', fontSize: 13, lineHeight: 19, textAlign: 'center' }, messages: { flexGrow: 1, padding: 18, gap: 10, paddingBottom: 22 }, loadingHistory: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 8 }, bubble: { maxWidth: '88%', borderRadius: 20, padding: 14 }, assistantBubble: { alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB', borderBottomLeftRadius: 7 }, userBubble: { alignSelf: 'flex-end', backgroundColor: '#111827', borderBottomRightRadius: 7 }, rtlBubble: { borderBottomLeftRadius: 20, borderBottomRightRadius: 7 }, bubbleText: { fontSize: 15, lineHeight: 22 }, userText: { color: '#FFFFFF' }, assistantText: { color: '#111827' }, rtlText: { textAlign: 'right' }, meta: { marginTop: 6, color: '#9CA3AF', fontSize: 10, lineHeight: 14 }, typing: { flexDirection: 'row', alignItems: 'center', gap: 8 }, noticeCard: { backgroundColor: '#FFFBEB', borderRadius: 14, padding: 12 }, noticeText: { color: '#92400E', fontSize: 12, lineHeight: 18 }, errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 12 }, errorText: { color: '#B91C1C', fontSize: 12, lineHeight: 18 }, composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, padding: 12, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E5E7EB' }, input: { flex: 1, minHeight: 48, maxHeight: 120, borderRadius: 16, borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: '#F9FAFB', paddingHorizontal: 14, paddingVertical: 11, color: '#111827', fontSize: 15 }, rtlInput: { textAlign: 'right' }, sendButton: { minWidth: 70, minHeight: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111827', paddingHorizontal: 14 }, sendText: { color: '#FFFFFF', fontWeight: '900' }, disabled: { opacity: 0.4 }, pressed: { opacity: 0.8 },
+  safe: { flex: 1, backgroundColor: '#F7F8FA' }, flex: { flex: 1 }, header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingTop: 8, paddingBottom: 12, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }, rtl: { flexDirection: 'row-reverse' }, backButton: { width: 82, paddingVertical: 8 }, backText: { color: '#374151', fontWeight: '800', fontSize: 13 }, headerCenter: { flex: 1, alignItems: 'center' }, eyebrow: { color: '#9CA3AF', fontSize: 9, fontWeight: '900', letterSpacing: 1.4 }, title: { color: '#111827', fontSize: 18, fontWeight: '900', marginTop: 2 }, brainBadge: { width: 38, height: 38, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F3F4F6' }, brainEmoji: { fontSize: 20 }, subHeader: { paddingHorizontal: 18, paddingVertical: 13, backgroundColor: '#FFFFFF' }, subtitle: { color: '#6B7280', fontSize: 13, lineHeight: 19, textAlign: 'center' }, messages: { flexGrow: 1, padding: 18, gap: 10, paddingBottom: 22 }, loadingHistory: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 8 }, bubble: { maxWidth: '88%', borderRadius: 20, padding: 14 }, assistantBubble: { alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB', borderBottomLeftRadius: 7 }, userBubble: { alignSelf: 'flex-end', backgroundColor: '#111827', borderBottomRightRadius: 7 }, rtlBubble: { borderBottomLeftRadius: 20, borderBottomRightRadius: 7 }, bubbleText: { fontSize: 15, lineHeight: 22 }, userText: { color: '#FFFFFF' }, assistantText: { color: '#111827' }, rtlText: { textAlign: 'right' }, meta: { marginTop: 6, color: '#9CA3AF', fontSize: 10, lineHeight: 14 }, typing: { flexDirection: 'row', alignItems: 'center', gap: 8 }, speakButton: { marginTop: 10, alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 7, borderRadius: 10, backgroundColor: '#F3F4F6' }, speakText: { color: '#374151', fontSize: 11, fontWeight: '800' }, noticeCard: { backgroundColor: '#FFFBEB', borderRadius: 14, padding: 12 }, noticeText: { color: '#92400E', fontSize: 12, lineHeight: 18 }, errorCard: { backgroundColor: '#FEF2F2', borderRadius: 14, padding: 12 }, errorText: { color: '#B91C1C', fontSize: 12, lineHeight: 18 }, composer: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, padding: 12, backgroundColor: '#FFFFFF', borderTopWidth: 1, borderTopColor: '#E5E7EB' }, input: { flex: 1, minHeight: 48, maxHeight: 120, borderRadius: 16, borderWidth: 1, borderColor: '#D1D5DB', backgroundColor: '#F9FAFB', paddingHorizontal: 14, paddingVertical: 11, color: '#111827', fontSize: 15 }, rtlInput: { textAlign: 'right' }, sendButton: { minWidth: 70, minHeight: 48, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#111827', paddingHorizontal: 14 }, sendText: { color: '#FFFFFF', fontWeight: '900' }, disabled: { opacity: 0.4 }, pressed: { opacity: 0.8 },
 });
