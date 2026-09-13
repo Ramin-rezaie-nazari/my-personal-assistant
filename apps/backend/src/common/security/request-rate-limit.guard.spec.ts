@@ -1,4 +1,4 @@
-import { ExecutionContext, TooManyRequestsException } from '@nestjs/common';
+import { ExecutionContext, HttpException, HttpStatus } from '@nestjs/common';
 import { RequestRateLimitGuard } from './request-rate-limit.guard';
 
 describe('RequestRateLimitGuard', () => {
@@ -30,8 +30,14 @@ describe('RequestRateLimitGuard', () => {
     }
 
     expect(() => guard.canActivate(contextFor('POST', '/auth/login'))).toThrow(
-      TooManyRequestsException,
+      HttpException,
     );
+    try {
+      guard.canActivate(contextFor('POST', '/auth/login'));
+    } catch (error) {
+      expect(error).toBeInstanceOf(HttpException);
+      expect((error as HttpException).getStatus()).toBe(HttpStatus.TOO_MANY_REQUESTS);
+    }
   });
 
   it('keeps different client IPs isolated', () => {
