@@ -17,7 +17,7 @@ import type { FitnessDiscipline } from '../services/fitness-catalog.service';
 import { FitnessProfileService } from '../services/fitness-profile.service';
 import { FitnessProgressService } from '../services/fitness-progress.service';
 
-type AuthenticatedRequest = { user: { sub: string } };
+type AuthenticatedRequest = { user: { id: string } };
 
 @Controller('fitness')
 @UseGuards(JwtAuthGuard)
@@ -30,17 +30,17 @@ export class FitnessController {
 
   @Get('profile')
   getProfile(@Req() req: AuthenticatedRequest) {
-    return this.profile.get(req.user.sub);
+    return this.profile.get(req.user.id);
   }
 
   @Get('context')
   context(@Req() req: AuthenticatedRequest) {
-    return this.profile.buildRecommendationContext(req.user.sub);
+    return this.profile.buildRecommendationContext(req.user.id);
   }
 
   @Get('progress')
   getProgress(@Req() req: AuthenticatedRequest) {
-    return this.progress.list(req.user.sub);
+    return this.progress.list(req.user.id);
   }
 
   @Get('progress/:discipline')
@@ -51,7 +51,7 @@ export class FitnessController {
     if (!['gym', 'calisthenics', 'yoga'].includes(discipline)) {
       throw new BadRequestException('discipline must be gym, calisthenics or yoga');
     }
-    return this.progress.get(req.user.sub, discipline as FitnessDiscipline);
+    return this.progress.get(req.user.id, discipline as FitnessDiscipline);
   }
 
   @Post('progress/session')
@@ -65,7 +65,7 @@ export class FitnessController {
     if (!Number.isInteger(body.difficulty) || body.difficulty < 1 || body.difficulty > 10) {
       throw new BadRequestException('difficulty must be an integer between 1 and 10');
     }
-    return this.progress.recordSession({ userId: req.user.sub, ...body });
+    return this.progress.recordSession({ userId: req.user.id, ...body });
   }
 
   @Get('catalog')
@@ -105,7 +105,7 @@ export class FitnessController {
     @Req() req: AuthenticatedRequest,
     @Body() body: { profile: FitnessProfile },
   ) {
-    return this.profile.save(req.user.sub, body.profile);
+    return this.profile.save(req.user.id, body.profile);
   }
 
   @Post('equipment')
@@ -113,12 +113,12 @@ export class FitnessController {
     @Req() req: AuthenticatedRequest,
     @Body() body: { item: FitnessProfile['equipment'][number] },
   ) {
-    return this.profile.addEquipment(req.user.sub, body.item);
+    return this.profile.addEquipment(req.user.id, body.item);
   }
 
   @Delete('equipment/:id')
   removeEquipment(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
-    return this.profile.removeEquipment(req.user.sub, id);
+    return this.profile.removeEquipment(req.user.id, id);
   }
 
   @Post('goal')
@@ -126,7 +126,7 @@ export class FitnessController {
     @Req() req: AuthenticatedRequest,
     @Body() body: { goal: FitnessGoal },
   ) {
-    return this.profile.addGoal(req.user.sub, body.goal);
+    return this.profile.addGoal(req.user.id, body.goal);
   }
 
   @Post('goal/from-text')
