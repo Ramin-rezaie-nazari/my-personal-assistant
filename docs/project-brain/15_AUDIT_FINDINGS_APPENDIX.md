@@ -1,7 +1,7 @@
 # Audit Findings Appendix
 
-Last updated: 2026-09-12
-Review status: REMEDIATION RECONCILED; FINAL CI RECHECK IN PROGRESS
+Last updated: 2026-09-13
+Review status: ACTIVE REMEDIATION CONTINUES; LATEST HARDENING CI IN PROGRESS
 
 This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit. The original `OPEN` labels below represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
 
@@ -112,12 +112,22 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-256 | WITHDRAWN | Current-main/package source confirms the nutrition/recommendation scripts exist; PB-199/PB-200/PB-204 remain the independent quality findings and are now remediated. |
 | PB-257 | CLOSED — REMEDIATED | `Workout(userId, performedAt)` and `UserBehavior(userId, createdAt)` composite indexes are present in the Prisma schema. |
 
+## New hardening findings — PB-258 through PB-262
+
+| Finding | Current status | Resolution / current evidence |
+|---|---|---|
+| PB-258 | CLOSED — REMEDIATED | `DecisionExecutionController.confirm` was consuming `req.body` through a TypeScript-only shape. It now uses `DecisionConfirmDto` with runtime token validation. |
+| PB-259 | CLOSED — REMEDIATED | Calisthenics session/coach request bodies were inline TypeScript shapes. Runtime DTOs now bound duration, level, focus, equipment, object payloads and elapsed-time bounds. |
+| PB-260 | CLOSED — REMEDIATED | Yoga session/coach/cue/motion request bodies were inline TypeScript shapes. Runtime DTOs now validate scalar bounds/enums and object payload presence. |
+| PB-261 | CLOSED — REMEDIATED | Calendar event PATCH accepted an inline body. `UpdateCalendarEventDto` now bounds text and validates ISO timestamps. |
+| PB-262 | CLOSED — REMEDIATED | Personal Brain and User Intelligence/Recommendation action endpoints contained multiple inline request bodies. Dedicated DTOs now provide runtime validation at those boundaries. |
+
 ## Historical catalog boundary
 
 The exact prose of PB-001 through PB-155 is not recoverable from the repository history exposed to the remediation environment. `docs/project-brain/12_OPEN_WORK.md` preserves the historical ID/index information, but missing historical text is not reconstructed or invented. This is an evidence limitation, not a silently omitted finding.
 
 ## Verification boundary
 
-Recent GitHub Actions evidence has verified the Mobile pipeline end-to-end and has verified Backend dependency installation, Prisma schema validation/generation, migration application/idempotence, and the food-intelligence self-test. The latest retention-service compatibility changes have triggered another Backend CI cycle; the branch must remain unmarked as production-green until that cycle completes successfully.
+Recent GitHub Actions evidence has verified the Mobile pipeline end-to-end and has verified Backend dependency installation, Prisma schema validation/generation, migration application/idempotence, and the food-intelligence self-test. New hardening commits have triggered a fresh Backend CI cycle; the branch must remain unmarked as production-green until the latest hardening line completes successfully.
 
 Local repository execution is unavailable because direct GitHub network access is blocked in the container environment. Production Supabase/Auth/Storage state, RLS configuration, push delivery and real-device UX remain outside the available runtime boundary.
