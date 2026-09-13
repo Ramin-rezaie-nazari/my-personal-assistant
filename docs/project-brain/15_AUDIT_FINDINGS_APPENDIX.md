@@ -1,11 +1,11 @@
 # Audit Findings Appendix
 
-Last updated: 2026-09-12
-Review status: REMEDIATION RECONCILED; FINAL CI RECHECK IN PROGRESS
+Last updated: 2026-09-13
+Review status: REMEDIATION RECONCILED; FINAL CI RECHECK IN PROGRESS; SPORTS CATALOG RECONCILIATION OPEN
 
-This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit. The original `OPEN` labels below represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
+This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit and subsequent reconciliation work. The original `OPEN` labels below represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
 
-## Current status — PB-156 through PB-257
+## Current status — PB-156 through PB-258
 
 | Finding | Current status | Resolution / current evidence |
 |---|---|---|
@@ -112,12 +112,20 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-256 | WITHDRAWN | Current-main/package source confirms the nutrition/recommendation scripts exist; PB-199/PB-200/PB-204 remain the independent quality findings and are now remediated. |
 | PB-257 | CLOSED — REMEDIATED | `Workout(userId, performedAt)` and `UserBehavior(userId, createdAt)` composite indexes are present in the Prisma schema. |
 
+## Follow-up findings — 2026-09-13
+
+| Finding | Current status | Resolution / current evidence |
+|---|---|---|
+| PB-259 | REMEDIATION APPLIED / RERUN PENDING | Backend CI exposed a real refresh-token rotation defect: two refresh JWTs generated in the same second could be identical because the payload contained only stable claims. `createRefreshToken()` now includes a random `jti` via `randomUUID()` on both the audit branch and autonomous branch. CI rerun is required for final runtime confirmation. |
+| PB-260 | OPEN — RECONCILIATION REQUIRED | The current sports catalog summaries report 871 normalized gym/calisthenics exercises plus 48 normalized yoga poses = 919 total records. The previously stated target of 916 therefore does not match the committed catalog summaries. Exact intended target and the three-record delta must be reconciled before declaring the sports corpus complete. |
+| PB-261 | CLOSED — REMEDIATED | The autonomous branch had omitted most canonical Project Brain control-plane documents and the findings appendix. Missing canonical docs, deep-read files, contract/DB/feature matrices and audit records were restored from the verified audit branch into the autonomous branch without resetting or merging the divergent code history. |
+
 ## Historical catalog boundary
 
 The exact prose of PB-001 through PB-155 is not recoverable from the repository history exposed to the remediation environment. `docs/project-brain/12_OPEN_WORK.md` preserves the historical ID/index information, but missing historical text is not reconstructed or invented. This is an evidence limitation, not a silently omitted finding.
 
 ## Verification boundary
 
-Recent GitHub Actions evidence has verified the Mobile pipeline end-to-end and has verified Backend dependency installation, Prisma schema validation/generation, migration application/idempotence, and the food-intelligence self-test. The latest retention-service compatibility changes have triggered another Backend CI cycle; the branch must remain unmarked as production-green until that cycle completes successfully.
+Recent GitHub Actions evidence has verified the Mobile pipeline and has verified Backend dependency installation, Prisma schema validation/generation, migration application/idempotence, food-intelligence self-test, build, and the full backend unit suite on the audit branch. The latest Backend cycle after the refresh-token uniqueness remediation is still pending its final E2E result. Production Supabase/Auth/Storage state, push delivery and real-device UX remain outside the available runtime boundary.
 
-Local repository execution is unavailable because direct GitHub network access is blocked in the container environment. Production Supabase/Auth/Storage state, RLS configuration, push delivery and real-device UX remain outside the available runtime boundary.
+Local repository execution is unavailable from the connected environment; the user-controlled Mac remains the authoritative local execution environment. Media corpora and generated step-guide videos remain local-only and are intentionally excluded from Git.
