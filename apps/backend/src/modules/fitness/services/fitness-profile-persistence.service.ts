@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../../common/database/prisma.service';
 import {
@@ -37,9 +38,7 @@ export class FitnessProfilePersistenceService {
   }
 
   async get(userId: string): Promise<FitnessProfile> {
-    const row = await this.prisma.fitnessProfileState.findUnique({
-      where: { userId },
-    });
+    const row = await this.prisma.fitnessProfileState.findUnique({ where: { userId } });
     return this.normalize(row?.profile);
   }
 
@@ -53,99 +52,51 @@ export class FitnessProfilePersistenceService {
     return normalized;
   }
 
-  async addEquipment(
-    userId: string,
-    item: FitnessProfile['equipment'][number],
-  ) {
+  async addEquipment(userId: string, item: FitnessProfile['equipment'][number]) {
     const profile = await this.get(userId);
-    return this.save(userId, {
-      ...profile,
-      equipment: [...profile.equipment.filter((x) => x.id !== item.id), item],
-    });
+    return this.save(userId, { ...profile, equipment: [...profile.equipment.filter((x) => x.id !== item.id), item] });
   }
 
   async removeEquipment(userId: string, equipmentId: string) {
     const profile = await this.get(userId);
-    return this.save(userId, {
-      ...profile,
-      equipment: profile.equipment.filter((item) => item.id !== equipmentId),
-    });
+    return this.save(userId, { ...profile, equipment: profile.equipment.filter((item) => item.id !== equipmentId) });
   }
 
   async addGoal(userId: string, goal: FitnessGoal) {
     const profile = await this.get(userId);
-    return this.save(userId, {
-      ...profile,
-      goals: [...profile.goals.filter((x) => x.id !== goal.id), goal],
-    });
+    return this.save(userId, { ...profile, goals: [...profile.goals.filter((x) => x.id !== goal.id), goal] });
   }
 
-  async buildRecommendationContext(
-    userId: string,
-  ): Promise<FitnessRecommendationContext> {
+  async buildRecommendationContext(userId: string): Promise<FitnessRecommendationContext> {
     const profile = await this.get(userId);
-    const primaryGoal =
-      [...profile.goals]
-        .filter((goal) => goal.active)
-        .sort((a, b) => b.priority - a.priority)[0] ?? null;
+    const primaryGoal = [...profile.goals].filter((goal) => goal.active).sort((a, b) => b.priority - a.priority)[0] ?? null;
     const targetAreas: BodyTarget[] = primaryGoal?.targetAreas ?? ['full_body'];
-    const equipment: FitnessEquipment[] = profile.equipment
-      .filter((item) => item.active)
-      .map((item) => item.type);
+    const equipment: FitnessEquipment[] = profile.equipment.filter((item) => item.active).map((item) => item.type);
     if (equipment.length === 0) equipment.push('none');
-    return {
-      disciplines: profile.disciplines,
-      primaryGoal,
-      equipment: [...new Set(equipment)],
-      constraints: profile.constraints,
-      targetAreas,
-    };
+    return { disciplines: profile.disciplines, primaryGoal, equipment: [...new Set(equipment)], constraints: profile.constraints, targetAreas };
   }
 
   parseNaturalGoal(text: string): FitnessGoal {
-    const normalized = text.toLowerCase();
+    const normalized = text
+      .toLowerCase()
+      .replace(/[يى]/g, 'ی')
+      .replace(/[ك]/g, 'ک')
+      .replace(/[\u200c]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
     const targets: BodyTarget[] = [];
-    const push = (target: BodyTarget, ...words: string[]) => {
-      if (words.some((word) => normalized.includes(word))) targets.push(target);
-    };
+    const push = (target: BodyTarget, ...words: string[]) => { if (words.some((word) => normalized.includes(word))) targets.push(target); };
     push('thighs', 'ران', 'thigh');
     push('glutes', 'باسن', 'glute');
     push('shoulders', 'سرشانه', 'شانه', 'shoulder');
     push('waist', 'کمر', 'waist');
     push('core', 'شکم', 'core', 'abs');
     push('back', 'پشت', 'back');
-    const avoidBulk =
-      normalized.includes('حجم') &&
-      (normalized.includes('نمی') || normalized.includes('نه'));
-    const fatLoss =
-      normalized.includes('لاغر') ||
-      normalized.includes('چربی') ||
-      normalized.includes('fat loss');
-    const sculpt =
-      normalized.includes('خوش فرم') ||
-      normalized.includes('خوش‌فرم') ||
-      normalized.includes('tone') ||
-      normalized.includes('sculpt');
-    const strength =
-      normalized.includes('قوی') ||
-      normalized.includes('قدرت') ||
-      normalized.includes('strength');
-    const kind = fatLoss
-      ? 'fat_loss'
-      : sculpt
-        ? 'body_sculpt'
-        : strength
-          ? 'strength'
-          : 'general_fitness';
-    return {
-      id: `parsed-${Date.now()}`,
-      kind,
-      title: text.trim(),
-      targetAreas: targets.length ? [...new Set(targets)] : ['full_body'],
-      desiredOutcome: text.trim(),
-      priority: 80,
-      avoidBulk,
-      active: true,
-    };
+    const avoidBulk = normalized.includes('حجم') && /(?:نمی\s*خوام|نمی\s*گیرم|نگیرم|بدون|نه|نخوام)/.test(normalized);
+    const fatLoss = normalized.includes('لاغر') || normalized.includes('چربی') || normalized.includes('fat loss');
+    const sculpt = normalized.includes('خوش فرم') || normalized.includes('خوش‌فرم') || normalized.includes('tone') || normalized.includes('sculpt');
+    const strength = normalized.includes('قوی') || normalized.includes('قدرت') || normalized.includes('strength');
+    const kind = fatLoss ? 'fat_loss' : sculpt ? 'body_sculpt' : strength ? 'strength' : 'general_fitness';
+    return { id: `parsed-${randomUUID()}`, kind, title: text.trim(), targetAreas: targets.length ? [...new Set(targets)] : ['full_body'], desiredOutcome: text.trim(), priority: 80, avoidBulk, active: true };
   }
 }
