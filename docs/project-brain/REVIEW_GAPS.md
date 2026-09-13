@@ -1,26 +1,29 @@
 # Review Gaps
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
-Scope actually read: Governance/navigation, operational docs, package manifests, authentication implementation/tests, and substantial source coverage across users/profile/preferences/onboarding/settings/context-engine/device-intelligence/user-intelligence.
-Scope not yet read: Remaining files in core scopes, all migrations/schema reconciliation, remaining backend/mobile source, complete CI/test internals, and complete scripts/data inventory.
-Evidence roots: `AGENTS.md`; `MYPA_START_HERE.md`; backend operational docs; package manifests; `apps/backend/src/modules/auth/`; `users/`; `profile/`; `preferences/`; `onboarding/`; `settings/`; `context-engine/`; `device-intelligence/`; `user-intelligence/`.
-Confidence level: MEDIUM for retrieved implementation, LOW for completeness.
-Open questions: exact total source-file count, remaining nested files in core scopes, full schema/migration mapping, route-to-mobile mapping, local Mac dirty/process state.
+Last updated: 2026-09-13
+Review status: REMEDIATION RECONCILED; HOSTED CI GATES CLOSING; EXTERNAL VALIDATION EXPLICIT
 
-## Open gaps
+Scope actually read: Governance/control-plane docs; backend/mobile package manifests; authentication/session implementation and tests; substantial backend modules across users/profile/preferences/onboarding/settings/context-engine/device-intelligence/user-intelligence/assistant/brain/memory/food/recipe/nutrition/meals/recommendation/budget/shopping/life-health/fitness; backend common/config/database/i18n/image boundaries; Prisma schema and migration set; mobile app/lib/components/native route/client scope; operational content/media scripts; CI workflows; current remediation findings and GitHub Actions evidence.
+Scope not yet read: exhaustive line-by-line repository-wide inventory beyond the audited source scopes; physical-device/native UX execution; user's Mac-local recipe/fitness media corpus execution; live production database/provider state; unrecoverable PB-001..PB-155 historical prose.
+Evidence roots: `AGENTS.md`; `MYPA_START_HERE.md`; `apps/backend/src/`; `apps/backend/prisma/`; `apps/backend/scripts/`; `apps/mobile/`; `.github/workflows/`; `docs/project-brain/`; canonical findings appendix.
+Confidence level: HIGH for the directly rechecked remediation and hosted CI contracts; MEDIUM for repository-wide completeness because local/production/device execution remains outside the connector environment.
+Open questions: final backend CI result after the latest users/rate-limit build fixes; final current Android/ADB/device UX validation; completion of the Mac-local media corpus and later VPS/object-storage migration; production provider/database state; historical PB-001..PB-155 prose recovery remains unavailable.
 
-1. Complete deterministic repository inventory and per-source-file line counts.
-2. Finish `01-core.md` by enumerating and reading every remaining file under auth/users/profile/preferences/onboarding/settings/context-engine/device-intelligence/user-intelligence.
-3. Reconcile every Prisma model against migrations and database-facing readers/writers.
-4. Build complete backend route catalog and mobile consumer mapping.
-5. Complete Brain, food, shopping, life/health and fitness deep reads.
-6. Complete mobile source deep read.
-7. Verify tests and CI with actual runs where executable; distinguish device-only gates.
-8. Reconcile documentation claims against current code where older docs may be stale.
-9. Complete security/privacy contract review including auth/session, authorization, secrets, rate limiting and retention.
-10. Reassess current recipe/media pipeline separately from historical Supabase-backed media claims; current workflow is local Mac media acquisition and must not be treated as runtime storage evidence.
-11. Investigate duplicate users controller paths and duplicated onboarding responsibilities before treating the user/account architecture as coherent.
-12. Review currently weak/placeholder core implementations: context snapshot builder, empty context controller, native health bridge placeholders, activity tracker placeholder, user profile intelligence placeholder, and device-sync DTO without validation decorators.
+## Remaining gaps
+
+1. Physical-device/native UX validation cannot be executed from the hosted repository environment and must be performed on the user's actual device/toolchain.
+2. The Mac-local recipe/fitness media corpus remains intentionally outside Git and requires local execution/audit before VPS/object-storage migration.
+3. Production provider/database state, push delivery, real credentials and deployed runtime behavior cannot be certified from this hosted audit environment.
+4. Exact historical prose for PB-001..PB-155 is not recoverable from the exposed repository history and is therefore not fabricated.
+5. Exhaustive repository-wide source inventory beyond the already audited scopes should be treated as a separate evidence pass if absolute file-by-file closure is required.
+
+## Closed reconciliation areas
+
+- Duplicate/placeholder module findings addressed in the canonical findings appendix are no longer treated as unexplained gaps.
+- Prisma schema and migration deployment are validated by hosted CI; migration deploy is idempotent on a clean PostgreSQL 16 service.
+- Mobile route/surface/typecheck/Expo config/Android JavaScript export are covered by green hosted Mobile CI.
+- Android JavaScript export and the debug APK Gradle pipeline have reached green hosted evidence on the audited branch.
+- Sports catalog arithmetic is reconciled to the committed 919 normalized-record contract (740 gym + 131 calisthenics + 48 yoga); the former 916 statement is retired as stale.
+- Authentication refresh-token uniqueness and fitness write DTO/controller contracts have dedicated regression coverage; final backend CI rerun remains the remaining hosted gate at the time of this document update.
 
 No gap is marked resolved without direct source evidence or executed validation evidence.
