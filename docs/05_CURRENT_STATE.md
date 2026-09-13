@@ -11,8 +11,9 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Branch: `main`
-- Latest source commit in this verification pass: `7b56ad428c34a4caabf01be5d88ab06e47ef0ced`
-- Scope: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI verification.
+- Latest functional verification commit: `0d19d2b7dad5e9100505205328fbd523e544445b`
+- Subsequent commits only synchronize Project Brain/current-state evidence; they do not alter the verified native implementation.
+- Scope: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
 
 ## Remediation completed
 
@@ -29,31 +30,33 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Personal Brain runtime DI metadata was hardened so the full application bootstrap can resolve `DecisionExecutionCoordinatorService`.
 - Mobile brain-execution credentials use `expo-secure-store` with device-only keychain accessibility and clear both credentials after refresh failure.
 - Security/privacy documentation was reconciled to current remediation evidence.
-- Audit findings PB-258 through PB-267 are recorded in the canonical appendix and currently closed/remediated.
+- Audit findings PB-258 through PB-268 are recorded in the canonical appendix and currently closed/remediated.
+- Android Expo SDK 53 autolinking is explicitly pinned through `apps/mobile/react-native.config.js`, with the supporting pnpm hoisting remediation retained.
 
 ## Automated evidence
 
 ### Backend CI — GREEN
 
-The latest Backend CI run on `7b56ad428c34a4caabf01be5d88ab06e47ef0ced` completed successfully through dependency installation, Prisma schema validation/generation, migration deployment and idempotence, food-intelligence self-test, backend build, unit tests and API E2E tests. Backend CI is green for this verification line.
+The latest verified Backend CI line completed successfully through dependency installation, Prisma schema validation/generation, migration deployment and idempotence, food-intelligence self-test, backend build, unit tests and API E2E tests.
 
 ### Mobile CI — GREEN
 
-The latest Mobile CI run on the same commit completed successfully through dependency installation, mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling. Mobile CI is green for this verification line.
+The latest verified Mobile CI line completed successfully through dependency installation, mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling.
 
-### Android native APK
+### Android native APK — GREEN
 
-The canonical native evidence path remains `.github/workflows/android-apk.yml`. The workflow generates the native Android project and runs a real Gradle `assembleDebug` build before uploading the APK. A previous successful run reached native project generation and Gradle debug APK build, but repository evidence does not currently prove that native build against the exact latest `main` commit `7b56ad4...`. The workflow is therefore not falsely marked latest-commit green.
+The canonical native evidence path is `.github/workflows/android-apk.yml`. Workflow run `34772364209` (run #79), head `0d19d2b7dad5e9100505205328fbd523e544445b`, completed successfully through Expo prebuild, real Gradle `assembleDebug`, and APK upload. The produced artifact is `my-personal-assistant-debug-apk`, 58,443,390 bytes, SHA-256 `622b90eeef0898ab7d3eac9af75fac6e486da46eb4f741116d601f3d727f23da`.
 
 ## Evidence limitations
 
-- The latest canonical Android native APK build is not yet evidenced against the exact latest `main` commit.
 - Real physical-device UX remains unvalidated.
 - Production deployment behavior, production Supabase/Auth/RLS/Storage configuration and real notification delivery remain environment-limited.
+- Microphone/location/speech behavior on a physical device is not proven by repository CI alone.
 - Local media in a user's device/gallery is not directly validated by repository CI.
+- Direct local repository execution is unavailable in the remediation container because outbound GitHub network access is blocked; GitHub Actions remains the authoritative automated execution evidence for this pass.
 
 These are explicit evidence limits, not silently marked green findings.
 
 ## Project Brain
 
-`docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` is synchronized with the current remediation boundary.
+`docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` must remain synchronized with the same verification boundary.
