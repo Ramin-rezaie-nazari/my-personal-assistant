@@ -55,10 +55,13 @@ jobs:
       - name: Expo prebuild
         env:
           CI: '1'
+          EXPO_PUBLIC_API_URL: https://ci.invalid
         run: npx expo prebuild --platform android
 
       - name: Gradle assemble debug APK
         working-directory: apps/mobile/android
+        env:
+          EXPO_PUBLIC_API_URL: https://ci.invalid
         run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
