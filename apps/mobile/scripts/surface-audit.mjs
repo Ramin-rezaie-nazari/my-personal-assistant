@@ -40,8 +40,9 @@ for (const route of required) {
 }
 
 const sourceFiles = [...walk(appDir), ...walk(libDir)].filter((file) => !file.endsWith('surface-audit.mjs'));
+const runtimeFiles = sourceFiles.filter((file) => !/\.spec\.(tsx?|jsx?)$/.test(file));
 const directLocalhost = [];
-for (const file of sourceFiles) {
+for (const file of runtimeFiles) {
   const text = fs.readFileSync(file, 'utf8');
   if (text.includes("http://localhost:3000") && !file.endsWith('api-base.ts')) {
     directLocalhost.push(path.relative(process.cwd(), file));
