@@ -97,6 +97,6 @@ export class FitnessProfilePersistenceService {
     const sculpt = normalized.includes('خوش فرم') || normalized.includes('خوش‌فرم') || normalized.includes('tone') || normalized.includes('sculpt');
     const strength = normalized.includes('قوی') || normalized.includes('قدرت') || normalized.includes('strength');
     const kind = fatLoss ? 'fat_loss' : sculpt ? 'body_sculpt' : strength ? 'strength' : 'general_fitness';
-    return { id: `parsed-${randomUUID()}`, kind, title: text.trim(), targetAreas: targets.length ? [...new Set(targets)] : ['full_body'], desiredOutcome: text.trim(), priority: 80, avoidBulk, active: true };
+    return { id: randomUUID(), kind, title: text.trim(), targetAreas: targets.length ? [...new Set(targets)] : ['full_body'], desiredOutcome: text.trim(), priority: 80, avoidBulk, active: true };
   }
 }
