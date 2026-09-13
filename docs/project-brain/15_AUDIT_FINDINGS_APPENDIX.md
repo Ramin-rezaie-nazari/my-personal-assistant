@@ -112,7 +112,7 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-256 | WITHDRAWN | Current-main/package source confirms the nutrition/recommendation scripts exist; PB-199/PB-200/PB-204 remain the independent quality findings and are now remediated. |
 | PB-257 | CLOSED — REMEDIATED | `Workout(userId, performedAt)` and `UserBehavior(userId, createdAt)` composite indexes are present in the Prisma schema. |
 
-## New hardening findings — PB-258 through PB-262
+## New hardening findings — PB-258 through PB-263
 
 | Finding | Current status | Resolution / current evidence |
 |---|---|---|
@@ -121,6 +121,7 @@ This file is the canonical current status of the findings catalog covered by the
 | PB-260 | CLOSED — REMEDIATED | Yoga session/coach/cue/motion request bodies were inline TypeScript shapes. Runtime DTOs now validate scalar bounds/enums and object payload presence. |
 | PB-261 | CLOSED — REMEDIATED | Calendar event PATCH accepted an inline body. `UpdateCalendarEventDto` now bounds text and validates ISO timestamps. |
 | PB-262 | CLOSED — REMEDIATED | Personal Brain and User Intelligence/Recommendation action endpoints contained multiple inline request bodies. Dedicated DTOs now provide runtime validation at those boundaries. |
+| PB-263 | CLOSED — REMEDIATED | `apps/mobile/lib/brain-execution.ts` had its own auth refresh path and stored access/refresh tokens in AsyncStorage. It now uses `expo-secure-store` with device-only keychain accessibility for both credentials and clears both on refresh failure. |
 
 ## Historical catalog boundary
 
