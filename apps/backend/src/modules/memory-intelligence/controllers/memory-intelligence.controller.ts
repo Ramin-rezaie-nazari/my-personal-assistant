@@ -10,20 +10,13 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { randomUUID } from 'node:crypto';
-import { MemoryType } from '../models/memory.model';
+import { RememberMemoryDto } from '../dto/remember-memory.dto';
 import { MemoryIntelligenceService } from '../services/memory-intelligence.service';
 
 interface AuthenticatedRequest {
   user: {
     id: string;
   };
-}
-
-interface RememberMemoryBody {
-  type: MemoryType;
-  key: string;
-  value: unknown;
-  importance?: number;
 }
 
 @Controller('memory-intelligence')
@@ -36,7 +29,7 @@ export class MemoryIntelligenceController {
   @Post()
   async remember(
     @Req() req: AuthenticatedRequest,
-    @Body() body: RememberMemoryBody,
+    @Body() body: RememberMemoryDto,
   ) {
     const now = new Date();
     const memory = {
