@@ -1,7 +1,7 @@
 # MYPA Current State
 
-Last updated: 2026-09-13
-Review status: FINAL VERIFICATION / EVIDENCE-LIMITED DEPLOYMENT ITEMS REMAIN
+Last updated: 2026-09-14
+Review status: FITNESS PROGRAM/MEDIA FOUNDATION IMPLEMENTED / CI VERIFICATION PENDING
 
 ## Canonical ownership
 
@@ -10,53 +10,76 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 ## Repository state
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
-- Branch: `main`
-- Latest functional verification commit: `0d19d2b7dad5e9100505205328fbd523e544445b`
-- Subsequent commits only synchronize Project Brain/current-state evidence; they do not alter the verified native implementation.
-- Scope: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
+- Main baseline: `f8a5681eebef5ecbac1e3e392b27a6a87d3396a0`
+- Active feature branch: `feat/fitness-video-media-foundation-v2`
+- The feature branch extends the verified baseline with Fitness exercise content/media, durable programs and calculators. The new slice must not be treated as fully green until CI verifies the final head.
 
-## Remediation completed
+## Verified baseline
 
 - Major audit remediation PR #71 is merged.
 - Frozen pnpm lockfile is aligned with the workspace dependency graph.
 - Duplicate Android/EAS workflow definitions were removed; canonical APK and EAS preview paths remain.
 - Missing shopping DTO contract exposed by CI was restored.
-- Runtime DTO validation was added across the previously identified unvalidated action/write boundaries.
-- Fitness authenticated identity uses `req.user.id` and Fitness persistence is Prisma-backed.
-- Fitness natural-goal IDs are UUID-compatible and Persian text handling is normalized.
-- Price normalization preserves currency semantics and currency-aware deduplication.
+- Runtime DTO validation was added across previously identified unvalidated action/write boundaries.
+- Fitness authenticated identity uses `req.user.id` and Fitness profile persistence is Prisma-backed.
 - Personal Brain, Yoga, Calisthenics, Calendar, User Intelligence, Recommendation Intelligence, Decision Feedback and Memory Intelligence action boundaries have runtime DTO validation.
-- Recipe inventory matching is unit-aware for compatible metric mass/volume/count units and rejects incompatible dimensions rather than making false numeric matches.
+- Recipe inventory matching is unit-aware and rejects incompatible dimensions.
 - Personal Brain runtime DI metadata was hardened so the full application bootstrap can resolve `DecisionExecutionCoordinatorService`.
-- Mobile brain-execution credentials use `expo-secure-store` with device-only keychain accessibility and clear both credentials after refresh failure.
-- Security/privacy documentation was reconciled to current remediation evidence.
-- Audit findings PB-258 through PB-268 are recorded in the canonical appendix and currently closed/remediated.
-- Android Expo SDK 53 autolinking is explicitly pinned through `apps/mobile/react-native.config.js`, with the supporting pnpm hoisting remediation retained.
+- Mobile brain-execution credentials use `expo-secure-store` and clear both credentials after refresh failure.
+- Android Expo SDK 53 autolinking is explicitly pinned through `apps/mobile/react-native.config.js`.
+
+## Fitness work now implemented on the feature branch
+
+### Exercise content/media foundation
+
+- Canonical `Exercise`, `ExerciseMedia` and `ExerciseRelationship` database surfaces.
+- Authenticated exercise list/detail APIs with filtering and approved-media gates.
+- Mobile Exercise Library and Exercise Detail screens.
+- Provenance-aware media contract covering ownership, license, attribution, source reference and approval.
+- Local rights-aware video discovery tooling; discovery results are candidates only until rights/exact-match approval.
+
+### Durable programs
+
+- `FitnessProgram` catalog entries.
+- Versioned `FitnessProgramVersion` definitions.
+- Durable `FitnessProgramSession` week/day records.
+- Per-user `FitnessPlanAssignment` enrollment and progress.
+- Program list/detail/current/start/complete/status APIs.
+- Six curated MYPA starter programs spanning strength, hypertrophy/sculpt, fat loss home, calisthenics, mobility/yoga and general fitness.
+- Mobile Program Library and Program Detail/execution screens.
+
+### Fitness calculators
+
+- BMI.
+- BMR (Mifflin-St Jeor).
+- TDEE from activity factor.
+- Calorie guidance for fat loss/gain.
+- Workout calorie estimate when a per-minute estimate is supplied.
+- Optional lean-mass estimate from body-fat percentage.
+- Lifestyle water target estimate with explicit non-medical methodology wording.
+- Mobile calculator surface.
 
 ## Automated evidence
 
-### Backend CI — GREEN
+### Verified baseline
 
-The latest verified Backend CI line completed successfully through dependency installation, Prisma schema validation/generation, migration deployment and idempotence, food-intelligence self-test, backend build, unit tests and API E2E tests.
+The previous Backend CI, Mobile CI and Android native APK evidence remains valid for the baseline commit listed above.
 
-### Mobile CI — GREEN
+### New Fitness slice
 
-The latest verified Mobile CI line completed successfully through dependency installation, mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling.
-
-### Android native APK — GREEN
-
-The canonical native evidence path is `.github/workflows/android-apk.yml`. Workflow run `34772364209` (run #79), head `0d19d2b7dad5e9100505205328fbd523e544445b`, completed successfully through Expo prebuild, real Gradle `assembleDebug`, and APK upload. The produced artifact is `my-personal-assistant-debug-apk`, 58,443,390 bytes, SHA-256 `622b90eeef0898ab7d3eac9af75fac6e486da46eb4f741116d601f3d727f23da`.
+The durable program/calculator changes and current exercise/media changes are **pending fresh CI verification** on the final feature-branch head. No new slice is marked green from code inspection alone.
 
 ## Evidence limitations
 
 - Real physical-device UX remains unvalidated.
-- Production deployment behavior, production Supabase/Auth/RLS/Storage configuration and real notification delivery remain environment-limited.
-- Microphone/location/speech behavior on a physical device is not proven by repository CI alone.
-- Local media in a user's device/gallery is not directly validated by repository CI.
-- Direct local repository execution is unavailable in the remediation container because outbound GitHub network access is blocked; GitHub Actions remains the authoritative automated execution evidence for this pass.
-
-These are explicit evidence limits, not silently marked green findings.
+- Production Supabase/Auth/RLS/Storage/CDN behavior remains environment-limited.
+- Final instructional-video availability is content/legal-gated.
+- The local ExerciseDB V1 OSS corpus is non-commercial research material and must not be shipped in a monetized build without compatible commercial rights.
 
 ## Project Brain
 
-`docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` must remain synchronized with the same verification boundary.
+- `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` remains the reference-product gap analysis.
+- `docs/project-brain/17_FITNESS_VIDEO_MEDIA_FOUNDATION.md` documents the media foundation and acquisition boundary.
+- `docs/project-brain/18_FITNESS_PROGRAMS_AND_CALCULATORS.md` documents the durable program/calculator slice.
+- `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` remains the canonical audit findings record.
+- `docs/project-brain/12_OPEN_WORK.md` remains the canonical actionable-work list.
