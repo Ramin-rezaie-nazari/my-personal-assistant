@@ -1,7 +1,7 @@
 # MYPA Current State
 
-Last updated: 2026-09-13
-Review status: FINAL VERIFICATION / EVIDENCE-LIMITED DEPLOYMENT ITEMS REMAIN
+Last updated: 2026-09-14
+Review status: FITNESS EXERCISE CONTENT/MEDIA FOUNDATION IMPLEMENTED / RUNTIME VERIFICATION PENDING
 
 ## Canonical ownership
 
@@ -11,11 +11,11 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Branch: `main`
-- Latest functional verification commit: `0d19d2b7dad5e9100505205328fbd523e544445b`
-- Subsequent commits only synchronize Project Brain/current-state evidence; they do not alter the verified native implementation.
-- Scope: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
+- Latest fully verified functional baseline: `0d19d2b7dad5e9100505205328fbd523e544445b`
+- Subsequent commits now include the Exercise Content/Media foundation work; that new slice is not yet covered by the previous CI/native verification evidence.
+- Scope of the latest verified baseline: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
 
-## Remediation completed
+## Remediation completed in verified baseline
 
 - Major audit remediation PR #71 is merged.
 - Frozen pnpm lockfile is aligned with the workspace dependency graph.
@@ -33,7 +33,15 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Audit findings PB-258 through PB-268 are recorded in the canonical appendix and currently closed/remediated.
 - Android Expo SDK 53 autolinking is explicitly pinned through `apps/mobile/react-native.config.js`, with the supporting pnpm hoisting remediation retained.
 
-## Automated evidence
+## New Exercise Content/Media foundation (unverified until CI)
+
+- Canonical `Exercise`, `ExerciseMedia` and `ExerciseRelationship` Prisma models were added as a multi-file schema slice.
+- A migration was added for the new exercise content/media tables and indexes.
+- Authenticated read APIs were added for exercise listing/search/filtering and exercise detail.
+- Exercise media now carries provider, license, attribution, approval status, dimensions, duration, poster and checksum metadata.
+- Existing fitness generators are intentionally not yet rewritten against the new catalog; that integration follows runtime verification of this foundation.
+
+## Automated evidence for the verified baseline
 
 ### Backend CI — GREEN
 
@@ -49,6 +57,8 @@ The canonical native evidence path is `.github/workflows/android-apk.yml`. Workf
 
 ## Evidence limitations
 
+- The new Exercise Content/Media foundation has not yet received a CI run after these commits.
+- No production exercise dataset or approved production video catalog has been imported yet.
 - Real physical-device UX remains unvalidated.
 - Production deployment behavior, production Supabase/Auth/RLS/Storage configuration and real notification delivery remain environment-limited.
 - Microphone/location/speech behavior on a physical device is not proven by repository CI alone.
@@ -59,4 +69,4 @@ These are explicit evidence limits, not silently marked green findings.
 
 ## Project Brain
 
-`docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` must remain synchronized with the same verification boundary.
+`docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` is the reference-product gap analysis, and `docs/project-brain/17_EXERCISE_CONTENT_MEDIA_IMPLEMENTATION.md` documents the new exercise/media foundation and remaining work. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` must remain synchronized with the same verification boundary.
