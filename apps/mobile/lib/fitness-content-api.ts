@@ -1,6 +1,7 @@
-import { getStoredAccessToken } from './api';
+import { clearAuthSession, getStoredAccessToken, getStoredRefreshToken, setAuthSession } from './api';
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3000';
+type AuthResponse = Parameters<typeof setAuthSession>[0];
 
 export type ExerciseMedia = {
   id: string;
@@ -42,6 +43,18 @@ export type ExerciseSummary = {
   approvedVideoCount: number;
 };
 
+export type ExerciseRelationship = {
+  id: string;
+  fromExerciseId: string;
+  toExerciseId: string;
+  kind: string;
+  priority: number;
+  notes: string | null;
+  slug: string;
+  name: string;
+  nameFa: string | null;
+};
+
 export type ExerciseDetail = ExerciseSummary & {
   secondaryMuscles: string[];
   aliases: string[];
@@ -49,18 +62,34 @@ export type ExerciseDetail = ExerciseSummary & {
   commonMistakes: string[];
   cautions: string[];
   media: ExerciseMedia[];
-  relationships: Array<{ id: string; kind: string; priority: number; notes: string | null; slug: string; name: string; nameFa: string | null }>;
+  relationships: ExerciseRelationship[];
   mediaReady: boolean;
   videoReady: boolean;
 };
 
 export type ExerciseListResponse = { items: ExerciseSummary[]; total: number; limit: number; offset: number };
 
+async function rawRequest(path: string, token?: string) {
+  return fetch(`${API_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+}
+
 async function request<T>(path: string): Promise<T> {
-  const token = await getStoredAccessToken();
-  const response = await fetch(`${API_URL}${path}`, {
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-  });
+  let token = await getStoredAccessToken();
+  let response = await rawRequest(path, token ?? undefined);
+  if (response.status === 401 && token) {
+    const refreshToken = await getStoredRefreshToken();
+    if (refreshToken) {
+      const refreshResponse = await rawRequest('/auth/refresh');
+      if (refreshResponse.ok) {
+        const auth = await refreshResponse.json() as AuthResponse;
+        await setAuthSession(auth);
+        token = auth.accessToken;
+        response = await rawRequest(path, token);
+      } else {
+        await clearAuthSession();
+      }
+    }
+  }
   if (!response.ok) throw new Error((await response.text()) || `Request failed with ${response.status}`);
   return response.json() as Promise<T>;
 }
