@@ -21,11 +21,13 @@ const VALID_CLASSES = new Set([
   'commercial-license-library-api',
   'commercial-license-animation',
   'commercial-api-media',
+  'commercial-in-app-exercise-data-media',
   'open-license-exercise-data',
   'stock-video-platform',
   'exercise-api-media',
   'embedding-license-lead',
   'rights-review-required',
+  'exercise-data-video-marketplace',
 ]);
 
 function fail(message) {
