@@ -11,3 +11,7 @@ apps/backend/recipe-image-dataset/
 .kaggle-venv/
 My-Personal-Assistant-Data/
 processed-images/
+
+# Local fitness exercise corpora and discovery output
+/data/mypa-exercisedb-v1/
+/data/mypa-exercise-video-discovery.json

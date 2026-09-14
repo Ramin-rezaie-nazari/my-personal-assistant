@@ -4,6 +4,7 @@ const DIFFICULTIES = ['beginner', 'intermediate', 'advanced', 'professional'] as
 const CONTENT_STATUSES = ['draft', 'published', 'archived'] as const;
 const MEDIA_KINDS = ['video', 'image', 'animation'] as const;
 const MEDIA_STATUSES = ['pending', 'approved', 'rejected', 'retired'] as const;
+const ACQUISITION_MODES = ['owned_upload', 'licensed', 'open_license', 'external_authorized'] as const;
 const RELATIONSHIP_KINDS = ['alternative', 'progression', 'regression'] as const;
 
 export class ExerciseQueryDto {
@@ -42,6 +43,10 @@ export class AddExerciseMediaDto {
   @IsOptional() @IsUrl({ require_tld: false }) sourceUrl?: string;
   @IsString() @IsNotEmpty() @MaxLength(160) sourceProvider!: string;
   @IsString() @IsNotEmpty() @MaxLength(160) license!: string;
+  @IsIn(ACQUISITION_MODES) acquisitionMode!: (typeof ACQUISITION_MODES)[number];
+  @IsString() @IsNotEmpty() @MaxLength(500) sourceReference!: string;
+  @IsString() @IsNotEmpty() @MaxLength(500) rightsBasis!: string;
+  @IsOptional() @IsString() @MaxLength(160) creator?: string;
   @IsOptional() @IsString() @MaxLength(500) attribution?: string;
   @IsOptional() @IsString() @MaxLength(80) mimeType?: string;
   @IsOptional() @IsInt() @Min(0) @Max(86400) durationSeconds?: number;
@@ -50,6 +55,8 @@ export class AddExerciseMediaDto {
   @IsOptional() @IsString() @MaxLength(16) language?: string;
   @IsOptional() @IsUrl({ require_tld: false }) posterUrl?: string;
   @IsOptional() @IsString() @MaxLength(200) checksum?: string;
+  @IsOptional() @IsString() @MaxLength(500) storageKey?: string;
+  @IsOptional() transformed?: boolean;
   @IsOptional() @IsIn(MEDIA_STATUSES) status?: (typeof MEDIA_STATUSES)[number];
   @IsOptional() @IsInt() @Min(0) @Max(1000) position?: number;
 }

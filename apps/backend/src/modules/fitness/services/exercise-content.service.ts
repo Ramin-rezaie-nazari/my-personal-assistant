@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { AddExerciseMediaDto, AddExerciseRelationshipDto, CreateExerciseDto, ExerciseQueryDto } from '../dto/exercise-content.dto';
@@ -10,7 +10,7 @@ export class ExerciseContentService {
 
   async list(query: ExerciseQueryDto) {
     const limit = Math.min(query.limit ?? 24, 100);
-    const offset = query.offset ?? 0;
+    const offset = Math.max(0, query.offset ?? 0);
     const filters: Prisma.Sql[] = [Prisma.sql`"contentStatus" = 'published'`];
     if (query.search) {
       const value = `%${query.search.trim()}%`;
@@ -25,11 +25,18 @@ export class ExerciseContentService {
 
     const [items, countRows] = await Promise.all([
       this.prisma.$queryRaw<any[]>(Prisma.sql`
-        SELECT "id","slug","name","nameFa","aliases","discipline","movementPattern",
-               "primaryMuscles","secondaryMuscles","equipment","difficulty","goals",
-               "instructions","coachCues","commonMistakes","cautions","contentStatus",
-               "sourceProvider","sourceLicense","sourceAttribution","createdAt","updatedAt"
-        FROM "Exercise" WHERE ${where} ORDER BY "name" ASC LIMIT ${limit} OFFSET ${offset}
+        SELECT e."id",e."slug",e."name",e."nameFa",e."aliases",e."discipline",e."movementPattern",
+               e."primaryMuscles",e."secondaryMuscles",e."equipment",e."difficulty",e."goals",
+               e."instructions",e."coachCues",e."commonMistakes",e."cautions",e."contentStatus",
+               e."sourceProvider",e."sourceLicense",e."sourceAttribution",e."createdAt",e."updatedAt",
+               COUNT(m."id") FILTER (WHERE m."status" = 'approved')::int AS "approvedMediaCount",
+               COUNT(m."id") FILTER (WHERE m."status" = 'approved' AND m."kind" = 'video')::int AS "approvedVideoCount"
+        FROM "Exercise" e
+        LEFT JOIN "ExerciseMedia" m ON m."exerciseId" = e."id"
+        WHERE ${where}
+        GROUP BY e."id"
+        ORDER BY e."name" ASC
+        LIMIT ${limit} OFFSET ${offset}
       `),
       this.prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`SELECT COUNT(*)::bigint AS count FROM "Exercise" WHERE ${where}`),
     ]);
@@ -40,15 +47,23 @@ export class ExerciseContentService {
     const exercises = await this.prisma.$queryRaw<any[]>(Prisma.sql`SELECT * FROM "Exercise" WHERE "id" = ${id} LIMIT 1`);
     if (!exercises[0]) throw new NotFoundException('Exercise not found');
     const [media, relationships] = await Promise.all([
-      this.prisma.$queryRaw<any[]>(Prisma.sql`SELECT * FROM "ExerciseMedia" WHERE "exerciseId" = ${id} AND "status" = 'approved' ORDER BY "position" ASC, "createdAt" ASC`),
+      this.prisma.$queryRaw<any[]>(Prisma.sql`
+        SELECT "id","exerciseId","kind","url","sourceUrl","sourceProvider","license","attribution",
+               "mimeType","durationSeconds","width","height","language","posterUrl","checksum",
+               "status","position","acquisitionMode","sourceReference","rightsBasis","creator","storageKey",
+               "transformed","reviewer","reviewedAt","contentVersion","createdAt","updatedAt"
+        FROM "ExerciseMedia"
+        WHERE "exerciseId" = ${id} AND "status" = 'approved'
+        ORDER BY "position" ASC, "createdAt" ASC
+      `),
       this.prisma.$queryRaw<any[]>(Prisma.sql`
         SELECT r.*, e."slug", e."name", e."nameFa"
         FROM "ExerciseRelationship" r JOIN "Exercise" e ON e."id" = r."toExerciseId"
-        WHERE r."fromExerciseId" = ${id}
+        WHERE r."fromExerciseId" = ${id} AND e."contentStatus" = 'published'
         ORDER BY r."kind" ASC, r."priority" ASC, e."name" ASC
       `),
     ]);
-    return { ...exercises[0], media, relationships };
+    return { ...exercises[0], media, relationships, mediaReady: media.length > 0, videoReady: media.some((item) => item.kind === 'video') };
   }
 
   async create(dto: CreateExerciseDto) {
@@ -72,17 +87,25 @@ export class ExerciseContentService {
 
   async addMedia(exerciseId: string, dto: AddExerciseMediaDto) {
     await this.assertExercise(exerciseId);
+    if (dto.status === 'approved') {
+      const rights = [dto.acquisitionMode, dto.sourceReference, dto.rightsBasis].every(Boolean);
+      if (!rights) throw new BadRequestException('Approved media requires acquisition mode, source reference and rights basis');
+      if (dto.acquisitionMode !== 'owned_upload' && !dto.sourceUrl) throw new BadRequestException('Non-owned media requires a canonical source URL');
+    }
+    if (dto.kind === 'video' && !dto.mimeType) throw new BadRequestException('Video media requires a MIME type');
     const id = randomUUID();
     await this.prisma.$executeRaw(Prisma.sql`
       INSERT INTO "ExerciseMedia" (
         "id","exerciseId","kind","url","sourceUrl","sourceProvider","license","attribution",
         "mimeType","durationSeconds","width","height","language","posterUrl","checksum","status","position",
-        "createdAt","updatedAt"
+        "acquisitionMode","sourceReference","rightsBasis","creator","storageKey","transformed","reviewer","reviewedAt",
+        "contentVersion","createdAt","updatedAt"
       ) VALUES (
         ${id},${exerciseId},${dto.kind},${dto.url},${dto.sourceUrl ?? null},${dto.sourceProvider},${dto.license},
         ${dto.attribution ?? null},${dto.mimeType ?? null},${dto.durationSeconds ?? null},${dto.width ?? null},
         ${dto.height ?? null},${dto.language ?? null},${dto.posterUrl ?? null},${dto.checksum ?? null},
-        ${dto.status ?? 'pending'},${dto.position ?? 0},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
+        ${dto.status ?? 'pending'},${dto.position ?? 0},${dto.acquisitionMode},${dto.sourceReference},${dto.rightsBasis},
+        ${dto.creator ?? null},${dto.storageKey ?? null},${dto.transformed ?? false},NULL,NULL,NULL,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
       )
     `);
     const rows = await this.prisma.$queryRaw<any[]>(Prisma.sql`SELECT * FROM "ExerciseMedia" WHERE "id" = ${id} LIMIT 1`);
