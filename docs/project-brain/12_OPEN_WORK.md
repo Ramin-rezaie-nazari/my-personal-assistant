@@ -1,13 +1,13 @@
 # MYPA Open Work
 
 Last updated: 2026-09-14
-Status: FITNESS CONTENT / MEDIA EXECUTION PHASE OPEN; BASE AUDIT REMEDIATION CLOSED
+Status: FITNESS FREE-FIRST CONTENT / MEDIA EXECUTION PHASE OPEN; BASE AUDIT REMEDIATION CLOSED
 
 This file contains only currently actionable work/evidence gaps. Historical audit observations are preserved in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` and dated deep-read/audit continuation documents; an old OPEN label in a historical catalog is not evidence that the defect still exists.
 
 ## Remaining work — Fitness content/media phase
 
-The repository-side Fitness product foundation is implemented on the feature branch. The next actionable phase is content scale + authorized media acquisition.
+The repository-side Fitness product foundation is implemented on the feature branch. The active phase is content scale + free/open/public-domain media discovery and authorized acquisition.
 
 ### 1. 1500-exercise catalog
 
@@ -18,22 +18,38 @@ The repository-side Fitness product foundation is implemented on the feature bra
 
 ### 2. 1000-source discovery corpus
 
-- Discover up to **1000 candidate websites/source domains** for exercise demonstrations and structured exercise content.
-- Record domain/source URL, content type, creator/owner, license or permission basis, commercial-use compatibility, attribution requirements, download/API/hotlink constraints and approval status.
+- Discover at least **1000 distinct candidate websites/source domains/collections** for exercise demonstrations and structured exercise content.
+- Larger discovery runs (10,000+ sources) are permitted when needed; 1000 is the first milestone, not a hard ceiling.
+- Record domain/source URL, content type, creator/owner, exact license or permission basis, commercial-use compatibility, attribution requirements, download/API/hotlink constraints and approval status.
 - Candidate discovery is not permission to copy content.
 
-### 3. Rights-aware media acquisition
+### 3. Free-first media acquisition
 
-- Build/execute the acquisition pipeline only for MYPA-owned, explicitly licensed, compatible open-license or externally authorized assets.
+Priority order:
+
+1. exact CC0/public-domain assets;
+2. exact CC BY assets;
+3. other compatible open licenses after obligations are reviewed;
+4. government/public-domain exercise footage with asset-level checks;
+5. openly licensed creator/exercise libraries;
+6. free stock platforms only when the exact asset license supports MYPA's intended distribution/storage model;
+7. paid vendors only as fallback if free coverage cannot satisfy the movement gap.
+
+The repository now contains scalable discovery and rights-gated download tooling. Execute the free/open/public-domain path first and measure exact coverage against the 1500-movement target before considering paid procurement.
+
+### 4. Rights-aware media acquisition
+
+- Build/execute acquisition only for MYPA-owned, explicitly licensed, compatible open-license or externally authorized assets.
 - Do not blanket-download BODINEXT media or arbitrary third-party exercise videos.
-- Persist provenance before publication: acquisition mode, source reference, rights basis, creator, attribution, checksum, storage key, reviewer and review timestamp.
+- Persist provenance before publication: acquisition mode, source reference, rights basis, license URL, creator, attribution, checksum, storage key, reviewer and review timestamp.
+- Use the approved-media downloader only after asset-level approval.
 
-### 4. Consumer media UX
+### 5. Consumer media UX
 
 - Add true in-app video playback after the authorized media source strategy is finalized.
 - Keep external/link-only fallback explicit when an approved asset cannot be embedded safely.
 
-### 5. Fitness analytics polish
+### 6. Fitness analytics polish
 
 - Add richer exercise-level program analytics.
 - Add PR and volume/adherence trend views to the consumer dashboard.
