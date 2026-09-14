@@ -80,11 +80,12 @@ for (const [index, record] of manifest.entries()) {
   if (!['owned_upload', 'licensed', 'open_license', 'external_authorized'].includes(record.acquisitionMode)) {
     fail(`manifest[${index}] invalid acquisitionMode`);
   }
-  for (const field of ['rightsBasis', 'sourceReference', 'downloadUrl', 'filename', 'exerciseId']) {
+  for (const field of ['rightsBasis', 'licenseUrl', 'sourceReference', 'downloadUrl', 'filename', 'exerciseId']) {
     if (!String(record?.[field] ?? '').trim()) fail(`manifest[${index}] missing ${field}`);
   }
-  assertHttpUrl(record.sourceReference, `manifest[${index}].sourceReference`);
-  assertHttpUrl(record.downloadUrl, `manifest[${index}].downloadUrl`);
+  for (const field of ['licenseUrl', 'sourceReference', 'downloadUrl']) {
+    assertHttpUrl(record[field], `manifest[${index}].${field}`);
+  }
   const allowedHosts = Array.isArray(record.allowedHosts) ? record.allowedHosts : [];
   if (!allowedHosts.length) fail(`manifest[${index}] must define allowedHosts`);
   const host = new URL(record.downloadUrl).hostname.toLowerCase();
