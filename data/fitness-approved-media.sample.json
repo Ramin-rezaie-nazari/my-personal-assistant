@@ -1,0 +1,50 @@
+[
+  {
+    "exerciseId": "bench-press",
+    "filename": "bench-press-fitnessscape.webm",
+    "approved": true,
+    "acquisitionMode": "open_license",
+    "rightsBasis": "CC BY 3.0 Unported",
+    "sourceReference": "https://commons.wikimedia.org/wiki/File:Bench_press_-_exercise_demonstration_video.webm",
+    "downloadUrl": "https://upload.wikimedia.org/wikipedia/commons/d/df/Bench_press_-_exercise_demonstration_video.webm",
+    "allowedHosts": ["upload.wikimedia.org"],
+    "creator": "FitnessScape",
+    "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "exerciseId": "squat",
+    "filename": "squat-fitnessscape.webm",
+    "approved": true,
+    "acquisitionMode": "open_license",
+    "rightsBasis": "CC BY 3.0 Unported",
+    "sourceReference": "https://commons.wikimedia.org/wiki/File:Squat_-_exercise_demonstration_video.webm",
+    "downloadUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Squat_-_exercise_demonstration_video.webm",
+    "allowedHosts": ["commons.wikimedia.org"],
+    "creator": "FitnessScape",
+    "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "exerciseId": "deadlift",
+    "filename": "deadlift-fitnessscape.webm",
+    "approved": true,
+    "acquisitionMode": "open_license",
+    "rightsBasis": "CC BY 3.0 Unported",
+    "sourceReference": "https://commons.wikimedia.org/wiki/File:Deadlift_-_exercise_demonstration_video.webm",
+    "downloadUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Deadlift_-_exercise_demonstration_video.webm",
+    "allowedHosts": ["commons.wikimedia.org"],
+    "creator": "FitnessScape",
+    "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "exerciseId": "pull-ups",
+    "filename": "pull-ups-fitnessscape.webm",
+    "approved": true,
+    "acquisitionMode": "open_license",
+    "rightsBasis": "CC BY 3.0 Unported",
+    "sourceReference": "https://commons.wikimedia.org/wiki/File:Pull-ups_-_exercise_demonstration_video.webm",
+    "downloadUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Pull-ups_-_exercise_demonstration_video.webm",
+    "allowedHosts": ["commons.wikimedia.org"],
+    "creator": "FitnessScape",
+    "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
+  }
+]
