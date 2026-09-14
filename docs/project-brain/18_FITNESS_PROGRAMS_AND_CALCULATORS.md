@@ -40,11 +40,11 @@ These are MYPA-curated starter programs, not copied BODINEXT programs.
 - `POST /fitness/programs/:id/sessions/complete`
 - `POST /fitness/programs/:id/status`
 
-All routes inherit the Fitness controller JWT boundary.
+All routes inherit the Fitness controller JWT boundary. Session completion is constrained to the currently assigned week/day so progress cannot be double-counted or completed out of order.
 
 ### Calculator API
 
-`GET /fitness/calculators` now provides a reusable calculation primitive for:
+`POST /fitness/calculators` now provides a reusable calculation primitive for:
 
 - BMI.
 - BMR using Mifflin-St Jeor.
@@ -54,7 +54,13 @@ All routes inherit the Fitness controller JWT boundary.
 - lean mass estimate when body-fat percentage is supplied.
 - lifestyle water target estimate.
 
-The API exposes methodology text and keeps the water calculation explicitly non-medical.
+Body metrics are sent as JSON rather than query parameters to avoid unnecessary exposure in URLs/logs. The API exposes methodology text and keeps the water calculation explicitly non-medical.
+
+### Progress summary API
+
+- `GET /fitness/progress/summary`
+
+Returns authenticated user-level workout count/minutes/calories, performance completion/difficulty averages, and active-program progress percentage.
 
 ### Mobile consumer surfaces
 
@@ -66,11 +72,11 @@ The API exposes methodology text and keeps the water calculation explicitly non-
 
 ## Remaining Fitness gaps before video phase
 
-- Connect durable program prescriptions to canonical `Exercise` IDs rather than string `exerciseKey` values once the commercial-safe Exercise catalog is selected/imported.
-- Add richer exercise-level program analytics (volume, adherence, PR/progression summaries) to the consumer dashboard.
-- Add true in-app video playback only after the authorized video source strategy is finalized.
+- Resolve durable program prescriptions against canonical published `Exercise` records once the commercial-safe Exercise catalog is selected/imported; the current payload uses stable exercise keys as an interim bridge.
+- Add richer exercise-level program analytics and PR/volume trend charts to the consumer dashboard.
+- Add true in-app video playback after the authorized video source strategy is finalized.
 - Keep third-party video acquisition separate from program/content architecture.
 
 ## Verification boundary
 
-The new program/calculator slice is not considered green until Backend CI and Mobile CI complete successfully on the final branch head. Production Supabase behavior and physical-device UX remain environment-specific evidence.
+The new program/calculator/progress slice is not considered green until Backend CI and Mobile CI complete successfully on the final branch head. Production Supabase behavior and physical-device UX remain environment-specific evidence.
