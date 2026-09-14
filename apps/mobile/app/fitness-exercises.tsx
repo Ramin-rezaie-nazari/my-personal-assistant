@@ -8,144 +8,22 @@ import { hasAuthSession } from '../lib/api';
 import { BRAND } from '../lib/branding';
 
 const ui = {
-  en: {
-    eyebrow: 'FITNESS LIBRARY', title: 'Find your next movement', subtitle: 'Browse the exercise catalog by goal, muscle, equipment, or level.', search: 'Search exercises…', all: 'All', gym: 'Gym', calisthenics: 'Calisthenics', yoga: 'Yoga', loading: 'Loading exercises…', empty: 'No exercises match your filters.', retry: 'Try again', media: 'media', videos: 'videos', open: 'Open', back: 'Back',
-  },
-  fa: {
-    eyebrow: 'کتابخانه تمرین', title: 'حرکت بعدی را پیدا کن', subtitle: 'تمرین‌ها را بر اساس هدف، عضله، تجهیزات یا سطح پیدا کن.', search: 'جستجوی تمرین…', all: 'همه', gym: 'بدنسازی', calisthenics: 'کالیستنیکس', yoga: 'یوگا', loading: 'در حال بارگذاری تمرین‌ها…', empty: 'تمرینی با این فیلترها پیدا نشد.', retry: 'تلاش دوباره', media: 'مدیا', videos: 'ویدئو', open: 'باز کردن', back: 'برگشت',
-  },
+  en: { eyebrow:'FITNESS LIBRARY', title:'Find your next movement', subtitle:'Browse the exercise catalog by goal, muscle, equipment, or level.', search:'Search exercises…', all:'All', gym:'Gym', calisthenics:'Calisthenics', yoga:'Yoga', beginner:'Beginner', intermediate:'Intermediate', advanced:'Advanced', equipment:'Equipment', bodyweight:'Bodyweight', dumbbells:'Dumbbells', barbell:'Barbell', band:'Band', loading:'Loading exercises…', empty:'No exercises match your filters.', retry:'Try again', media:'media', videos:'videos', back:'Back' },
+  fa: { eyebrow:'کتابخانه تمرین', title:'حرکت بعدی را پیدا کن', subtitle:'تمرین‌ها را بر اساس هدف، عضله، تجهیزات یا سطح پیدا کن.', search:'جستجوی تمرین…', all:'همه', gym:'بدنسازی', calisthenics:'کالیستنیکس', yoga:'یوگا', beginner:'مبتدی', intermediate:'متوسط', advanced:'پیشرفته', equipment:'تجهیزات', bodyweight:'وزن بدن', dumbbells:'دمبل', barbell:'هالتر', band:'کش', loading:'در حال بارگذاری تمرین‌ها…', empty:'تمرینی با این فیلترها پیدا نشد.', retry:'تلاش دوباره', media:'مدیا', videos:'ویدئو', back:'برگشت' },
 } as const;
 
-const disciplines = [
-  { key: '', labelKey: 'all' },
-  { key: 'gym', labelKey: 'gym' },
-  { key: 'calisthenics', labelKey: 'calisthenics' },
-  { key: 'yoga', labelKey: 'yoga' },
-] as const;
+const disciplines=[{key:'',labelKey:'all'},{key:'gym',labelKey:'gym'},{key:'calisthenics',labelKey:'calisthenics'},{key:'yoga',labelKey:'yoga'}] as const;
+const difficulties=[{key:'',labelKey:'all'},{key:'beginner',labelKey:'beginner'},{key:'intermediate',labelKey:'intermediate'},{key:'advanced',labelKey:'advanced'}] as const;
+const equipment=[{key:'',labelKey:'all'},{key:'body weight',labelKey:'bodyweight'},{key:'dumbbell',labelKey:'dumbbells'},{key:'barbell',labelKey:'barbell'},{key:'band',labelKey:'band'}] as const;
 
-export default function FitnessExercisesScreen() {
-  const { locale, rtl } = useAppLocale();
-  const text = ui[locale];
-  const [search, setSearch] = useState('');
-  const [discipline, setDiscipline] = useState('');
-  const [items, setItems] = useState<ExerciseSummary[]>([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      setError(null);
-      const result = await getExerciseList({ search: search.trim(), discipline, limit: 40, offset: 0 });
-      setItems(result.items);
-      setTotal(result.total);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to load exercises.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [discipline, search]);
-
-  useEffect(() => {
-    let mounted = true;
-    void hasAuthSession().then((ok) => {
-      if (!mounted) return;
-      if (!ok) { router.replace('/auth'); return; }
-      void load();
-    });
-    return () => { mounted = false; };
-  }, [load]);
-
-  return (
-    <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>{rtl ? '→' : '←'} {text.back}</Text></Pressable>
-        <Text style={[styles.eyebrow, rtl && styles.rtlText]}>{text.eyebrow}</Text>
-        <Text style={[styles.title, rtl && styles.rtlText]}>{text.title}</Text>
-        <Text style={[styles.subtitle, rtl && styles.rtlText]}>{text.subtitle}</Text>
-        <TextInput value={search} onChangeText={setSearch} onSubmitEditing={() => void load()} placeholder={text.search} placeholderTextColor="#9CA3AF" style={[styles.search, rtl && styles.rtlText]} returnKeyType="search" />
-        <FlatList
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          data={disciplines}
-          keyExtractor={(item) => item.key || 'all'}
-          contentContainerStyle={styles.filters}
-          renderItem={({ item }) => (
-            <Pressable onPress={() => setDiscipline(item.key)} style={[styles.chip, discipline === item.key && styles.chipActive]}>
-              <Text style={[styles.chipText, discipline === item.key && styles.chipTextActive]}>{text[item.labelKey as keyof typeof text] as string}</Text>
-            </Pressable>
-          )}
-        />
-        <Text style={[styles.resultCount, rtl && styles.rtlText]}>{total} {locale === 'fa' ? 'تمرین' : 'exercises'}</Text>
-      </View>
-
-      {loading ? <View style={styles.center}><ActivityIndicator size="large" color={BRAND.colors.primaryStrong} /><Text style={styles.centerText}>{text.loading}</Text></View> : error ? (
-        <View style={styles.center}><Text style={styles.errorTitle}>{text.empty}</Text><Text style={styles.errorBody}>{error}</Text><Pressable onPress={() => void load()} style={styles.retry}><Text style={styles.retryText}>{text.retry}</Text></Pressable></View>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={[styles.list, !items.length && styles.listEmpty]}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}
-          renderItem={({ item }) => (
-            <Pressable onPress={() => router.push(`/fitness-exercise/${encodeURIComponent(item.id)}`)} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
-              <View style={styles.cardTop}>
-                <View style={styles.level}><Text style={styles.levelText}>{item.difficulty.toUpperCase()}</Text></View>
-                <Text style={styles.discipline}>{item.discipline}</Text>
-              </View>
-              <Text style={[styles.name, rtl && styles.rtlText]}>{locale === 'fa' && item.nameFa ? item.nameFa : item.name}</Text>
-              <Text style={[styles.muscles, rtl && styles.rtlText]} numberOfLines={2}>{item.primaryMuscles.join(' · ') || item.movementPattern || ''}</Text>
-              <View style={[styles.metaRow, rtl && styles.rtlRow]}>
-                <Text style={styles.meta}>{item.equipment.length ? item.equipment.slice(0, 2).join(' · ') : 'Bodyweight'}</Text>
-                <Text style={styles.metaStrong}>{item.approvedVideoCount} {text.videos} · {item.approvedMediaCount} {text.media}</Text>
-              </View>
-            </Pressable>
-          )}
-          ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>{text.empty}</Text></View>}
-        />
-      )}
-    </SafeAreaView>
-  );
+export default function FitnessExercisesScreen(){
+  const {locale,rtl}=useAppLocale(); const text=ui[locale];
+  const [search,setSearch]=useState(''); const [discipline,setDiscipline]=useState(''); const [difficulty,setDifficulty]=useState(''); const [equipmentFilter,setEquipmentFilter]=useState('');
+  const [items,setItems]=useState<ExerciseSummary[]>([]); const [total,setTotal]=useState(0); const [loading,setLoading]=useState(true); const [refreshing,setRefreshing]=useState(false); const [error,setError]=useState<string|null>(null);
+  const load=useCallback(async()=>{try{setError(null);const result=await getExerciseList({search:search.trim(),discipline,difficulty,equipment:equipmentFilter,limit:40,offset:0});setItems(result.items);setTotal(result.total);}catch(err){setError(err instanceof Error?err.message:'Unable to load exercises.')}finally{setLoading(false);setRefreshing(false);}},[discipline,difficulty,equipmentFilter,search]);
+  useEffect(()=>{let mounted=true;void hasAuthSession().then(ok=>{if(!mounted)return;if(!ok){router.replace('/auth');return;}void load();});return()=>{mounted=false}},[load]);
+  const ChipRow=({data,onSelect,value}:{data:ReadonlyArray<{key:string;labelKey:string}>;onSelect:(v:string)=>void;value:string})=><FlatList horizontal showsHorizontalScrollIndicator={false} data={data} keyExtractor={x=>x.key||x.labelKey} contentContainerStyle={styles.filters} renderItem={({item})=><Pressable onPress={()=>onSelect(item.key)} style={[styles.chip,value===item.key&&styles.chipActive]}><Text style={[styles.chipText,value===item.key&&styles.chipTextActive]}>{text[item.labelKey as keyof typeof text] as string}</Text></Pressable>}/>;
+  return <SafeAreaView style={styles.safe}><View style={styles.header}><Pressable onPress={()=>router.back()} style={styles.back}><Text style={styles.backText}>{rtl?'→':'←'} {text.back}</Text></Pressable><Text style={[styles.eyebrow,rtl&&styles.rtlText]}>{text.eyebrow}</Text><Text style={[styles.title,rtl&&styles.rtlText]}>{text.title}</Text><Text style={[styles.subtitle,rtl&&styles.rtlText]}>{text.subtitle}</Text><TextInput value={search} onChangeText={setSearch} onSubmitEditing={()=>void load()} placeholder={text.search} placeholderTextColor="#9CA3AF" style={[styles.search,rtl&&styles.rtlText]} returnKeyType="search"/><ChipRow data={disciplines} onSelect={setDiscipline} value={discipline}/><Text style={[styles.filterLabel,rtl&&styles.rtlText]}>{faLabel(locale,'Level')}</Text><ChipRow data={difficulties} onSelect={setDifficulty} value={difficulty}/><Text style={[styles.filterLabel,rtl&&styles.rtlText]}>{text.equipment}</Text><ChipRow data={equipment} onSelect={setEquipmentFilter} value={equipmentFilter}/><Text style={[styles.resultCount,rtl&&styles.rtlText]}>{total} {locale==='fa'?'تمرین':'exercises'}</Text></View>{loading?<View style={styles.center}><ActivityIndicator size="large" color={BRAND.colors.primaryStrong}/><Text style={styles.centerText}>{text.loading}</Text></View>:error?<View style={styles.center}><Text style={styles.errorTitle}>{text.empty}</Text><Text style={styles.errorBody}>{error}</Text><Pressable onPress={()=>void load()} style={styles.retry}><Text style={styles.retryText}>{text.retry}</Text></Pressable></View>:<FlatList data={items} keyExtractor={item=>item.id} contentContainerStyle={[styles.list,!items.length&&styles.listEmpty]} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{setRefreshing(true);void load()}}/>} renderItem={({item})=><Pressable onPress={()=>router.push(`/fitness-exercise/${encodeURIComponent(item.id)}`)} style={({pressed})=>[styles.card,pressed&&styles.pressed]}><View style={styles.cardTop}><View style={styles.level}><Text style={styles.levelText}>{item.difficulty.toUpperCase()}</Text></View><Text style={styles.discipline}>{item.discipline}</Text></View><Text style={[styles.name,rtl&&styles.rtlText]}>{locale==='fa'&&item.nameFa?item.nameFa:item.name}</Text><Text style={[styles.muscles,rtl&&styles.rtlText]} numberOfLines={2}>{item.primaryMuscles.join(' · ')||item.movementPattern||''}</Text><View style={[styles.metaRow,rtl&&styles.rtlRow]}><Text style={styles.meta}>{item.equipment.length?item.equipment.slice(0,2).join(' · '):'Bodyweight'}</Text><Text style={styles.metaStrong}>{item.approvedVideoCount} {text.videos} · {item.approvedMediaCount} {text.media}</Text></View></Pressable>} ListEmptyComponent={<View style={styles.empty}><Text style={styles.emptyTitle}>{text.empty}</Text></View>}/>}</SafeAreaView>;
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BRAND.colors.canvas },
-  header: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 8 },
-  back: { alignSelf: 'flex-start', paddingVertical: 6, marginBottom: 8 },
-  backText: { color: '#374151', fontWeight: '800' },
-  eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.7, color: BRAND.colors.primaryStrong },
-  title: { marginTop: 5, fontSize: 30, lineHeight: 36, fontWeight: '900', color: '#111827' },
-  subtitle: { marginTop: 7, fontSize: 14, lineHeight: 20, color: '#6B7280' },
-  search: { marginTop: 16, minHeight: 50, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 16, backgroundColor: '#FFFFFF', paddingHorizontal: 16, color: '#111827' },
-  filters: { gap: 8, paddingVertical: 12 },
-  chip: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 999, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
-  chipActive: { backgroundColor: '#111827', borderColor: '#111827' },
-  chipText: { fontSize: 12, fontWeight: '800', color: '#4B5563' },
-  chipTextActive: { color: '#FFFFFF' },
-  resultCount: { color: '#6B7280', fontSize: 11, fontWeight: '800' },
-  list: { padding: 20, paddingTop: 8, gap: 12, paddingBottom: 36 },
-  listEmpty: { flexGrow: 1 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 22, padding: 17, borderWidth: 1, borderColor: '#EEF0F3' },
-  pressed: { opacity: 0.84, transform: [{ scale: 0.99 }] },
-  cardTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  level: { paddingHorizontal: 8, paddingVertical: 5, borderRadius: 8, backgroundColor: '#F3F4F6' },
-  levelText: { fontSize: 9, fontWeight: '900', color: '#4B5563' },
-  discipline: { fontSize: 10, fontWeight: '800', color: BRAND.colors.primaryStrong, textTransform: 'uppercase' },
-  name: { marginTop: 12, fontSize: 20, fontWeight: '900', color: '#111827' },
-  muscles: { marginTop: 6, color: '#6B7280', fontSize: 12, lineHeight: 18 },
-  metaRow: { marginTop: 14, paddingTop: 11, borderTopWidth: 1, borderTopColor: '#F0F1F3', flexDirection: 'row', justifyContent: 'space-between', gap: 10 },
-  rtlRow: { flexDirection: 'row-reverse' },
-  meta: { flex: 1, color: '#6B7280', fontSize: 11, fontWeight: '700' },
-  metaStrong: { color: '#111827', fontSize: 11, fontWeight: '900' },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 28 },
-  centerText: { marginTop: 12, color: '#6B7280' },
-  errorTitle: { color: '#111827', fontSize: 18, fontWeight: '900', textAlign: 'center' },
-  errorBody: { color: '#6B7280', fontSize: 12, textAlign: 'center', marginTop: 8 },
-  retry: { marginTop: 16, paddingHorizontal: 18, paddingVertical: 11, borderRadius: 12, backgroundColor: '#111827' },
-  retryText: { color: '#FFFFFF', fontWeight: '800' },
-  empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 30 },
-  emptyTitle: { color: '#6B7280', fontWeight: '800', textAlign: 'center' },
-  rtlText: { textAlign: 'right', writingDirection: 'rtl' },
-});
+const faLabel=(locale:'en'|'fa',value:string)=>locale==='fa'?'سطح':value;
+const styles=StyleSheet.create({safe:{flex:1,backgroundColor:BRAND.colors.canvas},header:{paddingHorizontal:20,paddingTop:10,paddingBottom:8},back:{alignSelf:'flex-start',paddingVertical:6,marginBottom:8},backText:{color:'#374151',fontWeight:'800'},eyebrow:{fontSize:11,fontWeight:'900',letterSpacing:1.7,color:BRAND.colors.primaryStrong},title:{marginTop:5,fontSize:30,lineHeight:36,fontWeight:'900',color:'#111827'},subtitle:{marginTop:7,fontSize:14,lineHeight:20,color:'#6B7280'},search:{marginTop:16,minHeight:50,borderWidth:1,borderColor:'#E5E7EB',borderRadius:16,backgroundColor:'#FFFFFF',paddingHorizontal:16,color:'#111827'},filters:{gap:8,paddingVertical:8},filterLabel:{fontSize:10,fontWeight:'900',color:'#6B7280',marginTop:2},chip:{paddingHorizontal:14,paddingVertical:8,borderRadius:999,backgroundColor:'#FFFFFF',borderWidth:1,borderColor:'#E5E7EB'},chipActive:{backgroundColor:'#111827',borderColor:'#111827'},chipText:{fontSize:11,fontWeight:'800',color:'#4B5563'},chipTextActive:{color:'#FFFFFF'},resultCount:{color:'#6B7280',fontSize:11,fontWeight:'800',marginTop:2},list:{padding:20,paddingTop:8,gap:12,paddingBottom:36},listEmpty:{flexGrow:1},card:{backgroundColor:'#FFFFFF',borderRadius:22,padding:17,borderWidth:1,borderColor:'#EEF0F3'},pressed:{opacity:.84,transform:[{scale:.99}]},cardTop:{flexDirection:'row',alignItems:'center',justifyContent:'space-between'},level:{paddingHorizontal:8,paddingVertical:5,borderRadius:8,backgroundColor:'#F3F4F6'},levelText:{fontSize:9,fontWeight:'900',color:'#4B5563'},discipline:{fontSize:10,fontWeight:'800',color:BRAND.colors.primaryStrong,textTransform:'uppercase'},name:{marginTop:12,fontSize:20,fontWeight:'900',color:'#111827'},muscles:{marginTop:6,color:'#6B7280',fontSize:12,lineHeight:18},metaRow:{marginTop:14,paddingTop:11,borderTopWidth:1,borderTopColor:'#F0F1F3',flexDirection:'row',justifyContent:'space-between',gap:10},rtlRow:{flexDirection:'row-reverse'},meta:{flex:1,color:'#6B7280',fontSize:11,fontWeight:'700'},metaStrong:{color:'#111827',fontSize:11,fontWeight:'900'},center:{flex:1,alignItems:'center',justifyContent:'center',padding:28},centerText:{marginTop:12,color:'#6B7280'},errorTitle:{color:'#111827',fontSize:18,fontWeight:'900',textAlign:'center'},errorBody:{color:'#6B7280',fontSize:12,textAlign:'center',marginTop:8},retry:{marginTop:16,paddingHorizontal:18,paddingVertical:11,borderRadius:12,backgroundColor:'#111827'},retryText:{color:'#FFFFFF',fontWeight:'800'},empty:{flex:1,alignItems:'center',justifyContent:'center',padding:30},emptyTitle:{color:'#6B7280',fontWeight:'800',textAlign:'center'},rtlText:{textAlign:'right',writingDirection:'rtl'}});
