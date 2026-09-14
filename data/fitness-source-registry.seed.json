@@ -1,0 +1,182 @@
+[
+  {
+    "id": "wikimedia-commons",
+    "name": "Wikimedia Commons",
+    "url": "https://commons.wikimedia.org/",
+    "class": "open-license-media-archive",
+    "priority": 10,
+    "status": "active",
+    "notes": "Asset-level license verification required; strong source for CC/public-domain exercise media."
+  },
+  {
+    "id": "ymove",
+    "name": "YMove",
+    "url": "https://ymove.app/free-exercise-videos",
+    "class": "commercial-license-video",
+    "priority": 10,
+    "status": "active",
+    "notes": "25 free exercise videos advertise commercial use and direct download; full library has separate licensing/white-label terms."
+  },
+  {
+    "id": "exercise-video-api",
+    "name": "ExerciseVideoAPI",
+    "url": "https://exercisevideoapi.com/",
+    "class": "commercial-license-video",
+    "priority": 10,
+    "status": "lead",
+    "notes": "290 HD white-label exercise videos with advertised perpetual commercial licence and download delivery. Verify final purchase terms before ingestion."
+  },
+  {
+    "id": "fitter-stock",
+    "name": "Fitter Stock",
+    "url": "https://fitterstock.com/",
+    "class": "commercial-license-library",
+    "priority": 10,
+    "status": "lead",
+    "notes": "Advertises 3,500+ exercise assets, 1,000+ videos and white-label/platform licensing."
+  },
+  {
+    "id": "funxtion-fxcontent",
+    "name": "Funxtion FXCONTENT",
+    "url": "https://www.funxtion.com/products/content",
+    "class": "commercial-license-library-api",
+    "priority": 10,
+    "status": "lead",
+    "notes": "Advertises 3,500+ exercises, 1,000+ workouts, 650+ virtual classes, REST API and SDK delivery."
+  },
+  {
+    "id": "workoutdb",
+    "name": "WorkoutDB",
+    "url": "https://work-out-db.com/answers/white-label-exercise-content",
+    "class": "commercial-license-api-media",
+    "priority": 10,
+    "status": "lead",
+    "notes": "Paid Pro/Scale plans advertise commercial in-product use of first-party exercise media/data."
+  },
+  {
+    "id": "musclewiki-api",
+    "name": "MuscleWiki API",
+    "url": "https://api.musclewiki.com/",
+    "class": "commercial-api-media",
+    "priority": 9,
+    "status": "lead",
+    "notes": "Commercial API intended for fitness/health products; redistribution, own API and competing dataset are prohibited. Prefer streaming/embedded delivery over mirroring."
+  },
+  {
+    "id": "exercise-api-com",
+    "name": "ExerciseAPI",
+    "url": "https://exercise-api.com/",
+    "class": "open-license-exercise-data",
+    "priority": 9,
+    "status": "candidate",
+    "notes": "Advertises exercise data under CC BY 4.0. Useful for metadata; media coverage is not assumed. Attribution required."
+  },
+  {
+    "id": "repdb",
+    "name": "RepDB",
+    "url": "https://github.com/RepDB/exercise-dataset",
+    "class": "commercial-in-app-exercise-data-media",
+    "priority": 9,
+    "status": "candidate",
+    "notes": "601-exercise free snapshot with commercial in-app use and attribution. No redistribution as a dataset; premium animation previews excluded."
+  },
+  {
+    "id": "movekit",
+    "name": "MoveKit",
+    "url": "https://movekit.com/",
+    "class": "commercial-license-animation",
+    "priority": 8,
+    "status": "lead",
+    "notes": "400+ exercise animations with commercial licensing; raw standalone redistribution prohibited."
+  },
+  {
+    "id": "exercise-animatic",
+    "name": "Exercise Animatic",
+    "url": "https://www.exerciseanimatic.com/",
+    "class": "commercial-license-animation",
+    "priority": 8,
+    "status": "lead",
+    "notes": "Commercial/lifetime licensing is advertised for embedding exercise animations in apps and other products."
+  },
+  {
+    "id": "exerciseclips",
+    "name": "ExerciseClips",
+    "url": "https://exerciseclips.com/licence/standard/v1.1",
+    "class": "commercial-license-animation",
+    "priority": 7,
+    "status": "lead",
+    "notes": "Standard licence is not sufficient for building an app/platform; Extended Licence is required for that use case."
+  },
+  {
+    "id": "whitelabelworkouts",
+    "name": "White Label Workouts",
+    "url": "https://whitelabelworkouts.com/white-label-exercise-explainers/",
+    "class": "commercial-license-video",
+    "priority": 8,
+    "status": "lead",
+    "notes": "Exercise demos/explainers marketed for apps, portals and coaching products under white-label terms."
+  },
+  {
+    "id": "pexels",
+    "name": "Pexels Videos",
+    "url": "https://www.pexels.com/videos/",
+    "class": "stock-video-platform",
+    "priority": 6,
+    "status": "candidate",
+    "notes": "Commercial-use platform license exists, but asset/person/brand suitability and standalone redistribution restrictions must be checked per use."
+  },
+  {
+    "id": "pixabay",
+    "name": "Pixabay Videos",
+    "url": "https://pixabay.com/videos/",
+    "class": "stock-video-platform",
+    "priority": 6,
+    "status": "candidate",
+    "notes": "Commercial-use platform license exists, but standalone redistribution and asset-specific rights must be respected."
+  },
+  {
+    "id": "mixkit",
+    "name": "Mixkit",
+    "url": "https://mixkit.co/free-stock-video/",
+    "class": "stock-video-platform",
+    "priority": 6,
+    "status": "candidate",
+    "notes": "Large workout/exercise stock-video catalogs; verify the exact asset licence before app ingestion."
+  },
+  {
+    "id": "kinetic-place",
+    "name": "Kinetic.place",
+    "url": "https://kinetic.place/",
+    "class": "exercise-data-video-marketplace",
+    "priority": 7,
+    "status": "lead",
+    "notes": "Large exercise catalog and premium video offering; free data claims do not imply premium-video redistribution rights."
+  },
+  {
+    "id": "exercise-library-api",
+    "name": "ExerciseLibrary API",
+    "url": "https://exerciselibrary.com/",
+    "class": "exercise-api-media",
+    "priority": 7,
+    "status": "lead",
+    "notes": "Large exercise API with video links; delivery/caching rights depend on plan and terms."
+  },
+  {
+    "id": "programme",
+    "name": "Programme",
+    "url": "https://programme.co/",
+    "class": "embedding-license-lead",
+    "priority": 5,
+    "status": "lead",
+    "notes": "Useful embedding/licensing research lead; compiling a competing standalone library is constrained."
+  },
+  {
+    "id": "gymvisual-dataset-warning",
+    "name": "Gym visual derived datasets",
+    "url": "https://gymvisual.com/content/3-terms-and-conditions-of-use",
+    "class": "rights-review-required",
+    "priority": 4,
+    "status": "blocked-until-license",
+    "notes": "Public repos may contain Gym visual media with separate rights; repo MIT status must never be treated as a media licence."
+  }
+]
