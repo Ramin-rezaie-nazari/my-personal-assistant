@@ -9,66 +9,94 @@ Build a discovery corpus of up to 1000 external websites, APIs, repositories, me
 
 The number **1000** is the discovery target. It is not a count of approved download sources.
 
-## Current verified findings
+## Discovery model
+
+Sources are normalized by domain/provider and classified by expected value:
+
+- `open-license-media-archive`
+- `commercial-license-video`
+- `commercial-license-library`
+- `commercial-license-library-api`
+- `commercial-license-animation`
+- `commercial-api-media`
+- `open-license-exercise-data`
+- `stock-video-platform`
+- `exercise-api-media`
+- `embedding-license-lead`
+- `rights-review-required`
+
+The source registry seed is stored in `data/fitness-source-registry.seed.json` so discovery does not remain documentation-only.
+
+## Current high-value findings
 
 | Source | What was found | Rights / delivery signal | MYPA status |
 |---|---|---|---|
-| Wikimedia Commons | Category of physical-exercise videos; individual exercise files exist | Each file has its own license; exact file page must be checked | Preferred open-license discovery source |
-| Wikimedia Commons / FitnessScape | Bench press demonstration | CC BY 3.0 on exact file page; attribution required | Approved-candidate class after metadata capture |
-| Wikimedia Commons / FitnessScape | Squat demonstration | CC BY 3.0 on exact file page; attribution required | Approved-candidate class after metadata capture |
-| Wikimedia Commons / FitnessScape | Deadlift demonstration | CC BY 3.0 on exact file page; attribution required | Approved-candidate class after metadata capture |
-| Wikimedia Commons / FitnessScape | Pull-up demonstration | CC BY 3.0 on exact file page; attribution required | Approved-candidate class after metadata capture |
-| Mixkit | 883 exercise stock videos and 718 workout stock videos are advertised | Mixkit License; individual asset terms still need to be recorded | Candidate; verify per-asset terms |
-| YMove | 25 free downloadable exercise videos; larger 1107+ library | Commercial use advertised for free set; full app/white-label use is license-dependent | High-value licensing lead |
-| ExerciseLibrary | 804+ exercise API with video links | Free/Pro API model; CDN video access is plan-dependent | API/licensing lead |
-| MuscleWiki API | 1900+ exercises and 7700+ video demonstrations | API terms control; video caching/storage restrictions are explicit | Streaming/API lead, not bulk-download default |
-| Exercise Animatic | Commercial fitness animation library | Commercial incorporation is licensed; raw redistribution/standalone library prohibited under listed business license | Licensing lead |
-| ExerciseClips | Exercise animation library | Standard license does not allow building an app/library without extended rights | Licensing lead |
-| Programme | Exercise videos | Free-to-use embedding license exists, but compiling to replicate a competing service is prohibited | Useful for embedding research; not a bulk-library source |
-| Exercise Database (ZenithFits) | 317 exercises, 593 demo videos, static API | Site advertises MIT for code/data but its own page also says demo videos are for demonstration; provenance must be audited before redistribution | Candidate, rights review |
-| Free Exercise DB with Videos GitHub | Same 317/593 collection and downloader | Repo explicitly warns that video provenance is uncertain despite MIT code/metadata claims | **Do not ingest media** without separate permission |
-| Kinetic Exercises DB | 899 exercise metadata records | Repository presents itself as open-source; media/license details must be reviewed before use | Metadata lead |
-| Kinetic.place | 1500+ exercise / premium video marketplace claims | MIT API/data claim; premium videos separately licensed | Strong licensing lead |
-| ExerciseAPI.dev | Exercise API with some demo videos | Video coverage currently small; API-specific terms apply | Secondary API lead |
-| ExerciseAPI.com | 183 curated exercises | API terms/free-call limits apply | Metadata/recommendation lead |
-| ExerciseDB public repos | Multiple 1500+/5000+/11000+ exercise claims | Many public datasets are forks/repackagings with unclear media rights | Discovery only; no automatic ingestion |
+| Wikimedia Commons | Physical-exercise video archive and individual exercise demonstration files | Exact file page carries its own license | Preferred open-license discovery source |
+| Wikimedia Commons / FitnessScape | Bench press, squat, deadlift, pull-up, shoulder press, leg-raises, incline press, hanging crunches and additional demonstration files were identified | Exact files can carry CC BY 3.0 attribution terms | Approved-candidate class after metadata capture |
+| YMove | 25 free downloadable exercise videos; 1107+ total library advertised | Free set advertises commercial use and direct download; full library has separate white-label/API licensing | High-value licensing lead |
+| ExerciseVideoAPI | 290 HD real filmed demonstration videos | Advertised perpetual commercial licence, white-label, instant download and self-hosting | High-value licensing lead |
+| Fitter Stock | 3500+ exercise assets and 1000+ videos advertised | White-label/platform-ready commercial licensing | High-value licensing lead |
+| Funxtion FXCONTENT | 3500+ exercises, 1000+ workouts, 650+ virtual classes | REST API, SDK and white-label commercial content platform | High-value licensing lead |
+| WorkoutDB | ~873 exercises with demo video | Paid Pro/Scale plans advertise commercial in-product media/data use; no dataset redistribution | API/media lead |
+| MuscleWiki API | Large exercise/video catalog | Commercial use intended; redistribution/own API/competing dataset restricted | Streaming/API lead, not bulk-download default |
+| ExerciseAPI | Exercise catalog/data | Data advertised as CC BY 4.0; attribution required | Strong metadata source |
+| RepDB | 601-exercise free snapshot with original illustrations and metadata | Free commercial in-app use with attribution; no dataset redistribution | Strong metadata/visual source |
+| MoveKit | 400+ exercise animations | Standard commercial licence; app use allowed; raw asset redistribution prohibited | Commercial visual lead |
+| Exercise Animatic | Commercial exercise animation library | Lifetime commercial licensing advertised, including paid mobile apps | Commercial visual lead |
+| ExerciseClips | Exercise animation library | Standard licence excludes app/platform library; Extended Licence required | Commercial visual lead with licence gate |
+| White Label Workouts | Exercise demos + explainers | Marketed for apps/client programs under white-label terms | Commercial video lead |
+| Pexels Videos | Large stock video platform | Commercial platform licence, but per-asset/person/brand suitability and redistribution limits apply | Candidate only |
+| Pixabay Videos | Large stock video platform | Commercial platform licence, but standalone redistribution and asset-specific conditions apply | Candidate only |
+| Mixkit | Large exercise/workout stock-video catalogs | Platform licence with asset-level terms | Candidate only |
+| Kinetic.place | Large exercise catalogue and premium video marketplace | Data/API and premium video rights are separate | Licensing lead |
+| ExerciseLibrary API | 800+ exercise API with video links advertised | Access/caching/storage depends on API plan/terms | API/media lead |
+| Programme | Exercise video/embedding ecosystem | Embedding/licensing route exists; competing compiled library restrictions apply | Embedding lead only |
+| Gym visual derived public datasets | Many GitHub repos repackage Gym visual media | Public repo MIT often covers code/data only; media retains separate rights | Blocked until direct licence |
 
-## Important source-rights observations
+## Rights lessons established during discovery
 
-1. A public website, GitHub repository or API is not automatically a redistribution license.
-2. Exercise metadata and exercise media must be licensed separately when the source does not explicitly unify those rights.
-3. Platform APIs may permit streaming but prohibit caching, storing or redistributing the underlying media.
-4. A paid license may still prohibit reselling or redistributing the raw media library; the exact app-embedding/white-label rights must be checked.
-5. Every candidate must be retained with its exact source URL, creator/owner where discoverable, license/permission basis, attribution, acquisition method and review status.
+1. A public website, GitHub repository or API is not automatically a redistribution licence.
+2. Exercise metadata and exercise media can have separate rights.
+3. Platform APIs may permit streaming while prohibiting caching, storing or redistributing underlying media.
+4. A commercial licence can permit in-app use while prohibiting raw-file redistribution or a competing media library.
+5. Exact source URL, creator/owner, rights basis, attribution, acquisition mode, storage/delivery restrictions and review timestamp must be retained per asset.
+6. `approved` is an asset-level state, not a domain-level assumption.
+
+## Current approved-media seed
+
+The rights-gated download manifest contains exact open-license demonstration files from Wikimedia Commons and records creator, source reference, license and attribution. These entries are the first controlled ingestion set; they do not imply every file from Wikimedia or any other source is approved.
 
 ## 1000-source expansion strategy
 
-The discovery corpus should be expanded by source class rather than by randomly collecting fitness websites:
+The corpus will be expanded by source class and de-duplicated by canonical domain/provider:
 
 - open-license repositories and media archives;
-- public APIs and exercise databases;
-- commercial exercise-video vendors with app/white-label licensing;
+- public exercise APIs and structured databases;
+- commercial exercise-video vendors with app/white-label rights;
 - creator/trainer libraries with explicit permission programs;
 - stock-video libraries with commercial-use terms;
-- platform APIs that explicitly permit the required app delivery model;
-- university/public-health/education repositories where individual assets carry reuse rights;
-- multilingual and regional exercise creators whose rights can be documented.
+- platform APIs with explicit in-product delivery rights;
+- university/public-health/education repositories with asset-level reuse rights;
+- multilingual and regional creators with documented permission;
+- animation providers with app/platform licensing;
+- specialist rehabilitation, mobility, yoga, pilates, calisthenics and functional-movement libraries.
 
-Each candidate is normalized to a domain/source record and de-duplicated before counting toward the 1000 target.
+Target is to maximize useful, rights-compatible coverage of the 1500-exercise catalog rather than merely maximize raw domain count.
 
 ## Acquisition gate
 
-The discovery list feeds the MYPA rights-aware acquisition pipeline. Only records explicitly promoted to `approved` may be downloaded. A candidate source remains non-downloadable until:
+Only records promoted to `approved` may be downloaded. A candidate remains non-downloadable until:
 
 - exact asset is identified;
-- rights basis is known and compatible with MYPA's intended distribution;
+- rights basis is compatible with MYPA's intended distribution;
 - attribution requirements are captured;
 - creator/owner is captured when available;
 - storage/redistribution restrictions are understood;
-- reviewer and review timestamp are recorded.
+- reviewer and review timestamp are recorded;
+- download host is explicitly allow-listed.
 
-This prevents a 1000-site crawl from becoming a 1000-site copyright/ToS violation.
+This prevents a 1000-source crawl from becoming a 1000-source copyright/ToS violation.
 
 ## Current next step
 
-Continue discovery toward the 1000-source corpus, but rank sources by expected legal/usability value. High-value targets are sources with explicit commercial/app-embedding rights or clearly open licenses. Then ingest only the approved subset and measure how many of the 1500 target exercises receive exact-match media.
+Continue source discovery aggressively toward the 1000-source target, but rank every source by legal/usability value. Prioritize sources that can supply exact, commercially usable, self-hostable assets for the 1500-exercise target. Then ingest the approved subset, calculate exact exercise coverage, and fill remaining gaps through licensed purchase or MYPA-original production.
