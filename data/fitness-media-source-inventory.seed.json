@@ -3,181 +3,42 @@
   "targetExercises": 1500,
   "lastUpdated": "2026-09-14",
   "sources": [
-    {
-      "id": "wikimedia-commons-exercise-videos",
-      "url": "https://commons.wikimedia.org/wiki/Category:Videos_of_physical_exercises",
-      "type": "open_license_media",
-      "status": "verified_source",
-      "coverage": "exercise demonstration videos",
-      "rightsAction": "verify each file license before approval"
-    },
-    {
-      "id": "wikimedia-commons-pullups",
-      "url": "https://commons.wikimedia.org/wiki/File:Pull-ups_-_exercise_demonstration_video.webm",
-      "type": "open_license_media",
-      "status": "approved-sample",
-      "coverage": "pull-ups",
-      "rightsAction": "CC BY 3.0; attribution required"
-    },
-    {
-      "id": "wikimedia-commons-squat",
-      "url": "https://commons.wikimedia.org/wiki/File:Squat_-_exercise_demonstration_video.webm",
-      "type": "open_license_media",
-      "status": "approved-sample",
-      "coverage": "weighted squat",
-      "rightsAction": "CC BY 3.0; attribution required"
-    },
-    {
-      "id": "wikimedia-commons-bench-press",
-      "url": "https://commons.wikimedia.org/wiki/File:Bench_press_-_exercise_demonstration_video.webm",
-      "type": "open_license_media",
-      "status": "approved-sample",
-      "coverage": "bench press",
-      "rightsAction": "CC BY 3.0; attribution required"
-    },
-    {
-      "id": "wikimedia-commons-deadlift",
-      "url": "https://commons.wikimedia.org/wiki/File:Deadlift_-_exercise_demonstration_video.webm",
-      "type": "open_license_media",
-      "status": "approved-sample",
-      "coverage": "deadlift",
-      "rightsAction": "CC BY 3.0; attribution required"
-    },
-    {
-      "id": "wikimedia-commons-shoulder-press",
-      "url": "https://commons.wikimedia.org/wiki/File:Shoulder_press_-_exercise_demonstration_video.webm",
-      "type": "open_license_media",
-      "status": "approved-sample",
-      "coverage": "shoulder press",
-      "rightsAction": "CC BY 3.0; attribution required"
-    },
-    {
-      "id": "wikimedia-commons-leg-raises",
-      "url": "https://commons.wikimedia.org/wiki/File:Leg_raises_-_exercise_demonstration_video.webm",
-      "type": "open_license_media",
-      "status": "approved-sample",
-      "coverage": "leg raises",
-      "rightsAction": "CC BY 3.0; attribution required"
-    },
-    {
-      "id": "wikimedia-commons-incline-press",
-      "url": "https://commons.wikimedia.org/wiki/File:Incline_press_-_exercise_demonstration_video.webm",
-      "type": "open_license_media",
-      "status": "approved-sample",
-      "coverage": "incline press",
-      "rightsAction": "CC BY 3.0; attribution required"
-    },
-    {
-      "id": "wikimedia-commons-hanging-crunches",
-      "url": "https://commons.wikimedia.org/wiki/File:Hanging_crunches_-_exercise_demonstration_video.webm",
-      "type": "open_license_media",
-      "status": "approved-sample",
-      "coverage": "hanging crunches",
-      "rightsAction": "CC BY 3.0; attribution required"
-    },
-    {
-      "id": "wikimedia-commons-bent-over-row",
-      "url": "https://commons.wikimedia.org/wiki/File:Bent-over_row_-_exercise_demonstration_video.webm",
-      "type": "open_license_media",
-      "status": "approved-sample",
-      "coverage": "bent-over row",
-      "rightsAction": "CC BY 3.0; attribution required"
-    },
-    {
-      "id": "ymove",
-      "url": "https://ymove.app/free-exercise-videos",
-      "type": "licensed_vendor",
-      "status": "verified-free-sample",
-      "coverage": "25 named exercise videos; vendor advertises 1,107+ total",
-      "rightsAction": "free sample page states commercial use; bulk library requires license/API"
-    },
-    {
-      "id": "repdb-free",
-      "url": "https://github.com/RepDB/exercise-dataset",
-      "type": "licensed_dataset",
-      "status": "verified-license-lead",
-      "coverage": "600+ exercise metadata + flat WebP illustrations",
-      "rightsAction": "commercial in-app use with attribution; no standalone dataset redistribution"
-    },
-    {
-      "id": "repdb-standard",
-      "url": "https://repdb.co/",
-      "type": "licensed_vendor",
-      "status": "commercial-lead",
-      "coverage": "608 exercises; transparent animations on Standard",
-      "rightsAction": "obtain and archive exact paid-tier license before production use"
-    },
-    {
-      "id": "vital-animations",
-      "url": "https://vitalanimations.com/",
-      "type": "licensed_vendor",
-      "status": "commercial-lead",
-      "coverage": "advertised 1,500+ exercise animations",
-      "rightsAction": "evaluate exact commercial license, hosting and redistribution scope"
-    },
-    {
-      "id": "exercisedb-io",
-      "url": "https://exercisedb.io/faq",
-      "type": "licensed_vendor",
-      "status": "commercial-lead",
-      "coverage": "exercise JSON + GIF assets",
-      "rightsAction": "commercial use stated; purchase/current license terms must be archived"
-    },
-    {
-      "id": "pexels",
-      "url": "https://www.pexels.com/",
-      "type": "stock_media_platform",
-      "status": "platform-license-candidate",
-      "coverage": "fitness/workout videos",
-      "rightsAction": "commercial use is stated, but each asset must still be checked for brands/people/third-party rights and MYPA's in-app hosting model"
-    },
-    {
-      "id": "pixabay",
-      "url": "https://pixabay.com/service/license-summary/",
-      "type": "stock_media_platform",
-      "status": "platform-license-candidate",
-      "coverage": "exercise/fitness videos",
-      "rightsAction": "content license permits use subject to prohibited uses; standalone redistribution is prohibited"
-    },
-    {
-      "id": "coverr",
-      "url": "https://coverr.co/license",
-      "type": "stock_media_platform",
-      "status": "platform-license-candidate",
-      "coverage": "fitness/workout stock video",
-      "rightsAction": "commercial use stated; cannot compile content into a competing stock service; inspect model/brand rights"
-    },
-    {
-      "id": "mixkit-workout",
-      "url": "https://mixkit.co/free-stock-video/workout/",
-      "type": "stock_media_platform",
-      "status": "candidate-only",
-      "coverage": "718 workout stock videos advertised",
-      "rightsAction": "asset-level Mixkit license and in-app distribution model must be checked before approval"
-    },
-    {
-      "id": "mixkit-exercise",
-      "url": "https://mixkit.co/free-stock-video/exercise/",
-      "type": "stock_media_platform",
-      "status": "candidate-only",
-      "coverage": "883 exercise stock videos advertised",
-      "rightsAction": "asset-level license and reuse restrictions must be checked"
-    },
-    {
-      "id": "videvo-workout",
-      "url": "https://www.videvo.net/stock-video-footage/workout-training/",
-      "type": "stock_media_platform",
-      "status": "candidate-only",
-      "coverage": "workout/training clips",
-      "rightsAction": "license type is asset-specific; exclude Editorial/NonCommercial; attribution or paid credit may apply"
-    },
-    {
-      "id": "videezy",
-      "url": "https://www.videezy.com/",
-      "type": "stock_media_platform",
-      "status": "candidate-only",
-      "coverage": "fitness/workout clips",
-      "rightsAction": "asset-level license required; Community/Standard/Pro terms differ"
-    }
+    {"id":"wikimedia-commons-exercise-videos","url":"https://commons.wikimedia.org/wiki/Category:Videos_of_physical_exercises","type":"open_license_media","status":"verified_source","coverage":"exercise demonstration videos","rightsAction":"verify each file license before approval"},
+    {"id":"wikimedia-commons-pullups","url":"https://commons.wikimedia.org/wiki/File:Pull-ups_-_exercise_demonstration_video.webm","type":"open_license_media","status":"approved-sample","coverage":"pull-ups","rightsAction":"CC BY 3.0; attribution required"},
+    {"id":"wikimedia-commons-squat","url":"https://commons.wikimedia.org/wiki/File:Squat_-_exercise_demonstration_video.webm","type":"open_license_media","status":"approved-sample","coverage":"weighted squat","rightsAction":"CC BY 3.0; attribution required"},
+    {"id":"wikimedia-commons-bench-press","url":"https://commons.wikimedia.org/wiki/File:Bench_press_-_exercise_demonstration_video.webm","type":"open_license_media","status":"approved-sample","coverage":"bench press","rightsAction":"CC BY 3.0; attribution required"},
+    {"id":"wikimedia-commons-deadlift","url":"https://commons.wikimedia.org/wiki/File:Deadlift_-_exercise_demonstration_video.webm","type":"open_license_media","status":"approved-sample","coverage":"deadlift","rightsAction":"CC BY 3.0; attribution required"},
+    {"id":"wikimedia-commons-shoulder-press","url":"https://commons.wikimedia.org/wiki/File:Shoulder_press_-_exercise_demonstration_video.webm","type":"open_license_media","status":"approved-sample","coverage":"shoulder press","rightsAction":"CC BY 3.0; attribution required"},
+    {"id":"wikimedia-commons-leg-raises","url":"https://commons.wikimedia.org/wiki/File:Leg_raises_-_exercise_demonstration_video.webm","type":"open_license_media","status":"approved-sample","coverage":"leg raises","rightsAction":"CC BY 3.0; attribution required"},
+    {"id":"wikimedia-commons-incline-press","url":"https://commons.wikimedia.org/wiki/File:Incline_press_-_exercise_demonstration_video.webm","type":"open_license_media","status":"approved-sample","coverage":"incline press","rightsAction":"CC BY 3.0; attribution required"},
+    {"id":"wikimedia-commons-hanging-crunches","url":"https://commons.wikimedia.org/wiki/File:Hanging_crunches_-_exercise_demonstration_video.webm","type":"open_license_media","status":"approved-sample","coverage":"hanging crunches","rightsAction":"CC BY 3.0; attribution required"},
+    {"id":"wikimedia-commons-bent-over-row","url":"https://commons.wikimedia.org/wiki/File:Bent-over_row_-_exercise_demonstration_video.webm","type":"open_license_media","status":"approved-sample","coverage":"bent-over row","rightsAction":"CC BY 3.0; attribution required"},
+    {"id":"ymove","url":"https://ymove.app/free-exercise-videos","type":"licensed_vendor","status":"verified-free-sample","coverage":"25 named exercise videos; vendor advertises 1,107+ total","rightsAction":"free sample page states commercial use; bulk library requires license/API"},
+    {"id":"repdb-free","url":"https://github.com/RepDB/exercise-dataset","type":"licensed_dataset","status":"verified-license-lead","coverage":"600+ exercise metadata + flat WebP illustrations","rightsAction":"commercial in-app use with attribution; no standalone dataset redistribution"},
+    {"id":"repdb-standard","url":"https://repdb.co/","type":"licensed_vendor","status":"commercial-lead","coverage":"608 exercises; transparent animations on Standard","rightsAction":"obtain and archive exact paid-tier license before production use"},
+    {"id":"vital-animations","url":"https://vitalanimations.com/","type":"licensed_vendor","status":"commercial-lead","coverage":"advertised 1,500+ exercise animations","rightsAction":"evaluate exact commercial license, hosting and redistribution scope"},
+    {"id":"exercisedb-io","url":"https://exercisedb.io/faq","type":"licensed_vendor","status":"commercial-lead","coverage":"exercise JSON + GIF assets","rightsAction":"commercial use stated; purchase/current license terms must be archived"},
+    {"id":"pexels","url":"https://www.pexels.com/","type":"stock_media_platform","status":"platform-license-candidate","coverage":"fitness/workout videos","rightsAction":"commercial use is stated, but each asset must still be checked for brands/people/third-party rights and MYPA's in-app hosting model"},
+    {"id":"pixabay","url":"https://pixabay.com/service/license-summary/","type":"stock_media_platform","status":"platform-license-candidate","coverage":"exercise/fitness videos","rightsAction":"content license permits use subject to prohibited uses; standalone redistribution is prohibited"},
+    {"id":"coverr","url":"https://coverr.co/license","type":"stock_media_platform","status":"platform-license-candidate","coverage":"fitness/workout stock video","rightsAction":"commercial use stated; cannot compile content into a competing stock service; inspect model/brand rights"},
+    {"id":"mixkit-workout","url":"https://mixkit.co/free-stock-video/workout/","type":"stock_media_platform","status":"candidate-only","coverage":"718 workout stock videos advertised","rightsAction":"asset-level Mixkit license and in-app distribution model must be checked before approval"},
+    {"id":"mixkit-exercise","url":"https://mixkit.co/free-stock-video/exercise/","type":"stock_media_platform","status":"candidate-only","coverage":"883 exercise stock videos advertised","rightsAction":"asset-level license and reuse restrictions must be checked"},
+    {"id":"videvo-workout","url":"https://www.videvo.net/stock-video-footage/workout-training/","type":"stock_media_platform","status":"candidate-only","coverage":"workout/training clips","rightsAction":"license type is asset-specific; exclude Editorial/NonCommercial; attribution or paid credit may apply"},
+    {"id":"videezy","url":"https://www.videezy.com/","type":"stock_media_platform","status":"candidate-only","coverage":"fitness/workout clips","rightsAction":"asset-level license required; Community/Standard/Pro terms differ"},
+    {"id":"exercise-video-api","url":"https://exercisevideoapi.com/","type":"licensed_vendor","status":"commercial-lead","coverage":"290 filmed HD exercise videos + metadata","rightsAction":"vendor advertises perpetual commercial app licence; archive final purchased terms before ingestion"},
+    {"id":"workoutdb","url":"https://work-out-db.com/answers/white-label-exercise-content","type":"licensed_api_media","status":"commercial-lead","coverage":"~873 exercises with demo video","rightsAction":"Pro/Scale commercial in-product media rights; verify current plan terms and API delivery model"},
+    {"id":"funxtion-fxcontent","url":"https://www.funxtion.com/products/content","type":"licensed_vendor_api","status":"commercial-lead","coverage":"3,500+ exercise videos, classes, plans; REST API + SDK","rightsAction":"obtain commercial product/API agreement and confirm MYPA scope"},
+    {"id":"hyperhuman","url":"https://studio.hyperhuman.cc/fitness-content-licensing","type":"licensed_content_platform","status":"commercial-lead","coverage":"premium exercise clips, classes, yoga, Pilates, strength, HIIT, mobility, recovery","rightsAction":"license scope varies by provider/plan; verify exact app/API/video-export rights"},
+    {"id":"fitscope-studio","url":"https://www.fitscope.com/licensing","type":"licensed_content_vendor","status":"commercial-lead","coverage":"thousands of studio fitness classes across 30+ modalities","rightsAction":"app/OEM/digital-platform licensing offered; obtain scope and delivery terms"},
+    {"id":"caravan-wellness","url":"https://caravanwellness.com/exercise-api/","type":"licensed_api_media","status":"commercial-lead","coverage":"white-label health/wellness exercise video API","rightsAction":"verify exact commercial licence, streaming/storage and customization terms"},
+    {"id":"movekit","url":"https://movekit.com/","type":"licensed_animation","status":"commercial-lead","coverage":"400+ exercise animations","rightsAction":"commercial app use allowed; raw standalone redistribution prohibited"},
+    {"id":"exercise-animatic","url":"https://www.exerciseanimatic.com/license","type":"licensed_animation","status":"commercial-lead","coverage":"exercise animations/videos for apps and platforms","rightsAction":"N-EB2BL allows commercial iOS/Android apps; archive purchased licence"},
+    {"id":"exerciseclips","url":"https://exerciseclips.com/licence/standard/v1.1","type":"licensed_animation","status":"blocked-until-extended-license","coverage":"exercise animation library","rightsAction":"standard license explicitly excludes app/platform use; extended licence required"},
+    {"id":"whitelabelworkouts","url":"https://whitelabelworkouts.com/white-label-exercise-explainers/","type":"licensed_video_vendor","status":"commercial-lead","coverage":"120+ white-label exercise explainers","rightsAction":"review exact product licence and redistribution/storage terms"},
+    {"id":"kinetic-place","url":"https://kinetic.place/","type":"exercise_marketplace","status":"commercial-lead","coverage":"large exercise catalog and premium video offerings","rightsAction":"separate free-data claims from premium-video rights; verify licence"},
+    {"id":"exercise-library-api","url":"https://exerciselibrary.com/","type":"exercise_api_media","status":"commercial-lead","coverage":"large exercise API with video links","rightsAction":"delivery/caching/storage rights depend on plan; confirm MYPA usage"},
+    {"id":"programme","url":"https://programme.co/","type":"embedding_license_lead","status":"lead","coverage":"exercise video embedding","rightsAction":"use only within provider's permitted embedding model; no compiled competing library"},
+    {"id":"gymvisual-terms","url":"https://gymvisual.com/content/3-terms-and-conditions-of-use","type":"rights_review","status":"blocked-until-license","coverage":"exercise illustrations/animations in public datasets","rightsAction":"public GitHub MIT status does not transfer media copyright; obtain license separately"},
+    {"id":"smyrdev-exercises-dataset","url":"https://github.com/smyrdev/exercises-dataset","type":"exercise_dataset","status":"candidate","coverage":"1,324 exercises with multilingual instructions and training-volume data","rightsAction":"review repository license and provenance before commercial use; metadata rights must be verified"}
   ]
 }
