@@ -44,6 +44,7 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Provenance-aware media contract covering ownership, license, attribution, source reference, acquisition mode and approval.
 - Local rights-aware video discovery tooling; discovery results remain candidates until exact-match and rights approval.
 - Rights-gated downloader added for explicitly approved media records only.
+- An initial rights-gated sample manifest now contains 9 exact Wikimedia demonstration assets under CC BY 3.0.
 
 ### Durable programs
 
@@ -75,18 +76,17 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 ## Current content/media research
 
-A first research batch found several high-value sources:
+A first research batch found several high-value source families, including:
 
 - Wikimedia Commons exercise-video categories and exact CC-licensed demonstration files.
 - Mixkit exercise/workout stock-video catalogs with a platform license.
 - YMove free/commercial exercise-video set plus separately licensed larger app library.
 - ExerciseLibrary API with exercise metadata and video links.
-- MuscleWiki API with large exercise/video catalog and explicit streaming/caching constraints.
-- Exercise Animatic and ExerciseClips as licensing leads.
-- Programme as an embedding license lead with explicit prohibition on building a competing compiled library.
+- Commercial/licensed exercise dataset leads such as RepDB, Vital Animations and ExerciseDB Pro.
+- Pexels/Pixabay/Coverr/Videezy/Videvo as platform-license candidate families whose asset-level restrictions must still be checked for the intended MYPA use.
 - Multiple ExerciseDB-derived public datasets; media rights vary and must not be inferred from repository publicity alone.
 
-The detailed findings and the 1000-source expansion strategy are in `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md`.
+The detailed findings and the 1000-source expansion strategy are in `docs/project-brain/19_FITNESS_MEDIA_SOURCE_RESEARCH.md` and `data/fitness-media-source-inventory.seed.json`.
 
 ## Acquisition boundary
 
@@ -117,6 +117,6 @@ The final feature branch has received CI triggers during development, and one ea
 - `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` remains the reference-product gap analysis.
 - `docs/project-brain/17_FITNESS_VIDEO_MEDIA_FOUNDATION.md` documents the media foundation and acquisition boundary.
 - `docs/project-brain/18_FITNESS_PROGRAMS_AND_CALCULATORS.md` documents programs, calculators, progress and the 1500-exercise target.
-- `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md` documents the 1000-source discovery corpus and current source findings.
+- `docs/project-brain/19_FITNESS_MEDIA_SOURCE_RESEARCH.md` documents the 1000-source discovery corpus and current source findings.
 - `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` remains the canonical audit findings record.
 - `docs/project-brain/12_OPEN_WORK.md` remains the canonical actionable-work list.
