@@ -1,13 +1,13 @@
 # MYPA Fitness Video & Media Foundation
 
 Last updated: 2026-09-14
-Status: IMPLEMENTED FOUNDATION + MOBILE EXERCISE SURFACE / VIDEO ACQUISITION REMAINS CONTENT-GATED
+Status: IMPLEMENTED FOUNDATION + MOBILE EXERCISE SURFACE + VIDEO DISCOVERY PIPELINE / FINAL ASSET APPROVAL REMAINS CONTENT-GATED
 
 ## Goal
 
 Make every publishable MYPA exercise capable of carrying a real instructional media set without coupling the app to BODINEXT, runtime scraping, or an unverified third-party URL.
 
-The existing fitness content system has a canonical `Exercise` / `ExerciseMedia` / `ExerciseRelationship` surface used by the Fitness API. This pass adds stronger media provenance requirements and a usable mobile exercise browsing/detail experience.
+The existing fitness content system has a canonical `Exercise` / `ExerciseMedia` / `ExerciseRelationship` surface used by the Fitness API. This pass adds stronger media provenance requirements, a usable mobile exercise browsing/detail experience, and a local rights-aware discovery pipeline for the 1,500-record exercise catalog.
 
 ## What is now implemented
 
@@ -22,6 +22,7 @@ The existing fitness content system has a canonical `Exercise` / `ExerciseMedia`
 - Command Center now exposes a direct Exercises entry point.
 - Mobile fitness-content API client supports authenticated requests and access-token refresh using the existing refresh session contract.
 - Automated backend unit coverage exists for the new media rights gates.
+- `tools/discover-exercise-videos.mjs` scans the local 1,500-exercise catalog and searches Wikimedia Commons plus optional Pexels/Pixabay APIs, preserving candidate provenance and rights classification.
 
 ## Media lifecycle
 
@@ -66,6 +67,24 @@ Every candidate must carry:
 
 Missing or ambiguous rights are **not publishable**.
 
+## Discovery sources
+
+### Wikimedia Commons
+
+The local discovery tool queries the public MediaWiki API and inspects per-file media/license metadata. Explicit CC0/public-domain, CC BY, and CC BY-SA candidates are classified as open-license candidates; everything else remains rights-review-required.
+
+### Pexels
+
+The tool can query the Pexels video API when `PEXELS_API_KEY` is provided. Pexels states its photos and videos can be used for commercial purposes under the Pexels License, but the product must still respect restrictions such as standalone redistribution and any rights attached to depicted people, trademarks or brands. Pexels candidates therefore remain review-required until mapped to MYPA's actual delivery model.
+
+### Pixabay
+
+The tool can query the Pixabay video API when `PIXABAY_API_KEY` is provided. Pixabay's Content License permits free use and adaptation, including commercial use, subject to its prohibited-use rules; candidates remain review-required until the asset's exact use in MYPA is checked.
+
+### Direct permission
+
+Exercises without a strong open/platform candidate emit a ready-to-use permission-search query. A creator response granting reuse is represented as an authorized acquisition basis and must be stored as evidence before approval.
+
 ## Current delivery behavior
 
 The mobile exercise detail page can show approved images immediately. For an approved instructional video, the current mobile surface exposes a play action against the approved media URL. Full in-app playback should use the Expo video stack once the dependency is integrated and CI-validated; until then, the action deliberately avoids pretending an external URL is an in-app player.
@@ -83,18 +102,17 @@ Do not make runtime scraping a dependency. Do not download or mirror BODINEXT me
 
 ## Catalog coverage strategy
 
-The target is 500 published movements per discipline. Content is released in batches rather than presenting a fake catalog with missing or unverified media.
+The target is a large, balanced exercise library rather than a small set of examples. The current local corpus contains 1,500 exercise records with 1,324 downloaded GIF assets, but that source's own manifest states non-commercial-only terms. Those files are therefore treated as local research/import material until an appropriate commercial license is obtained.
 
-For each batch:
+For each production batch:
 
 1. import/validate exercise metadata;
-2. attach the required four approved WebP assets;
-3. attach an approved instructional video when available;
-4. verify provenance and license;
-5. run content-balance validation;
-6. publish only the exercises that satisfy all release gates.
-
-Exercises may remain `draft` / `pending_media` without appearing as complete consumer content.
+2. attach approved media with complete provenance;
+3. attach an exact instructional video when available;
+4. record attribution or permission evidence;
+5. verify technical metadata and delivery path;
+6. run content-balance validation;
+7. publish only the exercises that satisfy all release gates.
 
 ## Verification requirements
 
@@ -107,6 +125,6 @@ Repository-level validation should prove:
 - media ordering is deterministic;
 - relationship navigation targets the actual exercise;
 - content-balance checks continue to enforce the existing four-WebP requirement;
-- import/review operations remain restartable and idempotent.
+- discovery/import/review operations remain restartable and idempotent.
 
 Physical-device playback and production CDN/storage behavior remain separate runtime gates.
