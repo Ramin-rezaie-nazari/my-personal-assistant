@@ -1,0 +1,69 @@
+model Exercise {
+  id String @id
+  slug String @unique
+  name String
+  nameFa String?
+  aliases Json @default("[]")
+  discipline String
+  movementPattern String?
+  primaryMuscles Json @default("[]")
+  secondaryMuscles Json @default("[]")
+  equipment Json @default("[]")
+  difficulty String
+  goals Json @default("[]")
+  instructions String?
+  coachCues Json @default("[]")
+  commonMistakes Json @default("[]")
+  cautions Json @default("[]")
+  contentStatus String @default("draft")
+  sourceProvider String?
+  sourceLicense String?
+  sourceAttribution String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  media ExerciseMedia[]
+  outgoingRelationships ExerciseRelationship[] @relation("ExerciseRelationshipFrom")
+  incomingRelationships ExerciseRelationship[] @relation("ExerciseRelationshipTo")
+  @@index([discipline, difficulty])
+  @@index([contentStatus])
+}
+
+model ExerciseMedia {
+  id String @id
+  exerciseId String
+  kind String
+  url String
+  sourceUrl String?
+  sourceProvider String
+  license String
+  attribution String?
+  mimeType String?
+  durationSeconds Int?
+  width Int?
+  height Int?
+  language String?
+  posterUrl String?
+  checksum String?
+  status String @default("pending")
+  position Int @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
+  @@index([exerciseId, status])
+  @@index([sourceProvider, license])
+}
+
+model ExerciseRelationship {
+  id String @id
+  fromExerciseId String
+  toExerciseId String
+  kind String
+  priority Int @default(0)
+  notes String?
+  createdAt DateTime @default(now())
+  fromExercise Exercise @relation("ExerciseRelationshipFrom", fields: [fromExerciseId], references: [id], onDelete: Cascade)
+  toExercise Exercise @relation("ExerciseRelationshipTo", fields: [toExerciseId], references: [id], onDelete: Cascade)
+  @@unique([fromExerciseId, toExerciseId, kind])
+  @@index([fromExerciseId, kind, priority])
+  @@index([toExerciseId, kind])
+}
