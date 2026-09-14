@@ -94,5 +94,17 @@
     "allowedHosts": ["commons.wikimedia.org"],
     "creator": "FitnessScape",
     "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "exerciseId": "bent-over-row",
+    "filename": "bent-over-row-fitnessscape.webm",
+    "approved": true,
+    "acquisitionMode": "open_license",
+    "rightsBasis": "CC BY 3.0 Unported",
+    "sourceReference": "https://commons.wikimedia.org/wiki/File:Bent-over_row_-_exercise_demonstration_video.webm",
+    "downloadUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bent-over_row_-_exercise_demonstration_video.webm",
+    "allowedHosts": ["commons.wikimedia.org"],
+    "creator": "FitnessScape",
+    "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
   }
 ]
