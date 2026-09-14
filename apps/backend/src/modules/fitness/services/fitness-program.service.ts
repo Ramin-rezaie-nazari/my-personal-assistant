@@ -74,13 +74,12 @@ export class FitnessProgramService {
     const program = await this.get(programId, userId);
     const assignment = program.assignment;
     if (!assignment || assignment.status !== 'active') throw new BadRequestException('Program is not active');
-    const sessionExists = program.sessions.some((session) => session.weekNumber === dto.week && session.dayNumber === dto.day);
-    if (!sessionExists) throw new BadRequestException('Program session does not exist');
-    const sessionsThisWeek = program.sessions.filter((session) => session.weekNumber === dto.week);
-    const lastWeek = program.durationWeeks;
-    const isLastSession = dto.week === lastWeek && dto.day === sessionsThisWeek.length;
+    const sessionsThisWeek = program.sessions.filter((session) => session.weekNumber === assignment.currentWeek);
+    if (dto.week !== assignment.currentWeek || dto.day !== assignment.currentDay) throw new BadRequestException('Only the current program session can be completed');
+    if (!sessionsThisWeek.some((session) => session.dayNumber === dto.day)) throw new BadRequestException('Program session does not exist');
+    const isLastSession = dto.week === program.durationWeeks && dto.day === sessionsThisWeek.length;
     const completedSessions = assignment.completedSessions + 1;
-    const nextWeek = isLastSession ? lastWeek : dto.day >= sessionsThisWeek.length ? dto.week + 1 : dto.week;
+    const nextWeek = isLastSession ? program.durationWeeks : dto.day >= sessionsThisWeek.length ? dto.week + 1 : dto.week;
     const nextDay = isLastSession ? sessionsThisWeek.length : dto.day >= sessionsThisWeek.length ? 1 : dto.day + 1;
     await this.prisma.fitnessPlanAssignment.update({
       where: { id: assignment.id },
