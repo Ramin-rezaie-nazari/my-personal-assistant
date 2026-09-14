@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../../common/database/prisma.service';
@@ -43,7 +44,7 @@ export class FitnessProgramService {
       LIMIT 1
     `);
     if (!programs[0]) throw new NotFoundException('Fitness program not found');
-    const versionId = programs[0].versionId;
+    const versionId = programs[0].versionId as string;
     const [sessions, assignment] = await Promise.all([
       this.prisma.$queryRaw<any[]>(Prisma.sql`
         SELECT * FROM "FitnessProgramSession"
@@ -59,12 +60,11 @@ export class FitnessProgramService {
 
   async start(userId: string, dto: StartFitnessProgramDto) {
     const program = await this.get(dto.programId, userId);
-    const existing = program.assignment;
-    if (existing && existing.status !== 'cancelled') return program;
+    if (program.assignment && program.assignment.status !== 'cancelled') return program;
     const versionId = program.versionId as string;
     await this.prisma.fitnessPlanAssignment.upsert({
       where: { userId_programVersionId: { userId, programVersionId: versionId } },
-      create: { id: crypto.randomUUID(), userId, programVersionId: versionId, startedOn: new Date(), status: 'active' },
+      create: { id: randomUUID(), userId, programVersionId: versionId, startedOn: new Date(), status: 'active' },
       update: { startedOn: new Date(), status: 'active', currentWeek: 1, currentDay: 1, completedSessions: 0, lastSessionAt: null },
     });
     return this.get(dto.programId, userId);
@@ -73,17 +73,24 @@ export class FitnessProgramService {
   async completeSession(userId: string, programId: string, dto: CompleteFitnessProgramSessionDto) {
     const program = await this.get(programId, userId);
     const assignment = program.assignment;
-    if (!assignment || assignment.status === 'cancelled') throw new BadRequestException('Program is not active');
+    if (!assignment || assignment.status !== 'active') throw new BadRequestException('Program is not active');
     const sessionExists = program.sessions.some((session) => session.weekNumber === dto.week && session.dayNumber === dto.day);
     if (!sessionExists) throw new BadRequestException('Program session does not exist');
-    const nextCompleted = assignment.completedSessions + 1;
-    const atEndOfWeek = dto.day >= program.sessions.filter((s) => s.weekNumber === dto.week).length;
-    const nextWeek = atEndOfWeek ? dto.week + 1 : dto.week;
-    const nextDay = atEndOfWeek ? 1 : dto.day + 1;
-    const completed = nextWeek > program.durationWeeks;
+    const sessionsThisWeek = program.sessions.filter((session) => session.weekNumber === dto.week);
+    const lastWeek = program.durationWeeks;
+    const isLastSession = dto.week === lastWeek && dto.day === sessionsThisWeek.length;
+    const completedSessions = assignment.completedSessions + 1;
+    const nextWeek = isLastSession ? lastWeek : dto.day >= sessionsThisWeek.length ? dto.week + 1 : dto.week;
+    const nextDay = isLastSession ? sessionsThisWeek.length : dto.day >= sessionsThisWeek.length ? 1 : dto.day + 1;
     await this.prisma.fitnessPlanAssignment.update({
       where: { id: assignment.id },
-      data: { completedSessions: nextCompleted, currentWeek: completed ? program.durationWeeks : nextWeek, currentDay: completed ? program.sessions.filter((s) => s.weekNumber === program.durationWeeks).length : nextDay, lastSessionAt: new Date(), status: completed ? 'completed' : 'active' },
+      data: {
+        completedSessions,
+        currentWeek: nextWeek,
+        currentDay: nextDay,
+        lastSessionAt: new Date(),
+        status: isLastSession ? 'completed' : 'active',
+      },
     });
     return this.get(programId, userId);
   }
