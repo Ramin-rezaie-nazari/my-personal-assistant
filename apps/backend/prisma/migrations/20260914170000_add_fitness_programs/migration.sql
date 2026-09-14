@@ -1,3 +1,5 @@
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
 CREATE TABLE "FitnessProgram" (
   "id" TEXT NOT NULL,
   "slug" TEXT NOT NULL,
