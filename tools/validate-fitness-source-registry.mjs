@@ -28,6 +28,20 @@ const VALID_CLASSES = new Set([
   'embedding-license-lead',
   'rights-review-required',
   'exercise-data-video-marketplace',
+  'open_license_media',
+  'licensed_vendor',
+  'licensed_dataset',
+  'licensed_api_media',
+  'licensed_vendor_api',
+  'licensed_content_platform',
+  'licensed_content_vendor',
+  'licensed_animation',
+  'exercise_marketplace',
+  'embedding_license_lead',
+  'rights_review',
+  'exercise_dataset',
+  'marketplace_asset',
+  'stock_media_platform',
 ]);
 
 function fail(message) {
