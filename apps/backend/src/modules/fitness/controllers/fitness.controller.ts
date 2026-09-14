@@ -57,8 +57,8 @@ export class FitnessController {
   @Post('goal/from-text')
   parseGoal(@Body() dto: ParseFitnessGoalDto) { return this.profile.parseNaturalGoal(dto.text); }
 
-  @Get('calculators')
-  calculatorsGet(@Query() dto: FitnessCalculatorDto) { return this.calculators.calculate(dto); }
+  @Post('calculators')
+  calculatorsPost(@Body() dto: FitnessCalculatorDto) { return this.calculators.calculate(dto); }
 
   @Get('programs')
   listPrograms(@Query() query: FitnessProgramQueryDto) { return this.programs.list(query); }
