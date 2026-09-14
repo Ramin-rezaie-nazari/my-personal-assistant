@@ -1,19 +1,27 @@
 # MYPA Fitness Video & Media Foundation
 
 Last updated: 2026-09-14
-Status: IMPLEMENTATION CONTRACT / MEDIA INGESTION FOUNDATION
+Status: IMPLEMENTED FOUNDATION + MOBILE EXERCISE SURFACE / VIDEO ACQUISITION REMAINS CONTENT-GATED
 
 ## Goal
 
 Make every publishable MYPA exercise capable of carrying a real instructional media set without coupling the app to BODINEXT, runtime scraping, or an unverified third-party URL.
 
-The existing fitness content system already has a `FitnessExerciseCatalog` and `FitnessExerciseMedia` operational surface. The next step is to make the media contract explicitly video-capable and provenance-first while preserving the existing four-approved-WebP release gate for visual coverage.
+The existing fitness content system has a canonical `Exercise` / `ExerciseMedia` / `ExerciseRelationship` surface used by the Fitness API. This pass adds stronger media provenance requirements and a usable mobile exercise browsing/detail experience.
 
-## Product rule
+## What is now implemented
 
-An exercise is not considered fully media-ready merely because a URL exists.
-
-A media asset is displayable only when its provenance and entitlement are known and its ingestion status is approved.
+- JWT-protected `GET /fitness/exercises` list/search/filter surface.
+- JWT-protected `GET /fitness/exercises/:id` detail surface.
+- Approved-media filtering on consumer detail responses.
+- Approved media and approved video counts on exercise list results.
+- Exercise detail response exposes `mediaReady` and `videoReady`.
+- Media relationships expose target exercise IDs for reliable navigation.
+- Mobile Exercise Library route with search, discipline filters, result count, refresh and exercise cards.
+- Mobile Exercise Detail route with localized names, metadata, approved media gallery, instructions, coach cues, common mistakes, cautions and exercise relationships.
+- Command Center now exposes a direct Exercises entry point.
+- Mobile fitness-content API client supports authenticated requests and access-token refresh using the existing refresh session contract.
+- Automated backend unit coverage exists for the new media rights gates.
 
 ## Media lifecycle
 
@@ -29,15 +37,15 @@ Candidate source
   -> published exercise media
 ```
 
-## Supported media roles
+## Media roles
 
 - `hero` — primary exercise preview/poster.
-- `instructional_video` — the main exercise demonstration.
-- `secondary_video` — alternate angle, tempo or coaching view.
+- `instructional_video` — main demonstration.
+- `secondary_video` — alternate angle/tempo/coaching view.
 - `demo_image` — still demonstration frame.
 - `sequence_image` — ordered multi-step visual instruction.
 
-The current release gate remains at least four distinct approved WebP demonstration assets. Video coverage is additive and must not silently replace that gate until the product UX and automated validation are updated together.
+The current catalog release gate remains at least four distinct approved WebP demonstration assets. Video is additive until the final player and content gates are proven together.
 
 ## Provenance contract
 
@@ -53,13 +61,16 @@ Every candidate must carry:
 - original media URL/reference;
 - stored media location when copied into MYPA storage;
 - transformation history when normalized;
-- review status;
-- reviewer/review timestamp;
+- approval/review status;
 - content version.
 
 Missing or ambiguous rights are **not publishable**.
 
-## Video delivery strategy
+## Current delivery behavior
+
+The mobile exercise detail page can show approved images immediately. For an approved instructional video, the current mobile surface exposes a play action against the approved media URL. Full in-app playback should use the Expo video stack once the dependency is integrated and CI-validated; until then, the action deliberately avoids pretending an external URL is an in-app player.
+
+## Video acquisition strategy
 
 Preferred order:
 
@@ -70,59 +81,32 @@ Preferred order:
 
 Do not make runtime scraping a dependency. Do not download or mirror BODINEXT media merely because it is publicly reachable.
 
-## Storage contract
-
-```text
-Exercise
-  -> ExerciseMedia
-      -> provenance + license
-      -> technical metadata
-      -> approval/version
-      -> storage object or authorized playback reference
-  -> API response
-  -> mobile media player
-```
-
-Recommended video metadata:
-
-- MIME type;
-- duration in milliseconds;
-- width/height;
-- aspect ratio;
-- file size;
-- poster asset;
-- checksum/content hash;
-- captions/subtitles when available;
-- language;
-- streaming/direct-file mode;
-- storage key or authorized playback URL;
-- created/updated timestamps.
-
 ## Catalog coverage strategy
 
-The target is 500 published movements per discipline. Content should be released in batches, not as a fake catalog with missing media.
+The target is 500 published movements per discipline. Content is released in batches rather than presenting a fake catalog with missing or unverified media.
 
 For each batch:
 
 1. import/validate exercise metadata;
 2. attach the required four approved WebP assets;
-3. attach an approved instructional video where available;
+3. attach an approved instructional video when available;
 4. verify provenance and license;
 5. run content-balance validation;
-6. publish only the exercises that satisfy all gates.
+6. publish only the exercises that satisfy all release gates.
 
-Exercises can exist as `draft` or `pending_media` without appearing as fully published consumer content.
+Exercises may remain `draft` / `pending_media` without appearing as complete consumer content.
 
 ## Verification requirements
 
 Repository-level validation should prove:
 
-- media cannot be published without provenance/approval;
-- exercise queries return only publishable media for consumer surfaces;
+- media cannot be published as approved without the required provenance fields;
+- non-owned approved media carries a canonical source URL;
+- video media has a MIME type;
+- exercise queries return only published exercises and approved consumer media;
 - media ordering is deterministic;
-- video metadata validation rejects unsupported or malformed assets;
-- storage references are not confused with public source URLs;
+- relationship navigation targets the actual exercise;
 - content-balance checks continue to enforce the existing four-WebP requirement;
-- import/review operations are restartable and idempotent.
+- import/review operations remain restartable and idempotent.
 
 Physical-device playback and production CDN/storage behavior remain separate runtime gates.
