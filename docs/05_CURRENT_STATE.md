@@ -1,7 +1,7 @@
 # MYPA Current State
 
 Last updated: 2026-09-14
-Review status: FITNESS BODINEXT-ALIGNED NON-MEDIA PRODUCT SLICE IMPLEMENTED / CONTENT-MEDIA PHASE OPEN / FRESH CI VERIFICATION PENDING
+Review status: FITNESS BODINEXT-ALIGNED NON-MEDIA PRODUCT SLICE IMPLEMENTED / FREE-FIRST CONTENT-MEDIA PHASE OPEN / FRESH CI VERIFICATION PENDING
 
 ## Canonical ownership
 
@@ -19,7 +19,8 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Planned Fitness catalog scale: **1500 canonical exercises**.
 - The repository currently proves the canonical exercise/content/media architecture and seed/program foundations; it does not yet prove 1500 fully reviewed, commercially-safe production exercise records.
-- Next content phase: discover up to **1000 candidate source websites/domains** and then ingest only media with explicit MYPA-compatible rights.
+- Source-discovery milestone: **1000 distinct source sites/domains/collections**; larger research scale (10,000+ or more) is explicitly allowed where necessary.
+- Acquisition priority: **free/open/public-domain first**, because international paid procurement is currently constrained.
 
 ## Verified baseline
 
@@ -43,10 +44,12 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Mobile Exercise Library and Exercise Detail screens.
 - Provenance-aware media contract covering ownership, license, attribution, source reference, acquisition mode and approval.
 - Local rights-aware video discovery tooling; discovery results remain candidates until exact-match and rights approval.
-- Rights-gated downloader added for explicitly approved media records only.
-- Initial rights-gated sample manifest contains 9 exact Wikimedia demonstration assets under CC BY 3.0.
-- Machine-readable source registry currently contains **26 source records** across open-license media, commercial licensing, API/media, animation, stock and rights-review classes.
-- Registry/approved-manifest validator added as a rights-escalation guard.
+- Scalable Wikimedia Commons free-video discovery harvester for arbitrary exercise query lists.
+- Rights-gated downloader for explicitly approved media records only.
+- Downloader now streams to disk, verifies SHA-256 and writes an auditable report instead of buffering entire videos in RAM.
+- Initial rights-gated sample manifest contains 9 exact Wikimedia demonstration assets under CC BY 3.0 with explicit license URLs.
+- Source registry and approval validator guard against rights escalation.
+- Machine-readable source inventory currently contains **47 source records** across open-license media, government/public-domain, commercial licensing, API/media, animation, stock and rights-review classes.
 
 ### Durable programs
 
@@ -78,15 +81,17 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 ## Current content/media research
 
-Current research has identified high-value source families including Wikimedia Commons, YMove, ExerciseVideoAPI, Fitter Stock, Funxtion FXCONTENT, WorkoutDB, MuscleWiki API, ExerciseAPI, RepDB, MoveKit, Exercise Animatic, Vital Animations, CARAVAN, Hyperhuman, Exercise.com, White Label Workouts and other stock/open-license/licensing leads. Several public datasets are explicitly blocked because their media rights are uncertain or separate from the repository code/data licence.
+Free-first research has expanded beyond the initial vendors. High-value source families now include Wikimedia Commons exercise-video categories, exact CC BY demonstration files, U.S. government public-domain footage mirrored on Commons, SeniorForm's openly licensed exercise-video package, Workout Guide and Open Training visual libraries, CC Search/Openverse as discovery indexes, and asset-specific free stock sources such as Pixabay/Videvo.
 
-The detailed findings and 1000-source expansion strategy are in `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md`, with machine-readable seed providers in `data/fitness-source-registry.seed.json`.
+Commercial providers such as YMove, Vital Animations, Funxtion, ExerciseVideoAPI, WorkoutDB, CARAVAN, Hyperhuman, Exercise Animatic, MoveKit and others remain fallback licensing leads rather than the primary acquisition path.
+
+The detailed free-first plan is `docs/project-brain/20_FREE_FIRST_EXERCISE_VIDEO_STRATEGY.md`. The broader discovery plan remains `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md`.
 
 ## Acquisition boundary
 
-The new downloader is intentionally not a generic scraper. It requires an explicit approval flag, compatible acquisition mode, rights basis, source reference, allow-listed download host and checksum/reporting path.
+The downloader is intentionally not a generic scraper. It requires explicit approval, compatible acquisition mode, rights basis, license URL, source reference, allow-listed download host and checksum/reporting.
 
-It must not blanket-download BODINEXT media or arbitrary third-party exercise videos.
+It must not blanket-download BODINEXT media or arbitrary third-party exercise videos. "Free download" alone is not enough; the intended MYPA commercial app distribution/storage model must be compatible with the exact asset license.
 
 ## Automated evidence
 
@@ -104,13 +109,14 @@ The final feature branch has received CI triggers during development, and one ea
 - Production Supabase/Auth/RLS/Storage/CDN behavior remains environment-limited.
 - Final instructional-video availability is content/legal-gated.
 - The local ExerciseDB V1 OSS corpus is non-commercial research material and must not be shipped in a monetized build without compatible commercial rights.
-- The execution environment used for this session does not provide outbound DNS/network access for actually transferring external video binaries; the repository downloader is therefore prepared and dry-runable, but external binary transfer remains unvalidated here.
+- The execution environment used for this session does not provide outbound DNS/network access for actually transferring external video binaries; the repository downloader is therefore prepared and scalable, but external binary transfer remains unvalidated here.
 
 ## Project Brain
 
 - `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` remains the reference-product gap analysis.
 - `docs/project-brain/17_FITNESS_VIDEO_MEDIA_FOUNDATION.md` documents the media foundation and acquisition boundary.
 - `docs/project-brain/18_FITNESS_PROGRAMS_AND_CALCULATORS.md` documents programs, calculators, progress and the 1500-exercise target.
-- `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md` documents the 1000-source discovery corpus and current source findings.
+- `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md` documents the broad source-discovery corpus and expansion strategy.
+- `docs/project-brain/20_FREE_FIRST_EXERCISE_VIDEO_STRATEGY.md` defines the free-first acquisition strategy.
 - `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` remains the canonical audit findings record.
 - `docs/project-brain/12_OPEN_WORK.md` remains the canonical actionable-work list.
