@@ -7,11 +7,13 @@
  *   approved: true
  *   acquisitionMode: owned_upload | licensed | open_license | external_authorized
  *   rightsBasis
+ *   licenseUrl
  *   sourceReference
  *   downloadUrl
  *
- * The downloader also enforces an allow-list of acquisition hosts to make
- * accidental third-party blanket downloading harder.
+ * The downloader enforces an allow-list of acquisition hosts, streams to disk
+ * instead of buffering the whole asset in RAM, verifies the resulting SHA-256,
+ * and writes an auditable download report.
  *
  * Usage:
  *   node tools/download-approved-exercise-media.mjs manifest.json ./out
@@ -19,6 +21,7 @@
  */
 
 import fs from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { URL } from 'node:url';
@@ -37,9 +40,7 @@ const ALLOWED_ACQUISITION_MODES = new Set([
   'external_authorized',
 ]);
 
-function sha256(buffer) {
-  return crypto.createHash('sha256').update(buffer).digest('hex');
-}
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function sanitize(value) {
   return String(value)
@@ -50,23 +51,33 @@ function sanitize(value) {
 }
 
 function hostAllowed(host, allowedHosts) {
-  return allowedHosts.some((allowed) => host === allowed || host.endsWith(`.${allowed}`));
+  const normalizedHost = host.toLowerCase();
+  return allowedHosts.some((allowed) => {
+    const normalizedAllowed = String(allowed).toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+    return normalizedHost === normalizedAllowed || normalizedHost.endsWith(`.${normalizedAllowed}`);
+  });
 }
 
-async function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+async function hashFile(filePath) {
+  const hash = crypto.createHash('sha256');
+  const handle = await fs.open(filePath, 'r');
+  try {
+    const stream = handle.createReadStream();
+    for await (const chunk of stream) hash.update(chunk);
+  } finally {
+    await handle.close();
+  }
+  return hash.digest('hex');
 }
 
 async function downloadOne(record) {
-  if (!record || record.approved !== true) {
-    throw new Error('record is not explicitly approved');
-  }
+  if (!record || record.approved !== true) throw new Error('record is not explicitly approved');
   if (!ALLOWED_ACQUISITION_MODES.has(record.acquisitionMode)) {
     throw new Error(`unsupported acquisitionMode: ${record.acquisitionMode}`);
   }
-  if (!record.rightsBasis?.trim()) throw new Error('rightsBasis is required');
-  if (!record.sourceReference?.trim()) throw new Error('sourceReference is required');
-  if (!record.downloadUrl?.trim()) throw new Error('downloadUrl is required');
+  for (const field of ['rightsBasis', 'licenseUrl', 'sourceReference', 'downloadUrl']) {
+    if (!String(record?.[field] ?? '').trim()) throw new Error(`${field} is required`);
+  }
 
   const url = new URL(record.downloadUrl);
   const allowedHosts = Array.isArray(record.allowedHosts) ? record.allowedHosts : [];
@@ -89,43 +100,59 @@ async function downloadOne(record) {
   const response = await fetch(url, {
     redirect: 'follow',
     headers: {
-      'User-Agent': 'MYPA-approved-media-downloader/1.0',
+      'User-Agent': 'MYPA-approved-media-downloader/2.0',
       Accept: '*/*',
     },
   });
-
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  if (!response.body) throw new Error('response body is unavailable for streaming');
 
   const contentLength = Number(response.headers.get('content-length') ?? 0);
   if (contentLength > maxBytes) throw new Error(`content-length ${contentLength} exceeds ${maxBytes}`);
 
-  const body = await response.arrayBuffer();
-  const buffer = Buffer.from(body);
-  if (buffer.length > maxBytes) throw new Error(`downloaded ${buffer.length} bytes exceeds ${maxBytes}`);
-
   await fs.mkdir(outputDir, { recursive: true });
-  await fs.writeFile(destination, buffer, { flag: 'wx' }).catch(async (error) => {
-    if (error?.code === 'EEXIST') {
-      const existing = await fs.readFile(destination);
-      if (sha256(existing) !== sha256(buffer)) {
-        throw new Error(`destination exists with different checksum: ${destination}`);
-      }
-      return;
-    }
-    throw error;
-  });
+  const tempPath = `${destination}.part`;
 
-  return {
-    exerciseId: record.exerciseId,
-    destination,
-    bytes: buffer.length,
-    sha256: sha256(buffer),
-    mimeType: response.headers.get('content-type'),
-    status: 'downloaded',
-    sourceReference: record.sourceReference,
-    rightsBasis: record.rightsBasis,
-    attribution: record.attribution ?? null,
-  };
+  try {
+    const stream = response.body;
+    const file = createWriteStream(tempPath, { flags: 'w' });
+    let bytes = 0;
+    try {
+      for await (const chunk of stream) {
+        bytes += chunk.byteLength;
+        if (bytes > maxBytes) throw new Error(`downloaded ${bytes} bytes exceeds ${maxBytes}`);
+        if (!file.write(chunk)) await new Promise((resolve) => file.once('drain', resolve));
+      }
+    } finally {
+      await new Promise((resolve, reject) => {
+        file.end((error) => (error ? reject(error) : resolve()));
+      });
+    }
+
+    const checksum = await hashFile(tempPath);
+    await fs.rename(tempPath, destination);
+
+    if (record.expectedSha256 && checksum !== String(record.expectedSha256).toLowerCase()) {
+      await fs.rm(destination, { force: true });
+      throw new Error(`checksum mismatch: expected ${record.expectedSha256}, got ${checksum}`);
+    }
+
+    return {
+      exerciseId: record.exerciseId,
+      destination,
+      bytes,
+      sha256: checksum,
+      mimeType: response.headers.get('content-type'),
+      status: 'downloaded',
+      sourceReference: record.sourceReference,
+      rightsBasis: record.rightsBasis,
+      licenseUrl: record.licenseUrl,
+      attribution: record.attribution ?? null,
+    };
+  } catch (error) {
+    await fs.rm(tempPath, { force: true });
+    throw error;
+  }
 }
 
 async function main() {
@@ -137,7 +164,7 @@ async function main() {
   console.log(`Mode: ${dryRun ? 'DRY RUN' : 'DOWNLOAD'}`);
   console.log(`Concurrency: ${concurrency}, delay: ${delayMs}ms`);
 
-  const results = [];
+  const results = new Array(manifest.length);
   let cursor = 0;
   async function worker() {
     while (true) {
@@ -145,8 +172,7 @@ async function main() {
       if (index >= manifest.length) return;
       const record = manifest[index];
       try {
-        const result = await downloadOne(record);
-        results[index] = { ok: true, ...result };
+        results[index] = { ok: true, ...await downloadOne(record) };
         console.log(`[${index + 1}/${manifest.length}] OK ${record.exerciseId}`);
       } catch (error) {
         results[index] = {
@@ -160,7 +186,9 @@ async function main() {
     }
   }
 
-  await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(1, manifest.length)) }, () => worker()));
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, Math.max(1, manifest.length)) }, () => worker()),
+  );
 
   const report = {
     generatedAt: new Date().toISOString(),
