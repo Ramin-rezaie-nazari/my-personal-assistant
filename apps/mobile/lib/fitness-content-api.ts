@@ -69,8 +69,11 @@ export type ExerciseDetail = ExerciseSummary & {
 
 export type ExerciseListResponse = { items: ExerciseSummary[]; total: number; limit: number; offset: number };
 
-async function rawRequest(path: string, token?: string) {
-  return fetch(`${API_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+async function rawRequest(path: string, token?: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers);
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  if (init.body) headers.set('Content-Type', 'application/json');
+  return fetch(`${API_URL}${path}`, { ...init, headers });
 }
 
 async function request<T>(path: string): Promise<T> {
@@ -79,7 +82,10 @@ async function request<T>(path: string): Promise<T> {
   if (response.status === 401 && token) {
     const refreshToken = await getStoredRefreshToken();
     if (refreshToken) {
-      const refreshResponse = await rawRequest('/auth/refresh');
+      const refreshResponse = await rawRequest('/auth/refresh', undefined, {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+      });
       if (refreshResponse.ok) {
         const auth = await refreshResponse.json() as AuthResponse;
         await setAuthSession(auth);
