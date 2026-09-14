@@ -23,6 +23,7 @@ import { FitnessProfileService } from '../services/fitness-profile.service';
 import { ExerciseContentService } from '../services/exercise-content.service';
 import { FitnessProgramService } from '../services/fitness-program.service';
 import { FitnessCalculatorService } from '../services/fitness-calculator.service';
+import { FitnessProgressService } from '../services/fitness-progress.service';
 
 type AuthenticatedRequest = { user: { id: string } };
 
@@ -34,6 +35,7 @@ export class FitnessController {
     private readonly exercises: ExerciseContentService,
     private readonly programs: FitnessProgramService,
     private readonly calculators: FitnessCalculatorService,
+    private readonly progress: FitnessProgressService,
   ) {}
 
   @Get('profile')
@@ -59,6 +61,9 @@ export class FitnessController {
 
   @Post('calculators')
   calculatorsPost(@Body() dto: FitnessCalculatorDto) { return this.calculators.calculate(dto); }
+
+  @Get('progress/summary')
+  progressSummary(@Req() req: AuthenticatedRequest) { return this.progress.summary(req.user.id); }
 
   @Get('programs')
   listPrograms(@Query() query: FitnessProgramQueryDto) { return this.programs.list(query); }
