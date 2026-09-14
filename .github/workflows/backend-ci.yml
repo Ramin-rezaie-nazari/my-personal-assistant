@@ -7,10 +7,12 @@ on:
     branches: [main]
     paths:
       - 'apps/backend/**'
+      - 'tools/**'
+      - 'data/fitness-*.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/backend-ci.yml'
 
-jobs:
+ojobs:
   backend:
     runs-on: ubuntu-latest
 
@@ -62,6 +64,18 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
         working-directory: .
+
+      - name: Validate fitness source registry and approved media manifest
+        working-directory: .
+        run: node tools/validate-fitness-source-registry.mjs
+
+      - name: Validate fitness discovery tools syntax
+        working-directory: .
+        run: |
+          node --check tools/discover-exercise-videos.mjs
+          node --check tools/discover-free-exercise-videos-commons.mjs
+          node --check tools/discover-free-exercise-videos-commons-category.mjs
+          node --check tools/download-approved-exercise-media.mjs
 
       - name: Validate Prisma schema
         run: pnpm exec prisma validate
