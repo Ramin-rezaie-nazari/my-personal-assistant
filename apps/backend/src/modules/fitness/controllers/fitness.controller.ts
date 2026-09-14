@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -15,14 +16,19 @@ import {
   ParseFitnessGoalDto,
   SaveFitnessProfileDto,
 } from '../dto/fitness.dto';
+import { ExerciseQueryDto } from '../dto/exercise-content.dto';
 import { FitnessProfileService } from '../services/fitness-profile.service';
+import { ExerciseContentService } from '../services/exercise-content.service';
 
 type AuthenticatedRequest = { user: { id: string } };
 
 @Controller('fitness')
 @UseGuards(JwtAuthGuard)
 export class FitnessController {
-  constructor(private readonly profile: FitnessProfileService) {}
+  constructor(
+    private readonly profile: FitnessProfileService,
+    private readonly exercises: ExerciseContentService,
+  ) {}
 
   @Get('profile')
   getProfile(@Req() req: AuthenticatedRequest) {
@@ -35,26 +41,17 @@ export class FitnessController {
   }
 
   @Post('profile')
-  save(
-    @Req() req: AuthenticatedRequest,
-    @Body() dto: SaveFitnessProfileDto,
-  ) {
+  save(@Req() req: AuthenticatedRequest, @Body() dto: SaveFitnessProfileDto) {
     return this.profile.save(req.user.id, dto.profile);
   }
 
   @Post('equipment')
-  addEquipment(
-    @Req() req: AuthenticatedRequest,
-    @Body() dto: AddFitnessEquipmentDto,
-  ) {
+  addEquipment(@Req() req: AuthenticatedRequest, @Body() dto: AddFitnessEquipmentDto) {
     return this.profile.addEquipment(req.user.id, dto.item);
   }
 
   @Delete('equipment/:id')
-  removeEquipment(
-    @Req() req: AuthenticatedRequest,
-    @Param('id') id: string,
-  ) {
+  removeEquipment(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     return this.profile.removeEquipment(req.user.id, id);
   }
 
@@ -66,5 +63,15 @@ export class FitnessController {
   @Post('goal/from-text')
   parseGoal(@Body() dto: ParseFitnessGoalDto) {
     return this.profile.parseNaturalGoal(dto.text);
+  }
+
+  @Get('exercises')
+  listExercises(@Query() query: ExerciseQueryDto) {
+    return this.exercises.list(query);
+  }
+
+  @Get('exercises/:id')
+  getExercise(@Param('id') id: string) {
+    return this.exercises.get(id);
   }
 }
