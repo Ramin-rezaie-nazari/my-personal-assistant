@@ -1,0 +1,146 @@
+[
+  {
+    "id": "cc-search-portal",
+    "url": "https://search.creativecommons.org/",
+    "type": "open_media_search",
+    "status": "verified_source",
+    "coverage": "Openly licensed media discovery across Wikimedia Commons, Openverse, Vimeo, YouTube and other indexed providers",
+    "rightsAction": "Use search as discovery only; verify exact asset license on the originating source before approval"
+  },
+  {
+    "id": "wikimedia-strength-training-videos",
+    "url": "https://commons.wikimedia.org/wiki/Category:Videos_of_people_demonstrating_strength_training_exercises",
+    "type": "open_license_media_collection",
+    "status": "verified_source",
+    "coverage": "27 strength-training video files currently listed",
+    "rightsAction": "Inspect each file page; license can vary by file"
+  },
+  {
+    "id": "wikimedia-fitness-videos",
+    "url": "https://commons.wikimedia.org/wiki/Category:Videos_of_fitness",
+    "type": "open_license_media_collection",
+    "status": "verified_source",
+    "coverage": "Fitness video collection including exercise and workout footage",
+    "rightsAction": "Inspect exact file license and provenance before use"
+  },
+  {
+    "id": "wikimedia-rehabilitation-videos",
+    "url": "https://commons.wikimedia.org/wiki/Category:Videos_of_rehabilitation",
+    "type": "open_license_media_collection",
+    "status": "verified_source",
+    "coverage": "Rehabilitation/therapy video subtree",
+    "rightsAction": "Useful for mobility/rehab; verify exact file and any institutional provenance"
+  },
+  {
+    "id": "seniorform",
+    "url": "https://www.seniorform.eu/",
+    "type": "open_license_exercise_video_library",
+    "status": "license-lead",
+    "coverage": "Exercise video files for senior exercise; downloadable ZIP with MP4/SRT/WAV assets",
+    "rightsAction": "Videos/text/instructional materials are stated as CC BY-SA 4.0; confirm MYPA's intended commercial/app distribution and attribution/ShareAlike handling"
+  },
+  {
+    "id": "workout-guide",
+    "url": "https://github.com/bryllim/workout-guide",
+    "type": "open_license_exercise_illustration_library",
+    "status": "verified-license-lead",
+    "coverage": "302 exercises / 906 SVG visual frames",
+    "rightsAction": "Visual assets are CC BY-SA 4.0; use primarily for illustration/animation fallback and handle ShareAlike correctly"
+  },
+  {
+    "id": "open-training-exercises",
+    "url": "https://github.com/chaosbastler/opentraining-exercises",
+    "type": "open_license_exercise_data_illustrations",
+    "status": "verified-license-lead",
+    "coverage": "Open Training exercise metadata and Everkinetic-derived images",
+    "rightsAction": "Images are CC BY-SA 3.0; video coverage is not established"
+  },
+  {
+    "id": "nasa-stemonstrations-exercise",
+    "url": "https://commons.wikimedia.org/wiki/File:STEMonstrations-_Exercise.webm",
+    "type": "public_domain_government_video",
+    "status": "verified-source",
+    "coverage": "Exercise education video from NASA Johnson",
+    "rightsAction": "Public domain in the United States; NASA identifiers/logos and any third-party material require separate review"
+  },
+  {
+    "id": "nasa-functional-fitness",
+    "url": "https://commons.wikimedia.org/wiki/File:Functional_Fitness_kwSORatDYdQ.webm",
+    "type": "public_domain_government_video",
+    "status": "verified-source",
+    "coverage": "Functional fitness video",
+    "rightsAction": "Commons marks the work public domain under U.S. government authorship; inspect exact file metadata and branding before use"
+  },
+  {
+    "id": "navy-command-fitness-class",
+    "url": "https://commons.wikimedia.org/wiki/File:Command_Fitness_Training_Class_(986805).webm",
+    "type": "public_domain_government_video",
+    "status": "verified-source",
+    "coverage": "U.S. Navy fitness training class",
+    "rightsAction": "Commons marks source as public-domain U.S. Navy/DVIDS footage; inspect branding, people/privacy and exact source metadata"
+  },
+  {
+    "id": "cdc-media-resources",
+    "url": "https://www.cdc.gov/media/b-roll/index.html",
+    "type": "public_domain_government_video_collection",
+    "status": "verified-source",
+    "coverage": "U.S. CDC b-roll video collection",
+    "rightsAction": "CDC states its b-roll is public domain; exercise-specific coverage must be identified per asset and CDC attribution is requested"
+  },
+  {
+    "id": "cdc-global-health-broll",
+    "url": "https://archive.cdc.gov/www_cdc_gov/globalhealth/newsroom/b-roll/index.html",
+    "type": "public_domain_government_video_collection",
+    "status": "verified-source",
+    "coverage": "Archived CDC public-domain b-roll",
+    "rightsAction": "Use only exercise-relevant footage after exact asset verification; cite CDC"
+  },
+  {
+    "id": "medlineplus-content",
+    "url": "https://www.medlineplus.gov/about/using/usingcontent/",
+    "type": "government_media_rights_source",
+    "status": "rights-gated",
+    "coverage": "Federal public-domain content plus separately licensed ADAM videos/images",
+    "rightsAction": "Do not ingest copyrighted ADAM videos without direct license; only public-domain portions are free"
+  },
+  {
+    "id": "openverse",
+    "url": "https://docs.openverse.org/",
+    "type": "open_media_search",
+    "status": "verified-source",
+    "coverage": "Open-license media discovery platform",
+    "rightsAction": "Openverse warns that license metadata must be verified on the individual work; current public API documentation emphasizes image/audio rather than exercise-video bulk harvesting"
+  },
+  {
+    "id": "pixabay-exercise-search",
+    "url": "https://pixabay.com/videos/search/exercise/",
+    "type": "stock_video_platform",
+    "status": "candidate-only",
+    "coverage": "900+ exercise videos advertised in current search",
+    "rightsAction": "Platform Content License applies; exact asset/person/brand rights and MYPA library-distribution model must be checked"
+  },
+  {
+    "id": "pixabay-workout-search",
+    "url": "https://pixabay.com/videos/search/work-out/",
+    "type": "stock_video_platform",
+    "status": "candidate-only",
+    "coverage": "1,600+ workout clips advertised in current search",
+    "rightsAction": "Candidate discovery only; do not bulk mirror a stock library"
+  },
+  {
+    "id": "videvo-gym-exercise",
+    "url": "https://www.videvo.net/stock-video-footage/gym-exercise/",
+    "type": "stock_video_platform",
+    "status": "candidate-only",
+    "coverage": "Free gym-exercise clips with Creative Commons 3.0/Royalty-Free/Videvo Attribution filters",
+    "rightsAction": "Select only asset licenses compatible with MYPA and exclude editorial/noncommercial assets"
+  },
+  {
+    "id": "videvo-functional-exercise",
+    "url": "https://www.videvo.net/stock-video-footage/functional-exercise/",
+    "type": "stock_video_platform",
+    "status": "candidate-only",
+    "coverage": "Free functional exercise clips",
+    "rightsAction": "Asset-specific license verification required"
+  }
+]
