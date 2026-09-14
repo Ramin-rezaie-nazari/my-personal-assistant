@@ -21,7 +21,6 @@ model FitnessProgram {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   versions FitnessProgramVersion[]
-  assignments FitnessPlanAssignment[]
   @@index([discipline, goal, level])
   @@index([contentStatus])
 }
