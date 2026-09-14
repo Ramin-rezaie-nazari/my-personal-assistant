@@ -1,7 +1,7 @@
 # MYPA Current State
 
 Last updated: 2026-09-14
-Review status: FITNESS BODINEXT-ALIGNED NON-MEDIA PRODUCT SLICE IMPLEMENTED / FRESH CI VERIFICATION PENDING
+Review status: FITNESS BODINEXT-ALIGNED NON-MEDIA PRODUCT SLICE IMPLEMENTED / CONTENT-MEDIA PHASE OPEN / FRESH CI VERIFICATION PENDING
 
 ## Canonical ownership
 
@@ -13,7 +13,13 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Main baseline: `f8a5681eebef5ecbac1e3e392b27a6a87d3396a0`
 - Active feature branch: `feat/fitness-video-media-foundation-v2`
 - PR: #78 — `feat(fitness): complete BODINEXT-aligned program and media foundation`
-- The feature branch extends the verified baseline with Fitness exercise content/media, durable programs, calculators and progress summary. Fresh CI must verify the final head before this slice is marked green.
+- The feature branch extends the verified baseline with Fitness exercise content/media architecture, durable programs, calculators, progress summary and consumer mobile surfaces. Fresh CI must verify the final head before this slice is marked green.
+
+## Fitness target
+
+- Planned Fitness catalog scale: **1500 canonical exercises**.
+- The repository currently proves the canonical exercise/content/media architecture and seed/program foundations; it does not yet prove 1500 fully reviewed, commercially-safe production exercise records.
+- Next content phase: discover up to **1000 candidate source websites/domains** and then ingest only media with explicit MYPA-compatible rights.
 
 ## Verified baseline
 
@@ -35,8 +41,9 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Canonical `Exercise`, `ExerciseMedia` and `ExerciseRelationship` database surfaces.
 - Authenticated exercise list/detail APIs with search, discipline, muscle, equipment, difficulty and goal filters.
 - Mobile Exercise Library and Exercise Detail screens.
-- Provenance-aware media contract covering ownership, license, attribution, source reference and approval.
+- Provenance-aware media contract covering ownership, license, attribution, source reference, acquisition mode and approval.
 - Local rights-aware video discovery tooling; discovery results remain candidates until exact-match and rights approval.
+- Rights-gated downloader added for explicitly approved media records only.
 
 ### Durable programs
 
@@ -66,6 +73,27 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Authenticated `GET /fitness/progress/summary` aggregating workout totals, performance averages and active-program completion percentage.
 - Unit coverage added for the progress aggregation contract.
 
+## Current content/media research
+
+A first research batch found several high-value sources:
+
+- Wikimedia Commons exercise-video categories and exact CC-licensed demonstration files.
+- Mixkit exercise/workout stock-video catalogs with a platform license.
+- YMove free/commercial exercise-video set plus separately licensed larger app library.
+- ExerciseLibrary API with exercise metadata and video links.
+- MuscleWiki API with large exercise/video catalog and explicit streaming/caching constraints.
+- Exercise Animatic and ExerciseClips as licensing leads.
+- Programme as an embedding license lead with explicit prohibition on building a competing compiled library.
+- Multiple ExerciseDB-derived public datasets; media rights vary and must not be inferred from repository publicity alone.
+
+The detailed findings and the 1000-source expansion strategy are in `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md`.
+
+## Acquisition boundary
+
+The new downloader is intentionally not a generic scraper. It requires an explicit approval flag, compatible acquisition mode, rights basis, source reference, allow-listed download host and checksum/reporting path.
+
+It must not blanket-download BODINEXT media or arbitrary third-party exercise videos.
+
 ## Automated evidence
 
 ### Verified baseline
@@ -74,7 +102,7 @@ The previous Backend CI, Mobile CI and Android native APK evidence remains valid
 
 ### New Fitness slice
 
-The final feature branch has received CI triggers during development, and one earlier Backend CI run failed at Prisma schema validation before subsequent schema fixes. The final head has not yet received a confirmed green Backend CI/Mobile CI result in the available tool evidence, so this slice is intentionally not marked green.
+The final feature branch has received CI triggers during development, and one earlier Backend CI run failed at Prisma schema validation before subsequent schema fixes. The final feature branch head has not yet received a confirmed green Backend CI/Mobile CI result in the available tool evidence, so this slice is intentionally not marked green.
 
 ## Evidence limitations
 
@@ -82,11 +110,13 @@ The final feature branch has received CI triggers during development, and one ea
 - Production Supabase/Auth/RLS/Storage/CDN behavior remains environment-limited.
 - Final instructional-video availability is content/legal-gated.
 - The local ExerciseDB V1 OSS corpus is non-commercial research material and must not be shipped in a monetized build without compatible commercial rights.
+- The execution environment used for this session does not provide outbound DNS/network access for actually transferring external video binaries; the repository downloader is therefore prepared and dry-runable, but external binary transfer remains unvalidated here.
 
 ## Project Brain
 
 - `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` remains the reference-product gap analysis.
 - `docs/project-brain/17_FITNESS_VIDEO_MEDIA_FOUNDATION.md` documents the media foundation and acquisition boundary.
-- `docs/project-brain/18_FITNESS_PROGRAMS_AND_CALCULATORS.md` documents programs, calculators and progress summary.
+- `docs/project-brain/18_FITNESS_PROGRAMS_AND_CALCULATORS.md` documents programs, calculators, progress and the 1500-exercise target.
+- `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md` documents the 1000-source discovery corpus and current source findings.
 - `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` remains the canonical audit findings record.
 - `docs/project-brain/12_OPEN_WORK.md` remains the canonical actionable-work list.
