@@ -15,7 +15,7 @@ The operational discovery goal is **up to 1,000 distinct source sites/domains or
 
 Current feature branch: `feat/fitness-video-media-foundation-v2`.
 
-PR #78 currently contains the Fitness product/media foundation, durable programs, calculators and progress summary. The latest known PR snapshot has 56 commits, 29 changed files, +1531/-73, and the final feature head still requires fresh green Backend + Mobile CI evidence.
+PR #78 now contains the Fitness product/media foundation, durable programs, calculators, progress summary, source registry/inventory and rights-gated downloader/validator. The branch is still awaiting fresh green Backend + Mobile CI evidence.
 
 Implemented Fitness layers include:
 
@@ -26,6 +26,8 @@ Implemented Fitness layers include:
 - Approval gate for third-party media.
 - Rights-aware candidate discovery tool.
 - Explicit allow-listed downloader that only accepts approved records.
+- Source registry and media-source inventory for the 1,000-source research target.
+- Validator that prevents source-level discovery from becoming asset-level download permission.
 - Durable program/version/session/assignment domain.
 - Six MYPA-curated starter programs.
 - BMI/BMR/TDEE/calorie/lean-mass/water/workout calculators.
@@ -63,32 +65,47 @@ The source inventory should record at minimum:
 - reviewer and review date
 - sample asset IDs/URLs
 
-## 4. High-value sources found so far
+## 4. Current verified research findings
 
-### Wikimedia Commons exercise demonstrations
+### Open / low-friction sources
 
-Several exact exercise demonstration videos were found on Wikimedia Commons with explicit Creative Commons licenses. These are strong early candidates because each file page exposes the author and license metadata.
+- Wikimedia Commons contains exact exercise demonstration video files with asset-level Creative Commons metadata. The first sample set contains 9 approved-candidate CC BY 3.0 assets in the MYPA manifest.
+- Your Move currently advertises 25 free downloadable exercise videos for commercial use, while its broader library is separately licensed for white-label use/API access. The free set may not be redistributed as a standalone library.
+- RepDB currently advertises a 601-exercise free dataset with commercial in-app use and required attribution; the paid Standard tier adds consistent looping animations under a separate paid license.
 
-Verified examples:
+### Commercial white-label / API sources
 
-- Pull-ups — FitnessScape — CC BY 3.0.
-- Squat — FitnessScape — CC BY 3.0.
-- Shoulder press — FitnessScape — CC BY 3.0.
-- Bench press — FitnessScape — CC BY 3.0.
-- Deadlift — FitnessScape — CC BY 3.0.
-- Leg raises — FitnessScape — CC BY 3.0.
-- Incline press — FitnessScape — CC BY 3.0.
-- Hanging crunches — FitnessScape — CC BY 3.0.
+- Your Move: 1,107+ white-label HD exercise videos, bulk/API delivery, commercial licensing, 84 yoga poses through the same API family. citeturn244014search0turn464066search11
+- ExerciseVideoAPI: 290 filmed HD exercise videos, metadata JSON, perpetual commercial license, instant download and self-hosting claims; exact purchased contract still needs to be archived before production ingestion. citeturn244014search1turn464066search3
+- WorkoutDB: about 873 exercises with demo media; Pro/Scale plans advertise commercial in-product use and CDN/API delivery. citeturn244014search2turn464066search7
+- Funxtion FXCONTENT: 3,500+ exercise videos, 600+ classes, REST API and SDK, white-label delivery. citeturn244014search3turn486955search5
+- Hyperhuman: licensed exercise clips/classes, yoga, Pilates, strength, HIIT, mobility and recovery content delivered through app/web/API/video-export channels depending on plan/provider. citeturn960706search0
+- Fitscope Studio: thousands of studio fitness classes for apps/OEM/digital platforms under flexible licensing. citeturn960706search6turn486955search0
+- CARAVAN Wellness: white-label exercise API with CDN-hosted video and search/filter/personalization. citeturn960706search5
+- Exercise Animatic: commercial iOS/Android/app/platform use is explicitly described under its business-to-business license. citeturn373974search7turn960706search3
+- MoveKit: 400+ consistent exercise animations with commercial app licensing; raw standalone redistribution and competing-library use are prohibited. citeturn373974search2turn960706search4
+- Vital Animations: commercial use and self-hosting in paid iOS/Android apps are advertised, with complete collections covering gym, home, yoga, Pilates, women, mobility and stretching. citeturn960706search9
+- White Label Workouts: 120+ exercise demos/explainers explicitly marketed for apps, client programs and coaching products. citeturn244014search7
 
-Additional Commons demonstrations were found under CC BY-SA licenses (for example burpee and forward lunge). They remain rights-reviewed candidates rather than the first production download batch because ShareAlike obligations need to be handled consistently with MYPA's distribution model.
+### Structured exercise-data leads
 
-## 5. Commercial dataset/vendor leads
+- `smyrdev/exercises-dataset` advertises 1,324 exercises with multilingual instructions and muscle/volume data; repository licensing/provenance must still be reviewed before commercial reuse. citeturn960706search7
+- Several GymVisual-derived GitHub datasets explicitly separate MIT-covered code/data from GymVisual-owned media and say a separate GymVisual license is needed. These are useful for provenance research but are **not** production media sources by default. citeturn719100search1turn719100search10
+- ExerciseClips standard license explicitly excludes building an app/platform; an Extended Licence is required for that use case. citeturn244014search4
 
-A current example found during research is RepDB. Its free tier states that 600+ exercise records and associated flat WebP illustrations may be used in commercial applications with visible attribution, while forbidding redistribution as a standalone dataset. The paid tiers add animations and different licensing. This is potentially useful for the exercise catalog/illustration layer, but the exact current license must be accepted and recorded before ingestion.
+## 5. Source quality hierarchy
 
-Another current lead is Vital Animations / ExerciseDB Pro, which advertises 1,500+ exercise animations with a commercial license and download/hosting rights. This is a vendor lead, not a free asset source; MYPA should evaluate cost, contract scope and whether the purchased license covers our exact use case before acquisition.
+For MYPA production content, current ranking is:
 
-ExerciseDB-style GitHub mirrors remain candidate-only when their media ownership/licensing is unclear. A repository containing metadata is not evidence that the associated third-party media may be redistributed.
+1. owned/commissioned content;
+2. exact open-license/public-domain asset with clear reuse terms;
+3. one-time commercial white-label library with self-hosting rights;
+4. commercial API with explicit in-app delivery rights;
+5. embedding/streaming service where storage is prohibited;
+6. stock/platform candidates requiring asset-level review;
+7. public repositories with unclear media provenance.
+
+The key optimization is not merely reaching 1,000 sources. One commercially clean, well-structured provider covering 500–1,500 exercises may be more valuable than hundreds of fragmented sources.
 
 ## 6. Downloader rule
 
@@ -105,17 +122,24 @@ A record must include:
 
 The downloader refuses unapproved records, missing rights evidence, unsupported acquisition modes and non-allow-listed hosts. It records checksums, byte counts, MIME type and rights metadata in a download report.
 
-This is the desired behavior even when researching 1,000 sources: **discovery is broad, acquisition is narrow and auditable**.
+The validator separately verifies the source registry and approved-media manifest so discovery cannot silently escalate into download permission.
 
-## 7. Current acquisition boundary
+## 7. Current source inventory state
 
-MYPA will not mirror or bulk-copy BODINEXT media, and it will not treat a public search result, a third-party CDN URL, a scraped exercise dataset or a generic "free" label as permission.
+The checked-in inventory now contains **37 source/collection records** spanning:
 
-The workflow is:
+- Wikimedia Commons and exact asset pages;
+- free/open exercise data;
+- commercial exercise-video vendors;
+- commercial animation libraries;
+- API/media providers;
+- stock-video platforms;
+- embedding leads;
+- explicitly blocked/rights-review sources.
 
-`discover → exact asset match → inspect license/permission → determine commercial/hosting rights → record provenance → approve → download/import → checksum → catalog → attribution → test in app`
+These are de-duplicated by source/collection identity. Forks of the same dataset are not counted as distinct high-value sources unless they materially change rights or content provenance.
 
-## 8. Next execution batches
+## 8. Execution batches
 
 ### Batch A — exact open-license demonstrations
 
@@ -125,22 +149,51 @@ Populate an initial manifest of exact Commons files whose file page explicitly s
 
 Search Openverse/Wikimedia/public-domain collections for exercise illustrations and stills. Do not auto-approve merely because an API returns an asset; retain exact-license evidence.
 
-### Batch C — licensed commercial vendors
+### Batch C — commercial procurement shortlist
 
-Evaluate commercial packs that cover hundreds/thousands of movements. Compare per-app, redistribution, hosting/CDN, revenue, geography and sublicensing terms. A single clean commercial contract may outperform hundreds of fragmented sources.
+Compare YMove, ExerciseVideoAPI, WorkoutDB, Funxtion, Hyperhuman, Fitscope, CARAVAN, Exercise Animatic, MoveKit, Vital Animations and other leads for:
 
-### Batch D — 1,000-source inventory expansion
+- total exercise coverage
+- real video vs animation
+- female/male representation
+- yoga/Pilates/mobility/rehab coverage
+- commercial-app rights
+- white-label rights
+- self-hosting rights
+- API/CDN delivery
+- offline/download rights
+- sublicensing/redistribution restrictions
+- price and renewal model
+- attribution requirements
+- geographic restrictions
 
-Expand the research inventory to ~1,000 distinct sources/collections with deduplication by canonical domain/collection identifier. This is research breadth only; candidate sources do not enter production until rights review.
+### Batch D — 1,000-source discovery
+
+Expand the research inventory toward ~1,000 distinct sources/collections with deduplication. Discovery breadth remains separate from production approval.
+
+### Batch E — exact-match coverage measurement
+
+After the source universe is large enough, map every approved asset against the MYPA 1,500-exercise canonical slug/taxonomy and calculate:
+
+- exact coverage;
+- near-match requiring human review;
+- missing exercise media;
+- duplicate/alternate demonstrations;
+- modality gaps;
+- equipment gaps;
+- localization gaps.
+
+This converts "we found lots of videos" into a measurable exercise-library completion percentage.
 
 ## 9. Verification status
 
 - Product/media architecture: implemented on feature branch.
 - Rights-aware discovery: implemented.
 - Rights-gated downloader: implemented.
-- Exact open-license sample set: identified; manifest population is in progress.
-- 1,000-source research inventory: not yet complete.
-- 1,500-movement catalog population: not yet complete.
-- Real external media download: environment dependent; current runtime has no outbound DNS/network access for large external media transfer.
+- Source registry/inventory: implemented; 37 records currently checked in.
+- Exact open-license sample set: 9 approved-candidate records currently checked in.
+- 1,000-source research inventory: **in progress**.
+- 1,500-movement catalog population: **in progress / not yet proven complete**.
+- Real external binary download in this assistant runtime: environment-limited because outbound DNS/network transfer is unavailable.
 - Final in-app playback: not yet green-verified.
-- Fresh feature-branch Backend/Mobile CI: still pending confirmation.
+- Fresh feature-branch Backend/Mobile CI: pending confirmation.
