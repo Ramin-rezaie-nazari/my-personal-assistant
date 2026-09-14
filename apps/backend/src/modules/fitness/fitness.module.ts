@@ -6,6 +6,7 @@ import { FitnessProfilePersistenceService } from './services/fitness-profile-per
 import { ExerciseContentService } from './services/exercise-content.service';
 import { FitnessProgramService } from './services/fitness-program.service';
 import { FitnessCalculatorService } from './services/fitness-calculator.service';
+import { FitnessProgressService } from './services/fitness-progress.service';
 
 @Module({
   imports: [PrismaModule],
@@ -15,11 +16,12 @@ import { FitnessCalculatorService } from './services/fitness-calculator.service'
     ExerciseContentService,
     FitnessProgramService,
     FitnessCalculatorService,
+    FitnessProgressService,
     {
       provide: FitnessProfileService,
       useExisting: FitnessProfilePersistenceService,
     },
   ],
-  exports: [FitnessProfileService, FitnessProfilePersistenceService, ExerciseContentService, FitnessProgramService, FitnessCalculatorService],
+  exports: [FitnessProfileService, FitnessProfilePersistenceService, ExerciseContentService, FitnessProgramService, FitnessCalculatorService, FitnessProgressService],
 })
 export class FitnessModule {}
