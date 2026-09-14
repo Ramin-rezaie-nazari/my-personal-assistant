@@ -46,5 +46,53 @@
     "allowedHosts": ["commons.wikimedia.org"],
     "creator": "FitnessScape",
     "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "exerciseId": "shoulder-press",
+    "filename": "shoulder-press-fitnessscape.webm",
+    "approved": true,
+    "acquisitionMode": "open_license",
+    "rightsBasis": "CC BY 3.0 Unported",
+    "sourceReference": "https://commons.wikimedia.org/wiki/File:Shoulder_press_-_exercise_demonstration_video.webm",
+    "downloadUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Shoulder_press_-_exercise_demonstration_video.webm",
+    "allowedHosts": ["commons.wikimedia.org"],
+    "creator": "FitnessScape",
+    "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "exerciseId": "leg-raises",
+    "filename": "leg-raises-fitnessscape.webm",
+    "approved": true,
+    "acquisitionMode": "open_license",
+    "rightsBasis": "CC BY 3.0 Unported",
+    "sourceReference": "https://commons.wikimedia.org/wiki/File:Leg_raises_-_exercise_demonstration_video.webm",
+    "downloadUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Leg_raises_-_exercise_demonstration_video.webm",
+    "allowedHosts": ["commons.wikimedia.org"],
+    "creator": "FitnessScape",
+    "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "exerciseId": "incline-press",
+    "filename": "incline-press-fitnessscape.webm",
+    "approved": true,
+    "acquisitionMode": "open_license",
+    "rightsBasis": "CC BY 3.0 Unported",
+    "sourceReference": "https://commons.wikimedia.org/wiki/File:Incline_press_-_exercise_demonstration_video.webm",
+    "downloadUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Incline_press_-_exercise_demonstration_video.webm",
+    "allowedHosts": ["commons.wikimedia.org"],
+    "creator": "FitnessScape",
+    "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
+  },
+  {
+    "exerciseId": "hanging-crunches",
+    "filename": "hanging-crunches-fitnessscape.webm",
+    "approved": true,
+    "acquisitionMode": "open_license",
+    "rightsBasis": "CC BY 3.0 Unported",
+    "sourceReference": "https://commons.wikimedia.org/wiki/File:Hanging_crunches_-_exercise_demonstration_video.webm",
+    "downloadUrl": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Hanging_crunches_-_exercise_demonstration_video.webm",
+    "allowedHosts": ["commons.wikimedia.org"],
+    "creator": "FitnessScape",
+    "attribution": "FitnessScape — CC BY 3.0 — https://creativecommons.org/licenses/by/3.0/"
   }
 ]
