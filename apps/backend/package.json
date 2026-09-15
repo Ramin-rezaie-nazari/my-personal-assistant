@@ -28,7 +28,7 @@
     "fitness:media:sources:1000:search": "node ../../tools/discover-fitness-1000-sources-search.mjs ../../data/fitness-media-source-inventory.seed.json ../../data/fitness-media-1000-source-discovery.search.generated.json",
     "fitness:media:free": "node ../../tools/run-free-exercise-video-pipeline.mjs ../../data/fitness-free-video-queries.sample.json",
     "fitness:media:free:download": "node ../../tools/run-free-exercise-video-pipeline.mjs ../../data/fitness-free-video-queries.sample.json --download",
-    "fitness:media:free:dry-run": "node ../../tools/run-free-exercise-video-pipeline.mjs ../../data/fitness-free-exercise-video-queries.sample.json --download --dry-run",
+    "fitness:media:free:dry-run": "node ../../tools/run-free-exercise-video-pipeline.mjs ../../data/fitness-free-video-queries.sample.json --download --dry-run",
     "fitness:media:validate": "node ../../tools/validate-fitness-source-registry.mjs ../../data/fitness-source-registry.seed.json ../../data/fitness-approved-media.sample.json",
     "recipe-images:import": "node ./scripts/recipe-image-import.mjs",
     "recipe-images:dataset": "node ./scripts/recipe-image-dataset-import-v2.mjs",
