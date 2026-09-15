@@ -26,19 +26,24 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { spawn } from 'node:child_process';
 
-const queryPath = path.resolve(process.argv[2] ?? 'data/fitness-free-video-queries.sample.json');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const toolsDir = path.join(repoRoot, 'tools');
+
+const queryPath = path.resolve(process.argv[2] ?? path.join(repoRoot, 'data/fitness-free-video-queries.sample.json'));
 const shouldDownload = process.argv.includes('--download');
 const dryRun = process.argv.includes('--dry-run');
 
-const candidatesPath = path.resolve('data/fitness-free-video-candidates.commons.json');
-const approvedPath = path.resolve('data/fitness-approved-media.generated.json');
-const outputDir = path.resolve('data/fitness-media');
+const candidatesPath = path.join(repoRoot, 'data/fitness-free-video-candidates.commons.json');
+const approvedPath = path.join(repoRoot, 'data/fitness-approved-media.generated.json');
+const reportPath = path.join(repoRoot, 'data/fitness-approved-media.generated.report.json');
+const outputDir = path.join(repoRoot, 'data/fitness-media');
 
 function run(command, args) {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, { stdio: 'inherit' });
+    const child = spawn(command, args, { stdio: 'inherit', cwd: repoRoot });
     child.on('error', reject);
     child.on('close', (code) => {
       if (code === 0) resolve();
@@ -69,7 +74,6 @@ function licenseUrl(candidate) {
 }
 
 function promoteCandidate(candidate) {
-  if (!candidate?.ok && candidate?.ok !== undefined) return null;
   if (!candidate?.exactMatch) return null;
   if (!['cc0', 'cc-by', 'public-domain'].includes(candidate.licenseClass)) return null;
   if (!candidate.mediaUrl || !candidate.sourceUrl) return null;
@@ -100,7 +104,7 @@ const queryInput = JSON.parse(await fs.readFile(queryPath, 'utf8'));
 if (!Array.isArray(queryInput)) throw new Error('Query file must be an array');
 
 console.log(`MYPA free-first media pipeline: ${queryInput.length} queries`);
-await run('node', ['tools/discover-free-exercise-videos-commons.mjs', queryPath, candidatesPath]);
+await run('node', [path.join(toolsDir, 'discover-free-exercise-videos-commons.mjs'), queryPath, candidatesPath]);
 
 const report = JSON.parse(await fs.readFile(candidatesPath, 'utf8'));
 const approved = [];
@@ -109,7 +113,6 @@ const seenExerciseIds = new Set();
 for (const result of report.results ?? []) {
   if (!result?.ok) continue;
   for (const candidate of result.candidates ?? []) {
-    if (!candidate?.exactMatch) continue;
     const record = promoteCandidate(candidate);
     if (!record) continue;
     if (seenExerciseIds.has(record.exerciseId)) continue;
@@ -128,13 +131,14 @@ const manifest = {
   records: approved,
 };
 
+await fs.mkdir(path.dirname(approvedPath), { recursive: true });
 await fs.writeFile(approvedPath, `${JSON.stringify(approved, null, 2)}\n`, 'utf8');
-await fs.writeFile(path.resolve('data/fitness-approved-media.generated.report.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+await fs.writeFile(reportPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
 console.log(`Promoted ${approved.length} exact open-license assets to ${approvedPath}`);
 
 if (shouldDownload) {
-  const args = ['tools/download-approved-exercise-media.mjs', approvedPath, outputDir];
+  const args = [path.join(toolsDir, 'download-approved-exercise-media.mjs'), approvedPath, outputDir];
   if (dryRun) args.push('--dry-run');
   await run('node', args);
 } else {
