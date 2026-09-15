@@ -11,9 +11,11 @@
  * [{"exerciseId":"...","name":"squat"}, ...].
  *
  * Environment:
- *   COMMONS_VIDEO_CONCURRENCY=4
- *   COMMONS_VIDEO_DELAY_MS=200
+ *   COMMONS_VIDEO_CONCURRENCY=1
+ *   COMMONS_VIDEO_DELAY_MS=1000
  *   COMMONS_VIDEO_MAX_RESULTS=10
+ *   COMMONS_VIDEO_MAX_RETRIES=5
+ *   COMMONS_VIDEO_RETRY_BASE_MS=2000
  */
 
 import fs from 'node:fs/promises';
@@ -21,9 +23,11 @@ import path from 'node:path';
 
 const queryPath = path.resolve(process.argv[2] ?? 'data/fitness-free-video-queries.sample.json');
 const outputPath = path.resolve(process.argv[3] ?? 'data/fitness-free-video-candidates.commons.json');
-const concurrency = Math.max(1, Number(process.env.COMMONS_VIDEO_CONCURRENCY ?? 4));
-const delayMs = Math.max(0, Number(process.env.COMMONS_VIDEO_DELAY_MS ?? 200));
+const concurrency = Math.max(1, Number(process.env.COMMONS_VIDEO_CONCURRENCY ?? 1));
+const delayMs = Math.max(0, Number(process.env.COMMONS_VIDEO_DELAY_MS ?? 1000));
 const maxResults = Math.max(1, Number(process.env.COMMONS_VIDEO_MAX_RESULTS ?? 10));
+const maxRetries = Math.max(0, Number(process.env.COMMONS_VIDEO_MAX_RETRIES ?? 5));
+const retryBaseMs = Math.max(250, Number(process.env.COMMONS_VIDEO_RETRY_BASE_MS ?? 2000));
 
 const LICENSE_CLASS = {
   cc0: 'cc0',
@@ -65,15 +69,42 @@ function classifyLicense(name) {
   return 'rights-review-required';
 }
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function retryAfterMs(response, attempt) {
+  const header = response.headers.get('retry-after');
+  if (header) {
+    const seconds = Number(header);
+    if (Number.isFinite(seconds)) return Math.max(1000, seconds * 1000);
+    const at = Date.parse(header);
+    if (Number.isFinite(at)) return Math.max(1000, at - Date.now());
+  }
+  return retryBaseMs * (2 ** attempt) + Math.floor(Math.random() * 500);
+}
+
 async function getJson(url) {
-  const response = await fetch(url, {
-    headers: {
-      'User-Agent': 'MYPA-free-exercise-discovery/1.0 (research)',
-      Accept: 'application/json',
-    },
-  });
-  if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
-  return response.json();
+  for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'MYPA-free-exercise-discovery/1.0 (research; contact project maintainer)',
+        Accept: 'application/json',
+      },
+    });
+
+    if (response.ok) return response.json();
+
+    const transient = response.status === 408 || response.status === 429 || response.status >= 500;
+    if (!transient || attempt >= maxRetries) {
+      throw new Error(`HTTP ${response.status} for ${url}`);
+    }
+
+    const waitMs = retryAfterMs(response, attempt);
+    console.warn(`Commons HTTP ${response.status}; retry ${attempt + 1}/${maxRetries} in ${waitMs}ms`);
+    await sleep(waitMs);
+  }
+  throw new Error(`Unreachable request failure for ${url}`);
 }
 
 async function searchCommons(record) {
@@ -161,7 +192,7 @@ async function mapLimit(items, worker) {
           error: error instanceof Error ? error.message : String(error),
         };
       }
-      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      await sleep(delayMs);
       const row = results[index];
       console.log(`[${index + 1}/${items.length}] ${items[index].name}: ${row.ok ? row.candidates.length + ' candidates' : `ERROR (${row.error})`}`);
     }
@@ -175,6 +206,7 @@ if (!Array.isArray(input)) throw new Error('Query file must be an array');
 const records = input.map((item) => typeof item === 'string' ? { name: item } : item).filter((item) => item?.name);
 
 console.log(`Commons free-video discovery: ${records.length} exercise queries`);
+console.log(`Rate-limit policy: concurrency=${concurrency}, delay=${delayMs}ms, retries=${maxRetries}`);
 const results = await mapLimit(records, searchCommons);
 
 const flat = results.flatMap((result) => result?.ok ? result.candidates : []);
