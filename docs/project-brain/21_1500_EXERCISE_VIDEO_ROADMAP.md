@@ -20,47 +20,63 @@ The success metric is therefore:
 
 The target is **1500/1500**, not a target number of domains or raw candidate files.
 
+## Zero-cost constraint
+
+This workstream is hard-constrained to **zero monetary cost** for acquisition and production.
+
+Disallowed for the completion path:
+
+- paid stock/video subscriptions,
+- paid APIs or procurement services,
+- one-time purchases or licensed video packs that require payment,
+- recurring SaaS/media fees,
+- paid fallback procurement.
+
+Allowed completion lanes are limited to:
+
+1. genuinely free/open external media with asset-level rights compatible with MYPA commercial use, hosting/redistribution and any required transformation,
+2. media already owned by MYPA/project with defensible provenance, or
+3. self-produced exercise demonstration media created by the project team/user and therefore owned or otherwise explicitly controlled by MYPA/project.
+
+`Free to watch` or `free to download` is not enough. A third-party file may enter the approved lane only when the exact asset rights satisfy the manifest contract.
+
+The project must never fabricate a license, re-label third-party media as self-produced, or claim 100% coverage before the actual media exists and passes validation.
+
 ## Current evidence baseline
 
-The current free-first discovery pass uses 51 canonical exercise queries and produced:
+The 1,500-exercise canonical catalog and acquisition queue are built successfully.
 
-- 190 total source records after merging 48 curated seed sources with 142 newly discovered source domains.
-- 142 source pages sent through asset extraction.
-- 117/142 source pages fetched successfully.
-- 653 media candidates.
-- 604 mapped candidates.
-- 28/51 canonical exercises with at least one discovered candidate (54.9%).
-- 475 high-confidence discovery candidates.
-- Rights review completed for 653 candidates: 82 commercial-license leads, 122 blocked-platform candidates, 449 unresolved/manual-review candidates, 8 fetch failures, and 0 strong open-license/public-domain results from this specific automated pass.
+The full Wikimedia Commons exact-discovery pass has now completed:
 
-This baseline proves the discovery pipeline works, but it does **not** prove production media coverage. The next stages must optimize exact exercise coverage and rights evidence.
+- 1,500/1,500 exercise queries executed.
+- 0 discovery errors.
+- 6/1,500 exercises promoted into the approved free/open manifest from exact CC0/CC BY/Public Domain candidates.
+- 1,494/1,500 exercises remain without an approved video.
+- The Commons lane is therefore useful as a small free/open source, but is not sufficient as the sole acquisition strategy.
+
+This result is evidence that the pipeline mechanics are working while the source mix must be expanded aggressively.
 
 ## Implemented acceleration infrastructure
 
 The repository now contains the implementation needed to move the workstream from the 51-item starter set toward the 1,500-item target:
 
 - `tools/build-fitness-canonical-1500.mjs` builds a deterministic 1,500-row canonical metadata catalog from openly published exercise metadata sources and deliberately excludes source media from the catalog build.
-- `tools/build-fitness-video-acquisition-queue.mjs` creates a resumable one-row-per-exercise queue with batch numbers and lifecycle status fields.
-- `tools/run-fitness-1500-video-pipeline.mjs` orchestrates canonical catalog creation, queue creation, exact Wikimedia Commons discovery, rights-safe open-license promotion and completion-gate reporting, with optional approved-media download.
+- `tools/build-fitness-video-acquisition-queue.mjs` creates a one-row-per-exercise queue with batch numbers and lifecycle status fields.
+- `tools/run-fitness-1500-video-pipeline.mjs` orchestrates canonical catalog creation, queue creation, exact Wikimedia Commons discovery, rights-safe open-license promotion and completion-gate reporting.
+- `tools/discover-free-exercise-videos-commons.mjs` is resumable, rate-limited and checkpointed for large discovery runs.
+- `tools/discover-fitness-media-federated.mjs` supports direct/source-adapter discovery and retains source-query failures rather than hiding them.
+- `tools/discover-fitness-1000-sources-search.mjs` discovers additional web source domains through search-engine fallback; those results are leads only until exact asset rights are verified.
+- `tools/discover-fitness-video-assets-from-sources.mjs` extracts media candidates from discovered source pages.
+- `tools/review-fitness-video-rights.mjs` performs rights evidence classification without silently granting approval.
+- `tools/summarize-fitness-media-coverage.mjs` reports discovery and coverage evidence separately from approval.
 - `tools/check-fitness-media-tools.mjs` syntax-checks the expanded media toolchain.
-- `apps/backend/package.json` exposes `fitness:media:canonical:build`, `fitness:media:queue:build`, `fitness:media:1500` and `fitness:media:1500:download`.
-
-These tools are designed so the expensive work remains resumable and observable. They do not claim that an external license exists merely because an asset was found.
+- `apps/backend/package.json` exposes canonical, queue, discovery, rights-review, coverage and master-runner commands.
 
 ## Completion roadmap
 
 ### Phase 0 — Lock the canonical 1,500-exercise source of truth
 
 Goal: establish the authoritative catalog before trying to fill it with media.
-
-Deliverables:
-
-- One committed machine-readable catalog of exactly 1,500 canonical exercises.
-- Stable `exerciseId` / slug for every item.
-- Canonical English name plus aliases and, where available, Persian name.
-- Discipline/category, movement pattern, primary/secondary muscles, equipment and difficulty metadata.
-- Duplicate/near-duplicate detection rules so variants are intentional rather than accidental.
-- A generated coverage manifest with one row per exercise.
 
 Green gate:
 
@@ -74,30 +90,28 @@ Each exercise receives statuses such as:
 
 `missing → discovery → candidate-found → rights-review → approved → acquired → validated`
 
-The queue must retain candidates even when one source fails so that work is resumable and incremental.
-
 Green gate:
 
 `queueRows = 1500` and every row has a canonical exercise ID.
 
-### Phase 2 — Expand exact-match discovery sources
+### Phase 2 — Expand exact-match free/open discovery sources
 
-Goal: maximize free/open discovery before any paid procurement.
+Goal: maximize zero-cost coverage before any self-production work.
 
 Run separate discovery passes for:
 
 - Wikimedia Commons exact files/categories/search.
 - Government/public-domain libraries and official mirrors.
 - Open-source/open-license exercise libraries.
-- Free stock libraries only where the exact asset license and downstream distribution model are compatible.
+- Free media libraries only where the exact asset license and downstream distribution model are compatible.
 - Existing curated/seed sources.
-- Search-engine fallback with exercise-specific queries and aliases.
+- Search-engine fallback with exercise-specific queries, aliases, muscle/equipment synonyms and movement-pattern terms.
 
-Important: broad source discovery is secondary. Every candidate must be mapped back to one or more canonical exercises with an explainable matching score.
+Every candidate must be mapped back to one or more canonical exercises with an explainable matching score.
 
 Green gate:
 
-Every exercise has either at least one candidate or an explicit `discovery-gap` record explaining which discovery strategies were exhausted.
+Every exercise has either at least one candidate or an explicit `discovery-gap` record explaining which zero-cost discovery strategies were exhausted.
 
 ### Phase 3 — Strengthen asset-level rights verification
 
@@ -123,35 +137,38 @@ Green gate:
 
 Every approved media item has explicit asset-level rights evidence required by the MYPA manifest contract.
 
-### Phase 4 — Close coverage gaps in descending difficulty
+### Phase 4 — Close coverage gaps using only zero-cost lanes
 
-Goal: drive the coverage numerator from the current baseline to 1,500.
+Goal: drive approved coverage from the current **6/1500** to **1500/1500** without payment.
 
-Prioritize work in this order:
+Priority order:
 
-1. Exercises with strong exact candidates but incomplete rights evidence.
-2. Exercises with commercial-license leads and a viable acquisition path.
-3. Exercises with candidates that need better exact-match disambiguation.
-4. Exercises with no candidate at all.
-5. Rare or specialized movements that require dedicated query families or specialist sources.
+1. exact open-license candidates already discovered but not yet approved,
+2. additional open/public-domain/government source discovery,
+3. exercise-specific search-engine discovery against new sources,
+4. exact-match rights review for promising candidates,
+5. dedicated query families for rare/specialized movements,
+6. self-produced media for the remaining tail.
 
-Every batch should report:
+Every batch must report:
 
-`covered / 1500`, `approved / 1500`, `missing`, `rights-blocked`, `manual-review`, and `technical-validation-failed`.
+`covered / 1500`, `approved / 1500`, `missing`, `rights-blocked`, `manual-review`, `technical-validation-failed`, and `self-production-required`.
 
-### Phase 5 — Add a licensed fallback lane
+### Phase 5 — Self-produced zero-cost fallback
 
-Goal: guarantee completion of the remaining tail when free sources cannot satisfy rights or exactness.
+Goal: guarantee completion of the remaining tail without purchasing media.
 
-For any exercise still missing an approved video after all free-first routes are exhausted:
+For every exercise still missing an approved third-party video after all free/open routes are exhausted:
 
-- create a procurement lead,
-- verify commercial license scope, hosting/CDN rights and attribution requirements,
-- acquire only the exact required asset or package,
-- record cost and license evidence,
-- import through the approved-media pipeline.
+- create a self-production work item,
+- record the exact canonical exercise and the required demonstration specification,
+- produce/record the demonstration using project-owned personnel/assets or another zero-cost method whose resulting rights are controlled by MYPA/project,
+- store provenance for the produced asset,
+- ingest it through the same approval/validation contract as external media.
 
-Paid acquisition is a fallback, not a reason to lower the rights gate.
+A self-production queue is **not** equivalent to having a video. Coverage remains missing until the actual media file exists and is validated.
+
+The repository must never mark `self-produced` merely because a placeholder, storyboard, prompt or manifest row exists.
 
 ### Phase 6 — Acquire, normalize and validate media
 
@@ -159,10 +176,10 @@ Goal: turn approved candidates into reliable MYPA media.
 
 For every approved asset:
 
-- download only through the allow-listed approval path,
+- acquire only through the allow-listed approval path,
 - preserve original source metadata,
 - calculate SHA-256 checksum,
-- normalize dimensions/format only when the license allows transformation,
+- normalize dimensions/format only when the rights basis permits transformation,
 - generate poster/preview metadata when appropriate,
 - store using deterministic storage keys,
 - validate MIME type and playback metadata,
@@ -228,6 +245,7 @@ Approved video coverage: Z/1500 (Z/1500 * 100)
 Missing candidate: A
 Rights blocked/manual: B
 Technical validation failed: C
+Self-production required: D
 ```
 
 The only final green metric is:
@@ -244,15 +262,17 @@ APPROVED VIDEO COVERAGE = 1500 / 1500 (100%)
 - Never copy or mirror third-party media without the exact rights required by the intended MYPA distribution model.
 - Preserve provenance and auditability for every approved asset.
 - Prefer an approved exact video over many weaker approximate candidates.
+- Paid procurement is outside this workstream and must not be used to close the coverage gap.
+- Self-produced media must be real, usable media; placeholders do not count.
 
 ## Immediate execution sequence
 
-1. Run the canonical 1,500 catalog builder.
-2. Build the 1,500-row acquisition queue.
-3. Execute the master 1,500-item exact Commons discovery pass with live progress.
-4. Promote only exact CC0/CC BY/Public Domain candidates into the approved-manifest lane.
-5. Measure coverage and produce a gap list for every unsatisfied exercise.
-6. Re-run discovery only for gaps and rights-review candidates in resumable batches.
-7. Feed the remaining tail into the licensed fallback lane; the repository must not fabricate a license when a real commercial grant is required.
-8. Download, validate and connect only approved assets to `ExerciseMedia`.
+1. Preserve the verified 6/1500 Commons result as the baseline.
+2. Generate a gap-only work queue containing the 1,494 unsatisfied exercises.
+3. Run additional zero-cost discovery adapters/search-engine passes in resumable batches of 50–100.
+4. Re-evaluate rights at the exact asset level and promote only defensible approved candidates.
+5. Merge approved external media with any verified project-owned/self-produced media.
+6. Generate a self-production queue for the remaining tail.
+7. Produce and ingest actual self-produced videos for every remaining gap.
+8. Download/acquire, normalize, validate and connect only approved assets to `ExerciseMedia`.
 9. Continue until the validated approval coverage report reaches `1500/1500`.
