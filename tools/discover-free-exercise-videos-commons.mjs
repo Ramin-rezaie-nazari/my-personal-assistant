@@ -12,10 +12,10 @@
  *
  * Environment:
  *   COMMONS_VIDEO_CONCURRENCY=1
- *   COMMONS_VIDEO_DELAY_MS=1000
+ *   COMMONS_VIDEO_DELAY_MS=1500
  *   COMMONS_VIDEO_MAX_RESULTS=10
  *   COMMONS_VIDEO_MAX_RETRIES=5
- *   COMMONS_VIDEO_RETRY_BASE_MS=2000
+ *   COMMONS_VIDEO_RETRY_BASE_MS=5000
  */
 
 import fs from 'node:fs/promises';
@@ -23,11 +23,13 @@ import path from 'node:path';
 
 const queryPath = path.resolve(process.argv[2] ?? 'data/fitness-free-video-queries.sample.json');
 const outputPath = path.resolve(process.argv[3] ?? 'data/fitness-free-video-candidates.commons.json');
+const checkpointPath = path.resolve(process.env.COMMONS_VIDEO_CHECKPOINT ?? `${outputPath}.checkpoint.json`);
 const concurrency = Math.max(1, Number(process.env.COMMONS_VIDEO_CONCURRENCY ?? 1));
-const delayMs = Math.max(0, Number(process.env.COMMONS_VIDEO_DELAY_MS ?? 1000));
+const delayMs = Math.max(250, Number(process.env.COMMONS_VIDEO_DELAY_MS ?? 1500));
 const maxResults = Math.max(1, Number(process.env.COMMONS_VIDEO_MAX_RESULTS ?? 10));
 const maxRetries = Math.max(0, Number(process.env.COMMONS_VIDEO_MAX_RETRIES ?? 5));
-const retryBaseMs = Math.max(250, Number(process.env.COMMONS_VIDEO_RETRY_BASE_MS ?? 2000));
+const retryBaseMs = Math.max(1000, Number(process.env.COMMONS_VIDEO_RETRY_BASE_MS ?? 5000));
+const checkpointEvery = Math.max(1, Number(process.env.COMMONS_VIDEO_CHECKPOINT_EVERY ?? 10));
 
 const LICENSE_CLASS = {
   cc0: 'cc0',
@@ -173,9 +175,39 @@ async function searchCommons(record) {
   return candidates.sort((a, b) => b.score - a.score);
 }
 
-async function mapLimit(items, worker) {
-  const results = new Array(items.length);
-  let cursor = 0;
+async function writeCheckpoint(results, records, nextIndex, startedAt) {
+  const flat = results.filter(Boolean);
+  const payload = {
+    generatedAt: new Date().toISOString(),
+    source: 'wikimedia_commons',
+    queryCount: records.length,
+    completedCount: flat.length,
+    nextIndex,
+    startedAt,
+    resumed: nextIndex > 0,
+    results,
+  };
+  await fs.mkdir(path.dirname(checkpointPath), { recursive: true });
+  await fs.writeFile(checkpointPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+}
+
+async function loadCheckpoint(records) {
+  try {
+    const saved = JSON.parse(await fs.readFile(checkpointPath, 'utf8'));
+    if (saved?.queryCount !== records.length || !Array.isArray(saved?.results)) return null;
+    return saved;
+  } catch {
+    return null;
+  }
+}
+
+async function mapLimit(items, worker, initialResults = []) {
+  const results = new Array(items.length).fill(null);
+  for (const [index, result] of initialResults.entries()) results[index] = result;
+  let cursor = initialResults.length;
+  let completedSinceCheckpoint = 0;
+  const startedAt = Date.now();
+
   async function runner() {
     while (true) {
       const index = cursor++;
@@ -194,9 +226,19 @@ async function mapLimit(items, worker) {
       }
       await sleep(delayMs);
       const row = results[index];
-      console.log(`[${index + 1}/${items.length}] ${items[index].name}: ${row.ok ? row.candidates.length + ' candidates' : `ERROR (${row.error})`}`);
+      const processed = results.filter(Boolean).length;
+      const elapsed = Math.max(1, (Date.now() - startedAt) / 1000);
+      const rate = processed / elapsed;
+      const etaSeconds = rate > 0 ? Math.max(0, (items.length - processed) / rate) : 0;
+      console.log(`[${processed}/${items.length}] ${items[index].name}: ${row.ok ? `${row.candidates.length} candidates` : `ERROR (${row.error})`} | rate ${rate.toFixed(2)}/s | ETA ${Math.round(etaSeconds)}s`);
+      completedSinceCheckpoint += 1;
+      if (completedSinceCheckpoint >= checkpointEvery) {
+        await writeCheckpoint(results, items, index + 1, startedAt);
+        completedSinceCheckpoint = 0;
+      }
     }
   }
+
   await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(1, items.length)) }, () => runner()));
   return results;
 }
@@ -205,9 +247,14 @@ const input = JSON.parse(await fs.readFile(queryPath, 'utf8'));
 if (!Array.isArray(input)) throw new Error('Query file must be an array');
 const records = input.map((item) => typeof item === 'string' ? { name: item } : item).filter((item) => item?.name);
 
+const checkpoint = await loadCheckpoint(records);
+const initialResults = checkpoint?.results?.map((result, index) => index < (checkpoint.nextIndex ?? 0) ? result : null).filter(Boolean) ?? [];
+const resumeCount = checkpoint ? Number(checkpoint.nextIndex ?? 0) : 0;
+
 console.log(`Commons free-video discovery: ${records.length} exercise queries`);
 console.log(`Rate-limit policy: concurrency=${concurrency}, delay=${delayMs}ms, retries=${maxRetries}`);
-const results = await mapLimit(records, searchCommons);
+console.log(resumeCount ? `Resuming from checkpoint: ${resumeCount}/${records.length}` : 'Starting fresh discovery');
+const results = await mapLimit(records, searchCommons, checkpoint ? checkpoint.results.map((result, index) => index < resumeCount ? result : null) : []);
 
 const flat = results.flatMap((result) => result?.ok ? result.candidates : []);
 const report = {
@@ -225,4 +272,5 @@ const report = {
 
 await fs.mkdir(path.dirname(outputPath), { recursive: true });
 await fs.writeFile(outputPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+await fs.rm(checkpointPath, { force: true });
 console.log(`Wrote ${outputPath}`);
