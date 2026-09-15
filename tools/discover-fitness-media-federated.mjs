@@ -15,10 +15,10 @@ import path from 'node:path';
 const queryPath = path.resolve(process.argv[2] ?? 'data/fitness-free-video-queries.sample.json');
 const inventoryPath = path.resolve(process.argv[3] ?? 'data/fitness-media-source-inventory.seed.json');
 const outputPath = path.resolve(process.argv[4] ?? 'data/fitness-federated-video-candidates.json');
-
-const sourceConcurrency = Math.max(1, Number(process.env.FITNESS_MEDIA_SOURCE_CONCURRENCY ?? 2));
-const delayMs = Math.max(0, Number(process.env.FITNESS_MEDIA_DELAY_MS ?? 750));
+const sourceConcurrency = Math.max(1, Number(process.env.FITNESS_MEDIA_SOURCE_CONCURRENCY ?? 1));
+const delayMs = Math.max(0, Number(process.env.FITNESS_MEDIA_DELAY_MS ?? 1000));
 const maxResults = Math.max(1, Number(process.env.FITNESS_MEDIA_MAX_RESULTS ?? 10));
+const retryCount = Math.max(0, Number(process.env.FITNESS_MEDIA_RETRIES ?? 4));
 const searchEndpoint = process.env.FITNESS_MEDIA_SEARCH_ENDPOINT ?? '';
 const BLOCKED_STATUSES = new Set(['blocked-until-license', 'blocked-until-extended-license']);
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -47,14 +47,35 @@ function classifyLicense(value) {
 }
 
 async function getJson(url) {
-  const response = await fetch(url, { headers: { 'User-Agent': 'MYPA-federated-fitness-media-discovery/1.4', Accept: 'application/json' } });
-  if (!response.ok) {
-    const error = new Error(`HTTP ${response.status} for ${url}`);
-    error.status = response.status;
-    error.retryAfter = response.headers.get('retry-after');
-    throw error;
+  let lastError;
+  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'MYPA-federated-fitness-media-discovery/2.0',
+          Accept: 'application/json',
+        },
+      });
+      if (response.ok) return response.json();
+      const error = new Error(`HTTP ${response.status} for ${url}`);
+      error.status = response.status;
+      error.retryAfter = response.headers.get('retry-after');
+      lastError = error;
+      const retryable = response.status === 408 || response.status === 429 || response.status >= 500;
+      if (!retryable || attempt >= retryCount) throw error;
+      const retryAfter = Number(response.headers.get('retry-after') ?? 0);
+      const backoff = retryAfter > 0 ? retryAfter * 1000 : Math.min(30000, 1500 * (2 ** attempt));
+      console.log(`  ↻ retry ${attempt + 1}/${retryCount} after ${Math.ceil(backoff / 1000)}s (${response.status})`);
+      await sleep(backoff);
+    } catch (error) {
+      lastError = error;
+      if (attempt >= retryCount || ![408, 429, 500, 502, 503, 504].includes(error?.status)) throw error;
+      const backoff = Math.min(30000, 1500 * (2 ** attempt));
+      console.log(`  ↻ retry ${attempt + 1}/${retryCount} after ${Math.ceil(backoff / 1000)}s (${error.status ?? 'network'})`);
+      await sleep(backoff);
+    }
   }
-  return response.json();
+  throw lastError;
 }
 
 async function discoverCommons(source, record) {
@@ -105,13 +126,28 @@ async function discoverOne(source, record) {
 }
 
 function normalizeSources(rawSources) {
-  return rawSources.filter((source) => source && !BLOCKED_STATUSES.has(source.status)).map((source) => {
+  const normalized = rawSources.filter((source) => source && !BLOCKED_STATUSES.has(source.status)).map((source) => {
     if (source.discovery?.mode) return source;
     const url = String(source.url ?? '');
     if (/commons\.wikimedia\.org/i.test(url)) return { ...source, discovery: { mode: 'commons_mediawiki' } };
     if (/^https?:\/\//i.test(url)) return { ...source, discovery: { mode: 'web_index', endpointEnv: 'FITNESS_MEDIA_SEARCH_ENDPOINT' } };
     return null;
   }).filter(Boolean);
+  const unique = [];
+  const seen = new Set();
+  for (const source of normalized) {
+    let key;
+    if (source.discovery?.mode === 'commons_mediawiki') key = 'commons_mediawiki::https://commons.wikimedia.org/w/api.php';
+    else if (source.discovery?.mode === 'web_index') {
+      let domain = source.domain ?? '';
+      if (!domain && source.url) { try { domain = new URL(source.url).hostname; } catch {} }
+      key = `web_index::${domain}`;
+    } else key = `${source.discovery?.mode ?? 'unknown'}::${source.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    unique.push(source);
+  }
+  return unique;
 }
 
 async function mapLimit(items, limit, worker, onComplete) {
