@@ -3,6 +3,7 @@
 /**
  * Build explicit zero-cost gap queues from the 1,500 video completion report.
  *
+ * Paths are repo-rooted so this tool behaves consistently from any cwd.
  * This tool never treats a queue row as a video. Third-party candidates remain
  * discovery/rights work, while self-production rows require an actual project-
  * owned media asset before they can become approved.
@@ -13,10 +14,14 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const completionPath = path.resolve(process.argv[2] ?? 'data/fitness-1500-video-completion.generated.json');
-const gapQueuePath = path.resolve(process.argv[3] ?? 'data/fitness-1500-video-gap-queue.generated.json');
-const selfProductionPath = path.resolve(process.argv[4] ?? 'data/fitness-1500-video-self-production.queue.generated.json');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const resolveRepoPath = (value, fallback) => path.resolve(repoRoot, value ?? fallback);
+
+const completionPath = resolveRepoPath(process.argv[2], 'data/fitness-1500-video-completion.generated.json');
+const gapQueuePath = resolveRepoPath(process.argv[3], 'data/fitness-1500-video-gap-queue.generated.json');
+const selfProductionPath = resolveRepoPath(process.argv[4], 'data/fitness-1500-video-self-production.queue.generated.json');
 
 const completion = JSON.parse(await fs.readFile(completionPath, 'utf8'));
 const exercises = Array.isArray(completion?.missingExercises) ? completion.missingExercises : [];
@@ -24,7 +29,7 @@ const generatedAt = new Date().toISOString();
 
 const gapQueue = {
   generatedAt,
-  sourceCompletionReport: path.basename(completionPath),
+  sourceCompletionReport: path.relative(repoRoot, completionPath),
   canonicalExerciseCount: Number(completion?.canonicalExerciseCount ?? 0),
   approvedOpenVideoCount: Number(completion?.approvedOpenVideoCount ?? 0),
   missingCount: exercises.length,
@@ -42,7 +47,7 @@ const gapQueue = {
 
 const selfProductionQueue = {
   generatedAt,
-  sourceGapQueue: path.basename(gapQueuePath),
+  sourceGapQueue: path.relative(repoRoot, gapQueuePath),
   canonicalExerciseCount: Number(completion?.canonicalExerciseCount ?? 0),
   requiredCount: exercises.length,
   statusMeaning: 'queued means the exercise still lacks an approved usable video; it does not mean a video exists.',
