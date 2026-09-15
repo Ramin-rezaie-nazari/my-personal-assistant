@@ -45,6 +45,7 @@ function run(command, args, env = {}) {
 }
 
 const readJson = async (file) => JSON.parse(await fs.readFile(file, 'utf8'));
+const fileExists = async (file) => { try { await fs.access(file); return true; } catch { return false; } };
 
 const completion = await readJson(completionPath);
 const missingExercises = Array.isArray(completion?.missingExercises) ? completion.missingExercises : [];
@@ -80,17 +81,17 @@ await run(process.execPath, [path.join(toolsDir, 'review-fitness-video-rights.mj
 
 const rights = await readJson(rightsReviewPath);
 const records = Array.isArray(rights?.results) ? rights.results : [];
-const approvedLike = records.filter((row) => ['cc0', 'cc-by', 'public-domain'].includes(row?.licenseClass) && row?.exactMatch && row?.mediaUrl && row?.sourceUrl);
+const eligible = records.filter((row) => row?.approval === 'eligible-for-manual-approval' && row?.exactMatch && row?.mediaUrl && row?.pageUrl);
 const exerciseIds = new Set(missingExercises.map((exercise) => exercise.exerciseId));
-const rightsQualifiedExercises = new Set(approvedLike.map((row) => row.exerciseId).filter((id) => exerciseIds.has(id)));
+const rightsQualifiedExercises = new Set(eligible.map((row) => row.exerciseId).filter((id) => exerciseIds.has(id)));
 
 const output = {
   generatedAt: new Date().toISOString(),
   canonicalExerciseCount: 1500,
   startingApprovedCoverage: Number(completion?.approvedOpenVideoCoverage ?? completion?.approvedOpenVideoCount ?? 0),
   gapExerciseCount: missingExercises.length,
-  candidateCount: Number(rights?.reviewed ?? records.length),
-  rightsQualifiedExactCandidates: approvedLike.length,
+  candidateCount: Number(rights?.reviewedCandidateCount ?? records.length),
+  rightsQualifiedExactCandidates: eligible.length,
   gapExercisesWithRightsQualifiedExactCandidate: rightsQualifiedExercises.size,
   note: 'This is a discovery/rights evidence report. It does not mutate approved media. Exact asset rights must still satisfy the MYPA manifest and technical validation contract before approval.',
 };
@@ -98,7 +99,3 @@ const output = {
 await fs.writeFile(outputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
 console.log(`Gap exercises with rights-qualified exact candidate: ${rightsQualifiedExercises.size}/${missingExercises.length}`);
 console.log(`Wrote ${outputPath}`);
-
-async function fileExists(file) {
-  try { await fs.access(file); return true; } catch { return false; }
-}
