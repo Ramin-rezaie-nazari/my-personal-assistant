@@ -32,6 +32,8 @@
     "fitness:media:coverage": "node ../../tools/summarize-fitness-media-coverage.mjs ../../data/fitness-media-video-rights-review.generated.json ../../data/fitness-free-video-queries.sample.json ../../data/fitness-media-coverage.generated.json",
     "fitness:media:canonical:build": "node ../../tools/build-fitness-canonical-1500.mjs",
     "fitness:media:queue:build": "node ../../tools/build-fitness-video-acquisition-queue.mjs",
+    "fitness:media:1500": "node ../../tools/run-fitness-1500-video-pipeline.mjs",
+    "fitness:media:1500:download": "node ../../tools/run-fitness-1500-video-pipeline.mjs --download",
     "fitness:media:next": "pnpm fitness:media:sources:merge && FITNESS_MEDIA_ASSET_CONCURRENCY=3 pnpm fitness:media:assets && FITNESS_MEDIA_RIGHTS_CONCURRENCY=3 pnpm fitness:media:review && pnpm fitness:media:coverage",
     "fitness:media:check": "node ../../tools/check-fitness-media-tools.mjs",
     "fitness:media:free": "node ../../tools/run-free-exercise-video-pipeline.mjs ../../data/fitness-free-video-queries.sample.json",
