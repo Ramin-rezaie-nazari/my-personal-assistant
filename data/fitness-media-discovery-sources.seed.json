@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-09-15",
+  "note": "Machine-queryable discovery adapters only. Discovery never grants production media rights.",
+  "sources": [
+    {
+      "id": "wikimedia-commons-exercise-videos",
+      "url": "https://commons.wikimedia.org/wiki/Category:Videos_of_physical_exercises",
+      "type": "open_license_media",
+      "status": "verified_source",
+      "coverage": "exercise demonstration videos",
+      "rightsAction": "verify each file license before approval",
+      "discovery": { "mode": "commons_mediawiki" }
+    }
+  ]
+}
