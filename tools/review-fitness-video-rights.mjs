@@ -22,8 +22,6 @@ const timeoutSeconds = Math.max(10, Number(process.env.FITNESS_MEDIA_RIGHTS_TIME
 const maxCandidates = Math.max(1, Number(process.env.FITNESS_MEDIA_RIGHTS_MAX_CANDIDATES ?? 5000));
 const userAgent = process.env.FITNESS_MEDIA_SOURCE_USER_AGENT ?? 'MYPA-fitness-rights-review/1.0 (https://github.com/Ramin-rezaie-nazari/my-personal-assistant)';
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 const licensePatterns = [
   { id: 'cc0', regex: /(?:creativecommons\.org\/publicdomain|creativecommons\.org\/share-your-work\/public-domain|\bcc0\b)/i, strength: 'strong' },
   { id: 'cc-by', regex: /(?:creativecommons\.org\/licenses\/by(?:\/\d(?:\.\d+)?)?|\bcc\s*by(?:\s*\d(?:\.\d+)?)?\b)/i, strength: 'strong' },
@@ -37,7 +35,7 @@ const licensePatterns = [
 
 const blockedOrRiskyPlatforms = new Set([
   'youtube.com', 'youtu.be', 'facebook.com', 'instagram.com', 'tiktok.com', 'x.com', 'twitter.com',
-];
+]);
 
 function registeredDomain(url) {
   try {
@@ -67,22 +65,23 @@ function absoluteUrl(value, base) {
 
 function textOnly(html) {
   return html
-    .replace(/<script[\\s\\S]*?<\\/script>/gi, ' ')
-    .replace(/<style[\\s\\S]*?<\\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
     .replace(/<[^>]+>/g, ' ')
-    .replace(/\\s+/g, ' ')
+    .replace(/\s+/g, ' ')
     .slice(0, 500_000);
 }
 
 function extractEvidence(html, pageUrl) {
   const text = textOnly(html);
+  const searchable = `${html} ${text}`;
   const licenses = [];
   for (const pattern of licensePatterns) {
-    if (pattern.regex.test(`${html} ${text}`)) licenses.push({ id: pattern.id, strength: pattern.strength });
+    if (pattern.regex.test(searchable)) licenses.push({ id: pattern.id, strength: pattern.strength });
   }
 
   const licenseUrls = new Set();
-  for (const match of html.matchAll(/(?:href|src|content)=["']([^"']*(?:creativecommons\\.org|license|licence|rights|terms)[^"']*)["']/gi)) {
+  for (const match of html.matchAll(/(?:href|src|content)=["']([^"']*(?:creativecommons\.org|license|licence|rights|terms)[^"']*)["']/gi)) {
     const url = absoluteUrl(match[1], pageUrl);
     if (url) licenseUrls.add(url);
   }
@@ -150,6 +149,12 @@ function classify(candidate, evidence) {
   if (ids.has('cc-by-sa')) {
     return { bucket: 'sharealike-review', approval: 'manual-rights-review', reason: 'CC BY-SA evidence detected; MYPA licensing/derivative obligations need review' };
   }
+  if (ids.has('cc-by-nd')) {
+    return { bucket: 'no-derivatives-review', approval: 'manual-rights-review', reason: 'CC BY-ND evidence detected; hosting/use model needs explicit review' };
+  }
+  if (ids.has('cc-by-nc')) {
+    return { bucket: 'noncommercial-blocked', approval: 'blocked', reason: 'CC BY-NC evidence conflicts with MYPA commercial use' };
+  }
   return { bucket: 'rights-review-required', approval: 'manual-rights-review', reason: 'No sufficiently explicit open/commercial rights evidence detected' };
 }
 
@@ -169,10 +174,7 @@ async function worker() {
       const classification = classify(candidate, evidence);
       results.push({
         ...candidate,
-        rightsEvidence: {
-          ...evidence,
-          sourcePageFetched: true,
-        },
+        rightsEvidence: { ...evidence, sourcePageFetched: true },
         ...classification,
       });
     } catch (error) {
@@ -200,6 +202,8 @@ const output = {
     publicDomainCandidates: results.filter((x) => x.bucket === 'public-domain-candidate').length,
     commercialLicenseLeads: results.filter((x) => x.bucket === 'commercial-license-lead').length,
     shareAlikeReview: results.filter((x) => x.bucket === 'sharealike-review').length,
+    noDerivativesReview: results.filter((x) => x.bucket === 'no-derivatives-review').length,
+    nonCommercialBlocked: results.filter((x) => x.bucket === 'noncommercial-blocked').length,
     blockedPlatform: results.filter((x) => x.bucket === 'blocked-platform').length,
     rightsReviewRequired: results.filter((x) => x.bucket === 'rights-review-required').length,
     eligibleForManualApproval: results.filter((x) => x.approval === 'eligible-for-manual-approval').length,
@@ -209,11 +213,11 @@ const output = {
 };
 
 await fs.mkdir(path.dirname(outputPath), { recursive: true });
-await fs.writeFile(outputPath, `${JSON.stringify(output, null, 2)}\\n`, 'utf8');
+await fs.writeFile(outputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
 console.log(`Wrote ${outputPath}`);
 console.log(`Reviewed candidates: ${results.length}`);
 console.log(`Open-license strong: ${output.summary.openLicenseStrong}`);
 console.log(`Public-domain candidates: ${output.summary.publicDomainCandidates}`);
 console.log(`Commercial-license leads: ${output.summary.commercialLicenseLeads}`);
 console.log(`Blocked platforms: ${output.summary.blockedPlatform}`);
-console.log(`Manual rights review: ${output.summary.rightsReviewRequired + output.summary.shareAlikeReview}`);
+console.log(`Manual rights review: ${output.summary.rightsReviewRequired + output.summary.shareAlikeReview + output.summary.noDerivativesReview}`);
