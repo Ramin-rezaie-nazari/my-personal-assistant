@@ -24,10 +24,11 @@ import fs from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { URL } from 'node:url';
+import { URL, fileURLToPath } from 'node:url';
 
-const manifestPath = path.resolve(process.argv[2] ?? 'data/fitness-approved-media.json');
-const outputDir = path.resolve(process.argv[3] ?? 'data/fitness-media');
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const manifestPath = path.resolve(process.argv[2] ?? path.join(repoRoot, 'data/fitness-approved-media.json'));
+const outputDir = path.resolve(process.argv[3] ?? path.join(repoRoot, 'data/fitness-media'));
 const dryRun = process.argv.includes('--dry-run');
 const concurrency = Math.max(1, Number(process.env.APPROVED_MEDIA_CONCURRENCY ?? 2));
 const maxBytes = Number(process.env.APPROVED_MEDIA_MAX_BYTES ?? 250 * 1024 * 1024);
@@ -114,28 +115,23 @@ async function downloadOne(record) {
   const tempPath = `${destination}.part`;
 
   try {
-    const stream = response.body;
     const file = createWriteStream(tempPath, { flags: 'w' });
     let bytes = 0;
     try {
-      for await (const chunk of stream) {
+      for await (const chunk of response.body) {
         bytes += chunk.byteLength;
         if (bytes > maxBytes) throw new Error(`downloaded ${bytes} bytes exceeds ${maxBytes}`);
         if (!file.write(chunk)) await new Promise((resolve) => file.once('drain', resolve));
       }
     } finally {
-      await new Promise((resolve, reject) => {
-        file.end((error) => (error ? reject(error) : resolve()));
-      });
+      await new Promise((resolve, reject) => file.end((error) => (error ? reject(error) : resolve())));
     }
 
     const checksum = await hashFile(tempPath);
-    await fs.rename(tempPath, destination);
-
     if (record.expectedSha256 && checksum !== String(record.expectedSha256).toLowerCase()) {
-      await fs.rm(destination, { force: true });
       throw new Error(`checksum mismatch: expected ${record.expectedSha256}, got ${checksum}`);
     }
+    await fs.rename(tempPath, destination);
 
     return {
       exerciseId: record.exerciseId,
