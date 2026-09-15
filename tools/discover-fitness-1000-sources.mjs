@@ -59,11 +59,12 @@ async function requestWithRetry(url, responseMode) {
       await sleep(backoff);
     } catch (error) {
       lastError = error;
-      const retryable = [408, 429, 500, 502, 503, 504].includes(error?.status);
-      if (!retryable || attempt >= retryCount) throw error;
+      const transportRetryable = !error?.status || [408, 425, 429, 500, 502, 503, 504].includes(error.status);
+      if (!transportRetryable || attempt >= retryCount) throw error;
 
-      const backoff = Math.min(60000, 3000 * (2 ** attempt));
-      console.log(`  ↻ retry ${attempt + 1}/${retryCount} after ${Math.ceil(backoff / 1000)}s`);
+      const backoff = Math.min(60000, 4000 * (2 ** attempt));
+      const reason = error?.code ? `${error.code}` : 'transport error';
+      console.log(`  ↻ retry ${attempt + 1}/${retryCount} after ${Math.ceil(backoff / 1000)}s (${reason})`);
       await sleep(backoff);
     }
   }
@@ -133,8 +134,6 @@ for (const pattern of patterns) {
     url: `*/${pattern}*`,
     output: 'json',
     filter: 'status:200',
-    // We dedupe by registered domain locally, so server-side URL-key collapse
-    // is unnecessary overhead for these broad discovery queries.
     fl: 'url',
     limit: String(maxPerPattern),
   }).toString();
@@ -143,7 +142,6 @@ for (const pattern of patterns) {
   console.log(`[pattern ${patternIndex}/${patterns.length}] ${elapsed}s | ${pattern}`);
 
   try {
-    // Stay intentionally serial and pace requests to respect Common Crawl's API guidance.
     const raw = await requestWithRetry(queryUrl, 'text');
     let addedForPattern = 0;
 
@@ -180,15 +178,14 @@ for (const pattern of patterns) {
       pattern,
       error: error instanceof Error ? error.message : String(error),
       status: error?.status ?? null,
+      code: error?.code ?? error?.cause?.code ?? null,
       retryAfter: error?.retryAfter ?? null,
     };
     failures.push(failure);
     const isRateLimited = [429, 502, 503, 504].includes(failure.status);
     consecutiveRateLimitFailures = isRateLimited ? consecutiveRateLimitFailures + 1 : 0;
-    console.log(`  ✗ ${failure.error}`);
+    console.log(`  ✗ ${failure.error}${failure.code ? ` [${failure.code}]` : ''}`);
 
-    // If Common Crawl is actively rate-limiting this IP, do not burn through the
-    // remaining patterns and risk making the temporary block worse.
     if (consecutiveRateLimitFailures >= 3) {
       console.log('  ! Stopping after 3 consecutive rate-limit/server failures; retry later with the same paced runner.');
       break;
