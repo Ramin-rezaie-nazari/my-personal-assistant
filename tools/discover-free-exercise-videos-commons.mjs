@@ -150,13 +150,20 @@ async function mapLimit(items, worker) {
       const index = cursor++;
       if (index >= items.length) return;
       try {
-        results[index] = { ok: true, ...(await worker(items[index])) };
+        const candidates = await worker(items[index]);
+        results[index] = { ok: true, candidates };
       } catch (error) {
-        results[index] = { ok: false, exerciseId: items[index].exerciseId ?? null, query: items[index].name, error: error instanceof Error ? error.message : String(error) };
+        results[index] = {
+          ok: false,
+          exerciseId: items[index].exerciseId ?? null,
+          query: items[index].name,
+          candidates: [],
+          error: error instanceof Error ? error.message : String(error),
+        };
       }
       await new Promise((resolve) => setTimeout(resolve, delayMs));
       const row = results[index];
-      console.log(`[${index + 1}/${items.length}] ${items[index].name}: ${row.ok ? row.candidates.length + ' candidates' : 'ERROR'}`);
+      console.log(`[${index + 1}/${items.length}] ${items[index].name}: ${row.ok ? row.candidates.length + ' candidates' : `ERROR (${row.error})`}`);
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, Math.max(1, items.length)) }, () => runner()));
@@ -179,6 +186,7 @@ const report = {
   openExactCandidates: flat.filter((item) => item.candidateStatus === 'open-exact-candidate').length,
   sharealikeReview: flat.filter((item) => item.candidateStatus === 'sharealike-review').length,
   exactRightsReview: flat.filter((item) => item.candidateStatus === 'exact-rights-review').length,
+  discoveryErrors: results.filter((item) => !item?.ok).length,
   note: 'Discovery only. Exact file license, attribution, creator/source provenance and MYPA distribution/storage rights must be reviewed before approval. Never auto-approve candidates.',
   results,
 };
