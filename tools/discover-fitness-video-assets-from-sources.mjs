@@ -15,10 +15,12 @@ import { promisify } from 'node:util';
 const execFileAsync = promisify(execFile);
 const sourcePath = path.resolve(process.argv[2] ?? 'data/fitness-media-1000-source-discovery.search.generated.json');
 const outputPath = path.resolve(process.argv[3] ?? 'data/fitness-media-video-asset-candidates.generated.json');
+const exerciseQueriesPath = path.resolve(process.argv[4] ?? 'data/fitness-free-video-queries.sample.json');
 const maxSources = Math.max(1, Number(process.env.FITNESS_MEDIA_ASSET_MAX_SOURCES ?? 250));
 const concurrency = Math.max(1, Number(process.env.FITNESS_MEDIA_ASSET_CONCURRENCY ?? 3));
 const timeoutSeconds = Math.max(10, Number(process.env.FITNESS_MEDIA_ASSET_TIMEOUT_SECONDS ?? 25));
 const retryCount = Math.max(0, Number(process.env.FITNESS_MEDIA_ASSET_RETRIES ?? 1));
+const maxExerciseMatchesPerCandidate = Math.max(1, Number(process.env.FITNESS_MEDIA_MAX_EXERCISE_MATCHES ?? 3));
 const userAgent = process.env.FITNESS_MEDIA_SOURCE_USER_AGENT ?? 'MYPA-fitness-media-discovery/1.0 (https://github.com/Ramin-rezaie-nazari/my-personal-assistant)';
 
 const exerciseTerms = [
@@ -38,6 +40,12 @@ const licenseHints = [
   ['public-domain', /public\s+domain|government\s+work/i],
   ['commercial-use', /commercial\s+use|commercially\s+licensed|commercial\s+license/i],
 ];
+
+const tokenize = (value) => value
+  .toLowerCase()
+  .replace(/[’']/g, '')
+  .replace(/[^a-z0-9]+/g, ' ')
+  .trim();
 
 function unique(values) { return [...new Set(values.filter(Boolean))]; }
 
@@ -115,6 +123,41 @@ function scoreCandidate(url, pageText, source, kind) {
   return { score: Math.min(100, score), matchedExerciseTerms, licenseHints: licenseMatches };
 }
 
+function matchCanonicalExercises({ source, pageText, pageTitle, mediaUrl }, exerciseQueries) {
+  if (!Array.isArray(exerciseQueries)) return [];
+
+  const sourceQuery = tokenize(source?.discovery?.query ?? '');
+  const pageHaystack = tokenize(`${mediaUrl} ${pageTitle} ${pageText}`);
+  const matches = [];
+
+  for (const exercise of exerciseQueries) {
+    const exerciseId = typeof exercise?.exerciseId === 'string' ? exercise.exerciseId.trim() : '';
+    const name = typeof exercise?.name === 'string' ? exercise.name.trim() : '';
+    if (!exerciseId || !name) continue;
+
+    const normalizedName = tokenize(name);
+    if (!normalizedName) continue;
+
+    const queryMatch = sourceQuery.includes(normalizedName);
+    const pageMatch = pageHaystack.includes(normalizedName);
+    if (!queryMatch && !pageMatch) continue;
+
+    matches.push({
+      exerciseId,
+      exerciseName: name,
+      matchSource: queryMatch ? 'discovery-query' : 'page-content',
+      specificity: normalizedName.split(' ').length,
+    });
+  }
+
+  return matches
+    .sort((a, b) => {
+      if (a.matchSource !== b.matchSource) return a.matchSource === 'discovery-query' ? -1 : 1;
+      return b.specificity - a.specificity || a.exerciseName.localeCompare(b.exerciseName);
+    })
+    .slice(0, maxExerciseMatchesPerCandidate);
+}
+
 async function fetchPage(url) {
   const args = [
     '--fail-with-body', '--silent', '--show-error', '--location',
@@ -125,7 +168,7 @@ async function fetchPage(url) {
   return stdout;
 }
 
-async function worker(queue, results) {
+async function worker(queue, results, exerciseQueries) {
   while (true) {
     const item = queue.shift();
     if (!item) return;
@@ -136,20 +179,34 @@ async function worker(queue, results) {
       const extracted = extractCandidates(html, item.url);
       const local = [];
 
-      for (const url of extracted.videoUrls) {
-        const scored = scoreCandidate(url, pageText, item, 'video');
-        local.push({ ...scored, exerciseId: item.exerciseId ?? null, exerciseName: item.exerciseName ?? null, pageUrl: item.url, pageTitle: title, mediaUrl: url, kind: 'video', domain: item.domain ?? null, sourceStatus: item.status ?? null, sourceCoverage: item.coverage ?? null });
-      }
-      for (const url of extracted.jsonLdUrls) {
-        const scored = scoreCandidate(url, pageText, item, 'json-ld');
-        local.push({ ...scored, exerciseId: item.exerciseId ?? null, exerciseName: item.exerciseName ?? null, pageUrl: item.url, pageTitle: title, mediaUrl: url, kind: 'json-ld', domain: item.domain ?? null, sourceStatus: item.status ?? null, sourceCoverage: item.coverage ?? null });
-      }
-      for (const url of extracted.iframeUrls) {
-        const scored = scoreCandidate(url, pageText, item, 'iframe');
-        local.push({ ...scored, exerciseId: item.exerciseId ?? null, exerciseName: item.exerciseName ?? null, pageUrl: item.url, pageTitle: title, mediaUrl: url, kind: 'iframe', domain: item.domain ?? null, sourceStatus: item.status ?? null, sourceCoverage: item.coverage ?? null });
-      }
+      const addCandidate = (url, kind) => {
+        const scored = scoreCandidate(url, pageText, item, kind);
+        const exerciseMatches = matchCanonicalExercises({ source: item, pageText, pageTitle: title, mediaUrl: url }, exerciseQueries);
+        const primaryExercise = item.exerciseId
+          ? { exerciseId: item.exerciseId, exerciseName: item.exerciseName ?? null, matchSource: 'source-record', specificity: 99 }
+          : exerciseMatches[0] ?? null;
 
-      results.push({ source: item.url, ok: true, candidateCount: local.length, candidates: local });
+        local.push({
+          ...scored,
+          exerciseId: primaryExercise?.exerciseId ?? null,
+          exerciseName: primaryExercise?.exerciseName ?? null,
+          exerciseMatchSource: primaryExercise?.matchSource ?? null,
+          exerciseMatches,
+          pageUrl: item.url,
+          pageTitle: title,
+          mediaUrl: url,
+          kind,
+          domain: item.domain ?? null,
+          sourceStatus: item.status ?? null,
+          sourceCoverage: item.coverage ?? null,
+        });
+      };
+
+      for (const url of extracted.videoUrls) addCandidate(url, 'video');
+      for (const url of extracted.jsonLdUrls) addCandidate(url, 'json-ld');
+      for (const url of extracted.iframeUrls) addCandidate(url, 'iframe');
+
+      results.push({ source: item.url, ok: true, candidateCount: local.length, mappedCandidateCount: local.filter((c) => c.exerciseId).length, candidates: local });
     } catch (error) {
       results.push({ source: item.url, ok: false, error: error instanceof Error ? error.message : String(error), candidates: [] });
     }
@@ -157,6 +214,10 @@ async function worker(queue, results) {
 }
 
 const input = JSON.parse(await fs.readFile(sourcePath, 'utf8'));
+const queryInput = JSON.parse(await fs.readFile(exerciseQueriesPath, 'utf8'));
+const exerciseQueries = Array.isArray(queryInput) ? queryInput : Array.isArray(queryInput?.exercises) ? queryInput.exercises : [];
+if (!exerciseQueries.length) throw new Error(`No canonical exercise queries found in ${exerciseQueriesPath}`);
+
 const sources = Array.isArray(input?.sources) ? input.sources.slice(0, maxSources) : [];
 if (!sources.length) throw new Error(`No sources found in ${sourcePath}`);
 
@@ -164,16 +225,23 @@ const queue = [...sources];
 const results = [];
 const startedAt = Date.now();
 console.log(`Asset extraction: ${sources.length} source pages, concurrency ${concurrency}`);
-await Promise.all(Array.from({ length: Math.min(concurrency, sources.length) }, () => worker(queue, results)));
+console.log(`Canonical exercise mapping: ${exerciseQueries.length} exercises`);
+await Promise.all(Array.from({ length: Math.min(concurrency, sources.length) }, () => worker(queue, results, exerciseQueries)));
 
 const candidates = results.flatMap((result) => result.candidates).sort((a, b) => b.score - a.score);
+const mappedCandidates = candidates.filter((candidate) => candidate.exerciseId);
 const output = {
   generatedAt: new Date().toISOString(),
   input: path.basename(sourcePath),
+  exerciseQueryInput: path.basename(exerciseQueriesPath),
+  canonicalExerciseCount: exerciseQueries.length,
   sourceCount: sources.length,
   successfulSourcePages: results.filter((r) => r.ok).length,
   failedSourcePages: results.filter((r) => !r.ok).length,
   candidateCount: candidates.length,
+  mappedCandidateCount: mappedCandidates.length,
+  unmappedCandidateCount: candidates.length - mappedCandidates.length,
+  coveredExerciseCount: new Set(mappedCandidates.map((candidate) => candidate.exerciseId)).size,
   highConfidenceCandidateCount: candidates.filter((candidate) => candidate.score >= 60).length,
   rightsReviewRequiredCount: candidates.filter((candidate) => !candidate.licenseHints.length).length,
   durationSeconds: Number(((Date.now() - startedAt) / 1000).toFixed(1)),
@@ -186,5 +254,7 @@ await fs.writeFile(outputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
 console.log(`Wrote ${outputPath}`);
 console.log(`Successful pages: ${output.successfulSourcePages}/${sources.length}`);
 console.log(`Media candidates: ${candidates.length}`);
+console.log(`Mapped candidates: ${mappedCandidates.length}`);
+console.log(`Covered canonical exercises: ${output.coveredExerciseCount}/${exerciseQueries.length}`);
 console.log(`High-confidence: ${output.highConfidenceCandidateCount}`);
 console.log(`Candidates without detected license hint: ${output.rightsReviewRequiredCount}`);
