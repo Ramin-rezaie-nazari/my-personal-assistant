@@ -23,6 +23,7 @@
     "test:e2e": "node ./test/prepare-e2e-db.cjs && jest --config ./test/jest-e2e.json --runInBand",
     "pretest:e2e": "prisma generate",
     "fitness:media:discover": "node ../../tools/discover-free-exercise-videos-commons.mjs ../../data/fitness-free-video-queries.sample.json ../../data/fitness-free-video-candidates.commons.json",
+    "fitness:media:federated": "node ../../tools/discover-fitness-media-federated.mjs ../../data/fitness-free-video-queries.sample.json ../../data/fitness-media-source-inventory.seed.json ../../data/fitness-federated-video-candidates.json",
     "fitness:media:free": "node ../../tools/run-free-exercise-video-pipeline.mjs ../../data/fitness-free-video-queries.sample.json",
     "fitness:media:free:download": "node ../../tools/run-free-exercise-video-pipeline.mjs ../../data/fitness-free-video-queries.sample.json --download",
     "fitness:media:free:dry-run": "node ../../tools/run-free-exercise-video-pipeline.mjs ../../data/fitness-free-video-queries.sample.json --download --dry-run",
