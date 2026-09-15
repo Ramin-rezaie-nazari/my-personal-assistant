@@ -25,7 +25,7 @@
     "fitness:media:discover": "node ../../tools/discover-free-exercise-videos-commons.mjs ../../data/fitness-free-video-queries.sample.json ../../data/fitness-free-video-candidates.commons.json",
     "fitness:media:federated": "node ../../tools/discover-fitness-media-federated.mjs ../../data/fitness-free-video-queries.sample.json ../../data/fitness-media-source-inventory.seed.json ../../data/fitness-federated-video-candidates.json",
     "fitness:media:sources:1000": "node ../../tools/discover-fitness-1000-sources.mjs ../../data/fitness-media-source-inventory.seed.json ../../data/fitness-media-1000-source-discovery.generated.json",
-    "fitness:media:sources:1000:search": "node ../../tools/discover-fitness-1000-sources-search.mjs ../../data/fitness-free-video-queries.sample.json ../../data/fitness-media-1000-source-discovery.search.generated.json",
+    "fitness:media:sources:1000:search": "node ../../tools/discover-fitness-1000-sources-search.mjs ../../data/fitness-media-source-inventory.seed.json ../../data/fitness-media-1000-source-discovery.search.generated.json",
     "fitness:media:sources:merge": "node ../../tools/merge-fitness-source-discovery.mjs ../../data/fitness-media-source-inventory.seed.json ../../data/fitness-media-1000-source-discovery.search.generated.json ../../data/fitness-media-source-inventory.generated.json",
     "fitness:media:assets": "node ../../tools/discover-fitness-video-assets-from-sources.mjs ../../data/fitness-media-1000-source-discovery.search.generated.json ../../data/fitness-media-video-asset-candidates.generated.json",
     "fitness:media:free": "node ../../tools/run-free-exercise-video-pipeline.mjs ../../data/fitness-free-video-queries.sample.json",
