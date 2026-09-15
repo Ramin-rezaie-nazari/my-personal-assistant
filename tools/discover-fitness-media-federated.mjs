@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 /**
- * Federated fitness-media discovery engine.
+ * Federated fitness-media discovery engine with live progress reporting.
  *
- * The source inventory is the source of truth. Sources with a dedicated
- * adapter are queried directly; other eligible sources are queried through
- * an operator-configured search API endpoint. Discovery never grants
+ * The source inventory is the source of truth. Dedicated adapters are queried
+ * directly. Sources without a configured search endpoint are skipped instead
+ * of generating thousands of doomed requests. Discovery never grants
  * production media rights.
  */
 
@@ -15,6 +15,7 @@ import path from 'node:path';
 const queryPath = path.resolve(process.argv[2] ?? 'data/fitness-free-video-queries.sample.json');
 const inventoryPath = path.resolve(process.argv[3] ?? 'data/fitness-media-source-inventory.seed.json');
 const outputPath = path.resolve(process.argv[4] ?? 'data/fitness-federated-video-candidates.json');
+
 const sourceConcurrency = Math.max(1, Number(process.env.FITNESS_MEDIA_SOURCE_CONCURRENCY ?? 2));
 const delayMs = Math.max(0, Number(process.env.FITNESS_MEDIA_DELAY_MS ?? 750));
 const maxResults = Math.max(1, Number(process.env.FITNESS_MEDIA_MAX_RESULTS ?? 10));
@@ -46,7 +47,7 @@ function classifyLicense(value) {
 }
 
 async function getJson(url) {
-  const response = await fetch(url, { headers: { 'User-Agent': 'MYPA-federated-fitness-media-discovery/1.1', Accept: 'application/json' } });
+  const response = await fetch(url, { headers: { 'User-Agent': 'MYPA-federated-fitness-media-discovery/1.4', Accept: 'application/json' } });
   if (!response.ok) {
     const error = new Error(`HTTP ${response.status} for ${url}`);
     error.status = response.status;
@@ -98,11 +99,9 @@ async function discoverWebIndex(source, record) {
 }
 
 async function discoverOne(source, record) {
-  switch (source.discovery?.mode) {
-    case 'commons_mediawiki': return discoverCommons(source, record);
-    case 'web_index': return discoverWebIndex(source, record);
-    default: return [];
-  }
+  if (source.discovery?.mode === 'commons_mediawiki') return discoverCommons(source, record);
+  if (source.discovery?.mode === 'web_index') return discoverWebIndex(source, record);
+  return [];
 }
 
 function normalizeSources(rawSources) {
@@ -115,15 +114,18 @@ function normalizeSources(rawSources) {
   }).filter(Boolean);
 }
 
-async function mapLimit(items, limit, worker) {
+async function mapLimit(items, limit, worker, onComplete) {
   const results = new Array(items.length);
   let cursor = 0;
+  let completed = 0;
   async function runner() {
     while (true) {
       const index = cursor++;
       if (index >= items.length) return;
       try { results[index] = { ok: true, value: await worker(items[index], index) }; }
       catch (error) { results[index] = { ok: false, error: error instanceof Error ? error.message : String(error), status: error?.status ?? null, retryAfter: error?.retryAfter ?? null }; }
+      completed += 1;
+      onComplete?.(completed, items.length, items[index], results[index]);
       if (delayMs) await sleep(delayMs);
     }
   }
@@ -136,10 +138,26 @@ const inventory = JSON.parse(await fs.readFile(inventoryPath, 'utf8'));
 if (!Array.isArray(queries) || !Array.isArray(inventory?.sources)) throw new Error('Invalid query or source inventory format');
 const records = queries.map((item) => typeof item === 'string' ? { name: item } : item).filter((item) => item?.name);
 const sources = normalizeSources(inventory.sources);
-console.log(`Federated fitness media discovery: ${records.length} queries x ${sources.length} eligible sources`);
+const directSources = sources.filter((source) => source.discovery?.mode === 'commons_mediawiki');
+const webSources = sources.filter((source) => source.discovery?.mode === 'web_index');
+const activeWebSources = searchEndpoint ? webSources : [];
+const skippedWebSources = searchEndpoint ? [] : webSources;
+const executableSources = [...directSources, ...activeWebSources];
+
+console.log(`Federated fitness media discovery: ${records.length} queries x ${executableSources.length} executable sources`);
+console.log(`Direct adapters: ${directSources.length}; web-index sources enabled: ${activeWebSources.length}; skipped awaiting search endpoint: ${skippedWebSources.length}`);
+
 const work = [];
-for (const source of sources) for (const record of records) work.push({ source, record });
-const discovered = await mapLimit(work, sourceConcurrency, async ({ source, record }) => ({ source, record, candidates: await discoverOne(source, record) }));
+for (const source of executableSources) for (const record of records) work.push({ source, record });
+
+const startedAt = Date.now();
+const discovered = await mapLimit(work, sourceConcurrency, async ({ source, record }) => ({ source, record, candidates: await discoverOne(source, record) }),
+  (completed, total, item, result) => {
+    const elapsed = ((Date.now() - startedAt) / 1000).toFixed(1);
+    const detail = result.ok ? `${result.value.candidates.length} candidates` : `ERROR ${result.error}`;
+    console.log(`[${completed}/${total}] ${elapsed}s | ${item.source.id} | ${item.record.name} | ${detail}`);
+  });
+
 const flat = discovered.flatMap((row) => row?.ok ? row.value.candidates : []);
 const deduped = new Map();
 for (const candidate of flat) {
@@ -148,9 +166,12 @@ for (const candidate of flat) {
   const existing = deduped.get(key);
   if (!existing || candidate.score > existing.score) deduped.set(key, candidate);
 }
+
 const failures = discovered.filter((row) => !row?.ok);
 const output = {
   generatedAt: new Date().toISOString(), queryCount: records.length, configuredSources: sources.length,
+  executableSources: executableSources.length,
+  skippedSourcesAwaitingSearchEndpoint: skippedWebSources.map((source) => source.id),
   attemptedSourceQueries: work.length, successfulSourceQueries: discovered.filter((row) => row?.ok).length,
   failedSourceQueries: failures.length, uniqueCandidates: deduped.size,
   exactMatches: [...deduped.values()].filter((candidate) => candidate.exactMatch).length,
@@ -161,4 +182,5 @@ await fs.mkdir(path.dirname(outputPath), { recursive: true });
 await fs.writeFile(outputPath, `${JSON.stringify(output, null, 2)}\n`, 'utf8');
 console.log(`Wrote ${outputPath}`);
 console.log(`Unique candidates: ${output.uniqueCandidates}; exact matches: ${output.exactMatches}; narrow open-license candidates: ${output.narrowOpenLicenseCandidates}`);
+if (skippedWebSources.length) console.log(`Skipped ${skippedWebSources.length} registry sources because FITNESS_MEDIA_SEARCH_ENDPOINT is not configured.`);
 if (failures.length) console.log(`Source-query failures retained: ${failures.length}`);
