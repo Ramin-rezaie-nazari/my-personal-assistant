@@ -1,6 +1,6 @@
 # MYPA Current State
 
-Last updated: 2026-09-14
+Last updated: 2026-09-15
 Review status: FITNESS BODINEXT-ALIGNED NON-MEDIA PRODUCT SLICE IMPLEMENTED / FREE-FIRST CONTENT-MEDIA PHASE OPEN / FRESH CI VERIFICATION PENDING
 
 ## Canonical ownership
@@ -45,11 +45,30 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Provenance-aware media contract covering ownership, license, attribution, source reference, acquisition mode and approval.
 - Local rights-aware video discovery tooling; discovery results remain candidates until exact-match and rights approval.
 - Scalable Wikimedia Commons free-video discovery harvester for arbitrary exercise query lists.
+- Free-first orchestration runner that promotes only exact CC0/CC BY/Public Domain Commons candidates to a generated approved manifest.
 - Rights-gated downloader for explicitly approved media records only.
-- Downloader now streams to disk, verifies SHA-256 and writes an auditable report instead of buffering entire videos in RAM.
+- Downloader streams to disk, verifies SHA-256 and writes an auditable report instead of buffering entire videos in RAM.
 - Initial rights-gated sample manifest contains 9 exact Wikimedia demonstration assets under CC BY 3.0 with explicit license URLs.
 - Source registry and approval validator guard against rights escalation.
-- Machine-readable source inventory currently contains **47 source records** across open-license media, government/public-domain, commercial licensing, API/media, animation, stock and rights-review classes.
+- Machine-readable source inventory contains dozens of source records across open-license media, government/public-domain, commercial licensing, API/media, animation, stock and rights-review classes.
+
+### Executable media workflow
+
+The canonical free-first terminal workflow is:
+
+```bash
+cd apps/backend && pnpm fitness:media:free:download
+```
+
+This runs discovery → exact-match/license gate → generated approved manifest → controlled download for the currently configured query corpus.
+
+A non-downloading preview is:
+
+```bash
+cd apps/backend && pnpm fitness:media:free:dry-run
+```
+
+For the eventual 1,500-exercise run, provide a query file containing every canonical exercise and carefully selected aliases; the same runner can process that larger corpus.
 
 ### Durable programs
 
@@ -81,11 +100,11 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 ## Current content/media research
 
-Free-first research has expanded beyond the initial vendors. High-value source families now include Wikimedia Commons exercise-video categories, exact CC BY demonstration files, U.S. government public-domain footage mirrored on Commons, SeniorForm's openly licensed exercise-video package, Workout Guide and Open Training visual libraries, CC Search/Openverse as discovery indexes, and asset-specific free stock sources such as Pixabay/Videvo.
+Free-first research has expanded across Wikimedia Commons exercise-video categories, exact CC-licensed demonstrations, U.S. government/public-domain footage mirrored on Commons, open-source exercise-video projects, Openverse/CC Search discovery indexes, and free stock platforms whose asset-level licenses permit the intended use.
 
-Commercial providers such as YMove, Vital Animations, Funxtion, ExerciseVideoAPI, WorkoutDB, CARAVAN, Hyperhuman, Exercise Animatic, MoveKit and others remain fallback licensing leads rather than the primary acquisition path.
+Commercial providers remain fallback procurement leads rather than the primary acquisition path because international payment is currently constrained.
 
-The detailed free-first plan is `docs/project-brain/20_FREE_FIRST_EXERCISE_VIDEO_STRATEGY.md`. The broader discovery plan remains `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md`.
+The detailed free-first plan is `docs/project-brain/20_FREE_FIRST_EXERCISE_VIDEO_STRATEGY.md`. The broader discovery plan is `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md`.
 
 ## Acquisition boundary
 
@@ -109,7 +128,7 @@ The final feature branch has received CI triggers during development, and one ea
 - Production Supabase/Auth/RLS/Storage/CDN behavior remains environment-limited.
 - Final instructional-video availability is content/legal-gated.
 - The local ExerciseDB V1 OSS corpus is non-commercial research material and must not be shipped in a monetized build without compatible commercial rights.
-- The execution environment used for this session does not provide outbound DNS/network access for actually transferring external video binaries; the repository downloader is therefore prepared and scalable, but external binary transfer remains unvalidated here.
+- This ChatGPT runtime cannot transfer large external video binaries because outbound DNS/network access for external media is unavailable here; the repository pipeline is prepared for execution in a network-enabled development environment.
 
 ## Project Brain
 
@@ -117,6 +136,6 @@ The final feature branch has received CI triggers during development, and one ea
 - `docs/project-brain/17_FITNESS_VIDEO_MEDIA_FOUNDATION.md` documents the media foundation and acquisition boundary.
 - `docs/project-brain/18_FITNESS_PROGRAMS_AND_CALCULATORS.md` documents programs, calculators, progress and the 1500-exercise target.
 - `docs/project-brain/19_FITNESS_1000_SOURCE_DISCOVERY.md` documents the broad source-discovery corpus and expansion strategy.
-- `docs/project-brain/20_FREE_FIRST_EXERCISE_VIDEO_STRATEGY.md` defines the free-first acquisition strategy.
+- `docs/project-brain/20_FREE_FIRST_EXERCISE_VIDEO_STRATEGY.md` defines the free-first acquisition strategy and executable terminal workflow.
 - `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` remains the canonical audit findings record.
 - `docs/project-brain/12_OPEN_WORK.md` remains the canonical actionable-work list.
