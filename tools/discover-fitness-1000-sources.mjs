@@ -27,29 +27,47 @@ const userAgent = process.env.FITNESS_MEDIA_SOURCE_USER_AGENT ?? 'MYPA-fitness-s
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-async function getJson(url) {
+async function requestWithRetry(url, responseMode) {
   let lastError;
+
   for (let attempt = 0; attempt <= retryCount; attempt += 1) {
     try {
-      const response = await fetch(url, { headers: { 'User-Agent': userAgent, Accept: 'application/json' } });
-      if (response.ok) return response.json();
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': userAgent,
+          Accept: responseMode === 'json' ? 'application/json' : 'application/x-ndjson, application/json, text/plain',
+        },
+      });
+
+      if (response.ok) {
+        return responseMode === 'json' ? response.json() : response.text();
+      }
+
       const error = new Error(`HTTP ${response.status} for ${url}`);
       error.status = response.status;
+      error.retryAfter = response.headers.get('retry-after');
       lastError = error;
+
       const retryable = [408, 429, 500, 502, 503, 504].includes(response.status);
       if (!retryable || attempt >= retryCount) throw error;
+
       const retryAfter = Number(response.headers.get('retry-after') ?? 0);
-      const backoff = retryAfter > 0 ? retryAfter * 1000 : Math.min(60000, 2000 * (2 ** attempt));
+      const backoff = retryAfter > 0
+        ? retryAfter * 1000
+        : Math.min(60000, 3000 * (2 ** attempt));
       console.log(`  ↻ retry ${attempt + 1}/${retryCount} after ${Math.ceil(backoff / 1000)}s (${response.status})`);
       await sleep(backoff);
     } catch (error) {
       lastError = error;
-      if (attempt >= retryCount || ![408, 429, 500, 502, 503, 504].includes(error?.status)) throw error;
-      const backoff = Math.min(60000, 2000 * (2 ** attempt));
+      const retryable = [408, 429, 500, 502, 503, 504].includes(error?.status);
+      if (!retryable || attempt >= retryCount) throw error;
+
+      const backoff = Math.min(60000, 3000 * (2 ** attempt));
       console.log(`  ↻ retry ${attempt + 1}/${retryCount} after ${Math.ceil(backoff / 1000)}s`);
       await sleep(backoff);
     }
   }
+
   throw lastError;
 }
 
@@ -94,20 +112,30 @@ const startedAt = Date.now();
 console.log(`Free 1000-source sweep: target ${targetSources} distinct domains across ${patterns.length} Common Crawl URL patterns`);
 console.log(`Known domains already in inventory: ${knownDomains.size}`);
 
+// The crawl list is stable for the run; fetch it once instead of once per pattern.
+const indexInfo = await requestWithRetry('https://index.commoncrawl.org/collinfo.json', 'json');
+const crawlId = Array.isArray(indexInfo) && indexInfo[0]?.id ? String(indexInfo[0].id) : '';
+const crawlApi = Array.isArray(indexInfo) && indexInfo[0]?.['cdx-api']
+  ? String(indexInfo[0]['cdx-api'])
+  : (crawlId ? `https://index.commoncrawl.org/${crawlId}-index` : '');
+if (!crawlId || !crawlApi) throw new Error('Common Crawl did not return a current crawl id/API endpoint');
+
+console.log(`Using Common Crawl ${crawlId}`);
+
 let patternIndex = 0;
+let consecutiveRateLimitFailures = 0;
 for (const pattern of patterns) {
   if (sourceMap.size >= targetSources) break;
   patternIndex += 1;
-  const indexInfo = await getJson('https://index.commoncrawl.org/collinfo.json');
-  const crawlId = Array.isArray(indexInfo) && indexInfo[0]?.id ? String(indexInfo[0].id) : '';
-  if (!crawlId) throw new Error('Common Crawl did not return a current crawl id');
 
-  const queryUrl = new URL(`https://index.commoncrawl.org/${crawlId}-index`);
+  const queryUrl = new URL(crawlApi);
   queryUrl.search = new URLSearchParams({
     url: `*/${pattern}*`,
     output: 'json',
     filter: 'status:200',
-    collapse: 'urlkey',
+    // We dedupe by registered domain locally, so server-side URL-key collapse
+    // is unnecessary overhead for these broad discovery queries.
+    fl: 'url',
     limit: String(maxPerPattern),
   }).toString();
 
@@ -115,15 +143,10 @@ for (const pattern of patterns) {
   console.log(`[pattern ${patternIndex}/${patterns.length}] ${elapsed}s | ${pattern}`);
 
   try {
-    const raw = await fetch(queryUrl, { headers: { 'User-Agent': userAgent, Accept: 'application/json' } }).then(async (response) => {
-      if (!response.ok) {
-        const error = new Error(`HTTP ${response.status} for ${queryUrl}`);
-        error.status = response.status;
-        error.retryAfter = response.headers.get('retry-after');
-        throw error;
-      }
-      return response.text();
-    });
+    // Stay intentionally serial and pace requests to respect Common Crawl's API guidance.
+    const raw = await requestWithRetry(queryUrl, 'text');
+    let addedForPattern = 0;
+
     for (const line of raw.split('\n').map((value) => value.trim()).filter(Boolean)) {
       let row;
       try { row = JSON.parse(line); } catch { continue; }
@@ -146,10 +169,30 @@ for (const pattern of patterns) {
         },
         rightsAction: 'Treat as discovery lead only; verify exact asset license and MYPA redistribution/hosting rights before approval',
       });
+      addedForPattern += 1;
       if (sourceMap.size >= targetSources) break;
     }
+
+    consecutiveRateLimitFailures = 0;
+    console.log(`  ✓ ${addedForPattern} new domains from ${pattern}; ${sourceMap.size} total discovered`);
   } catch (error) {
-    failures.push({ pattern, error: error instanceof Error ? error.message : String(error), status: error?.status ?? null, retryAfter: error?.retryAfter ?? null });
+    const failure = {
+      pattern,
+      error: error instanceof Error ? error.message : String(error),
+      status: error?.status ?? null,
+      retryAfter: error?.retryAfter ?? null,
+    };
+    failures.push(failure);
+    const isRateLimited = [429, 502, 503, 504].includes(failure.status);
+    consecutiveRateLimitFailures = isRateLimited ? consecutiveRateLimitFailures + 1 : 0;
+    console.log(`  ✗ ${failure.error}`);
+
+    // If Common Crawl is actively rate-limiting this IP, do not burn through the
+    // remaining patterns and risk making the temporary block worse.
+    if (consecutiveRateLimitFailures >= 3) {
+      console.log('  ! Stopping after 3 consecutive rate-limit/server failures; retry later with the same paced runner.');
+      break;
+    }
   }
   await sleep(delayMs);
 }
@@ -159,9 +202,11 @@ const mergedSources = [...inventory.sources, ...discoveredSources];
 const output = {
   generatedAt: new Date().toISOString(),
   targetSources,
+  crawlId,
   discoveredSourceCount: discoveredSources.length,
   totalInventorySourceCount: mergedSources.length,
   patterns,
+  attemptedPatterns: patternIndex,
   failures,
   sources: discoveredSources,
 };
