@@ -1,6 +1,6 @@
 {
   "generatedAt": "2026-09-15",
-  "note": "Machine-queryable discovery adapters only. Discovery never grants production media rights.",
+  "note": "Machine-queryable discovery source registry. Discovery never grants production media rights.",
   "sources": [
     {
       "id": "wikimedia-commons-exercise-videos",
@@ -10,6 +10,14 @@
       "coverage": "exercise demonstration videos",
       "rightsAction": "verify each file license before approval",
       "discovery": { "mode": "commons_mediawiki" }
+    },
+    {
+      "id": "web-index-source-registry",
+      "type": "web_index",
+      "status": "ready_for_provider",
+      "coverage": "all registered source domains without a dedicated API adapter",
+      "rightsAction": "search only through an operator-configured search API; never scrape search-engine result pages",
+      "discovery": { "mode": "web_index", "endpointEnv": "FITNESS_MEDIA_SEARCH_ENDPOINT" }
     }
   ]
 }
