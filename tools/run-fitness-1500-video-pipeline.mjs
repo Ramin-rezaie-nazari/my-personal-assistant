@@ -19,6 +19,7 @@ const toolsDir = path.join(repoRoot, 'tools');
 const dataDir = path.join(repoRoot, 'data');
 const catalogPath = path.join(dataDir, 'fitness-canonical-exercises-1500.generated.json');
 const queuePath = path.join(dataDir, 'fitness-video-acquisition-queue-1500.generated.json');
+const commonsQueryPath = path.join(dataDir, 'fitness-1500-commons-queries.generated.json');
 const commonsCandidatesPath = path.join(dataDir, 'fitness-1500-video-candidates.commons.json');
 const approvedPath = path.join(dataDir, 'fitness-1500-approved-video-manifest.generated.json');
 const reportPath = path.join(dataDir, 'fitness-1500-video-completion.generated.json');
@@ -93,8 +94,18 @@ function promoteCandidate(candidate) {
 
 await ensureCatalogAndQueue();
 
+const catalog = JSON.parse(await fs.readFile(catalogPath, 'utf8'));
+const exercises = Array.isArray(catalog.exercises) ? catalog.exercises : [];
+if (exercises.length !== 1500) throw new Error(`Canonical catalog must contain exactly 1500 exercises; found ${exercises.length}`);
+
+await fs.writeFile(commonsQueryPath, `${JSON.stringify(exercises.map((exercise) => ({
+  exerciseId: exercise.id,
+  name: exercise.name,
+})), null, 2)}\n`, 'utf8');
+console.log(`Wrote ${commonsQueryPath}`);
+
 console.log('=== PHASE 2: 1500-EXERCISE FREE-FIRST VIDEO DISCOVERY ===');
-await run(process.execPath, [path.join(toolsDir, 'discover-free-exercise-videos-commons.mjs'), catalogPath, commonsCandidatesPath], {
+await run(process.execPath, [path.join(toolsDir, 'discover-free-exercise-videos-commons.mjs'), commonsQueryPath, commonsCandidatesPath], {
   COMMONS_VIDEO_CONCURRENCY: process.env.COMMONS_VIDEO_CONCURRENCY ?? '2',
   COMMONS_VIDEO_DELAY_MS: process.env.COMMONS_VIDEO_DELAY_MS ?? '400',
   COMMONS_VIDEO_MAX_RESULTS: process.env.COMMONS_VIDEO_MAX_RESULTS ?? '10',
@@ -122,32 +133,31 @@ await fs.writeFile(approvedPath, `${JSON.stringify({
 }, null, 2)}\n`, 'utf8');
 
 console.log('=== PHASE 3: COVERAGE GATE ===');
-const catalog = JSON.parse(await fs.readFile(catalogPath, 'utf8'));
-const exerciseIds = new Set((catalog.exercises ?? []).map((exercise) => exercise.id));
+const exerciseIds = new Set(exercises.map((exercise) => exercise.id));
 const covered = [...bestByExercise.keys()].filter((id) => exerciseIds.has(id)).length;
-const missing = (catalog.exercises ?? []).filter((exercise) => !bestByExercise.has(exercise.id)).map((exercise) => ({ exerciseId: exercise.id, name: exercise.name }));
+const missing = exercises.filter((exercise) => !bestByExercise.has(exercise.id)).map((exercise) => ({ exerciseId: exercise.id, name: exercise.name }));
 const completion = {
   generatedAt: new Date().toISOString(),
-  canonicalExerciseCount: catalog.exercises?.length ?? 0,
+  canonicalExerciseCount: exercises.length,
   candidateQueryCount: candidateReport.queries ?? 0,
   discoveryErrorCount: candidateReport.discoveryErrors ?? 0,
   approvedOpenVideoCount: approved.length,
   approvedOpenVideoCoverage: covered,
-  approvedOpenVideoCoverageRate: catalog.exercises?.length ? Number(((covered / catalog.exercises.length) * 100).toFixed(1)) : 0,
+  approvedOpenVideoCoverageRate: Number(((covered / exercises.length) * 100).toFixed(1)),
   missingApprovedVideoCount: missing.length,
   missingExercises: missing,
-  nextLane: missing.length ? 'licensed-or-specialized-fallback-required' : 'complete-open-lane',
-  greenGate: (catalog.exercises?.length === 1500 && covered === 1500),
+  nextLane: missing.length ? 'free-only-gap-closure-required' : 'complete-open-lane',
+  greenGate: (exercises.length === 1500 && covered === 1500),
 };
 await fs.writeFile(reportPath, `${JSON.stringify(completion, null, 2)}\n`, 'utf8');
-console.log(`Approved open-license videos: ${covered}/${catalog.exercises?.length ?? 0}`);
+console.log(`Approved free/open videos: ${covered}/${exercises.length}`);
 console.log(`Missing approved videos: ${missing.length}`);
 console.log(`Discovery errors: ${completion.discoveryErrorCount}`);
 console.log(`GREEN 1500/1500 gate: ${completion.greenGate ? 'YES' : 'NO'}`);
 console.log(`Completion report: ${reportPath}`);
 
 if (shouldDownload && approved.length) {
-  console.log('=== PHASE 4: DOWNLOAD APPROVED OPEN-LICENSE MEDIA ===');
+  console.log('=== PHASE 4: DOWNLOAD APPROVED FREE/OPEN MEDIA ===');
   await run(process.execPath, [path.join(toolsDir, 'download-approved-exercise-media.mjs'), approvedPath, path.join(dataDir, 'fitness-media')]);
 } else {
   console.log('Download not requested; no media files were fetched by this master runner.');
