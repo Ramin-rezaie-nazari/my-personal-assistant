@@ -70,6 +70,32 @@ A free-first orchestration runner now exists:
 
 It discovers candidates, promotes only exact CC0 / CC BY / Public Domain matches into a generated manifest, and optionally invokes the rights-gated downloader.
 
+Search-engine fallback discovery is also implemented:
+
+`tools/discover-fitness-1000-sources-search.mjs`
+
+The first full run used 164 exercise/media discovery queries and completed with 0 failed queries, discovering 142 new domains; merged discovery inventory now contains 190 sources. These 142 are still discovery leads, not approved media sources.
+
+Common Crawl remains an optional discovery adapter, but the current operating environment's direct access to `index.commoncrawl.org` failed at the transport layer (`UND_ERR_SOCKET` in Node and curl error 52). The primary discovery path therefore uses search-engine results instead of depending on Common Crawl availability.
+
+## Source merge and asset discovery
+
+`tools/merge-fitness-source-discovery.mjs` creates a derived inventory without mutating the seed registry. This keeps the original curated source list intact while allowing repeatable discovery expansion.
+
+`tools/discover-fitness-video-assets-from-sources.mjs` fetches discovered source pages and extracts direct `<video>/<source>` URLs, social/player embeds, OpenGraph video URLs and JSON-LD `contentUrl`/`embedUrl` candidates. This is discovery only; it does not grant rights or download media.
+
+The next rights-evidence stage is:
+
+`tools/review-fitness-video-rights.mjs`
+
+It fetches candidate pages and records explicit license evidence, license URLs, attribution hints and commercial/redistribution language. Classification buckets distinguish strong open-license candidates, public-domain candidates, commercial-license leads, ShareAlike/ND/NC cases, blocked platforms and unresolved rights-review cases. Nothing from this stage is considered production-approved automatically.
+
+A lightweight guard is available through:
+
+`tools/check-fitness-media-tools.mjs`
+
+It syntax-checks the media tools and validates the key JSON fixtures before the wider pipeline is executed.
+
 ## Executable terminal workflow
 
 From the repository root, the current configured free-first batch can be run with:
@@ -84,7 +110,17 @@ Safe preview without downloading:
 cd apps/backend && pnpm fitness:media:free:dry-run
 ```
 
-The same runner accepts a larger custom query file. For the eventual 1,500-exercise sweep, the query file should contain every canonical exercise ID/name plus carefully selected aliases. The runner will then produce a generated approved manifest for exact eligible Commons matches and download only those records.
+For source discovery plus asset extraction plus rights-evidence preparation, use:
+
+```bash
+cd "$(git rev-parse --show-toplevel)" && \
+git pull --ff-only origin feat/fitness-video-media-foundation-v2 && \
+cd apps/backend && \
+pnpm fitness:media:check && \
+pnpm fitness:media:next
+```
+
+`fitness:media:next` merges the current search discovery output, extracts asset candidates and then runs rights-evidence review. It expects the generated search discovery file from the previous source-sweep step to exist locally.
 
 ## Download gate
 
@@ -112,11 +148,13 @@ The asset must have a reuse basis compatible with MYPA's intended commercial app
 
 ## Next target
 
-1. Expand the query corpus from the current starter set to the full 1,500 canonical movements and aliases.
-2. Run the free-first Commons sweep over that complete corpus.
-3. Expand discovery through strength, cardio, stretching, yoga, Pilates, mobility, rehabilitation and calisthenics categories.
-4. Add government/public-domain and open-source exercise-video candidates.
-5. Measure exact approved coverage before considering any paid provider.
+1. Finish the current 142-source asset extraction and rights-evidence pass and measure candidate yield.
+2. Expand the query corpus from the current starter set to the full 1,500 canonical movements and aliases.
+3. Run the free-first Commons sweep over that complete corpus.
+4. Expand discovery through strength, cardio, stretching, yoga, Pilates, mobility, rehabilitation and calisthenics categories.
+5. Add government/public-domain and open-source exercise-video candidates.
+6. Promote only exact candidates with explicit rights evidence into a human-approval queue.
+7. Measure exact approved coverage before considering any paid provider.
 
 The success metric is not "number of sites found". The success metric is:
 
