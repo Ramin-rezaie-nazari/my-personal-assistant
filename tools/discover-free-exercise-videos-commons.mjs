@@ -13,6 +13,7 @@
  * Environment:
  *   COMMONS_VIDEO_CONCURRENCY=1
  *   COMMONS_VIDEO_DELAY_MS=1500
+ *   COMMONS_VIDEO_REQUEST_GAP_MS=1500
  *   COMMONS_VIDEO_MAX_RESULTS=10
  *   COMMONS_VIDEO_MAX_RETRIES=5
  *   COMMONS_VIDEO_RETRY_BASE_MS=5000
@@ -26,6 +27,7 @@ const outputPath = path.resolve(process.argv[3] ?? 'data/fitness-free-video-cand
 const checkpointPath = path.resolve(process.env.COMMONS_VIDEO_CHECKPOINT ?? `${outputPath}.checkpoint.json`);
 const concurrency = Math.max(1, Number(process.env.COMMONS_VIDEO_CONCURRENCY ?? 1));
 const delayMs = Math.max(250, Number(process.env.COMMONS_VIDEO_DELAY_MS ?? 1500));
+const requestGapMs = Math.max(500, Number(process.env.COMMONS_VIDEO_REQUEST_GAP_MS ?? 1500));
 const maxResults = Math.max(1, Number(process.env.COMMONS_VIDEO_MAX_RESULTS ?? 10));
 const maxRetries = Math.max(0, Number(process.env.COMMONS_VIDEO_MAX_RETRIES ?? 5));
 const retryBaseMs = Math.max(1000, Number(process.env.COMMONS_VIDEO_RETRY_BASE_MS ?? 5000));
@@ -75,6 +77,19 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+let nextRequestAt = 0;
+let requestChain = Promise.resolve();
+async function acquireRequestSlot() {
+  let turn;
+  turn = requestChain.then(async () => {
+    const waitMs = Math.max(0, nextRequestAt - Date.now());
+    if (waitMs) await sleep(waitMs);
+    nextRequestAt = Date.now() + requestGapMs;
+  });
+  requestChain = turn.catch(() => {});
+  await turn;
+}
+
 function retryAfterMs(response, attempt) {
   const header = response.headers.get('retry-after');
   if (header) {
@@ -88,6 +103,7 @@ function retryAfterMs(response, attempt) {
 
 async function getJson(url) {
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+    await acquireRequestSlot();
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'MYPA-free-exercise-discovery/1.0 (research; contact project maintainer)',
@@ -233,7 +249,7 @@ async function mapLimit(items, worker, initialResults = []) {
       console.log(`[${processed}/${items.length}] ${items[index].name}: ${row.ok ? `${row.candidates.length} candidates` : `ERROR (${row.error})`} | rate ${rate.toFixed(2)}/s | ETA ${Math.round(etaSeconds)}s`);
       completedSinceCheckpoint += 1;
       if (completedSinceCheckpoint >= checkpointEvery) {
-        await writeCheckpoint(results, items, index + 1, startedAt);
+        await writeCheckpoint(results, items, processed, startedAt);
         completedSinceCheckpoint = 0;
       }
     }
@@ -248,13 +264,13 @@ if (!Array.isArray(input)) throw new Error('Query file must be an array');
 const records = input.map((item) => typeof item === 'string' ? { name: item } : item).filter((item) => item?.name);
 
 const checkpoint = await loadCheckpoint(records);
-const initialResults = checkpoint?.results?.map((result, index) => index < (checkpoint.nextIndex ?? 0) ? result : null).filter(Boolean) ?? [];
 const resumeCount = checkpoint ? Number(checkpoint.nextIndex ?? 0) : 0;
 
 console.log(`Commons free-video discovery: ${records.length} exercise queries`);
-console.log(`Rate-limit policy: concurrency=${concurrency}, delay=${delayMs}ms, retries=${maxRetries}`);
+console.log(`Rate-limit policy: concurrency=${concurrency}, requestGap=${requestGapMs}ms, delay=${delayMs}ms, retries=${maxRetries}`);
 console.log(resumeCount ? `Resuming from checkpoint: ${resumeCount}/${records.length}` : 'Starting fresh discovery');
-const results = await mapLimit(records, searchCommons, checkpoint ? checkpoint.results.map((result, index) => index < resumeCount ? result : null) : []);
+const initialResults = checkpoint ? checkpoint.results.map((result, index) => index < resumeCount ? result : null) : [];
+const results = await mapLimit(records, searchCommons, initialResults.filter(Boolean));
 
 const flat = results.flatMap((result) => result?.ok ? result.candidates : []);
 const report = {
