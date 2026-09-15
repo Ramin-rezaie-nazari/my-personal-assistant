@@ -61,16 +61,39 @@ function slug(value) {
 }
 
 function licenseUrl(candidate) {
-  switch (candidate.licenseClass) {
+  const license = String(candidate?.license ?? '').toLowerCase().replace(/\s+/g, ' ').trim();
+  switch (candidate?.licenseClass) {
     case 'cc0':
       return 'https://creativecommons.org/publicdomain/zero/1.0/';
     case 'cc-by':
+      if (license.includes('3.0')) return 'https://creativecommons.org/licenses/by/3.0/';
+      if (license.includes('2.0')) return 'https://creativecommons.org/licenses/by/2.0/';
+      if (license.includes('1.0')) return 'https://creativecommons.org/licenses/by/1.0/';
       return 'https://creativecommons.org/licenses/by/4.0/';
     case 'public-domain':
-      return 'https://creativecommons.org/publicdomain/mark/1.0/';
+      return candidate.sourceUrl || 'https://commons.wikimedia.org/wiki/Commons:Copyright_tags#Public_domain';
     default:
       return null;
   }
+}
+
+function fileExtension(candidate) {
+  const mime = String(candidate?.mimeType ?? '').toLowerCase();
+  if (mime === 'video/mp4') return 'mp4';
+  if (mime === 'video/webm') return 'webm';
+  if (mime === 'video/ogg') return 'ogv';
+  if (mime === 'video/quicktime') return 'mov';
+  if (mime === 'video/x-m4v') return 'm4v';
+
+  try {
+    const pathname = new URL(candidate.mediaUrl).pathname;
+    const match = pathname.match(/\.([a-z0-9]{2,5})$/i);
+    if (match) return match[1].toLowerCase();
+  } catch {
+    // Fall back to a conservative extension when the media URL is unusual.
+  }
+
+  return 'bin';
 }
 
 function promoteCandidate(candidate) {
@@ -81,7 +104,7 @@ function promoteCandidate(candidate) {
 
   return {
     exerciseId: candidate.exerciseId,
-    filename: `${slug(candidate.exerciseId || candidate.query || candidate.title)}-${slug(candidate.title)}.webm`,
+    filename: `${slug(candidate.exerciseId || candidate.query || candidate.title)}-${slug(candidate.title)}.${fileExtension(candidate)}`,
     approved: true,
     acquisitionMode: 'open_license',
     rightsBasis: candidate.license || candidate.licenseClass,
@@ -127,6 +150,8 @@ const manifest = {
   policy: 'Exact Wikimedia Commons match + CC0/CC BY/Public Domain asset-level metadata only. No BODINEXT mirroring and no generic third-party scraping.',
   queryPath,
   candidateReport: candidatesPath,
+  queryCount: queryInput.length,
+  discoveryErrorCount: Number(report.discoveryErrors ?? 0),
   approvedCount: approved.length,
   records: approved,
 };
@@ -136,6 +161,9 @@ await fs.writeFile(approvedPath, `${JSON.stringify(approved, null, 2)}\n`, 'utf8
 await fs.writeFile(reportPath, `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
 
 console.log(`Promoted ${approved.length} exact open-license assets to ${approvedPath}`);
+if (manifest.discoveryErrorCount) {
+  console.warn(`Discovery completed with ${manifest.discoveryErrorCount} query errors; affected queries were retained in the candidate report.`);
+}
 
 if (shouldDownload) {
   const args = [path.join(toolsDir, 'download-approved-exercise-media.mjs'), approvedPath, outputDir];
