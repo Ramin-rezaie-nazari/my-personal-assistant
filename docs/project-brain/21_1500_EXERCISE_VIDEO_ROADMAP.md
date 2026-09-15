@@ -35,6 +35,18 @@ The current free-first discovery pass uses 51 canonical exercise queries and pro
 
 This baseline proves the discovery pipeline works, but it does **not** prove production media coverage. The next stages must optimize exact exercise coverage and rights evidence.
 
+## Implemented acceleration infrastructure
+
+The repository now contains the implementation needed to move the workstream from the 51-item starter set toward the 1,500-item target:
+
+- `tools/build-fitness-canonical-1500.mjs` builds a deterministic 1,500-row canonical metadata catalog from openly published exercise metadata sources and deliberately excludes source media from the catalog build.
+- `tools/build-fitness-video-acquisition-queue.mjs` creates a resumable one-row-per-exercise queue with batch numbers and lifecycle status fields.
+- `tools/run-fitness-1500-video-pipeline.mjs` orchestrates canonical catalog creation, queue creation, exact Wikimedia Commons discovery, rights-safe open-license promotion and completion-gate reporting, with optional approved-media download.
+- `tools/check-fitness-media-tools.mjs` syntax-checks the expanded media toolchain.
+- `apps/backend/package.json` exposes `fitness:media:canonical:build`, `fitness:media:queue:build`, `fitness:media:1500` and `fitness:media:1500:download`.
+
+These tools are designed so the expensive work remains resumable and observable. They do not claim that an external license exists merely because an asset was found.
+
 ## Completion roadmap
 
 ### Phase 0 — Lock the canonical 1,500-exercise source of truth
@@ -233,12 +245,14 @@ APPROVED VIDEO COVERAGE = 1500 / 1500 (100%)
 - Preserve provenance and auditability for every approved asset.
 - Prefer an approved exact video over many weaker approximate candidates.
 
-## Immediate next milestones
+## Immediate execution sequence
 
-1. Commit the authoritative 1,500-exercise catalog and aliases.
-2. Generate the 1,500-row media acquisition/coverage queue.
-3. Upgrade discovery tools to consume the full 1,500 catalog rather than the current 51-item starter file.
-4. Add exercise-specific gap queries and source prioritization.
-5. Improve rights evidence extraction and create a human-approval manifest workflow.
-6. Begin closing the long tail of uncovered exercises in measured batches.
-7. Do not declare completion until the validated approval coverage report reaches 1500/1500.
+1. Run the canonical 1,500 catalog builder.
+2. Build the 1,500-row acquisition queue.
+3. Execute the master 1,500-item exact Commons discovery pass with live progress.
+4. Promote only exact CC0/CC BY/Public Domain candidates into the approved-manifest lane.
+5. Measure coverage and produce a gap list for every unsatisfied exercise.
+6. Re-run discovery only for gaps and rights-review candidates in resumable batches.
+7. Feed the remaining tail into the licensed fallback lane; the repository must not fabricate a license when a real commercial grant is required.
+8. Download, validate and connect only approved assets to `ExerciseMedia`.
+9. Continue until the validated approval coverage report reaches `1500/1500`.
