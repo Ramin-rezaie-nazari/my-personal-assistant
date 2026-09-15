@@ -14,10 +14,10 @@ const jsTools = [
   'tools/discover-free-exercise-videos-commons.mjs',
   'tools/discover-fitness-media-federated.mjs',
   'tools/discover-fitness-1000-sources.mjs',
-  'tools/discover-fitness-1000-sources-search.mjs',
   'tools/merge-fitness-source-discovery.mjs',
   'tools/discover-fitness-video-assets-from-sources.mjs',
   'tools/review-fitness-video-rights.mjs',
+  'tools/summarize-fitness-media-coverage.mjs',
 ];
 
 for (const relativePath of jsTools) {
