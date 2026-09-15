@@ -106,7 +106,8 @@ async function getJson(url) {
     await acquireRequestSlot();
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'MYPA-free-exercise-discovery/1.0 (research; contact project maintainer)',
+        'User-Agent': 'MYPA-free-exercise-discovery/1.0 (https://github.com/Ramin-rezaie-nazari/my-personal-assistant) node-fetch/undici',
+        'Api-User-Agent': 'MYPA-free-exercise-discovery/1.0 (https://github.com/Ramin-rezaie-nazari/my-personal-assistant)',
         Accept: 'application/json',
       },
     });
