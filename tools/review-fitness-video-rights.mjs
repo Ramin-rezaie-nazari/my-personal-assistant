@@ -20,6 +20,7 @@ const outputPath = path.resolve(process.argv[3] ?? 'data/fitness-media-video-rig
 const concurrency = Math.max(1, Number(process.env.FITNESS_MEDIA_RIGHTS_CONCURRENCY ?? 3));
 const timeoutSeconds = Math.max(10, Number(process.env.FITNESS_MEDIA_RIGHTS_TIMEOUT_SECONDS ?? 25));
 const maxCandidates = Math.max(1, Number(process.env.FITNESS_MEDIA_RIGHTS_MAX_CANDIDATES ?? 5000));
+const progressEvery = Math.max(1, Number(process.env.FITNESS_MEDIA_RIGHTS_PROGRESS_EVERY ?? 10));
 const userAgent = process.env.FITNESS_MEDIA_SOURCE_USER_AGENT ?? 'MYPA-fitness-rights-review/1.0 (https://github.com/Ramin-rezaie-nazari/my-personal-assistant)';
 
 const licensePatterns = [
@@ -163,6 +164,35 @@ const allCandidates = Array.isArray(input?.candidates) ? input.candidates : [];
 const candidates = allCandidates.slice(0, maxCandidates);
 const queue = [...candidates];
 const results = [];
+const startedAt = Date.now();
+let completed = 0;
+let failed = 0;
+
+function currentCounts() {
+  return {
+    openLicenseStrong: results.filter((x) => x.bucket === 'open-license-strong').length,
+    publicDomain: results.filter((x) => x.bucket === 'public-domain-candidate').length,
+    commercial: results.filter((x) => x.bucket === 'commercial-license-lead').length,
+    blocked: results.filter((x) => ['blocked-platform', 'noncommercial-blocked'].includes(x.bucket)).length,
+    manual: results.filter((x) => ['rights-review-required', 'sharealike-review', 'no-derivatives-review'].includes(x.bucket)).length,
+  };
+}
+
+function logProgress(force = false) {
+  if (!force && completed % progressEvery !== 0) return;
+  const elapsedSeconds = Math.max(0.1, (Date.now() - startedAt) / 1000);
+  const rate = completed / elapsedSeconds;
+  const remaining = Math.max(0, candidates.length - completed);
+  const etaSeconds = rate > 0 ? remaining / rate : 0;
+  const counts = currentCounts();
+  console.log(
+    `[rights ${completed}/${candidates.length}] success ${completed - failed} | failed ${failed} | ` +
+    `open ${counts.openLicenseStrong} | public-domain ${counts.publicDomain} | commercial ${counts.commercial} | ` +
+    `blocked ${counts.blocked} | manual ${counts.manual} | ${rate.toFixed(2)}/s | ETA ${Math.ceil(etaSeconds)}s`,
+  );
+}
+
+console.log(`Rights review: ${candidates.length} candidates, concurrency ${concurrency}`);
 
 async function worker() {
   while (true) {
@@ -185,11 +215,15 @@ async function worker() {
         approval: 'manual-rights-review',
         reason: `Source page fetch failed: ${error instanceof Error ? error.message : String(error)}`,
       });
+      failed += 1;
     }
+    completed += 1;
+    logProgress();
   }
 }
 
 await Promise.all(Array.from({ length: Math.min(concurrency, candidates.length) }, () => worker()));
+logProgress(true);
 results.sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
 
 const output = {
