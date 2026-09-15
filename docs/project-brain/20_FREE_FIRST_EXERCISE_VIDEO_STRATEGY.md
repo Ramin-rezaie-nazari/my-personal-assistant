@@ -1,6 +1,6 @@
 # MYPA Free-First Exercise Video Strategy
 
-Last updated: 2026-09-14
+Last updated: 2026-09-15
 Status: ACTIVE — FREE-FIRST DISCOVERY / RIGHTS-GATED ACQUISITION
 
 ## Business constraint
@@ -58,17 +58,33 @@ Large providers such as Your Move, Vital Animations, Funxtion, ExerciseVideoAPI,
 
 ## Discovery architecture
 
-The repo now contains a scalable Wikimedia Commons harvester:
+The repo contains a scalable Wikimedia Commons harvester:
 
 `tools/discover-free-exercise-videos-commons.mjs`
 
-It accepts an arbitrary list of exercise names/IDs, searches Commons at asset level, reads license/creator/media metadata, scores exactness and produces candidate records. It never auto-approves media.
+It accepts an arbitrary list of exercise names/IDs, searches Commons at asset level, reads license/creator/media metadata, scores exactness and produces candidate records.
 
-For 1,500 exercises, the intended batch is:
+A free-first orchestration runner now exists:
 
-`1500 exercise queries → Commons candidates → exact-match score → license class → human/content-policy approval → approved manifest → controlled downloader`
+`tools/run-free-exercise-video-pipeline.mjs`
 
-The system can be run over a larger query universe if additional naming variants are needed.
+It discovers candidates, promotes only exact CC0 / CC BY / Public Domain matches into a generated manifest, and optionally invokes the rights-gated downloader.
+
+## Executable terminal workflow
+
+From the repository root, the current configured free-first batch can be run with:
+
+```bash
+cd apps/backend && pnpm fitness:media:free:download
+```
+
+Safe preview without downloading:
+
+```bash
+cd apps/backend && pnpm fitness:media:free:dry-run
+```
+
+The same runner accepts a larger custom query file. For the eventual 1,500-exercise sweep, the query file should contain every canonical exercise ID/name plus carefully selected aliases. The runner will then produce a generated approved manifest for exact eligible Commons matches and download only those records.
 
 ## Download gate
 
@@ -86,14 +102,7 @@ The downloader streams to disk, calculates SHA-256, verifies optional expected c
 
 ## Current free-media evidence
 
-Current web research confirms:
-
-- Commons has a dedicated strength-training exercise-video category with 27 listed files, including several exact demonstration clips.
-- The exact FitnessScape exercise demos are licensed CC BY 3.0 on their Commons pages.
-- Commons contains additional CC BY/CC BY-SA exercise/yoga/fitness demonstrations; CC BY assets are preferred for the initial commercial-safe free batch.
-- SeniorForm publishes downloadable exercise video files as CC BY-SA 4.0.
-- Pixabay currently advertises hundreds to thousands of free exercise/workout clips, but its Content License and standalone-redistribution restrictions prevent treating the whole library as an automatically safe exercise catalog.
-- Videvo exposes free gym/functional-exercise clips with multiple asset-specific license types; only compatible licenses should be selected.
+Current research has verified multiple exact CC-licensed Wikimedia demonstrations and identified additional open-license/public-domain families, including government footage and open-source exercise-video projects. Paid providers remain fallback leads because the current operating environment cannot reliably procure them internationally.
 
 ## Hard rule about "free"
 
@@ -103,13 +112,11 @@ The asset must have a reuse basis compatible with MYPA's intended commercial app
 
 ## Next target
 
-The next content batches should prioritize:
-
-1. Full Commons exercise-query sweep over the 1,500 canonical movement names and aliases.
-2. Commons category expansion for strength, cardio, stretching, yoga, Pilates, mobility, rehabilitation and calisthenics.
-3. Government/public-domain exercise-video expansion.
-4. Open-source/CC exercise video libraries such as SeniorForm.
-5. Only after free coverage is measured, determine whether any remaining gaps justify a later licensed vendor strategy.
+1. Expand the query corpus from the current starter set to the full 1,500 canonical movements and aliases.
+2. Run the free-first Commons sweep over that complete corpus.
+3. Expand discovery through strength, cardio, stretching, yoga, Pilates, mobility, rehabilitation and calisthenics categories.
+4. Add government/public-domain and open-source exercise-video candidates.
+5. Measure exact approved coverage before considering any paid provider.
 
 The success metric is not "number of sites found". The success metric is:
 
