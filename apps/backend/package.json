@@ -22,6 +22,10 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "node ./test/prepare-e2e-db.cjs && jest --config ./test/jest-e2e.json --runInBand",
     "pretest:e2e": "prisma generate",
+    "fitness:media:discover": "node ../../tools/discover-free-exercise-videos-commons.mjs",
+    "fitness:media:free": "node ../../tools/run-free-exercise-video-pipeline.mjs",
+    "fitness:media:free:download": "node ../../tools/run-free-exercise-video-pipeline.mjs",
+    "fitness:media:validate": "node ../../tools/validate-fitness-source-registry.mjs",
     "recipe-images:import": "node ./scripts/recipe-image-import.mjs",
     "recipe-images:dataset": "node ./scripts/recipe-image-dataset-import-v2.mjs",
     "recipe-images:reprocess-quality": "node ./scripts/recipe-image-reprocess-quality.mjs",
@@ -81,6 +85,7 @@
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
