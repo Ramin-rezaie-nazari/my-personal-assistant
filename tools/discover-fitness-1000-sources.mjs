@@ -16,7 +16,10 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
+const execFileAsync = promisify(execFile);
 const inventoryPath = path.resolve(process.argv[2] ?? 'data/fitness-media-source-inventory.seed.json');
 const outputPath = path.resolve(process.argv[3] ?? 'data/fitness-media-1000-source-discovery.generated.json');
 const targetSources = Math.max(1, Number(process.env.FITNESS_MEDIA_TARGET_SOURCES ?? 1000));
@@ -24,46 +27,76 @@ const maxPerPattern = Math.max(1, Number(process.env.FITNESS_MEDIA_SOURCE_RESULT
 const delayMs = Math.max(1000, Number(process.env.FITNESS_MEDIA_SOURCE_DISCOVERY_DELAY_MS ?? 1500));
 const retryCount = Math.max(0, Number(process.env.FITNESS_MEDIA_SOURCE_DISCOVERY_RETRIES ?? 4));
 const userAgent = process.env.FITNESS_MEDIA_SOURCE_USER_AGENT ?? 'MYPA-fitness-source-discovery/1.0 (https://github.com/Ramin-rezaie-nazari/my-personal-assistant)';
+const httpClient = process.env.FITNESS_MEDIA_SOURCE_HTTP_CLIENT ?? 'auto';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const isTransportError = (error) => !error?.status;
+
+async function requestWithCurl(url, responseMode) {
+  const accept = responseMode === 'json'
+    ? 'application/json'
+    : 'application/x-ndjson, application/json, text/plain';
+
+  const { stdout } = await execFileAsync('curl', [
+    '--fail-with-body',
+    '--silent',
+    '--show-error',
+    '--location',
+    '--max-time',
+    '90',
+    '--retry',
+    '2',
+    '--retry-delay',
+    '3',
+    '--retry-all-errors',
+    '--user-agent',
+    userAgent,
+    '--header',
+    `Accept: ${accept}`,
+    String(url),
+  ], { maxBuffer: 50 * 1024 * 1024 });
+
+  return responseMode === 'json' ? JSON.parse(stdout) : stdout;
+}
 
 async function requestWithRetry(url, responseMode) {
   let lastError;
 
   for (let attempt = 0; attempt <= retryCount; attempt += 1) {
     try {
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': userAgent,
-          Accept: responseMode === 'json' ? 'application/json' : 'application/x-ndjson, application/json, text/plain',
-        },
-      });
+      if (httpClient === 'curl') return await requestWithCurl(url, responseMode);
 
-      if (response.ok) {
-        return responseMode === 'json' ? response.json() : response.text();
+      try {
+        const response = await fetch(url, {
+          headers: {
+            'User-Agent': userAgent,
+            Accept: responseMode === 'json' ? 'application/json' : 'application/x-ndjson, application/json, text/plain',
+          },
+        });
+
+        if (response.ok) {
+          return responseMode === 'json' ? response.json() : response.text();
+        }
+
+        const error = new Error(`HTTP ${response.status} for ${url}`);
+        error.status = response.status;
+        error.retryAfter = response.headers.get('retry-after');
+        throw error;
+      } catch (error) {
+        if (httpClient !== 'auto' || !isTransportError(error)) throw error;
+        console.log('  ↪ fetch transport failed; trying curl fallback');
+        return await requestWithCurl(url, responseMode);
       }
-
-      const error = new Error(`HTTP ${response.status} for ${url}`);
-      error.status = response.status;
-      error.retryAfter = response.headers.get('retry-after');
-      lastError = error;
-
-      const retryable = [408, 429, 500, 502, 503, 504].includes(response.status);
-      if (!retryable || attempt >= retryCount) throw error;
-
-      const retryAfter = Number(response.headers.get('retry-after') ?? 0);
-      const backoff = retryAfter > 0
-        ? retryAfter * 1000
-        : Math.min(60000, 3000 * (2 ** attempt));
-      console.log(`  ↻ retry ${attempt + 1}/${retryCount} after ${Math.ceil(backoff / 1000)}s (${response.status})`);
-      await sleep(backoff);
     } catch (error) {
       lastError = error;
-      const transportRetryable = !error?.status || [408, 425, 429, 500, 502, 503, 504].includes(error.status);
-      if (!transportRetryable || attempt >= retryCount) throw error;
+      const retryable = !error?.status || [408, 425, 429, 500, 502, 503, 504].includes(error.status);
+      if (!retryable || attempt >= retryCount) throw error;
 
-      const backoff = Math.min(60000, 4000 * (2 ** attempt));
-      const reason = error?.code ? `${error.code}` : 'transport error';
+      const retryAfter = Number(error?.retryAfter ?? 0);
+      const backoff = retryAfter > 0
+        ? retryAfter * 1000
+        : Math.min(60000, 4000 * (2 ** attempt));
+      const reason = error?.code ? `${error.code}` : error?.status ? `HTTP ${error.status}` : 'transport error';
       console.log(`  ↻ retry ${attempt + 1}/${retryCount} after ${Math.ceil(backoff / 1000)}s (${reason})`);
       await sleep(backoff);
     }
@@ -142,6 +175,7 @@ for (const pattern of patterns) {
   console.log(`[pattern ${patternIndex}/${patterns.length}] ${elapsed}s | ${pattern}`);
 
   try {
+    // Stay intentionally serial and pace requests to respect Common Crawl's API guidance.
     const raw = await requestWithRetry(queryUrl, 'text');
     let addedForPattern = 0;
 
@@ -178,14 +212,16 @@ for (const pattern of patterns) {
       pattern,
       error: error instanceof Error ? error.message : String(error),
       status: error?.status ?? null,
-      code: error?.code ?? error?.cause?.code ?? null,
       retryAfter: error?.retryAfter ?? null,
+      code: error?.code ?? null,
     };
     failures.push(failure);
     const isRateLimited = [429, 502, 503, 504].includes(failure.status);
     consecutiveRateLimitFailures = isRateLimited ? consecutiveRateLimitFailures + 1 : 0;
-    console.log(`  ✗ ${failure.error}${failure.code ? ` [${failure.code}]` : ''}`);
+    console.log(`  ✗ ${failure.error}`);
 
+    // If Common Crawl is actively rate-limiting this IP, do not burn through the
+    // remaining patterns and risk making the temporary block worse.
     if (consecutiveRateLimitFailures >= 3) {
       console.log('  ! Stopping after 3 consecutive rate-limit/server failures; retry later with the same paced runner.');
       break;
