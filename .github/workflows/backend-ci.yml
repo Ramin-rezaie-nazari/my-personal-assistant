@@ -12,7 +12,7 @@ on:
       - 'pnpm-lock.yaml'
       - '.github/workflows/backend-ci.yml'
 
-ojobs:
+jobs:
   backend:
     runs-on: ubuntu-latest
 
