@@ -19,6 +19,8 @@ const jsTools = [
   'tools/discover-fitness-video-assets-from-sources.mjs',
   'tools/review-fitness-video-rights.mjs',
   'tools/summarize-fitness-media-coverage.mjs',
+  'tools/build-fitness-canonical-1500.mjs',
+  'tools/build-fitness-video-acquisition-queue.mjs',
 ];
 
 for (const relativePath of jsTools) {
