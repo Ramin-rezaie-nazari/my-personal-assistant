@@ -21,6 +21,7 @@ const jsTools = [
   'tools/summarize-fitness-media-coverage.mjs',
   'tools/build-fitness-canonical-1500.mjs',
   'tools/build-fitness-video-acquisition-queue.mjs',
+  'tools/build-fitness-video-gap-queues.mjs',
   'tools/run-fitness-1500-video-pipeline.mjs',
 ];
 
