@@ -4,9 +4,9 @@
  * Master 1,500-exercise video pipeline.
  *
  * Flow: canonical catalog -> acquisition queue -> Wikimedia exact discovery
- * -> rights-safe open-license promotion -> coverage report -> optional download.
- * Anything not satisfied by the free/open lane remains explicitly unresolved;
- * this script never invents rights or marks third-party assets as approved.
+ * -> rights-safe open-license promotion -> coverage report -> explicit gap queues
+ * -> optional download. Anything not satisfied by the free/open lane remains
+ * unresolved; this script never invents rights or marks third-party assets as approved.
  */
 
 import fs from 'node:fs/promises';
@@ -23,6 +23,8 @@ const commonsQueryPath = path.join(dataDir, 'fitness-1500-commons-queries.genera
 const commonsCandidatesPath = path.join(dataDir, 'fitness-1500-video-candidates.commons.json');
 const approvedPath = path.join(dataDir, 'fitness-1500-approved-video-manifest.generated.json');
 const reportPath = path.join(dataDir, 'fitness-1500-video-completion.generated.json');
+const gapQueuePath = path.join(dataDir, 'fitness-1500-video-gap-queue.generated.json');
+const selfProductionPath = path.join(dataDir, 'fitness-1500-video-self-production.queue.generated.json');
 const shouldDownload = process.argv.includes('--download');
 const batchSize = Math.max(1, Number(process.env.FITNESS_MEDIA_BATCH_SIZE ?? 50));
 
@@ -106,8 +108,9 @@ console.log(`Wrote ${commonsQueryPath}`);
 
 console.log('=== PHASE 2: 1500-EXERCISE FREE-FIRST VIDEO DISCOVERY ===');
 await run(process.execPath, [path.join(toolsDir, 'discover-free-exercise-videos-commons.mjs'), commonsQueryPath, commonsCandidatesPath], {
-  COMMONS_VIDEO_CONCURRENCY: process.env.COMMONS_VIDEO_CONCURRENCY ?? '2',
-  COMMONS_VIDEO_DELAY_MS: process.env.COMMONS_VIDEO_DELAY_MS ?? '400',
+  COMMONS_VIDEO_CONCURRENCY: process.env.COMMONS_VIDEO_CONCURRENCY ?? '1',
+  COMMONS_VIDEO_DELAY_MS: process.env.COMMONS_VIDEO_DELAY_MS ?? '1500',
+  COMMONS_VIDEO_REQUEST_GAP_MS: process.env.COMMONS_VIDEO_REQUEST_GAP_MS ?? '1800',
   COMMONS_VIDEO_MAX_RESULTS: process.env.COMMONS_VIDEO_MAX_RESULTS ?? '10',
 });
 
@@ -156,8 +159,16 @@ console.log(`Discovery errors: ${completion.discoveryErrorCount}`);
 console.log(`GREEN 1500/1500 gate: ${completion.greenGate ? 'YES' : 'NO'}`);
 console.log(`Completion report: ${reportPath}`);
 
+console.log('=== PHASE 4: BUILD ZERO-COST GAP QUEUES ===');
+await run(process.execPath, [
+  path.join(toolsDir, 'build-fitness-video-gap-queues.mjs'),
+  reportPath,
+  gapQueuePath,
+  selfProductionPath,
+]);
+
 if (shouldDownload && approved.length) {
-  console.log('=== PHASE 4: DOWNLOAD APPROVED FREE/OPEN MEDIA ===');
+  console.log('=== PHASE 5: DOWNLOAD APPROVED FREE/OPEN MEDIA ===');
   await run(process.execPath, [path.join(toolsDir, 'download-approved-exercise-media.mjs'), approvedPath, path.join(dataDir, 'fitness-media')]);
 } else {
   console.log('Download not requested; no media files were fetched by this master runner.');
