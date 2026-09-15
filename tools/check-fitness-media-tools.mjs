@@ -3,10 +3,12 @@
 /** Lightweight syntax/fixture guard for the fitness media toolchain. */
 
 import fs from 'node:fs/promises';
+import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
 const execFileAsync = promisify(execFile);
+const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 
 const jsTools = [
   'tools/discover-free-exercise-videos-commons.mjs',
@@ -18,9 +20,10 @@ const jsTools = [
   'tools/review-fitness-video-rights.mjs',
 ];
 
-for (const file of jsTools) {
-  await execFileAsync(process.execPath, ['--check', file]);
-  console.log(`✓ syntax ${file}`);
+for (const relativePath of jsTools) {
+  const file = path.join(repoRoot, relativePath);
+  await execFileAsync(process.execPath, ['--check', file], { cwd: repoRoot });
+  console.log(`✓ syntax ${relativePath}`);
 }
 
 const jsonFixtures = [
@@ -28,13 +31,14 @@ const jsonFixtures = [
   'data/fitness-media-source-inventory.seed.json',
 ];
 
-for (const file of jsonFixtures) {
+for (const relativePath of jsonFixtures) {
+  const file = path.join(repoRoot, relativePath);
   const parsed = JSON.parse(await fs.readFile(file, 'utf8'));
-  if (file.endsWith('fitness-free-video-queries.sample.json') && !Array.isArray(parsed)) {
-    throw new Error(`${file}: expected an array`);
+  if (relativePath.endsWith('fitness-free-video-queries.sample.json') && !Array.isArray(parsed)) {
+    throw new Error(`${relativePath}: expected an array`);
   }
-  if (file.endsWith('fitness-media-source-inventory.seed.json') && !Array.isArray(parsed?.sources)) {
-    throw new Error(`${file}: expected { sources: [] }`);
+  if (relativePath.endsWith('fitness-media-source-inventory.seed.json') && !Array.isArray(parsed?.sources)) {
+    throw new Error(`${relativePath}: expected { sources: [] }`);
   }
-  console.log(`✓ json ${file}`);
+  console.log(`✓ json ${relativePath}`);
 }
