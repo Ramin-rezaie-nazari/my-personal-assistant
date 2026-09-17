@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["ExpoTranslateTextModule"] },
+  "android": { "modules": ["expo.modules.translatetext.ExpoTranslateTextModule"] }
+}
