@@ -4,10 +4,10 @@ export type SupportedAppLocale =
   | 'nl' | 'no' | 'pl' | 'pt' | 'ro' | 'ru' | 'sk' | 'sl' | 'sq' | 'sv' | 'sw' | 'ta' | 'te' | 'th' | 'tl' | 'tr'
   | 'uk' | 'ur' | 'vi' | 'zh';
 
-/** Regional locales are separate from the 51 base languages. */
-export type RegionalAppLocale = 'az-IR';
+/** Regional locale used for Azerbaijani Turkish in Iran. Turkish (Türkiye) remains `tr`. */
+export type RegionalAppLocale = 'az';
 /** Legacy codes remain type-compatible for historical source files but are never selectable/persisted. */
-export type LegacyAppLocale = 'az' | 'sr' | 'pa' | 'zh-CN' | 'zh-TW' | 'fil' | 'am' | 'so' | 'kk' | 'uz' | 'hy' | 'ku' | 'nb';
+export type LegacyAppLocale = 'sr' | 'pa' | 'zh-CN' | 'zh-TW' | 'fil' | 'am' | 'so' | 'kk' | 'uz' | 'hy' | 'ku' | 'nb';
 export type AppLocale = SupportedAppLocale | RegionalAppLocale | LegacyAppLocale;
 
 export type AppLanguage = {
@@ -73,7 +73,7 @@ export const SUPPORTED_LANGUAGES: readonly AppLanguage[] = [
 ] as const;
 
 export const REGIONAL_LANGUAGE_VARIANTS: readonly AppLanguage[] = [
-  { code: 'az-IR', englishName: 'Azerbaijani Turkish (Iran)', nativeName: 'Türki (İran)', regional: true },
+  { code: 'az', englishName: 'Azerbaijani Turkish (Iran)', nativeName: 'Türki (ایران)', regional: true },
 ] as const;
 
 export const LANGUAGE_OPTIONS: readonly AppLanguage[] = [...SUPPORTED_LANGUAGES, ...REGIONAL_LANGUAGE_VARIANTS];
@@ -95,7 +95,6 @@ export function isRTL(code: AppLocale): boolean {
 }
 
 export function getTranslationLocaleCode(locale: AppLocale): string {
-  if (locale === 'az-IR') return 'az';
   if (locale === 'zh-CN' || locale === 'zh-TW') return 'zh';
   if (locale === 'fil') return 'fil';
   return locale;
