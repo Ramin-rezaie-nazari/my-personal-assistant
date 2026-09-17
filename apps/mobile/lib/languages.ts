@@ -4,15 +4,16 @@ export type SupportedAppLocale =
   | 'nl' | 'no' | 'pl' | 'pt' | 'ro' | 'ru' | 'sk' | 'sl' | 'sq' | 'sv' | 'sw' | 'ta' | 'te' | 'th' | 'tl' | 'tr'
   | 'uk' | 'ur' | 'vi' | 'zh';
 
-/** Legacy codes remain in the type only so old source files can compile safely. They are not selectable or persisted. */
-type LegacyLocale = 'az' | 'sr' | 'pa' | 'zh-CN' | 'zh-TW' | 'fil' | 'am' | 'so' | 'kk' | 'uz' | 'hy' | 'ku' | 'nb';
-export type AppLocale = SupportedAppLocale | LegacyLocale;
+/** Regional locales are not counted as additional base languages. */
+export type RegionalAppLocale = 'az-IR';
+export type AppLocale = SupportedAppLocale | RegionalAppLocale;
 
 export type AppLanguage = {
-  code: SupportedAppLocale;
+  code: AppLocale;
   englishName: string;
   nativeName: string;
   rtl?: boolean;
+  regional?: boolean;
 };
 
 export const SUPPORTED_LANGUAGES: readonly AppLanguage[] = [
@@ -62,24 +63,35 @@ export const SUPPORTED_LANGUAGES: readonly AppLanguage[] = [
   { code: 'te', englishName: 'Telugu', nativeName: 'తెలుగు' },
   { code: 'th', englishName: 'Thai', nativeName: 'ไทย' },
   { code: 'tl', englishName: 'Filipino', nativeName: 'Filipino' },
-  { code: 'tr', englishName: 'Turkish', nativeName: 'Türkçe' },
+  { code: 'tr', englishName: 'Turkish (Türkiye)', nativeName: 'Türkçe (Türkiye)' },
   { code: 'uk', englishName: 'Ukrainian', nativeName: 'Українська' },
   { code: 'ur', englishName: 'Urdu', nativeName: 'اردو', rtl: true },
   { code: 'vi', englishName: 'Vietnamese', nativeName: 'Tiếng Việt' },
   { code: 'zh', englishName: 'Chinese', nativeName: '中文' },
 ] as const;
 
+export const REGIONAL_LANGUAGE_VARIANTS: readonly AppLanguage[] = [
+  { code: 'az-IR', englishName: 'Azerbaijani Turkish (Iran)', nativeName: 'Türki (İran)', regional: true },
+] as const;
+
+export const LANGUAGE_OPTIONS: readonly AppLanguage[] = [...SUPPORTED_LANGUAGES, ...REGIONAL_LANGUAGE_VARIANTS];
+export const SUPPORTED_LANGUAGE_COUNT = SUPPORTED_LANGUAGES.length;
+
 export const DEFAULT_LOCALE: AppLocale = 'en';
-const SUPPORTED_CODES = new Set<SupportedAppLocale>(SUPPORTED_LANGUAGES.map((language) => language.code));
+const SUPPORTED_CODES = new Set<AppLocale>(LANGUAGE_OPTIONS.map((language) => language.code));
 
 export function isSupportedLocale(value?: string | null): value is AppLocale {
-  return Boolean(value && SUPPORTED_CODES.has(value as SupportedAppLocale));
+  return Boolean(value && SUPPORTED_CODES.has(value as AppLocale));
 }
 
 export function getLanguage(code: AppLocale): AppLanguage {
-  return SUPPORTED_LANGUAGES.find((language) => language.code === code) ?? SUPPORTED_LANGUAGES[0];
+  return LANGUAGE_OPTIONS.find((language) => language.code === code) ?? SUPPORTED_LANGUAGES[0];
 }
 
 export function isRTL(code: AppLocale): boolean {
-  return code === 'ku' || getLanguage(code).rtl === true;
+  return getLanguage(code).rtl === true;
+}
+
+export function getTranslationLocaleCode(locale: AppLocale): string {
+  return locale === 'az-IR' ? 'az' : locale;
 }
