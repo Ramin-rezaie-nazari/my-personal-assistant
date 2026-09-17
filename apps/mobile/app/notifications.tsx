@@ -6,6 +6,7 @@ import { Notification, generateSmartNotifications, getNotifications, hasAuthSess
 import { useAppLocale, type AppLocale, toIntlLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 import { BRAND } from '../lib/branding';
+import { translateDynamicText } from '../lib/runtime-translator';
 
 const TYPE_MARK: Record<string, string> = { hydration:'H', nutrition:'N', workout:'W', habit:'A', supplement:'S', reminder:'R' };
 const copy = localizedCopy({
@@ -13,8 +14,14 @@ const copy = localizedCopy({
   fa:{ eyebrow:'دستیار شخصی',title:'اعلان‌ها',subtitle:'یادآوری‌ها و پیشنهادهای دستیار که مهم‌ترها در اولویت نمایش داده می‌شوند.',home:'خانه',calendar:'تقویم',today:'امروز',unread:'خوانده‌نشده',all:'همه',markAll:'همه را خوانده‌شده کن',generate:'به‌روزرسانی پیشنهادها',generating:'در حال به‌روزرسانی…',retry:'تلاش دوباره',unavailable:'صندوق اعلان در دسترس نیست',emptyUnreadTitle:'همه‌چیز مرتبه',emptyUnreadBody:'فعلاً اعلان خوانده‌نشده‌ای از طرف دستیار نداری.',emptyAllTitle:'هنوز اعلانی نیست',emptyAllBody:'هر وقت چیزی در روزت نیاز به توجه داشته باشد، اینجا می‌بینی.',markRead:'خوانده‌شده',read:'خوانده‌شده',important:'مهم',helpful:'مفید',nice:'برای اطلاع',work:'در حال انجام…',loading:'در حال بارگذاری اعلان‌ها…',generated:(count:number)=>count?`${count} پیشنهاد جدید اضافه شد.`:'فعلاً پیشنهاد جدیدی وجود ندارد.'},
 });
 
-function priorityLabel(priority:number,text:Record<string,any>){return priority<=1?text.important:priority===2?text.helpful:text.nice;}
-function formatDateTime(value:string, locale:AppLocale){return new Date(value).toLocaleString(toIntlLocale(locale));}
+function priorityLabel(priority:number,text: { important:string; helpful:string; nice:string }) { return priority <= 1 ? text.important : priority === 2 ? text.helpful : text.nice; }
+function formatDateTime(value:string, locale:AppLocale) { return new Date(value).toLocaleString(toIntlLocale(locale)); }
+
+function DynamicNotificationCopy({ text, locale, rtl, style, numberOfLines }: { text:string; locale:AppLocale; rtl:boolean; style?:any; numberOfLines?:number }) {
+  const [value,setValue]=useState(text);
+  useEffect(()=>{let active=true;void (async()=>{if(locale==='en'){setValue(text);return}try{setValue(await translateDynamicText(locale,text))}catch{setValue(text)}})();return()=>{active=false}},[locale,text]);
+  return <Text numberOfLines={numberOfLines} style={[style,rtl&&styles.rtlText]}>{value}</Text>;
+}
 
 export default function NotificationsScreen(){
  const {locale,rtl}=useAppLocale(); const text=copy[locale];
@@ -26,16 +33,17 @@ export default function NotificationsScreen(){
  const clearAll=async()=>{try{setClearing(true);await markAllNotificationsRead();setItems(current=>showAll?current.map(item=>({...item,readAt:new Date().toISOString()})):[])}catch(err){setError(err instanceof Error?err.message:text.unavailable)}finally{setClearing(false)}};
  const generate=async()=>{try{setGenerating(true);const result=await generateSmartNotifications();setMessage(text.generated(result.created));await load(showAll)}catch(err){setError(err instanceof Error?err.message:text.unavailable)}finally{setGenerating(false)}};
  if(loading)return <View style={styles.center}><ActivityIndicator size="large"/><Text style={[styles.loadingText,rtl&&styles.rtlText]}>{text.loading}</Text></View>;
- const emptyTitle=showAll?text.emptyAllTitle:text.emptyUnreadTitle,emptyBody=showAll?text.emptyAllBody:text.emptyUnreadBody;
+ const emptyTitle = showAll ? text.emptyAllTitle : text.emptyUnreadTitle;
+ const emptyBody = showAll ? text.emptyAllBody : text.emptyUnreadBody;
  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{setRefreshing(true);void load(showAll)}}}>
   <View style={[styles.nav,rtl&&styles.rowReverse]}><Pressable onPress={()=>router.replace('/')}><Text style={styles.navText}>{rtl?'→ ':'← '}{text.home}</Text></Pressable><View style={styles.navRight}><Pressable onPress={()=>router.push('/calendar')}><Text style={styles.navText}>{text.calendar}</Text></Pressable><Pressable onPress={()=>router.push('/daily')}><Text style={styles.navText}>{text.today}</Text></Pressable></View></View>
   <View style={[styles.header,rtl&&styles.rowReverse]}><View style={styles.flex}><Text style={styles.eyebrow}>{text.eyebrow}</Text><Text style={[styles.title,rtl&&styles.rtlText]}>{text.title}</Text><Text style={[styles.subtitle,rtl&&styles.rtlText]}>{text.subtitle}</Text></View><View style={styles.count}><Text style={styles.countValue}>{unreadCount}</Text><Text style={styles.countLabel}>{text.unread}</Text></View></View>
   <View style={[styles.tabs,rtl&&styles.rowReverse]}><Pressable onPress={()=>{setShowAll(false);setLoading(true);void load(false)}} style={[styles.tab,!showAll&&styles.active]}><Text style={[styles.tabText,!showAll&&styles.activeText]}>{text.unread}</Text></Pressable><Pressable onPress={()=>{setShowAll(true);setLoading(true);void load(true)}} style={[styles.tab,showAll&&styles.active]}><Text style={[styles.tabText,showAll&&styles.activeText]}>{text.all}</Text></Pressable><Pressable onPress={()=>void generate()} disabled={generating} style={styles.generate}><Text style={styles.generateText}>{generating?text.generating:text.generate}</Text></Pressable></View>
-  {message?<View style={styles.message}><Text style={styles.messageText}>{message}</Text></View>:null}
+  {message?<View style={styles.message}><DynamicNotificationCopy text={message} locale={locale} rtl={rtl} style={styles.messageText}/></View>:null}
   {items.length&&unreadCount>0?<Pressable onPress={()=>void clearAll()} disabled={clearing} style={styles.clear}><Text style={[styles.clearText,rtl&&styles.rtlText]}>{clearing?text.work:`${text.markAll} · ${unreadCount}`}</Text></Pressable>:null}
-  {error?<View style={styles.error}><Text style={[styles.errorTitle,rtl&&styles.rtlText]}>{text.unavailable}</Text><Text style={[styles.body,rtl&&styles.rtlText]}>{error}</Text><Pressable onPress={()=>void load(showAll)} style={styles.button}><Text style={styles.buttonText}>{text.retry}</Text></Pressable></View>:null}
+  {error?<View style={styles.error}><Text style={[styles.errorTitle,rtl&&styles.rtlText]}>{text.unavailable}</Text><DynamicNotificationCopy text={error} locale={locale} rtl={rtl} style={styles.body}/><Pressable onPress={()=>void load(showAll)} style={styles.button}><Text style={styles.buttonText}>{text.retry}</Text></Pressable></View>:null}
   {!error&&!items.length?<View style={styles.empty}><Text style={styles.emptyMark}>✓</Text><Text style={[styles.cardTitle,rtl&&styles.rtlText]}>{emptyTitle}</Text><Text style={[styles.body,rtl&&styles.rtlText]}>{emptyBody}</Text></View>:null}
-  {items.map(item=>{const readState=Boolean(item.readAt),mark=TYPE_MARK[item.type]??'M';return <View key={item.id} style={[styles.card,readState&&styles.readCard]}><View style={[styles.itemRow,rtl&&styles.rowReverse]}><View style={styles.typeMark}><Text style={styles.typeMarkText}>{mark}</Text></View><View style={styles.flex}><Text style={[styles.priority,rtl&&styles.rtlText]}>{priorityLabel(item.priority,text)}</Text><Text style={[styles.cardTitle,rtl&&styles.rtlText]}>{item.title}</Text>{item.body?<Text style={[styles.body,rtl&&styles.rtlText]}>{item.body}</Text>:null}<Text style={styles.meta}>{formatDateTime(item.scheduledAt??item.createdAt,locale)}</Text></View></View>{!readState?<Pressable onPress={()=>void read(item.id)} disabled={busyId===item.id} style={styles.button}><Text style={styles.buttonText}>{busyId===item.id?'…':text.markRead}</Text></Pressable>:<Text style={styles.readTag}>{text.read}</Text>}</View>})}
+  {items.map(item=>{const readState=Boolean(item.readAt),mark=TYPE_MARK[item.type]??'M';return <View key={item.id} style={[styles.card,readState&&styles.readCard]}><View style={[styles.itemRow,rtl&&styles.rowReverse]}><View style={styles.typeMark}><Text style={styles.typeMarkText}>{mark}</Text></View><View style={styles.flex}><Text style={[styles.priority,rtl&&styles.rtlText]}>{priorityLabel(item.priority,text)}</Text><DynamicNotificationCopy text={item.title} locale={locale} rtl={rtl} style={styles.cardTitle}/>{item.body?<DynamicNotificationCopy text={item.body} locale={locale} rtl={rtl} style={styles.body}/>:null}<Text style={styles.meta}>{formatDateTime(item.scheduledAt??item.createdAt,locale)}</Text></View></View>{!readState?<Pressable onPress={()=>void read(item.id)} disabled={busyId===item.id} style={styles.button}><Text style={styles.buttonText}>{busyId===item.id?'…':text.markRead}</Text></Pressable>:<Text style={styles.readTag}>{text.read}</Text>}</View>})}
  </ScrollView></SafeAreaView>;
 }
 
