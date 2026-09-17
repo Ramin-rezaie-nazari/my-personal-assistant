@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, FlatList, I18nManager, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { AppLocale, getStoredLocale, isRTL, setStoredLocale, t } from '../lib/i18n';
+import { AppLocale, getLanguage, isRTL, SUPPORTED_LANGUAGES } from '../lib/languages';
+import { getStoredLocale, setStoredLocale, t } from '../lib/i18n';
 
 function BrandMark() {
   return (
@@ -17,12 +18,22 @@ function BrandMark() {
 
 export default function LanguageScreen() {
   const [locale, setLocale] = useState<AppLocale>('en');
+  const [query, setQuery] = useState('');
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
 
-  useEffect(() => { void getStoredLocale().then((stored) => { if (stored) setLocale(stored); setReady(true); }); }, []);
+  useEffect(() => {
+    void getStoredLocale().then((stored) => {
+      if (stored) setLocale(stored);
+      setReady(true);
+    });
+  }, []);
 
-  const choose = async (next: AppLocale) => { setLocale(next); await setStoredLocale(next); };
+  const choose = async (next: AppLocale) => {
+    setLocale(next);
+    await setStoredLocale(next);
+  };
+
   const continueToApp = async () => {
     setBusy(true);
     await setStoredLocale(locale);
@@ -30,30 +41,75 @@ export default function LanguageScreen() {
     router.replace('/auth');
   };
 
-  if (!ready) return <View style={styles.loading}><BrandMark /><ActivityIndicator color="#7C3AED" style={styles.loadingSpinner} /></View>;
+  const filtered = useMemo(() => {
+    const needle = query.trim().toLocaleLowerCase();
+    if (!needle) return [...SUPPORTED_LANGUAGES];
+    return SUPPORTED_LANGUAGES.filter((language) =>
+      `${language.englishName} ${language.nativeName} ${language.code}`.toLocaleLowerCase().includes(needle),
+    );
+  }, [query]);
+
+  if (!ready) {
+    return <View style={styles.loading}><BrandMark /><ActivityIndicator color="#7C3AED" style={styles.loadingSpinner} /></View>;
+  }
+
   const rtl = isRTL(locale);
+  const selected = getLanguage(locale);
 
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={[styles.container, rtl && styles.rtl]}>
-        <BrandMark />
-        <Text style={styles.eyebrow}>MY PERSONAL ASSISTANT</Text>
-        <Text style={styles.title}>{t(locale, 'languageTitle')}</Text>
-        <Text style={styles.subtitle}>{t(locale, 'languageSubtitle')}</Text>
-
-        <View style={styles.options}>
-          <Pressable onPress={() => void choose('fa')} style={[styles.option, locale === 'fa' && styles.selected]}>
-            <Text style={styles.flag}>🇮🇷</Text><View style={styles.copy}><Text style={styles.optionTitle}>فارسی</Text><Text style={styles.optionSub}>دستیار فارسی</Text></View><Text style={styles.check}>{locale === 'fa' ? '✓' : ''}</Text>
-          </Pressable>
-          <Pressable onPress={() => void choose('en')} style={[styles.option, locale === 'en' && styles.selected]}>
-            <Text style={styles.flag}>🇬🇧</Text><View style={styles.copy}><Text style={styles.optionTitle}>English</Text><Text style={styles.optionSub}>English assistant</Text></View><Text style={styles.check}>{locale === 'en' ? '✓' : ''}</Text>
-          </Pressable>
+      <View style={styles.container}>
+        <View style={styles.hero}>
+          <BrandMark />
+          <Text style={styles.eyebrow}>MY PERSONAL ASSISTANT</Text>
+          <Text style={[styles.title, rtl && styles.rtlText]}>{t(locale, 'languageTitle')}</Text>
+          <Text style={[styles.subtitle, rtl && styles.rtlText]}>{t(locale, 'languageSubtitle')}</Text>
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{SUPPORTED_LANGUAGES.length} languages</Text>
+          </View>
         </View>
 
-        <Pressable disabled={busy} onPress={() => void continueToApp()} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
-          {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t(locale, 'continue')} →</Text>}
-        </Pressable>
-        <Text style={styles.footer}>هوشمند، همراه، همیشه کنارت</Text>
+        <TextInput
+          value={query}
+          onChangeText={setQuery}
+          placeholder={rtl ? 'جستجوی زبان…' : 'Search a language…'}
+          placeholderTextColor="#9CA3AF"
+          style={[styles.search, rtl && styles.rtlText]}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+
+        <FlatList
+          data={filtered}
+          keyExtractor={(item) => item.code}
+          contentContainerStyle={styles.list}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => {
+            const isSelected = item.code === locale;
+            return (
+              <Pressable
+                onPress={() => void choose(item.code)}
+                accessibilityRole="radio"
+                accessibilityState={{ selected: isSelected }}
+                style={[styles.option, isSelected && styles.selected]}
+              >
+                <View style={[styles.optionCopy, item.rtl && styles.optionCopyRtl]}>
+                  <Text style={[styles.optionTitle, item.rtl && styles.rtlText]}>{item.nativeName}</Text>
+                  <Text style={[styles.optionSub, item.rtl && styles.rtlText]}>{item.englishName} · {item.code}</Text>
+                </View>
+                <Text style={[styles.check, isSelected && styles.checkSelected]}>{isSelected ? '✓' : ''}</Text>
+              </Pressable>
+            );
+          }}
+        />
+
+        <View style={styles.footerBar}>
+          <Text style={styles.selectedLabel}>{selected.nativeName}</Text>
+          <Pressable disabled={busy} onPress={() => void continueToApp()} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
+            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t(locale, 'continue')} →</Text>}
+          </Pressable>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -63,25 +119,31 @@ const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#F7F8FA' },
   loading: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7F8FA' },
   loadingSpinner: { marginTop: 18 },
-  container: { flex: 1, justifyContent: 'center', padding: 24 },
-  rtl: { direction: 'rtl' },
-  brandOuter: { width: 108, height: 108, borderRadius: 32, backgroundColor: '#0B1026', alignItems: 'center', justifyContent: 'center', alignSelf: 'center', marginBottom: 24, overflow: 'hidden' },
-  brandGlow: { position: 'absolute', width: 150, height: 150, borderRadius: 75, backgroundColor: '#7C3AED', opacity: 0.22 },
-  brandInner: { width: 74, height: 74, borderRadius: 24, borderWidth: 1, borderColor: '#6D5CE7', backgroundColor: '#111A39', alignItems: 'center', justifyContent: 'center' },
-  brandEmoji: { fontSize: 38 },
-  eyebrow: { fontSize: 11, fontWeight: '900', letterSpacing: 1.5, color: '#6B7280', marginBottom: 10, textAlign: 'center' },
-  title: { fontSize: 30, fontWeight: '900', color: '#111827', marginBottom: 8, textAlign: 'center' },
-  subtitle: { fontSize: 15, lineHeight: 23, color: '#6B7280', marginBottom: 26, textAlign: 'center' },
-  options: { gap: 12, marginBottom: 22 },
-  option: { flexDirection: 'row', alignItems: 'center', padding: 17, borderRadius: 18, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
+  container: { flex: 1, paddingHorizontal: 20, paddingTop: 8 },
+  hero: { alignItems: 'center' },
+  brandOuter: { width: 84, height: 84, borderRadius: 26, backgroundColor: '#0B1026', alignItems: 'center', justifyContent: 'center', marginBottom: 14, overflow: 'hidden' },
+  brandGlow: { position: 'absolute', width: 124, height: 124, borderRadius: 62, backgroundColor: '#7C3AED', opacity: 0.22 },
+  brandInner: { width: 60, height: 60, borderRadius: 20, borderWidth: 1, borderColor: '#6D5CE7', backgroundColor: '#111A39', alignItems: 'center', justifyContent: 'center' },
+  brandEmoji: { fontSize: 31 },
+  eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: '#6B7280', marginBottom: 7 },
+  title: { fontSize: 28, fontWeight: '900', color: '#111827', textAlign: 'center' },
+  subtitle: { fontSize: 14, lineHeight: 21, color: '#6B7280', textAlign: 'center', marginTop: 7 },
+  countBadge: { marginTop: 10, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999, backgroundColor: '#F0EAFE' },
+  countText: { color: '#6D28D9', fontSize: 12, fontWeight: '900' },
+  search: { marginTop: 14, minHeight: 48, borderRadius: 15, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#FFFFFF', paddingHorizontal: 14, color: '#111827' },
+  list: { paddingTop: 10, paddingBottom: 118, gap: 8 },
+  option: { flexDirection: 'row', alignItems: 'center', minHeight: 66, paddingHorizontal: 15, paddingVertical: 11, borderRadius: 16, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E5E7EB' },
   selected: { borderColor: '#7C3AED', borderWidth: 2, backgroundColor: '#FAF8FF' },
-  flag: { fontSize: 27, marginRight: 14 },
-  copy: { flex: 1 },
-  optionTitle: { fontSize: 18, fontWeight: '800', color: '#111827' },
-  optionSub: { fontSize: 12, color: '#6B7280', marginTop: 3 },
-  check: { fontSize: 21, fontWeight: '900', color: '#7C3AED' },
-  button: { minHeight: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: '#6D28D9' },
+  optionCopy: { flex: 1 },
+  optionCopyRtl: { alignItems: 'flex-end' },
+  optionTitle: { fontSize: 17, fontWeight: '800', color: '#111827' },
+  optionSub: { marginTop: 3, fontSize: 11, color: '#6B7280' },
+  check: { width: 24, textAlign: 'center', fontSize: 20, fontWeight: '900', color: '#D1D5DB' },
+  checkSelected: { color: '#7C3AED' },
+  footerBar: { position: 'absolute', left: 20, right: 20, bottom: 10, padding: 10, borderRadius: 20, backgroundColor: 'rgba(247,248,250,0.96)', borderWidth: 1, borderColor: '#E5E7EB' },
+  selectedLabel: { textAlign: 'center', color: '#6B7280', fontSize: 12, fontWeight: '800', marginBottom: 8 },
+  button: { minHeight: 54, borderRadius: 16, alignItems: 'center', justifyContent: 'center', backgroundColor: '#6D28D9' },
   buttonText: { color: '#FFFFFF', fontSize: 16, fontWeight: '900' },
   pressed: { opacity: 0.82 },
-  footer: { marginTop: 18, textAlign: 'center', color: '#9CA3AF', fontSize: 11 },
+  rtlText: { writingDirection: 'rtl', textAlign: 'right' },
 });
