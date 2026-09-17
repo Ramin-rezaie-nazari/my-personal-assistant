@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onTranslateTask } from '../modules/expo-translate-text/src';
-import type { AppLocale } from './languages';
+import { getTranslationLocaleCode, type AppLocale } from './languages';
 
 const CACHE_PREFIX = '@my-personal-assistant/i18n-pack-v1:';
 const memory = new Map<AppLocale, Record<string, string>>();
@@ -10,10 +10,7 @@ let activeLocale: AppLocale = 'en';
 let baseEnglish: Record<string, string> | null = null;
 
 function targetCode(locale: AppLocale): string {
-  switch (locale) {
-    case 'zh': return 'zh';
-    default: return locale;
-  }
+  return getTranslationLocaleCode(locale);
 }
 
 function isMeaningfulText(value: unknown): value is string {
@@ -58,17 +55,18 @@ export function getLocalizedCopy<T extends Record<string, string>>(locale: AppLo
   });
 }
 
-async function translateRecord(locale: AppLocale, source: Record<string, string>): Promise<Record<string, string> | null> {
-  if (locale === 'en') return { ...source };
+async function translateRecord(sourceLangCode: string, targetLangCode: string, source: Record<string, string>): Promise<Record<string, string> | null> {
+  if (sourceLangCode === targetLangCode) return { ...source };
   const input: Record<string, string> = {};
   for (const [key, value] of Object.entries(source)) if (isMeaningfulText(value)) input[key] = value;
   try {
-    const result = await onTranslateTask({ input, sourceLangCode: 'en', targetLangCode: targetCode(locale), requiresWifi: false, requireCharging: false });
+    const result = await onTranslateTask({ input, sourceLangCode, targetLangCode, requiresWifi: false, requireCharging: false });
     const translated = (result.translatedTexts ?? {}) as Record<string, unknown>;
     const pack: Record<string, string> = {};
     for (const key of Object.keys(source)) {
       const value = translated[key];
-      pack[key] = typeof value === 'string' && value.trim() ? value : source[key];
+      if (typeof value !== 'string' || !value.trim()) return null;
+      pack[key] = value;
     }
     return pack;
   } catch {
@@ -77,7 +75,7 @@ async function translateRecord(locale: AppLocale, source: Record<string, string>
 }
 
 async function translateCopy(source: Record<string, string>, locale: AppLocale): Promise<boolean> {
-  const pack = await translateRecord(locale, source);
+  const pack = await translateRecord('en', targetCode(locale), source);
   if (!pack) return false;
   const existing = memory.get(locale) ?? {};
   for (const [key, value] of Object.entries(pack)) existing[`copy:${key}`] = value;
@@ -134,7 +132,7 @@ export async function preloadLocale(locale: AppLocale, sourcePack?: Record<strin
 
   const work = (async () => {
     try {
-      const pack = await translateRecord(locale, basePack);
+      const pack = await translateRecord('en', targetCode(locale), basePack);
       if (!pack) return false;
       memory.set(locale, pack);
       await AsyncStorage.setItem(`${CACHE_PREFIX}${locale}`, JSON.stringify(pack));
@@ -149,16 +147,23 @@ export async function preloadLocale(locale: AppLocale, sourcePack?: Record<strin
   return work;
 }
 
-export async function translateDynamicText(locale: AppLocale, text: string): Promise<string> {
-  if (locale === 'en' || !isMeaningfulText(text)) return text;
-  const cacheKey = `dynamic:${text}`;
-  const cached = getCachedTranslation(locale, cacheKey, '');
+export async function translateTextBetweenLocales(text: string, sourceLocale: AppLocale, targetLocale: AppLocale): Promise<string> {
+  const normalized = text.trim();
+  if (!normalized || sourceLocale === targetLocale) return text;
+  const cacheKey = `bridge:${sourceLocale}->${targetLocale}:${normalized}`;
+  const cached = getCachedTranslation(targetLocale, cacheKey, '');
   if (cached) return cached;
-  const translatedPack = await translateRecord(locale, { [cacheKey]: text });
-  const translated = translatedPack?.[cacheKey] ?? text;
-  const pack = memory.get(locale) ?? {};
+
+  const translatedPack = await translateRecord(targetCode(sourceLocale), targetCode(targetLocale), { [cacheKey]: normalized });
+  const translated = translatedPack?.[cacheKey];
+  if (!translated) throw new Error(`Translation unavailable for ${sourceLocale} → ${targetLocale}`);
+  const pack = memory.get(targetLocale) ?? {};
   pack[cacheKey] = translated;
-  memory.set(locale, pack);
-  await AsyncStorage.setItem(`${CACHE_PREFIX}${locale}`, JSON.stringify(pack));
+  memory.set(targetLocale, pack);
+  await AsyncStorage.setItem(`${CACHE_PREFIX}${targetLocale}`, JSON.stringify(pack));
   return translated;
+}
+
+export async function translateDynamicText(locale: AppLocale, text: string): Promise<string> {
+  return translateTextBetweenLocales(text, 'en', locale);
 }
