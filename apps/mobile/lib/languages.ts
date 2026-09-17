@@ -1,11 +1,15 @@
-export type AppLocale =
+export type SupportedAppLocale =
   | 'en' | 'fa' | 'ar' | 'bn' | 'bg' | 'ca' | 'cs' | 'da' | 'de' | 'el' | 'es' | 'et' | 'fi' | 'fr' | 'gu'
   | 'he' | 'hi' | 'hr' | 'hu' | 'id' | 'it' | 'ja' | 'ka' | 'kn' | 'ko' | 'lt' | 'lv' | 'mk' | 'mr' | 'ms' | 'mt'
   | 'nl' | 'no' | 'pl' | 'pt' | 'ro' | 'ru' | 'sk' | 'sl' | 'sq' | 'sv' | 'sw' | 'ta' | 'te' | 'th' | 'tl' | 'tr'
   | 'uk' | 'ur' | 'vi' | 'zh';
 
+/** Legacy codes remain in the type only so old source files can compile safely. They are not selectable or persisted. */
+type LegacyLocale = 'az' | 'sr' | 'pa' | 'zh-CN' | 'zh-TW' | 'fil' | 'am' | 'so' | 'kk' | 'uz' | 'hy' | 'ku' | 'nb';
+export type AppLocale = SupportedAppLocale | LegacyLocale;
+
 export type AppLanguage = {
-  code: AppLocale;
+  code: SupportedAppLocale;
   englishName: string;
   nativeName: string;
   rtl?: boolean;
@@ -66,10 +70,10 @@ export const SUPPORTED_LANGUAGES: readonly AppLanguage[] = [
 ] as const;
 
 export const DEFAULT_LOCALE: AppLocale = 'en';
-const SUPPORTED_CODES = new Set<AppLocale>(SUPPORTED_LANGUAGES.map((language) => language.code));
+const SUPPORTED_CODES = new Set<SupportedAppLocale>(SUPPORTED_LANGUAGES.map((language) => language.code));
 
 export function isSupportedLocale(value?: string | null): value is AppLocale {
-  return Boolean(value && SUPPORTED_CODES.has(value as AppLocale));
+  return Boolean(value && SUPPORTED_CODES.has(value as SupportedAppLocale));
 }
 
 export function getLanguage(code: AppLocale): AppLanguage {
@@ -77,5 +81,5 @@ export function getLanguage(code: AppLocale): AppLanguage {
 }
 
 export function isRTL(code: AppLocale): boolean {
-  return getLanguage(code).rtl === true;
+  return code === 'ku' || getLanguage(code).rtl === true;
 }
