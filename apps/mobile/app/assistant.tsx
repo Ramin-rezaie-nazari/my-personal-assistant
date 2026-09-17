@@ -13,11 +13,11 @@ type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; meta?
 const copy = localizedCopy({
   en: {
     title: 'Your Assistant', subtitle: 'Tell me what you need. I will use your context, plans and preferences.', placeholder: 'What should we do?', send: 'Send', back: 'Back',
-    welcome: 'I’m here. Ask me to plan your day, adjust a workout, track something, or help with a decision.', error: 'I could not reach the assistant right now. Check your connection and try again.', done: 'Done', understood: 'Understood', historyError: 'I could not restore the previous conversation. You can still start a new message.', speak: 'Speak', loadingHistory: 'Restoring conversation…', thinking: 'Thinking…',
+    welcome: 'I’m here. Ask me to plan your day, adjust a workout, track something, or help with a decision.', error: 'I could not reach the assistant right now. Check your connection and try again.', voiceError: 'Voice playback is unavailable on this device.', done: 'Done', understood: 'Understood', historyError: 'I could not restore the previous conversation. You can still start a new message.', speak: 'Speak', loadingHistory: 'Restoring conversation…', thinking: 'Thinking…',
   },
   fa: {
     title: 'دستیار تو', subtitle: 'هر چیزی لازم داری بگو؛ از برنامه و عادت‌ها تا تصمیم‌های روزمره.', placeholder: 'چی کار کنیم؟', send: 'ارسال', back: 'برگشت',
-    welcome: 'من اینجام. برای برنامه‌ریزی روز، ورزش، یادآوری یا هر تصمیمی که داری ازم کمک بگیر.', error: 'الان نتونستم به دستیار وصل بشم. اتصال اینترنت رو بررسی کن و دوباره امتحان کن.', done: 'انجام شد', understood: 'متوجه شدم', historyError: 'نتونستم گفت‌وگوی قبلی رو بازیابی کنم؛ ولی می‌تونی همین الان ادامه بدی.', speak: 'پخش صدا', loadingHistory: 'در حال بازیابی گفت‌وگو…', thinking: 'دارم فکر می‌کنم…',
+    welcome: 'من اینجام. برای برنامه‌ریزی روز، ورزش، یادآوری یا هر تصمیمی که داری ازم کمک بگیر.', error: 'الان نتونستم به دستیار وصل بشم. اتصال اینترنت رو بررسی کن و دوباره امتحان کن.', voiceError: 'پخش صدای دستیار روی این دستگاه در دسترس نیست.', done: 'انجام شد', understood: 'متوجه شدم', historyError: 'نتونستم گفت‌وگوی قبلی رو بازیابی کنم؛ ولی می‌تونی همین الان ادامه بدی.', speak: 'پخش صدا', loadingHistory: 'در حال بازیابی گفت‌وگو…', thinking: 'دارم فکر می‌کنم…',
   },
 });
 
@@ -27,9 +27,9 @@ function containsPersianScript(text: string): boolean {
 
 async function localizeAssistantText(text: string, locale: AppLocale): Promise<string> {
   if (!text.trim() || locale === 'en') return text;
-  const source: AppLocale = locale === 'fa' && containsPersianScript(text) ? 'fa' : containsPersianScript(text) ? 'fa' : 'en';
+  const source: AppLocale = containsPersianScript(text) ? 'fa' : 'en';
   if (source === locale) return text;
-  try { return await translateTextBetweenLocales(text, source, locale); } catch { return source === locale ? text : text; }
+  try { return await translateTextBetweenLocales(text, source, locale); } catch { return text; }
 }
 
 const mapUserHistory = (turns: AssistantHistoryTurn[]): ChatMessage[] => turns.filter((turn) => turn.role === 'user').map((turn) => ({
@@ -80,10 +80,7 @@ export default function AssistantScreen() {
   const send = async () => {
     const text = draft.trim();
     if (!text || sending) return;
-    setDraft('');
-    setError(null);
-    setHistoryNotice(false);
-    setSending(true);
+    setDraft(''); setError(null); setHistoryNotice(false); setSending(true);
     setMessages((current) => [...current, { id: `u-${Date.now()}`, role: 'user', text }]);
     try {
       const canonicalInput = locale === 'en' ? text : await translateTextBetweenLocales(text, locale, 'en');
@@ -91,18 +88,15 @@ export default function AssistantScreen() {
       const localizedResponse = await localizeAssistantText(response.message, locale);
       const executionMeta = response.execution ? (response.execution.executed ? ui.done : ui.understood) : null;
       setMessages((current) => [...current, { id: `a-${Date.now()}`, role: 'assistant', text: localizedResponse, meta: executionMeta || undefined }]);
-    } catch {
-      setError(ui.error);
-    } finally {
-      setSending(false);
-    }
+    } catch { setError(ui.error); }
+    finally { setSending(false); }
   };
 
   const speak = async (message: ChatMessage) => {
     if (message.role !== 'assistant' || speakingId) return;
     setSpeakingId(message.id);
     try { await speakAssistantText(message.text, locale); }
-    catch { setError('Voice playback is unavailable on this device.'); }
+    catch { setError(ui.voiceError); }
     finally { setSpeakingId(null); }
   };
 
