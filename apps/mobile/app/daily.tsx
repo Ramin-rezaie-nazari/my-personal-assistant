@@ -6,15 +6,16 @@ import { DailyCommandCenterResponse, generateSmartNotifications, getDailyCommand
 import { colors, radius, spacing, typography, shadows } from '../lib/design-system';
 import { AnimatedIn, MotionPress } from '../lib/motion-components';
 import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
+import { localizedCopy } from '../lib/localized-copy';
 
-const copy = {
+const copy = localizedCopy({
   en: {
     home:'← Home', calendar:'📅 Calendar', inbox:'🔔 Inbox', today:'TODAY', title:'Your Command Center', meals:'🍽️ Meals', unavailable:'Today is unavailable', retry:'Retry', priorities:'🔥 Top priorities', clear:'You are clear for now. Keep the streak going.', calories:'Calories', protein:'Protein', water:'Water', habits:'Habits', supplements:'Supplements', reminders:'Reminders', pending:'pending', schedule:"📅 Today's schedule", scheduleHint:'Events from your assistant calendar.', openCalendar:'Open calendar →', emptySchedule:'Nothing scheduled today. Nice and clean. ✨', next:'Next up', noUpcoming:'No upcoming schedule items.', latestWorkout:'🏋️ Latest workout', noWorkout:'🏃 No workout logged yet today.', linksMeals:'🍽️ Meals & Nutrition →', linksCalendar:'📅 Calendar →', linksNotifications:'Notification Inbox →', linksHabits:'Habits →', linksSupplements:'Supplements →', linksReminders:'Reminders →', loadError:'Unable to load today', loading:'Loading today', actionError:'Unable to load today.'
   },
   fa: {
     home:'خانه ←', calendar:'تقویم 📅', inbox:'صندوق اعلان 🔔', today:'امروز', title:'مرکز فرمان دستیار من', meals:'وعده‌ها 🍽️', unavailable:'امروز در دسترس نیست', retry:'تلاش دوباره', priorities:'🔥 اولویت‌های امروز', clear:'فعلاً مورد فوری‌ای نداری؛ روندت را ادامه بده.', calories:'کالری', protein:'پروتئین', water:'آب', habits:'عادت‌ها', supplements:'مکمل‌ها', reminders:'یادآوری‌ها', pending:'در انتظار', schedule:'📅 برنامه امروز', scheduleHint:'رویدادهای تقویم دستیار تو.', openCalendar:'باز کردن تقویم ←', emptySchedule:'امروز برنامه‌ای ثبت نشده؛ مرتب و تمیز. ✨', next:'بعدی', noUpcoming:'مورد زمان‌بندی‌شده‌ای باقی نمانده.', latestWorkout:'🏋️ آخرین تمرین', noWorkout:'🏃 امروز هنوز تمرینی ثبت نشده.', linksMeals:'🍽️ وعده‌ها و تغذیه ←', linksCalendar:'📅 تقویم ←', linksNotifications:'صندوق اعلان ←', linksHabits:'عادت‌ها ←', linksSupplements:'مکمل‌ها ←', linksReminders:'یادآوری‌ها ←', loadError:'بارگذاری امروز انجام نشد', loading:'در حال بارگذاری امروز', actionError:'بارگذاری امروز انجام نشد.'
   }
-} as const;
+});
 
 export default function DailyCommandCenterScreen() {
   const [locale, setLocale] = useState<AppLocale>('en');
