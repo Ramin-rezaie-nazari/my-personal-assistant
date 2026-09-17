@@ -1,12 +1,13 @@
 import { addWater, createReminder, createWorkout } from './api';
 import { getStoredLocale } from './i18n';
+import { localizedCopy } from './localized-copy';
 
 export type CommandActionResult = { ok: boolean; message: string };
 
-const messages = {
+const messages = localizedCopy({
   en: { water: '500 ml water logged.', walk: '20 min walk logged.', strength: '45 min strength workout logged.', reminder: 'Reminder created for 20:00.' },
   fa: { water: '۵۰۰ میلی‌لیتر آب ثبت شد.', walk: 'پیاده‌روی ۲۰ دقیقه‌ای ثبت شد.', strength: 'تمرین قدرتی ۴۵ دقیقه‌ای ثبت شد.', reminder: 'یادآوری برای ساعت ۲۰:۰۰ ساخته شد.' },
-} as const;
+});
 
 export async function runQuickCommand(action: 'water' | 'walk' | 'strength' | 'reminder'): Promise<CommandActionResult> {
   const locale = (await getStoredLocale()) ?? 'en';
