@@ -1,7 +1,7 @@
 # MYPA Current State
 
-Last updated: 2026-09-14
-Review status: FITNESS EXERCISE CONTENT/MEDIA FOUNDATION IMPLEMENTED / RUNTIME VERIFICATION PENDING
+Last updated: 2026-09-17
+Review status: GLOBAL MULTILINGUAL ASSISTANT FOUNDATION IMPLEMENTED / RUNTIME DEVICE VERIFICATION PENDING
 
 ## Canonical ownership
 
@@ -11,9 +11,9 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Branch: `main`
-- Latest fully verified functional baseline: `0d19d2b7dad5e9100505205328fbd523e544445b`
-- Subsequent commits now include the Exercise Content/Media foundation work; that new slice is not yet covered by the previous CI/native verification evidence.
-- Scope of the latest verified baseline: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
+- Latest fully verified functional baseline before the current feature slice: `0d19d2b7dad5e9100505205328fbd523e544445b`
+- Subsequent commits now include the Exercise Content/Media foundation and the Global Multilingual Assistant foundation; those new slices require fresh CI/device verification before they can be treated as fully verified.
+- Scope of the latest previously verified baseline: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
 
 ## Remediation completed in verified baseline
 
@@ -30,10 +30,10 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Personal Brain runtime DI metadata was hardened so the full application bootstrap can resolve `DecisionExecutionCoordinatorService`.
 - Mobile brain-execution credentials use `expo-secure-store` with device-only keychain accessibility and clear both credentials after refresh failure.
 - Security/privacy documentation was reconciled to current remediation evidence.
-- Audit findings PB-258 through PB-268 are recorded in the canonical appendix and currently closed/remediated.
+- Audit findings PB-258 through PB-268 are recorded in the canonical appendix and were closed/remediated in the previous verified slice.
 - Android Expo SDK 53 autolinking is explicitly pinned through `apps/mobile/react-native.config.js`, with the supporting pnpm hoisting remediation retained.
 
-## New Exercise Content/Media foundation (unverified until CI)
+## Exercise Content/Media foundation — pending fresh verification
 
 - Canonical `Exercise`, `ExerciseMedia` and `ExerciseRelationship` Prisma models were added as a multi-file schema slice.
 - A migration was added for the new exercise content/media tables and indexes.
@@ -41,32 +41,41 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Exercise media now carries provider, license, attribution, approval status, dimensions, duration, poster and checksum metadata.
 - Existing fitness generators are intentionally not yet rewritten against the new catalog; that integration follows runtime verification of this foundation.
 
-## Automated evidence for the verified baseline
+## Global Multilingual Assistant foundation — pending fresh verification
 
-### Backend CI — GREEN
+- The canonical UI language registry continues to contain exactly 51 base languages.
+- Azerbaijani Turkish in Iran is represented as a separate regional locale (`az`) while Turkish (Türkiye) remains `tr`.
+- Mobile translation now supports a bidirectional bridge between the selected locale and the canonical assistant language.
+- Assistant chat sends user input through the selected-locale → canonical-language gateway and translates assistant responses back before rendering.
+- Assistant TTS now follows the selected app locale rather than a Persian/English-only switch.
+- The backend local assistant provider no longer emits hard-coded Persian response strings; canonical assistant responses are language-neutral English so the mobile gateway has a stable source language.
+- `docs/project-brain/18_GLOBAL_MULTILINGUAL_ASSISTANT.md` is the canonical architecture and quality contract for this feature.
 
-The latest verified Backend CI line completed successfully through dependency installation, Prisma schema validation/generation, migration deployment and idempotence, food-intelligence self-test, backend build, unit tests and API E2E tests.
+## Automated evidence for the previously verified baseline
 
-### Mobile CI — GREEN
+### Backend CI — GREEN on previous baseline
 
-The latest verified Mobile CI line completed successfully through dependency installation, mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling.
+The latest previously verified Backend CI line completed successfully through dependency installation, Prisma schema validation/generation, migration deployment and idempotence, food-intelligence self-test, backend build, unit tests and API E2E tests.
 
-### Android native APK — GREEN
+### Mobile CI — GREEN on previous baseline
 
-The canonical native evidence path is `.github/workflows/android-apk.yml`. Workflow run `34772364209` (run #79), head `0d19d2b7dad5e9100505205328fbd523e544445b`, completed successfully through Expo prebuild, real Gradle `assembleDebug`, and APK upload. The produced artifact is `my-personal-assistant-debug-apk`, 58,443,390 bytes, SHA-256 `622b90eeef0898ab7d3eac9af75fac6e486da46eb4f741116d601f3d727f23da`.
+The latest previously verified Mobile CI line completed successfully through dependency installation, mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling.
+
+### Android native APK — GREEN on previous baseline
+
+The canonical native evidence path is `.github/workflows/android-apk.yml`. Workflow run `34772364209` (run #79), head `0d19d2b7dad5e9100505205328fbd523e544445b`, completed successfully through Expo prebuild, real Gradle `assembleDebug`, and APK upload.
 
 ## Evidence limitations
 
-- The new Exercise Content/Media foundation has not yet received a CI run after these commits.
-- No production exercise dataset or approved production video catalog has been imported yet.
-- Real physical-device UX remains unvalidated.
-- Production deployment behavior, production Supabase/Auth/RLS/Storage configuration and real notification delivery remain environment-limited.
-- Microphone/location/speech behavior on a physical device is not proven by repository CI alone.
-- Local media in a user's device/gallery is not directly validated by repository CI.
+- The Exercise Content/Media foundation has not yet received fresh CI evidence after its commits.
+- The Global Multilingual Assistant foundation has not yet received fresh CI evidence after the current commits.
+- Translation-model availability and TTS voice availability for every locale remain device/OS capabilities and cannot be proven from repository source alone.
+- Real physical-device UX remains unvalidated, including RTL rendering, locale-specific speech, translation model availability, startup language switching and dynamic-content translation.
+- Production deployment behavior, production Auth/RLS/Storage configuration and real notification delivery remain environment-limited.
 - Direct local repository execution is unavailable in the remediation container because outbound GitHub network access is blocked; GitHub Actions remains the authoritative automated execution evidence for this pass.
 
 These are explicit evidence limits, not silently marked green findings.
 
 ## Project Brain
 
-`docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` is the reference-product gap analysis, and `docs/project-brain/17_EXERCISE_CONTENT_MEDIA_IMPLEMENTATION.md` documents the new exercise/media foundation and remaining work. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` must remain synchronized with the same verification boundary.
+`docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` is the reference-product gap analysis. `docs/project-brain/17_EXERCISE_CONTENT_MEDIA_IMPLEMENTATION.md` documents the exercise/media foundation. `docs/project-brain/18_GLOBAL_MULTILINGUAL_ASSISTANT.md` documents the multilingual language contract and implementation boundary. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` must remain synchronized with the same verification boundary.
