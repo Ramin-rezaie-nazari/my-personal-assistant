@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, I18nManager, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { AppLocale, getLanguage, isRTL, LANGUAGE_OPTIONS, SUPPORTED_LANGUAGE_COUNT } from '../lib/languages';
 import { getStoredLocale, setStoredLocale, t } from '../lib/i18n';
 import { preloadLocale } from '../lib/runtime-translator';
@@ -46,7 +47,7 @@ export default function LanguageScreen() {
       await setStoredLocale(locale);
       await preloadLocale(locale);
       I18nManager.allowRTL(isRTL(locale));
-      routerReplaceAuth();
+      router.replace('/auth');
     } finally {
       setBusy(false);
     }
@@ -126,13 +127,6 @@ export default function LanguageScreen() {
       </View>
     </SafeAreaView>
   );
-}
-
-function routerReplaceAuth() {
-  // Isolated import keeps the picker component easy to smoke-test without navigation mocks.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { router } = require('expo-router') as typeof import('expo-router');
-  router.replace('/auth');
 }
 
 const styles = StyleSheet.create({
