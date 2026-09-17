@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onTranslateTask } from '../modules/expo-translate-text/src';
 import { getTranslationLocaleCode, type AppLocale } from './languages';
+import { iranianAzerbaijaniToTurkish, turkishToIranianAzerbaijani } from './az-language-bridge';
 
 const CACHE_PREFIX = '@my-personal-assistant/i18n-pack-v1:';
 const memory = new Map<AppLocale, Record<string, string>>();
@@ -68,7 +69,7 @@ export function getLocalizedCopy<T extends Record<string, string>>(locale: AppLo
   });
 }
 
-async function translateRecord(sourceLangCode: string, targetLangCode: string, source: Record<string, string>): Promise<Record<string, string> | null> {
+async function translateRecordNative(sourceLangCode: string, targetLangCode: string, source: Record<string, string>): Promise<Record<string, string> | null> {
   if (sourceLangCode === targetLangCode) return { ...source };
   const input: Record<string, string> = {};
   for (const [key, value] of Object.entries(source)) if (isMeaningfulText(value)) input[key] = value;
@@ -85,6 +86,30 @@ async function translateRecord(sourceLangCode: string, targetLangCode: string, s
   } catch {
     return null;
   }
+}
+
+/**
+ * Google ML Kit does not currently expose Azerbaijani as a translation target/source.
+ * `az` therefore uses a regional compatibility bridge through Turkish, then applies
+ * deterministic Iranian-Azerbaijani lexical normalization. This preserves `az` as a
+ * separate product locale while keeping the app functional without a second business-logic stack.
+ * A dedicated Azerbaijani MT provider can replace this bridge later without changing callers.
+ */
+async function translateRecord(sourceLangCode: string, targetLangCode: string, source: Record<string, string>): Promise<Record<string, string> | null> {
+  if (sourceLangCode === targetLangCode) return { ...source };
+
+  if (targetLangCode === 'az') {
+    const viaTurkish = await translateRecordNative(sourceLangCode, 'tr', source);
+    if (!viaTurkish) return null;
+    return Object.fromEntries(Object.entries(viaTurkish).map(([key, value]) => [key, turkishToIranianAzerbaijani(value)]));
+  }
+
+  if (sourceLangCode === 'az') {
+    const normalizedTurkish = Object.fromEntries(Object.entries(source).map(([key, value]) => [key, iranianAzerbaijaniToTurkish(value)]));
+    return translateRecordNative('tr', targetLangCode, normalizedTurkish);
+  }
+
+  return translateRecordNative(sourceLangCode, targetLangCode, source);
 }
 
 async function translateCopy(source: Record<string, string>, locale: AppLocale): Promise<boolean> {
