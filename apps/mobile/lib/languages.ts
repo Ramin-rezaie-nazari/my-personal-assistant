@@ -4,9 +4,11 @@ export type SupportedAppLocale =
   | 'nl' | 'no' | 'pl' | 'pt' | 'ro' | 'ru' | 'sk' | 'sl' | 'sq' | 'sv' | 'sw' | 'ta' | 'te' | 'th' | 'tl' | 'tr'
   | 'uk' | 'ur' | 'vi' | 'zh';
 
-/** Regional locales are not counted as additional base languages. */
+/** Regional locales are separate from the 51 base languages. */
 export type RegionalAppLocale = 'az-IR';
-export type AppLocale = SupportedAppLocale | RegionalAppLocale;
+/** Legacy codes remain type-compatible for historical source files but are never selectable/persisted. */
+export type LegacyAppLocale = 'az' | 'sr' | 'pa' | 'zh-CN' | 'zh-TW' | 'fil' | 'am' | 'so' | 'kk' | 'uz' | 'hy' | 'ku' | 'nb';
+export type AppLocale = SupportedAppLocale | RegionalAppLocale | LegacyAppLocale;
 
 export type AppLanguage = {
   code: AppLocale;
@@ -89,9 +91,12 @@ export function getLanguage(code: AppLocale): AppLanguage {
 }
 
 export function isRTL(code: AppLocale): boolean {
-  return getLanguage(code).rtl === true;
+  return code === 'ku' || getLanguage(code).rtl === true;
 }
 
 export function getTranslationLocaleCode(locale: AppLocale): string {
-  return locale === 'az-IR' ? 'az' : locale;
+  if (locale === 'az-IR') return 'az';
+  if (locale === 'zh-CN' || locale === 'zh-TW') return 'zh';
+  if (locale === 'fil') return 'fil';
+  return locale;
 }
