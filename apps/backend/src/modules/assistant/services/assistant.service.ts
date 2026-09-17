@@ -34,7 +34,7 @@ export class AssistantService {
     await this.conversationContextService.append({
       userId,
       role: 'assistant',
-      text: receipt.status === 'completed' ? 'تأیید شد و انجام شد.' : receipt.reason,
+      text: receipt.status === 'completed' ? 'Confirmed and completed.' : receipt.reason,
       action: receipt.action,
       executionId: receipt.decisionId,
       resourceType: this.resourceTypeFor(receipt.action),
@@ -60,10 +60,10 @@ export class AssistantService {
           nextAction: undefined,
           message:
             plan.reason === 'conflicting_request'
-              ? 'یه بخش از درخواستت با بخش دیگه تناقض داره؛ قبل از انجامش باید مشخص کنی دقیقاً کدوم رو می‌خوای.'
-              : 'برای اینکه درست انجامش بدم، یه بخش از درخواستت نیاز به توضیح بیشتر داره.',
+              ? 'Part of your request conflicts with another part. Please tell me which one you want me to do.'
+              : 'I need a little more detail to make sure I perform the right action.',
           confidence: contextualCommand.confidence,
-          metadata: { local: true, clarification: true },
+          metadata: { local: true, clarification: true, canonicalLanguage: 'en' },
         } as BrainResponse)
       : ((local ? this.responseForLocalIntent(local) : undefined) ??
         (await this.brainOrchestratorService.processRequest(input, userId)));
@@ -91,6 +91,7 @@ export class AssistantService {
         localUnderstanding: local,
         contextualCommand,
         localPlan: plan,
+        canonicalLanguage: 'en',
       },
     };
     const receipt = execution?.receipt;
@@ -119,17 +120,17 @@ export class AssistantService {
   private responseForLocalIntent(local: ReturnType<LocalLanguageUnderstandingService['understand']>): BrainResponse | undefined {
     if (local.intent === 'UNKNOWN' || local.confidence < 0.7) return undefined;
     const map: Record<string, { intent: string; nextAction: string; message: string }> = {
-      ADD_TO_BASKET: { intent: 'shopping', nextAction: 'add_to_basket', message: 'باشه، به سبد خرید اضافه‌اش می‌کنم.' },
-      REMOVE_FROM_BASKET: { intent: 'shopping', nextAction: 'remove_from_basket', message: 'باشه، از سبد خرید حذفش می‌کنم.' },
-      RECOMMEND_MEAL: { intent: 'nutrition', nextAction: 'recommend_meal', message: 'حتماً، بر اساس اطلاعات خودت یک گزینه مناسب پیدا می‌کنم.' },
-      GET_NUTRITION_SUMMARY: { intent: 'nutrition', nextAction: 'get_nutrition_summary', message: 'حتماً، خلاصه تغذیه امروزت رو بررسی می‌کنم.' },
-      CREATE_REMINDER: { intent: 'reminder', nextAction: 'create_reminder', message: 'حتماً، یادآوری رو برایت آماده می‌کنم.' },
-      UPDATE_REQUEST: { intent: 'assistant', nextAction: 'update_contextual_request', message: 'باشه، درخواست قبلی رو با تغییر جدیدت به‌روزرسانی می‌کنم.' },
-      CANCEL_REQUEST: { intent: 'assistant', nextAction: 'cancel_contextual_request', message: 'باشه، درخواست قبلی رو لغو می‌کنم.' },
+      ADD_TO_BASKET: { intent: 'shopping', nextAction: 'add_to_basket', message: 'Okay, I’ll add it to your shopping basket.' },
+      REMOVE_FROM_BASKET: { intent: 'shopping', nextAction: 'remove_from_basket', message: 'Okay, I’ll remove it from your shopping basket.' },
+      RECOMMEND_MEAL: { intent: 'nutrition', nextAction: 'recommend_meal', message: 'Absolutely. I’ll find an option that fits your information and goals.' },
+      GET_NUTRITION_SUMMARY: { intent: 'nutrition', nextAction: 'get_nutrition_summary', message: 'Absolutely. I’ll check your nutrition summary for today.' },
+      CREATE_REMINDER: { intent: 'reminder', nextAction: 'create_reminder', message: 'Absolutely. I’ll prepare the reminder for you.' },
+      UPDATE_REQUEST: { intent: 'assistant', nextAction: 'update_contextual_request', message: 'Okay, I’ll update the previous request with your new change.' },
+      CANCEL_REQUEST: { intent: 'assistant', nextAction: 'cancel_contextual_request', message: 'Okay, I’ll cancel the previous request.' },
     };
     const selected = map[local.intent];
     return selected
-      ? { ...selected, confidence: local.confidence, metadata: { local: true, entities: local.entities } }
+      ? { ...selected, confidence: local.confidence, metadata: { local: true, entities: local.entities, canonicalLanguage: 'en' } }
       : undefined;
   }
 
