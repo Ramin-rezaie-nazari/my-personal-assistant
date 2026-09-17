@@ -3,12 +3,13 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollVie
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
+import { localizedCopy } from '../lib/localized-copy';
 import { AssistantHistoryTurn, getAssistantHistory, sendAssistantMessage } from '../lib/assistant-api';
 import { speakAssistantText } from '../lib/assistant-tts';
 
 type ChatMessage = { id: string; role: 'user' | 'assistant'; text: string; meta?: string };
 
-const copy = {
+const copy = localizedCopy({
   en: {
     title: 'Your Assistant', subtitle: 'Tell me what you need. I will use your context, plans and preferences.', placeholder: 'What should we do?', send: 'Send', back: 'Back',
     welcome: 'I’m here. Ask me to plan your day, adjust a workout, track something, or help with a decision.', error: 'I could not reach the assistant right now. Check your connection and try again.', done: 'Done', understood: 'Understood', historyError: 'I could not restore the previous conversation. You can still start a new message.', speak: 'Speak',
@@ -17,7 +18,7 @@ const copy = {
     title: 'دستیار تو', subtitle: 'هر چیزی لازم داری بگو؛ از برنامه و عادت‌ها تا تصمیم‌های روزمره.', placeholder: 'چی کار کنیم؟', send: 'ارسال', back: 'برگشت',
     welcome: 'من اینجام. برای برنامه‌ریزی روز، ورزش، یادآوری یا هر تصمیمی که داری ازم کمک بگیر.', error: 'الان نتونستم به دستیار وصل بشم. اتصال اینترنت رو بررسی کن و دوباره امتحان کن.', done: 'انجام شد', understood: 'متوجه شدم', historyError: 'نتونستم گفت‌وگوی قبلی رو بازیابی کنم؛ ولی می‌تونی همین الان ادامه بدی.', speak: 'پخش صدا',
   },
-};
+});
 
 const mapHistory = (turns: AssistantHistoryTurn[]): ChatMessage[] => turns.map((turn) => ({
   id: turn.id,
