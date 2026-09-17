@@ -7,7 +7,7 @@ import { AppErrorState } from '../components/app-error-state';
 import { BrandMark } from '../components/BrandMark';
 import { BrandWordmark } from '../components/BrandWordmark';
 import { getStoredLocale, isRTL } from '../lib/i18n';
-import { preloadLocale } from '../lib/runtime-translator';
+import { preloadLocale, subscribeTranslationRevision } from '../lib/runtime-translator';
 import { getStoredAccessToken, hasAuthSession } from '../lib/api';
 import { getOnboardingState } from '../lib/onboarding';
 import { registerForPushNotifications, listenForPushTokenRefresh } from '../lib/notifications/push-registration';
@@ -24,7 +24,7 @@ function StartupScreen() {
     ]));
     loop.start(); return () => loop.stop();
   }, [glow, scale]);
-  return <View style={styles.startup} accessible accessibilityLabel="Starting My Personal Assistant"><Animated.View style={[styles.startupGlow, { opacity: glow, transform: [{ scale }] }]} /><View style={styles.startupMark}><BrandMark size={104} /></View><BrandWordmark dark /><Text style={styles.startupSubtitle}>Your day, your goals, your assistant.</Text><ActivityIndicator accessibilityLabel="Loading" color={BRAND.colors.violet} style={styles.startupSpinner} /></View>;
+  return <View style={styles.startup} accessible accessibilityLabel="Starting My Personal Assistant"><Animated.View style={[styles.startupGlow, { opacity: glow, transform: [{ scale }] }]} /><View style={styles.startupMark}><BrandMark size={104} /></View><BrandWordmark dark /><ActivityIndicator accessibilityLabel="Loading" color={BRAND.colors.violet} style={styles.startupSpinner} /></View>;
 }
 
 export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
@@ -37,9 +37,12 @@ const stackScreens = {
 
 export default function RootLayout() {
   const [bootReady, setBootReady] = useState(false);
+  const [, forceTranslationRevision] = useState(0);
   const [targetRoute, setTargetRoute] = useState<'/language' | '/auth' | '/onboarding' | '/'>('/language');
   const segments = useSegments();
   const currentSegment = segments[0];
+
+  useEffect(() => subscribeTranslationRevision(() => forceTranslationRevision((value) => value + 1)), []);
 
   useEffect(() => {
     let mounted = true;
@@ -129,5 +132,5 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1 }, startup: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.startup, paddingHorizontal: 28 }, startupGlow: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: BRAND.colors.primaryStrong }, startupMark: { marginBottom: 18 }, startupSubtitle: { marginTop: 6, color: BRAND.colors.startupMuted, fontSize: 13, textAlign: 'center' }, startupSpinner: { marginTop: 28 }, assistantBubble: { position: 'absolute', right: 18, bottom: 24, borderRadius: 20, elevation: 6, shadowColor: '#000', shadowOpacity: BRAND.shadow.opacity, shadowRadius: BRAND.shadow.radius, shadowOffset: { width: 0, height: BRAND.shadow.offsetY } }, pressed: { opacity: 0.82, transform: [{ scale: 0.96 }] },
+  root: { flex: 1 }, startup: { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: BRAND.colors.startup, paddingHorizontal: 28 }, startupGlow: { position: 'absolute', width: 170, height: 170, borderRadius: 85, backgroundColor: BRAND.colors.primaryStrong }, startupMark: { marginBottom: 18 }, startupSpinner: { marginTop: 28 }, assistantBubble: { position: 'absolute', right: 18, bottom: 24, borderRadius: 20, elevation: 6, shadowColor: '#000', shadowOpacity: BRAND.shadow.opacity, shadowRadius: BRAND.shadow.radius, shadowOffset: { width: 0, height: BRAND.shadow.offsetY } }, pressed: { opacity: 0.82, transform: [{ scale: 0.96 }] },
 });
