@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { router } from 'expo-router';
 import { createMeal, FoodItem, getFoods, hasAuthSession } from '../lib/api';
 import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
