@@ -10,37 +10,27 @@ import { translateDynamicText } from '../lib/runtime-translator';
 
 const TYPE_MARK: Record<string, string> = { hydration: 'H', nutrition: 'N', workout: 'W', habit: 'A', supplement: 'S', reminder: 'R' };
 const copy = localizedCopy({
-  en: { eyebrow: 'PERSONAL ASSISTANT', title: 'Notifications', subtitle: 'Useful nudges from your assistant, ranked so the important ones rise to the top.', home: 'Home', calendar: 'Calendar', today: 'Today', unread: 'Unread', all: 'All', markAll: 'Mark all as read', generate: 'Refresh suggestions', generating: 'Refreshing…', retry: 'Retry', unavailable: 'Inbox unavailable', emptyUnreadTitle: 'You’re all caught up', emptyUnreadBody: 'No unread assistant notifications right now.', emptyAllTitle: 'No notifications yet', emptyAllBody: 'Your assistant will surface useful nudges here as your day changes.', markRead: 'Mark as read', read: 'Read', important: 'Important', helpful: 'Helpful', nice: 'Nice to know', work: 'Working…', loading: 'Loading notifications…', generated: (count: number) => count ? `${count} new suggestions added.` : 'No new suggestions right now.' },
-  fa: { eyebrow: 'دستیار شخصی', title: 'اعلان‌ها', subtitle: 'یادآوری‌ها و پیشنهادهای دستیار که مهم‌ترها در اولویت نمایش داده می‌شوند.', home: 'خانه', calendar: 'تقویم', today: 'امروز', unread: 'خوانده‌نشده', all: 'همه', markAll: 'همه را خوانده‌شده کن', generate: 'به‌روزرسانی پیشنهادها', generating: 'در حال به‌روزرسانی…', retry: 'تلاش دوباره', unavailable: 'صندوق اعلان در دسترس نیست', emptyUnreadTitle: 'همه‌چیز مرتبه', emptyUnreadBody: 'فعلاً اعلان خوانده‌نشده‌ای از طرف دستیار نداری.', emptyAllTitle: 'هنوز اعلانی نیست', emptyAllBody: 'هر وقت چیزی در روزت نیاز به توجه داشته باشد، اینجا می‌بینی.', markRead: 'خوانده‌شده', read: 'خوانده‌شده', important: 'مهم', helpful: 'مفید', nice: 'برای اطلاع', work: 'در حال انجام…', loading: 'در حال بارگذاری اعلان‌ها…', generated: (count: number) => count ? `${count} پیشنهاد جدید اضافه شد.` : 'فعلاً پیشنهاد جدیدی وجود ندارد.' },
+  en: { eyebrow: 'PERSONAL ASSISTANT', title: 'Notifications', subtitle: 'Useful nudges from your assistant, ranked so the important ones rise to the top.', home: 'Home', calendar: 'Calendar', today: 'Today', unread: 'Unread', all: 'All', markAll: 'Mark all as read', generate: 'Refresh suggestions', generating: 'Refreshing…', retry: 'Retry', unavailable: 'Inbox unavailable', emptyUnreadTitle: 'You’re all caught up', emptyUnreadBody: 'No unread assistant notifications right now.', emptyAllTitle: 'No notifications yet', emptyAllBody: 'Your assistant will surface useful nudges here as your day changes.', markRead: 'Mark as read', read: 'Read', important: 'Important', helpful: 'Helpful', nice: 'Nice to know', work: 'Working…', loading: 'Loading notifications…', newSuggestions: 'new suggestions added.', noSuggestions: 'No new suggestions right now.' },
+  fa: { eyebrow: 'دستیار شخصی', title: 'اعلان‌ها', subtitle: 'یادآوری‌ها و پیشنهادهای دستیار که مهم‌ترها در اولویت نمایش داده می‌شوند.', home: 'خانه', calendar: 'تقویم', today: 'امروز', unread: 'خوانده‌نشده', all: 'همه', markAll: 'همه را خوانده‌شده کن', generate: 'به‌روزرسانی پیشنهادها', generating: 'در حال به‌روزرسانی…', retry: 'تلاش دوباره', unavailable: 'صندوق اعلان در دسترس نیست', emptyUnreadTitle: 'همه‌چیز مرتبه', emptyUnreadBody: 'فعلاً اعلان خوانده‌نشده‌ای از طرف دستیار نداری.', emptyAllTitle: 'هنوز اعلانی نیست', emptyAllBody: 'هر وقت چیزی در روزت نیاز به توجه داشته باشد، اینجا می‌بینی.', markRead: 'خوانده‌شده', read: 'خوانده‌شده', important: 'مهم', helpful: 'مفید', nice: 'برای اطلاع', work: 'در حال انجام…', loading: 'در حال بارگذاری اعلان‌ها…', newSuggestions: 'پیشنهاد جدید اضافه شد.', noSuggestions: 'فعلاً پیشنهاد جدیدی وجود ندارد.' },
 });
 
-function priorityLabel(priority: number, text: { important: string; helpful: string; nice: string }): string {
+function priorityLabel(priority: number, text: Record<string, string>): string {
   return priority <= 1 ? text.important : priority === 2 ? text.helpful : text.nice;
 }
+function formatDateTime(value: string, locale: AppLocale): string { return new Date(value).toLocaleString(toIntlLocale(locale)); }
 
-function formatDateTime(value: string, locale: AppLocale): string {
-  return new Date(value).toLocaleString(toIntlLocale(locale));
-}
-
-function DynamicNotificationCopy({ text, locale, rtl, style, numberOfLines }: { text: string; locale: AppLocale; rtl: boolean; style?: object; numberOfLines?: number }) {
+function DynamicNotificationCopy({ text, locale, rtl, style }: { text: string; locale: AppLocale; rtl: boolean; style?: object }) {
   const [value, setValue] = useState(text);
   useEffect(() => {
     let active = true;
     void (async () => {
-      if (!text.trim() || locale === 'en') {
-        if (active) setValue(text);
-        return;
-      }
-      try {
-        const translated = await translateDynamicText(locale, text);
-        if (active) setValue(translated);
-      } catch {
-        if (active) setValue(text);
-      }
+      if (!text.trim() || locale === 'en') { if (active) setValue(text); return; }
+      try { const translated = await translateDynamicText(locale, text); if (active) setValue(translated); }
+      catch { if (active) setValue(text); }
     })();
     return () => { active = false; };
   }, [locale, text]);
-  return <Text numberOfLines={numberOfLines} style={[style, rtl ? styles.rtlText : undefined]}>{value}</Text>;
+  return <Text style={[style, rtl ? styles.rtlText : undefined]}>{value}</Text>;
 }
 
 export default function NotificationsScreen() {
@@ -57,58 +47,32 @@ export default function NotificationsScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async (all = showAll) => {
-    try {
-      setError(null);
-      setItems(await getNotifications(all));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : text.unavailable);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
+    try { setError(null); setItems(await getNotifications(all)); }
+    catch (err) { setError(err instanceof Error ? err.message : text.unavailable); }
+    finally { setLoading(false); setRefreshing(false); }
   }, [showAll, text.unavailable]);
 
   useEffect(() => {
     let active = true;
     void hasAuthSession().then((ok) => {
       if (!active) return;
-      if (!ok) {
-        router.replace('/auth');
-        return;
-      }
+      if (!ok) { router.replace('/auth'); return; }
       void load(showAll);
-    }).catch(() => {
-      if (active) {
-        setError(text.unavailable);
-        setLoading(false);
-      }
-    });
+    }).catch(() => { if (active) { setError(text.unavailable); setLoading(false); } });
     return () => { active = false; };
   }, [load, showAll, text.unavailable]);
 
   const unreadCount = useMemo(() => items.filter((item) => !item.readAt).length, [items]);
-
-  const refresh = useCallback(() => {
-    setRefreshing(true);
-    void load(showAll);
-  }, [load, showAll]);
-
-  const switchTab = useCallback((all: boolean) => {
-    setShowAll(all);
-    setLoading(true);
-    void load(all);
-  }, [load]);
+  const refresh = useCallback(() => { setRefreshing(true); void load(showAll); }, [load, showAll]);
+  const switchTab = useCallback((all: boolean) => { setShowAll(all); setLoading(true); void load(all); }, [load]);
 
   const read = async (id: string) => {
     try {
       setBusyId(id);
       await markNotificationRead(id);
       setItems((current) => showAll ? current.map((item) => item.id === id ? { ...item, readAt: new Date().toISOString() } : item) : current.filter((item) => item.id !== id));
-    } catch (err) {
-      setError(err instanceof Error ? err.message : text.unavailable);
-    } finally {
-      setBusyId(null);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : text.unavailable); }
+    finally { setBusyId(null); }
   };
 
   const clearAll = async () => {
@@ -116,129 +80,38 @@ export default function NotificationsScreen() {
       setClearing(true);
       await markAllNotificationsRead();
       setItems((current) => showAll ? current.map((item) => ({ ...item, readAt: new Date().toISOString() })) : []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : text.unavailable);
-    } finally {
-      setClearing(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : text.unavailable); }
+    finally { setClearing(false); }
   };
 
   const generate = async () => {
     try {
       setGenerating(true);
       const result = await generateSmartNotifications();
-      setMessage(text.generated(result.created));
+      setMessage(result.created ? `${result.created} ${text.newSuggestions}` : text.noSuggestions);
       await load(showAll);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : text.unavailable);
-    } finally {
-      setGenerating(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : text.unavailable); }
+    finally { setGenerating(false); }
   };
 
-  if (loading) {
-    return <View style={styles.center}><ActivityIndicator size="large" /><Text style={[styles.loadingText, rtl ? styles.rtlText : undefined]}>{text.loading}</Text></View>;
-  }
-
+  if (loading) return <View style={styles.center}><ActivityIndicator size="large" /><Text style={[styles.loadingText, rtl ? styles.rtlText : undefined]}>{text.loading}</Text></View>;
   const emptyTitle = showAll ? text.emptyAllTitle : text.emptyUnreadTitle;
   const emptyBody = showAll ? text.emptyAllBody : text.emptyUnreadBody;
 
   return <SafeAreaView style={styles.safe}>
     <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} />}>
-      <View style={[styles.nav, rtl ? styles.rowReverse : undefined]}>
-        <Pressable onPress={() => router.replace('/')}><Text style={styles.navText}>{rtl ? '→ ' : '← '}{text.home}</Text></Pressable>
-        <View style={styles.navRight}>
-          <Pressable onPress={() => router.push('/calendar')}><Text style={styles.navText}>{text.calendar}</Text></Pressable>
-          <Pressable onPress={() => router.push('/daily')}><Text style={styles.navText}>{text.today}</Text></Pressable>
-        </View>
-      </View>
-
-      <View style={[styles.header, rtl ? styles.rowReverse : undefined]}>
-        <View style={styles.flex}>
-          <Text style={styles.eyebrow}>{text.eyebrow}</Text>
-          <Text style={[styles.title, rtl ? styles.rtlText : undefined]}>{text.title}</Text>
-          <Text style={[styles.subtitle, rtl ? styles.rtlText : undefined]}>{text.subtitle}</Text>
-        </View>
-        <View style={styles.count}><Text style={styles.countValue}>{unreadCount}</Text><Text style={styles.countLabel}>{text.unread}</Text></View>
-      </View>
-
-      <View style={[styles.tabs, rtl ? styles.rowReverse : undefined]}>
-        <Pressable onPress={() => switchTab(false)} style={[styles.tab, !showAll ? styles.active : undefined]}><Text style={[styles.tabText, !showAll ? styles.activeText : undefined]}>{text.unread}</Text></Pressable>
-        <Pressable onPress={() => switchTab(true)} style={[styles.tab, showAll ? styles.active : undefined]}><Text style={[styles.tabText, showAll ? styles.activeText : undefined]}>{text.all}</Text></Pressable>
-        <Pressable onPress={generate} disabled={generating} style={styles.generate}><Text style={styles.generateText}>{generating ? text.generating : text.generate}</Text></Pressable>
-      </View>
-
+      <View style={[styles.nav, rtl ? styles.rowReverse : undefined]}><Pressable onPress={() => router.replace('/')}><Text style={styles.navText}>{rtl ? '→ ' : '← '}{text.home}</Text></Pressable><View style={styles.navRight}><Pressable onPress={() => router.push('/calendar')}><Text style={styles.navText}>{text.calendar}</Text></Pressable><Pressable onPress={() => router.push('/daily')}><Text style={styles.navText}>{text.today}</Text></Pressable></View></View>
+      <View style={[styles.header, rtl ? styles.rowReverse : undefined]}><View style={styles.flex}><Text style={styles.eyebrow}>{text.eyebrow}</Text><Text style={[styles.title, rtl ? styles.rtlText : undefined]}>{text.title}</Text><Text style={[styles.subtitle, rtl ? styles.rtlText : undefined]}>{text.subtitle}</Text></View><View style={styles.count}><Text style={styles.countValue}>{unreadCount}</Text><Text style={styles.countLabel}>{text.unread}</Text></View></View>
+      <View style={[styles.tabs, rtl ? styles.rowReverse : undefined]}><Pressable onPress={() => switchTab(false)} style={[styles.tab, !showAll ? styles.active : undefined]}><Text style={[styles.tabText, !showAll ? styles.activeText : undefined]}>{text.unread}</Text></Pressable><Pressable onPress={() => switchTab(true)} style={[styles.tab, showAll ? styles.active : undefined]}><Text style={[styles.tabText, showAll ? styles.activeText : undefined]}>{text.all}</Text></Pressable><Pressable onPress={generate} disabled={generating} style={styles.generate}><Text style={styles.generateText}>{generating ? text.generating : text.generate}</Text></Pressable></View>
       {message ? <View style={styles.message}><DynamicNotificationCopy text={message} locale={locale} rtl={rtl} style={styles.messageText} /></View> : null}
-
       {items.length > 0 && unreadCount > 0 ? <Pressable onPress={() => void clearAll()} disabled={clearing} style={styles.clear}><Text style={[styles.clearText, rtl ? styles.rtlText : undefined]}>{clearing ? text.work : `${text.markAll} · ${unreadCount}`}</Text></Pressable> : null}
-
       {error ? <View style={styles.error}><Text style={[styles.errorTitle, rtl ? styles.rtlText : undefined]}>{text.unavailable}</Text><DynamicNotificationCopy text={error} locale={locale} rtl={rtl} style={styles.body} /><Pressable onPress={() => void load(showAll)} style={styles.button}><Text style={styles.buttonText}>{text.retry}</Text></Pressable></View> : null}
-
       {!error && items.length === 0 ? <View style={styles.empty}><Text style={styles.emptyMark}>✓</Text><Text style={[styles.cardTitle, rtl ? styles.rtlText : undefined]}>{emptyTitle}</Text><Text style={[styles.body, rtl ? styles.rtlText : undefined]}>{emptyBody}</Text></View> : null}
-
-      {items.map((item) => {
-        const readState = Boolean(item.readAt);
-        const mark = TYPE_MARK[item.type] ?? 'M';
-        return <View key={item.id} style={[styles.card, readState ? styles.readCard : undefined]}>
-          <View style={[styles.itemRow, rtl ? styles.rowReverse : undefined]}>
-            <View style={styles.typeMark}><Text style={styles.typeMarkText}>{mark}</Text></View>
-            <View style={styles.flex}>
-              <Text style={[styles.priority, rtl ? styles.rtlText : undefined]}>{priorityLabel(item.priority, text)}</Text>
-              <DynamicNotificationCopy text={item.title} locale={locale} rtl={rtl} style={styles.cardTitle} />
-              {item.body ? <DynamicNotificationCopy text={item.body} locale={locale} rtl={rtl} style={styles.body} /> : null}
-              <Text style={styles.meta}>{formatDateTime(item.scheduledAt ?? item.createdAt, locale)}</Text>
-            </View>
-          </View>
-          {!readState ? <Pressable onPress={() => void read(item.id)} disabled={busyId === item.id} style={styles.button}><Text style={styles.buttonText}>{busyId === item.id ? '…' : text.markRead}</Text></Pressable> : <Text style={styles.readTag}>{text.read}</Text>}
-        </View>;
-      })}
+      {items.map((item) => { const readState = Boolean(item.readAt); const mark = TYPE_MARK[item.type] ?? 'M'; return <View key={item.id} style={[styles.card, readState ? styles.readCard : undefined]}><View style={[styles.itemRow, rtl ? styles.rowReverse : undefined]}><View style={styles.typeMark}><Text style={styles.typeMarkText}>{mark}</Text></View><View style={styles.flex}><Text style={[styles.priority, rtl ? styles.rtlText : undefined]}>{priorityLabel(item.priority, text)}</Text><DynamicNotificationCopy text={item.title} locale={locale} rtl={rtl} style={styles.cardTitle} /><DynamicNotificationCopy text={item.body ?? ''} locale={locale} rtl={rtl} style={styles.body} /><Text style={styles.meta}>{formatDateTime(item.scheduledAt ?? item.createdAt, locale)}</Text></View></View>{!readState ? <Pressable onPress={() => void read(item.id)} disabled={busyId === item.id} style={styles.button}><Text style={styles.buttonText}>{busyId === item.id ? '…' : text.markRead}</Text></Pressable> : <Text style={styles.readTag}>{text.read}</Text>}</View>; })}
     </ScrollView>
   </SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: BRAND.colors.canvas },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BRAND.colors.canvas },
-  loadingText: { marginTop: 12, color: BRAND.colors.muted },
-  content: { padding: 20, gap: 14, paddingBottom: 40 },
-  flex: { flex: 1 },
-  nav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  rowReverse: { flexDirection: 'row-reverse' },
-  navRight: { flexDirection: 'row', gap: 18 },
-  navText: { fontWeight: '800', color: BRAND.colors.ink, fontSize: 12 },
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  eyebrow: { fontSize: 10, letterSpacing: 1.4, fontWeight: '900', color: BRAND.colors.muted },
-  title: { fontSize: 31, fontWeight: '900', color: BRAND.colors.ink, marginTop: 3 },
-  subtitle: { fontSize: 14, lineHeight: 20, color: BRAND.colors.muted, marginTop: 4 },
-  rtlText: { writingDirection: 'rtl', textAlign: 'right' },
-  count: { minWidth: 54, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 15, backgroundColor: BRAND.colors.primarySoft, alignItems: 'center' },
-  countValue: { color: BRAND.colors.primaryStrong, fontSize: 18, fontWeight: '900' },
-  countLabel: { color: BRAND.colors.primary, fontSize: 9, fontWeight: '800' },
-  tabs: { flexDirection: 'row', gap: 8, alignItems: 'center' },
-  tab: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: BRAND.colors.surface },
-  active: { backgroundColor: BRAND.colors.ink },
-  tabText: { color: BRAND.colors.muted, fontWeight: '900', fontSize: 11 },
-  activeText: { color: BRAND.colors.white },
-  generate: { marginLeft: 'auto', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: BRAND.colors.primarySoft },
-  generateText: { color: BRAND.colors.primaryStrong, fontWeight: '900', fontSize: 10 },
-  message: { backgroundColor: '#ECFDF3', borderRadius: 14, padding: 12 },
-  messageText: { color: '#166534', fontSize: 12, fontWeight: '800' },
-  clear: { alignSelf: 'flex-start', backgroundColor: BRAND.colors.border, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 12 },
-  clearText: { fontWeight: '900', color: BRAND.colors.ink, fontSize: 11 },
-  error: { backgroundColor: '#FEF2F2', borderRadius: 18, padding: 16, gap: 5 },
-  errorTitle: { color: '#991B1B', fontWeight: '900', fontSize: 13 },
-  empty: { backgroundColor: BRAND.colors.surface, borderRadius: 20, padding: 24, alignItems: 'flex-start', gap: 8 },
-  emptyMark: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#ECFDF3', color: '#15803D', fontSize: 20, fontWeight: '900', textAlign: 'center', textAlignVertical: 'center' },
-  card: { backgroundColor: BRAND.colors.surface, borderRadius: 20, padding: 18, gap: 10 },
-  readCard: { opacity: 0.68 },
-  itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
-  typeMark: { width: 42, height: 42, borderRadius: 14, backgroundColor: BRAND.colors.primary, alignItems: 'center', justifyContent: 'center' },
-  typeMarkText: { color: BRAND.colors.white, fontSize: 13, fontWeight: '900' },
-  priority: { fontSize: 10, fontWeight: '900', color: BRAND.colors.ink, textTransform: 'uppercase', marginBottom: 5 },
-  cardTitle: { fontSize: 17, fontWeight: '900', color: BRAND.colors.ink },
-  body: { fontSize: 13, lineHeight: 20, color: '#4B5563', marginTop: 5 },
-  meta: { fontSize: 10, color: '#9CA3AF', fontWeight: '700', marginTop: 8 },
-  button: { alignSelf: 'flex-start', backgroundColor: BRAND.colors.ink, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 11 },
-  buttonText: { color: BRAND.colors.white, fontWeight: '900', fontSize: 11 },
-  readTag: { fontSize: 9, color: '#15803D', fontWeight: '900' },
+  safe: { flex: 1, backgroundColor: BRAND.colors.canvas }, center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: BRAND.colors.canvas }, loadingText: { marginTop: 12, color: BRAND.colors.muted }, content: { padding: 20, gap: 14, paddingBottom: 40 }, flex: { flex: 1 }, nav: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }, rowReverse: { flexDirection: 'row-reverse' }, navRight: { flexDirection: 'row', gap: 18 }, navText: { fontWeight: '800', color: BRAND.colors.ink, fontSize: 12 }, header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 }, eyebrow: { fontSize: 10, letterSpacing: 1.4, fontWeight: '900', color: BRAND.colors.muted }, title: { fontSize: 31, fontWeight: '900', color: BRAND.colors.ink, marginTop: 3 }, subtitle: { fontSize: 14, lineHeight: 20, color: BRAND.colors.muted, marginTop: 4 }, rtlText: { writingDirection: 'rtl', textAlign: 'right' }, count: { minWidth: 54, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 15, backgroundColor: BRAND.colors.primarySoft, alignItems: 'center' }, countValue: { color: BRAND.colors.primaryStrong, fontSize: 18, fontWeight: '900' }, countLabel: { color: BRAND.colors.primary, fontSize: 9, fontWeight: '800' }, tabs: { flexDirection: 'row', gap: 8, alignItems: 'center' }, tab: { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: BRAND.colors.surface }, active: { backgroundColor: BRAND.colors.ink }, tabText: { color: BRAND.colors.muted, fontWeight: '900', fontSize: 11 }, activeText: { color: BRAND.colors.white }, generate: { marginLeft: 'auto', paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: BRAND.colors.primarySoft }, generateText: { color: BRAND.colors.primaryStrong, fontWeight: '900', fontSize: 10 }, message: { backgroundColor: '#ECFDF3', borderRadius: 14, padding: 12 }, messageText: { color: '#166534', fontSize: 12, fontWeight: '800' }, clear: { alignSelf: 'flex-start', backgroundColor: BRAND.colors.border, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 12 }, clearText: { fontWeight: '900', color: BRAND.colors.ink, fontSize: 11 }, error: { backgroundColor: '#FEF2F2', borderRadius: 18, padding: 16, gap: 5 }, errorTitle: { color: '#991B1B', fontWeight: '900', fontSize: 13 }, empty: { backgroundColor: BRAND.colors.surface, borderRadius: 20, padding: 24, alignItems: 'flex-start', gap: 8 }, emptyMark: { width: 42, height: 42, borderRadius: 14, backgroundColor: '#ECFDF3', color: '#15803D', fontSize: 20, fontWeight: '900', textAlign: 'center', textAlignVertical: 'center' }, card: { backgroundColor: BRAND.colors.surface, borderRadius: 20, padding: 18, gap: 10 }, readCard: { opacity: 0.68 }, itemRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 }, typeMark: { width: 42, height: 42, borderRadius: 14, backgroundColor: BRAND.colors.primary, alignItems: 'center', justifyContent: 'center' }, typeMarkText: { color: BRAND.colors.white, fontSize: 13, fontWeight: '900' }, priority: { fontSize: 10, fontWeight: '900', color: BRAND.colors.ink, textTransform: 'uppercase', marginBottom: 5 }, cardTitle: { fontSize: 17, fontWeight: '900', color: BRAND.colors.ink }, body: { fontSize: 13, lineHeight: 20, color: '#4B5563', marginTop: 5 }, meta: { fontSize: 10, color: '#9CA3AF', fontWeight: '700', marginTop: 8 }, button: { alignSelf: 'flex-start', backgroundColor: BRAND.colors.ink, paddingHorizontal: 13, paddingVertical: 10, borderRadius: 11 }, buttonText: { color: BRAND.colors.white, fontWeight: '900', fontSize: 11 }, readTag: { fontSize: 9, color: '#15803D', fontWeight: '900' },
 });
