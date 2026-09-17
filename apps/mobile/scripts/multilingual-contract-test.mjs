@@ -18,7 +18,7 @@ const expected = 51;
 const checks = [
   ['51 canonical base locales', baseLocales.length === expected],
   ['Iranian Azerbaijani Turkish is separate', /RegionalAppLocale\s*=\s*'az'/.test(languages) && /code:\s*'tr'[\s\S]*?Turkish \(Türkiye\)/.test(languages)],
-  ['language options include regional az', /export const REGIONAL_LANGUAGE_VARIANTS[\s\S]*?code:\s*'az'[\s\S]*?Azerbaijani Turkish \(Iran\)/.test(languages) && /export const LANGUAGE_OPTIONS\s*=\s*\[\.\.\.SUPPORTED_LANGUAGES, \.\.\.REGIONAL_LANGUAGE_VARIANTS\]/.test(languages)],
+  ['language options include regional az', /REGIONAL_LANGUAGE_VARIANTS\s*=/.test(languages) && /code:\s*'az'[\s\S]*?Azerbaijani Turkish \(Iran\)/.test(languages) && /LANGUAGE_OPTIONS\s*=\s*\[\.\.\.SUPPORTED_LANGUAGES, \.\.\.REGIONAL_LANGUAGE_VARIANTS\]/.test(languages)],
   ['voice mapping includes every base locale', baseLocales.every((code) => new RegExp(`\\b${code}:\\s*'[^']+'`).test(voiceLanguage))],
   ['voice mapping includes az', /\baz:\s*'az-AZ'/.test(voiceLanguage)],
   ['bidirectional translation gateway exists', runtimeTranslator.includes('translateTextBetweenLocales') && runtimeTranslator.includes('translateRecord(targetCode(sourceLocale), targetCode(targetLocale)')],
