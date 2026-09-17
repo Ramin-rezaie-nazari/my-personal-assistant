@@ -9,11 +9,13 @@ import { getMeals, hasAuthSession, Meal } from '../../lib/api';
 const copy = localizedCopy({
   en: {
     unavailable: 'Meal unavailable', notFound: 'Meal not found', removed: 'This meal may have been removed or is no longer available.',
-    details: 'MEAL DETAILS', ingredients: 'Ingredients', serving: 'serving', servings: 'servings', logAnother: 'Log another meal', carbs: 'Carbs', fat: 'Fat', meals: 'Meals',
+    details: 'MEAL DETAILS', ingredients: 'Ingredients', serving: 'serving', servings: 'servings', logAnother: 'Log another meal', meals: 'Meals',
+    calories: 'Calories', protein: 'Protein', carbs: 'Carbs', fat: 'Fat',
   },
   fa: {
     unavailable: 'غذا در دسترس نیست', notFound: 'غذا پیدا نشد', removed: 'این غذا ممکن است حذف شده باشد یا دیگر در دسترس نباشد.',
-    details: 'جزئیات غذا', ingredients: 'مواد تشکیل‌دهنده', serving: 'سرو', servings: 'سرو', logAnother: 'ثبت یک غذای دیگر', carbs: 'کربوهیدرات', fat: 'چربی', meals: 'غذاها',
+    details: 'جزئیات غذا', ingredients: 'مواد تشکیل‌دهنده', serving: 'سرو', servings: 'سرو', logAnother: 'ثبت یک غذای دیگر', meals: 'غذاها',
+    calories: 'کالری', protein: 'پروتئین', carbs: 'کربوهیدرات', fat: 'چربی',
   },
 });
 
