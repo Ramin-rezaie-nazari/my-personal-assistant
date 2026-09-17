@@ -6,6 +6,7 @@ const CACHE_PREFIX = '@my-personal-assistant/i18n-pack-v1:';
 const memory = new Map<AppLocale, Record<string, string>>();
 const pending = new Map<AppLocale, Promise<boolean>>();
 const registeredCopies = new Set<Record<string, string>>();
+const listeners = new Set<() => void>();
 let activeLocale: AppLocale = 'en';
 let baseEnglish: Record<string, string> | null = null;
 
@@ -15,6 +16,17 @@ function targetCode(locale: AppLocale): string {
 
 function isMeaningfulText(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0 && /[\p{L}]/u.test(value);
+}
+
+function emitTranslationRevision(): void {
+  for (const listener of listeners) {
+    try { listener(); } catch { /* subscribers must never break translation */ }
+  }
+}
+
+export function subscribeTranslationRevision(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 
 async function getBaseEnglishPack(): Promise<Record<string, string>> {
@@ -49,6 +61,7 @@ export function getLocalizedCopy<T extends Record<string, string>>(locale: AppLo
       if (typeof property === 'string') {
         const pack = memory.get(locale);
         if (pack?.[`copy:${property}`]) return pack[`copy:${property}`] as T[keyof T];
+        return '…' as T[keyof T];
       }
       return Reflect.get(target, property);
     },
@@ -80,6 +93,7 @@ async function translateCopy(source: Record<string, string>, locale: AppLocale):
   const existing = memory.get(locale) ?? {};
   for (const [key, value] of Object.entries(pack)) existing[`copy:${key}`] = value;
   memory.set(locale, existing);
+  emitTranslationRevision();
   return true;
 }
 
@@ -87,10 +101,12 @@ export async function hydrateLocale(locale: AppLocale): Promise<boolean> {
   activeLocale = locale;
   if (locale === 'en') {
     if (baseEnglish) await patchGlobalTranslationPack(locale, baseEnglish);
+    emitTranslationRevision();
     return true;
   }
   if (memory.has(locale)) {
     await patchGlobalTranslationPack(locale, memory.get(locale) ?? {});
+    emitTranslationRevision();
     return true;
   }
   const raw = await AsyncStorage.getItem(`${CACHE_PREFIX}${locale}`);
@@ -101,6 +117,7 @@ export async function hydrateLocale(locale: AppLocale): Promise<boolean> {
     for (const [key, value] of Object.entries(parsed)) if (typeof value === 'string') pack[key] = value;
     memory.set(locale, pack);
     await patchGlobalTranslationPack(locale, pack);
+    emitTranslationRevision();
     return Object.keys(pack).length > 0;
   } catch {
     await AsyncStorage.removeItem(`${CACHE_PREFIX}${locale}`);
@@ -120,9 +137,13 @@ export async function preloadLocale(locale: AppLocale, sourcePack?: Record<strin
   if (locale === 'en') {
     baseEnglish = { ...basePack };
     await patchGlobalTranslationPack(locale, baseEnglish);
+    emitTranslationRevision();
     return true;
   }
-  if (locale === 'fa') return true;
+  if (locale === 'fa') {
+    emitTranslationRevision();
+    return true;
+  }
   const existing = pending.get(locale);
   if (existing) return existing;
   if (await hydrateLocale(locale)) {
@@ -137,6 +158,7 @@ export async function preloadLocale(locale: AppLocale, sourcePack?: Record<strin
       memory.set(locale, pack);
       await AsyncStorage.setItem(`${CACHE_PREFIX}${locale}`, JSON.stringify(pack));
       await patchGlobalTranslationPack(locale, pack);
+      emitTranslationRevision();
       await preloadRegisteredCopies(locale);
       return true;
     } finally {
@@ -161,6 +183,7 @@ export async function translateTextBetweenLocales(text: string, sourceLocale: Ap
   pack[cacheKey] = translated;
   memory.set(targetLocale, pack);
   await AsyncStorage.setItem(`${CACHE_PREFIX}${targetLocale}`, JSON.stringify(pack));
+  emitTranslationRevision();
   return translated;
 }
 
