@@ -6,6 +6,7 @@ const read = (relative) => readFile(join(root, relative), 'utf8');
 
 const languages = await read('lib/languages.ts');
 const runtimeTranslator = await read('lib/runtime-translator.ts');
+const azBridge = await read('lib/az-language-bridge.ts');
 const voiceLanguage = await read('lib/voice-language.ts');
 const assistant = await read('app/assistant.tsx');
 const sourceSmoke = await read('scripts/source-smoke-test.mjs');
@@ -22,6 +23,9 @@ const checks = [
   ['voice mapping includes every base locale', baseLocales.every((code) => new RegExp(`\\b${code}:\\s*'[^']+'`).test(voiceLanguage))],
   ['voice mapping includes az', /\baz:\s*'az-AZ'/.test(voiceLanguage)],
   ['bidirectional translation gateway exists', runtimeTranslator.includes('translateTextBetweenLocales') && runtimeTranslator.includes("translateRecord(targetCode(sourceLocale), targetCode(targetLocale)")],
+  ['Azerbaijani target bridges through Turkish', runtimeTranslator.includes("if (targetLangCode === 'az')") && runtimeTranslator.includes("translateRecordNative(sourceLangCode, 'tr', source)")],
+  ['Azerbaijani source bridges through Turkish', runtimeTranslator.includes("if (sourceLangCode === 'az')") && runtimeTranslator.includes("translateRecordNative('tr', targetLangCode, normalizedTurkish)")],
+  ['Iranian Azerbaijani lexical bridge exists', azBridge.includes('turkishToIranianAzerbaijani') && azBridge.includes('iranianAzerbaijaniToTurkish')],
   ['assistant canonicalizes input', assistant.includes("translateTextBetweenLocales(text, locale, 'en')")],
   ['assistant localizes output', assistant.includes('localizeAssistantText(response.message, locale)')],
   ['assistant TTS follows locale', assistant.includes('speakAssistantText(message.text, locale)')],
