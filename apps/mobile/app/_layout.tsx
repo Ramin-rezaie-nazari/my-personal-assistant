@@ -7,6 +7,7 @@ import { AppErrorState } from '../components/app-error-state';
 import { BrandMark } from '../components/BrandMark';
 import { BrandWordmark } from '../components/BrandWordmark';
 import { getStoredLocale, isRTL } from '../lib/i18n';
+import { preloadLocale } from '../lib/runtime-translator';
 import { getStoredAccessToken, hasAuthSession } from '../lib/api';
 import { getOnboardingState } from '../lib/onboarding';
 import { registerForPushNotifications, listenForPushTokenRefresh } from '../lib/notifications/push-registration';
@@ -48,10 +49,18 @@ export default function RootLayout() {
         const [locale, authenticated, onboarding] = await Promise.all([getStoredLocale(), hasAuthSession(), getOnboardingState()]);
         if (!mounted) return;
         clearTimeout(timeoutId);
-        if (locale) I18nManager.allowRTL(isRTL(locale));
+        if (locale) {
+          I18nManager.allowRTL(isRTL(locale));
+          await preloadLocale(locale);
+        }
         if (!locale) setTargetRoute('/language'); else if (!authenticated) setTargetRoute('/auth'); else if (!onboarding.completed) setTargetRoute('/onboarding'); else setTargetRoute('/');
         setBootReady(true);
-      } catch { if (!mounted) return; clearTimeout(timeoutId); setTargetRoute('/language'); setBootReady(true); }
+      } catch {
+        if (!mounted) return;
+        clearTimeout(timeoutId);
+        setTargetRoute('/language');
+        setBootReady(true);
+      }
     };
     void bootstrap();
     return () => { mounted = false; clearTimeout(timeoutId); };
@@ -62,9 +71,6 @@ export default function RootLayout() {
     const onExpectedRoute = (targetRoute === '/language' && currentSegment === 'language') || (targetRoute === '/auth' && currentSegment === 'auth') || (targetRoute === '/onboarding' && currentSegment === 'onboarding') || (targetRoute === '/' && currentSegment == null);
     if (onExpectedRoute) return;
 
-    // The language screen persists the locale before navigating. Re-read the
-    // startup state when leaving /language so its child navigation cannot be
-    // immediately overwritten by stale boot state.
     if (targetRoute === '/language' && currentSegment !== 'language') {
       void (async () => {
         const locale = await getStoredLocale();
@@ -72,6 +78,7 @@ export default function RootLayout() {
           router.replace('/language');
           return;
         }
+        await preloadLocale(locale);
         const authenticated = await hasAuthSession();
         const onboarding = await getOnboardingState();
         const nextRoute = !authenticated ? '/auth' : !onboarding.completed ? '/onboarding' : '/';
