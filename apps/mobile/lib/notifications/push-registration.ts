@@ -1,21 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import type { AppLocale } from '../languages';
 
 const DEVICE_ID_KEY = '@my-personal-assistant/notification-device-id';
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
-export type AppLanguage = 'fa' | 'en';
+export type AppLanguage = AppLocale;
 export type RegisteredDevice = { id: string; userId: string; platform: 'ios' | 'android' | 'web'; pushToken: string; enabled: boolean; locale?: AppLanguage; timezone?: string };
 type RegistrationOptions = { accessToken: string; language: AppLanguage; timezone?: string; projectId: string };
 
 async function registerToken(accessToken: string, language: AppLanguage, pushToken: string, timezone?: string) {
   if (!API_URL) return null;
-  const response = await fetch(`${API_URL}/personal-brain/coach/device`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ platform: Platform.OS, pushToken, locale: language, timezone: timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone }),
-  });
+  const response = await fetch(`${API_URL}/personal-brain/coach/device`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ platform: Platform.OS, pushToken, locale: language, timezone: timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone }) });
   if (!response.ok) throw new Error(`Notification device registration failed: ${response.status}`);
   const device = (await response.json()) as RegisteredDevice;
   await AsyncStorage.setItem(DEVICE_ID_KEY, device.id);
@@ -33,9 +30,7 @@ export async function registerForPushNotifications(options: RegistrationOptions)
 }
 
 export function listenForPushTokenRefresh(options: RegistrationOptions) {
-  return Notifications.addPushTokenListener(({ data }) => {
-    void registerToken(options.accessToken, options.language, data, options.timezone);
-  });
+  return Notifications.addPushTokenListener(({ data }) => { void registerToken(options.accessToken, options.language, data, options.timezone); });
 }
 
 export async function getRegisteredNotificationDeviceId() { return AsyncStorage.getItem(DEVICE_ID_KEY); }
@@ -44,11 +39,7 @@ export async function disableRegisteredNotificationDevice(accessToken: string) {
   if (!API_URL) return false;
   const deviceId = await getRegisteredNotificationDeviceId();
   if (!deviceId) return false;
-  const response = await fetch(`${API_URL}/personal-brain/coach/device/disable`, {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ deviceId }),
-  });
+  const response = await fetch(`${API_URL}/personal-brain/coach/device/disable`, { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ deviceId }) });
   if (!response.ok) throw new Error(`Notification device disable failed: ${response.status}`);
   await AsyncStorage.removeItem(DEVICE_ID_KEY);
   return true;
