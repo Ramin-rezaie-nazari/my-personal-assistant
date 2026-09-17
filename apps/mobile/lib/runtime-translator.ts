@@ -20,6 +20,12 @@ function isMeaningfulText(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0 && /[\p{L}]/u.test(value);
 }
 
+async function getBaseEnglishPack(): Promise<Record<string, string>> {
+  const module = await import('./i18n');
+  if (!baseEnglish) baseEnglish = { ...(module.translations.en as Record<string, string>) };
+  return { ...baseEnglish };
+}
+
 async function patchGlobalTranslationPack(locale: AppLocale, pack: Record<string, string>): Promise<void> {
   const module = await import('./i18n');
   if (!baseEnglish) baseEnglish = { ...(module.translations.en as Record<string, string>) };
@@ -41,10 +47,12 @@ export function getLocalizedCopy<T extends Record<string, string>>(locale: AppLo
   if (locale === 'fa') return source.fa;
   if (locale === 'en') return source.en;
   const registered = registerCopy(source.en);
-  const pack = memory.get(locale);
   return new Proxy(registered, {
     get(target, property: string | symbol) {
-      if (typeof property === 'string' && pack?.[`copy:${property}`]) return pack[`copy:${property}`] as T[keyof T];
+      if (typeof property === 'string') {
+        const pack = memory.get(locale);
+        if (pack?.[`copy:${property}`]) return pack[`copy:${property}`] as T[keyof T];
+      }
       return Reflect.get(target, property);
     },
   });
@@ -110,8 +118,7 @@ export async function preloadRegisteredCopies(locale: AppLocale): Promise<void> 
 
 export async function preloadLocale(locale: AppLocale, sourcePack?: Record<string, string>): Promise<boolean> {
   activeLocale = locale;
-  const i18n = await import('./i18n');
-  const basePack = sourcePack ?? ({ ...(i18n.translations.en as Record<string, string>) });
+  const basePack = sourcePack ?? await getBaseEnglishPack();
   if (locale === 'en') {
     baseEnglish = { ...basePack };
     await patchGlobalTranslationPack(locale, baseEnglish);
