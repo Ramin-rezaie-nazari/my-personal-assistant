@@ -60,7 +60,27 @@ export default function RootLayout() {
   useEffect(() => {
     if (!bootReady) return;
     const onExpectedRoute = (targetRoute === '/language' && currentSegment === 'language') || (targetRoute === '/auth' && currentSegment === 'auth') || (targetRoute === '/onboarding' && currentSegment === 'onboarding') || (targetRoute === '/' && currentSegment == null);
-    if (!onExpectedRoute) router.replace(targetRoute);
+    if (onExpectedRoute) return;
+
+    // The language screen persists the locale before navigating. Re-read the
+    // startup state when leaving /language so its child navigation cannot be
+    // immediately overwritten by stale boot state.
+    if (targetRoute === '/language' && currentSegment !== 'language') {
+      void (async () => {
+        const locale = await getStoredLocale();
+        if (!locale) {
+          router.replace('/language');
+          return;
+        }
+        const authenticated = await hasAuthSession();
+        const onboarding = await getOnboardingState();
+        const nextRoute = !authenticated ? '/auth' : !onboarding.completed ? '/onboarding' : '/';
+        setTargetRoute(nextRoute);
+      })();
+      return;
+    }
+
+    router.replace(targetRoute);
   }, [bootReady, currentSegment, targetRoute]);
 
   useEffect(() => {
