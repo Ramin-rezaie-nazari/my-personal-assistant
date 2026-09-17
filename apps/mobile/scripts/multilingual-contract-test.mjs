@@ -51,6 +51,8 @@ async function scanDir(relativeDir) {
 await scanDir('app');
 
 const failed = checks.filter(([, ok]) => !ok);
-for (const [name, ok] of checks) console.log(`${ok ? 'PASS' : 'FAIL'} ${name}`);
-if (failed.length) process.exit(1);
-console.log(`Multilingual contract smoke test passed (${checks.length} checks).`);
+if (failed.length) {
+  for (const [name] of failed) console.log(`FAIL ${name}`);
+  console.log(`Multilingual contract smoke test failed (${failed.length}/${checks.length} checks).`);
+  process.exit(1);
+}
