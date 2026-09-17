@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { AppLocale, getLanguage, isRTL, SUPPORTED_LANGUAGES } from '../lib/languages';
 import { getStoredLocale, setStoredLocale, t } from '../lib/i18n';
+import { preloadLocale } from '../lib/runtime-translator';
 
 function BrandMark() {
   return (
@@ -37,6 +38,11 @@ export default function LanguageScreen() {
   const continueToApp = async () => {
     setBusy(true);
     await setStoredLocale(locale);
+    const prepared = await preloadLocale(locale);
+    if (!prepared && locale !== 'en' && locale !== 'fa') {
+      // Keep the selection and let the runtime retry from cache/model setup on next launch.
+      // The initial route is still reachable so users are not trapped on onboarding.
+    }
     I18nManager.allowRTL(isRTL(locale));
     router.replace('/auth');
   };
