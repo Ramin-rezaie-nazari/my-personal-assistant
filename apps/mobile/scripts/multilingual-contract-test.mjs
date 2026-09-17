@@ -42,7 +42,7 @@ async function scanDir(relativeDir) {
     }
     if (!entry.name.endsWith('.tsx')) continue;
     if (relative.endsWith('app/_layout.tsx') || relative.endsWith('app/index.tsx') || relative.endsWith('app/command-center.tsx')) continue;
-    const source = await read(relative.slice(4));
+    const source = await read(relative);
     const localized = source.includes('localizedCopy') || source.includes('useAppLocale') || source.includes("from '../lib/i18n'") || source.includes("from '../../lib/i18n'") || source.includes("from '../lib/languages'") || source.includes("from '../../lib/languages'");
     checks.push([`${relative.replace(/^app\//, '')} exposes the locale contract`, localized]);
   }
