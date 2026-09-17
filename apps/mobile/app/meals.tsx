@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { getMeals, getNutritionSummary, hasAuthSession, Meal, NutritionSummary } from '../lib/api';
 import { router } from 'expo-router';
 import { AppLocale, getStoredLocale, isRTL, t } from '../lib/i18n';
+import { localizedCopy } from '../lib/localized-copy';
 
-const copy = {
+const copy = localizedCopy({
   en: { back: '← Back', today: 'Today', eyebrow: 'NUTRITION', title: 'Meals', subtitle: 'Everything you logged today, connected to your nutrition goals.', add: '+ Log meal', brain: 'PERSONAL BRAIN', next: 'What should you eat next?', suggest: 'Get suggestions matched to today’s remaining calories and protein.', suggestBtn: 'Suggest →', balance: "Today's balance", search: 'Search meals or foods...', unavailable: 'Meals unavailable', retry: 'Retry', view: 'View →', nothing: 'Nothing matches', none: 'No meals logged yet', try: 'Try another food or meal name.', first: 'Start by logging your first meal.', log: 'Log your first meal', backCenter: 'Back to Command Center', todayLabel: 'today', calories: 'Calories', protein: 'Protein', carbs: 'Carbs', fat: 'Fat' },
   fa: { back: 'برگشت ←', today: 'امروز', eyebrow: 'تغذیه', title: 'وعده‌ها', subtitle: 'همه چیزهایی که امروز ثبت کردی، متصل به هدف‌های تغذیه‌ای تو.', add: '+ ثبت وعده', brain: 'مغز شخصی', next: 'بعدی چی بخورم؟', suggest: 'پیشنهادها را با کالری و پروتئین باقی‌مانده امروز هماهنگ کن.', suggestBtn: 'پیشنهاد بده ←', balance: 'وضعیت امروز', search: 'جست‌وجوی وعده یا غذا...', unavailable: 'وعده‌ها در دسترس نیستند', retry: 'تلاش دوباره', view: 'مشاهده ←', nothing: 'موردی پیدا نشد', none: 'هنوز وعده‌ای ثبت نشده', try: 'نام غذا یا وعده دیگری را امتحان کن.', first: 'اولین وعده‌ات را ثبت کن.', log: 'ثبت اولین وعده', backCenter: 'برگشت به مرکز فرمان', todayLabel: 'امروز', calories: 'کالری', protein: 'پروتئین', carbs: 'کربوهیدرات', fat: 'چربی' },
-} as const;
-type Copy = (typeof copy)[keyof typeof copy];
+});
+
+type Copy = ReturnType<typeof localizedCopy<typeof copy.en>> extends Record<AppLocale, infer T> ? T : never;
 
 export default function MealsScreen() {
   const [locale, setLocale] = useState<AppLocale>('en');
