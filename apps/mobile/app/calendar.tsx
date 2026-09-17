@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import { CalendarEvent, completeCalendarEvent, createCalendarEvent, deleteCalendarEvent, getCalendarEvents, reopenCalendarEvent, updateCalendarEvent } from '../lib/calendar-api';
-import { getStoredLocale, isRTL, t, toIntlLocale, type AppLocale } from '../lib/i18n';
+import { isRTL, toIntlLocale, useAppLocale, type AppLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 import { colors, components, radius, spacing, typography } from '../lib/design-system';
 
@@ -20,7 +20,8 @@ const formatTime = (value: string) => new Date(value).toLocaleTimeString([], { h
 const formatDay = (value: Date, locale: AppLocale) => value.toLocaleDateString(toIntlLocale(locale), { weekday: 'long', month: 'short', day: 'numeric' });
 
 export default function CalendarScreen() {
-  const { locale, rtl } = (() => { const [value, setValue] = useState<AppLocale>('en'); useEffect(() => { void getStoredLocale().then((stored) => { if (stored) setValue(stored); }); }, []); return { locale: value, rtl: isRTL(value) }; })();
+  const { locale } = useAppLocale();
+  const rtl = isRTL(locale);
   const text = copy[locale];
   const [events, setEvents] = useState<CalendarEvent[]>([]); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null); const [rangeStart, setRangeStart] = useState(() => startOfDay(new Date())); const [selectedDay, setSelectedDay] = useState(() => startOfDay(new Date())); const [title, setTitle] = useState(''); const [startTime, setStartTime] = useState(''); const [endTime, setEndTime] = useState(''); const [editingId, setEditingId] = useState<string | null>(null);
   const rangeEnd = useMemo(() => new Date(rangeStart.getTime() + 7 * 24 * 60 * 60 * 1000), [rangeStart]);
