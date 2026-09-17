@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, I18nManager, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { AppLocale, getLanguage, isRTL, SUPPORTED_LANGUAGES } from '../lib/languages';
+import { AppLocale, getLanguage, isRTL, LANGUAGE_OPTIONS, SUPPORTED_LANGUAGE_COUNT } from '../lib/languages';
 import { getStoredLocale, setStoredLocale, t } from '../lib/i18n';
 import { preloadLocale } from '../lib/runtime-translator';
 
@@ -38,19 +38,15 @@ export default function LanguageScreen() {
   const continueToApp = async () => {
     setBusy(true);
     await setStoredLocale(locale);
-    const prepared = await preloadLocale(locale);
-    if (!prepared && locale !== 'en' && locale !== 'fa') {
-      // Keep the selection and let the runtime retry from cache/model setup on next launch.
-      // The initial route is still reachable so users are not trapped on onboarding.
-    }
+    await preloadLocale(locale);
     I18nManager.allowRTL(isRTL(locale));
     router.replace('/auth');
   };
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLocaleLowerCase();
-    if (!needle) return [...SUPPORTED_LANGUAGES];
-    return SUPPORTED_LANGUAGES.filter((language) =>
+    if (!needle) return [...LANGUAGE_OPTIONS];
+    return LANGUAGE_OPTIONS.filter((language) =>
       `${language.englishName} ${language.nativeName} ${language.code}`.toLocaleLowerCase().includes(needle),
     );
   }, [query]);
@@ -67,18 +63,17 @@ export default function LanguageScreen() {
       <View style={styles.container}>
         <View style={styles.hero}>
           <BrandMark />
-          <Text style={styles.eyebrow}>MY PERSONAL ASSISTANT</Text>
           <Text style={[styles.title, rtl && styles.rtlText]}>{t(locale, 'languageTitle')}</Text>
           <Text style={[styles.subtitle, rtl && styles.rtlText]}>{t(locale, 'languageSubtitle')}</Text>
           <View style={styles.countBadge}>
-            <Text style={styles.countText}>{SUPPORTED_LANGUAGES.length} languages</Text>
+            <Text style={styles.countText}>{SUPPORTED_LANGUAGE_COUNT} · {LANGUAGE_OPTIONS.length}</Text>
           </View>
         </View>
 
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder={rtl ? 'جستجوی زبان…' : 'Search a language…'}
+          placeholder={t(locale, 'languageTitle')}
           placeholderTextColor="#9CA3AF"
           style={[styles.search, rtl && styles.rtlText]}
           autoCapitalize="none"
@@ -111,7 +106,7 @@ export default function LanguageScreen() {
         />
 
         <View style={styles.footerBar}>
-          <Text style={styles.selectedLabel}>{selected.nativeName}</Text>
+          <Text style={[styles.selectedLabel, rtl && styles.rtlText]}>{selected.nativeName}</Text>
           <Pressable disabled={busy} onPress={() => void continueToApp()} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
             {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t(locale, 'continue')} →</Text>}
           </Pressable>
@@ -131,7 +126,6 @@ const styles = StyleSheet.create({
   brandGlow: { position: 'absolute', width: 124, height: 124, borderRadius: 62, backgroundColor: '#7C3AED', opacity: 0.22 },
   brandInner: { width: 60, height: 60, borderRadius: 20, borderWidth: 1, borderColor: '#6D5CE7', backgroundColor: '#111A39', alignItems: 'center', justifyContent: 'center' },
   brandEmoji: { fontSize: 31 },
-  eyebrow: { fontSize: 10, fontWeight: '900', letterSpacing: 1.4, color: '#6B7280', marginBottom: 7 },
   title: { fontSize: 28, fontWeight: '900', color: '#111827', textAlign: 'center' },
   subtitle: { fontSize: 14, lineHeight: 21, color: '#6B7280', textAlign: 'center', marginTop: 7 },
   countBadge: { marginTop: 10, paddingHorizontal: 11, paddingVertical: 6, borderRadius: 999, backgroundColor: '#F0EAFE' },
