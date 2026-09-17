@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, I18nManager, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
 import { AppLocale, getLanguage, isRTL, LANGUAGE_OPTIONS, SUPPORTED_LANGUAGE_COUNT } from '../lib/languages';
 import { getStoredLocale, setStoredLocale, t } from '../lib/i18n';
 import { preloadLocale } from '../lib/runtime-translator';
+
+const AZ_LANGUAGE_UI = {
+  languageTitle: 'Dilini seç',
+  languageSubtitle: 'Şəxsi köməkçin hər yerdə bu dildə səninlə danışacaq.',
+  continue: 'Davam et',
+};
 
 function BrandMark() {
   return (
@@ -37,10 +42,14 @@ export default function LanguageScreen() {
 
   const continueToApp = async () => {
     setBusy(true);
-    await setStoredLocale(locale);
-    await preloadLocale(locale);
-    I18nManager.allowRTL(isRTL(locale));
-    router.replace('/auth');
+    try {
+      await setStoredLocale(locale);
+      await preloadLocale(locale);
+      I18nManager.allowRTL(isRTL(locale));
+      routerReplaceAuth();
+    } finally {
+      setBusy(false);
+    }
   };
 
   const filtered = useMemo(() => {
@@ -57,14 +66,17 @@ export default function LanguageScreen() {
 
   const rtl = isRTL(locale);
   const selected = getLanguage(locale);
+  const title = locale === 'az' ? AZ_LANGUAGE_UI.languageTitle : t(locale, 'languageTitle');
+  const subtitle = locale === 'az' ? AZ_LANGUAGE_UI.languageSubtitle : t(locale, 'languageSubtitle');
+  const continueLabel = locale === 'az' ? AZ_LANGUAGE_UI.continue : t(locale, 'continue');
 
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <View style={styles.hero}>
           <BrandMark />
-          <Text style={[styles.title, rtl && styles.rtlText]}>{t(locale, 'languageTitle')}</Text>
-          <Text style={[styles.subtitle, rtl && styles.rtlText]}>{t(locale, 'languageSubtitle')}</Text>
+          <Text style={[styles.title, rtl && styles.rtlText]}>{title}</Text>
+          <Text style={[styles.subtitle, rtl && styles.rtlText]}>{subtitle}</Text>
           <View style={styles.countBadge}>
             <Text style={styles.countText}>{SUPPORTED_LANGUAGE_COUNT} · {LANGUAGE_OPTIONS.length}</Text>
           </View>
@@ -73,7 +85,7 @@ export default function LanguageScreen() {
         <TextInput
           value={query}
           onChangeText={setQuery}
-          placeholder={t(locale, 'languageTitle')}
+          placeholder={title}
           placeholderTextColor="#9CA3AF"
           style={[styles.search, rtl && styles.rtlText]}
           autoCapitalize="none"
@@ -108,12 +120,19 @@ export default function LanguageScreen() {
         <View style={styles.footerBar}>
           <Text style={[styles.selectedLabel, rtl && styles.rtlText]}>{selected.nativeName}</Text>
           <Pressable disabled={busy} onPress={() => void continueToApp()} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
-            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{t(locale, 'continue')} →</Text>}
+            {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>{continueLabel} →</Text>}
           </Pressable>
         </View>
       </View>
     </SafeAreaView>
   );
+}
+
+function routerReplaceAuth() {
+  // Isolated import keeps the picker component easy to smoke-test without navigation mocks.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { router } = require('expo-router') as typeof import('expo-router');
+  router.replace('/auth');
 }
 
 const styles = StyleSheet.create({
