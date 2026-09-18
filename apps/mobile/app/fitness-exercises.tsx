@@ -16,7 +16,7 @@ const ui = localizedCopy({
 
 const disciplines=[{key:'',labelKey:'all'},{key:'gym',labelKey:'gym'},{key:'calisthenics',labelKey:'calisthenics'},{key:'yoga',labelKey:'yoga'}] as const;
 const difficulties=[{key:'',labelKey:'all'},{key:'beginner',labelKey:'beginner'},{key:'intermediate',labelKey:'intermediate'},{key:'advanced',labelKey:'advanced'}] as const;
-const equipment=[{key:'',labelKey:'all'},{key:'body weight',labelKey:'bodyweight'},{key:'dumbbell',labelKey:'dumbbells'},{key:'barbell',labelKey:'barbell'},{key:'band',labelKey:'band'}] as const;
+const equipment=[{key:'',labelKey:'all'},{key:'bodyweight',labelKey:'bodyweight'},{key:'dumbbell',labelKey:'dumbbells'},{key:'barbell',labelKey:'barbell'},{key:'band',labelKey:'band'}] as const;
 
 export default function FitnessExercisesScreen(){
   const {locale,rtl}=useAppLocale(); const text=ui[locale];
