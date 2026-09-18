@@ -1,12 +1,12 @@
 # Architecture Map
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-18
+Review status: CURRENT ARCHITECTURE RECONCILED / DEVICE VERIFICATION PENDING
 Scope actually read: root module wiring, package manifests and complete current-`main` Core source read.
-Scope not yet read: non-Core backend internals, mobile internals, DB/migrations, CI/runtime.
+The original Core/non-Core read boundaries are historical audit notes. Current architecture and remediation truth is reconciled in 05_CURRENT_STATE, 11_REPOSITORY_AUDIT and the audit appendix.
 Evidence roots: `apps/backend/src/app.module.ts`; manifests; Core module paths.
-Confidence level: MEDIUM for Core.
-Open questions: global middleware/prefix/guards; provider graph outside Core; DB relations; mobile consumers.
+Confidence level: HIGH for the current module topology and major dependency boundaries.
+Open questions: physical-device capabilities and release/deployment behavior.
 
 ## Backend root
 
