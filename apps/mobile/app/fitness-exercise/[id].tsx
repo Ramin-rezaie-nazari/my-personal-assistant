@@ -42,7 +42,7 @@ export default function FitnessExerciseDetailScreen() {
         <Pressable onPress={() => router.back()} style={styles.back}><Text style={styles.backText}>{rtl ? '→' : '←'} {text.back}</Text></Pressable>
         <Text style={[styles.eyebrow, rtl && styles.rtlText]}>{text.eyebrow}</Text>
         <View style={[styles.titleRow, rtl && styles.rtlRow]}>
-          <View style={styles.titleCopy}><FitnessLocalizedText en={exercise.name} fa={exercise.nameFa} locale={locale} style={{...styles.title, ...(rtl ? styles.rtlText : {})}} /><Text style={[styles.subtitle, rtl && styles.rtlText]}>{exercise.discipline} · {exercise.difficulty}</Text></View>
+          <View style={styles.titleCopy}><FitnessLocalizedText en={exercise.name} fa={exercise.nameFa} locale={locale} style={{...styles.title, ...(rtl ? styles.rtlText : {})}} /><FitnessLocalizedText en={`${exercise.discipline} · ${exercise.difficulty}`} locale={locale} style={{...styles.subtitle, ...(rtl ? styles.rtlText : {})}} /></View>
           <View style={styles.badge}><Text style={styles.badgeText}>{exercise.videoReady ? 'VIDEO' : 'MEDIA'}</Text></View>
         </View>
 
