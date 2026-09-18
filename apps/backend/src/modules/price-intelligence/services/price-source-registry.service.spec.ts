@@ -15,10 +15,18 @@ describe('PriceSourceRegistryService', () => {
       'feenama',
       'torob',
       'emalls',
+      'open-prices',
     ]);
     expect(
-      sources.every((source) => source.searchUrlTemplate.includes('{query}')),
+      sources
+        .filter((source) => source.collectionMode === 'tracked_products')
+        .every((source) => source.searchUrlTemplate.includes('{query}')),
     ).toBe(true);
+    expect(sources.find((source) => source.id === 'open-prices')).toMatchObject({
+      scope: 'global',
+      collectionMode: 'global_recent',
+      license: 'ODbL-1.0',
+    });
     expect(
       sources.every((source) => source.baseUrl.startsWith('https://')),
     ).toBe(true);
