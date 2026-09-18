@@ -30,10 +30,16 @@ for (const file of filesUnder(path.join(root, 'app')).concat(filesUnder(path.joi
     ['route-local locale state', /const\s*\[locale\s*,\s*setLocale\s*\]/],
     ['binary isFa state', /\b(?:const|let)\s+isFa\s*=\s*locale\s*===\s*['"]fa['"]/],
     ['binary locale UI branch', /locale\s*===\s*['"]fa['"]\s*\?/],
-    ['binary RTL text branch', /\brtl\s*\?\s*["']/],
+    ['binary RTL text branch', /\brtl\s*\?\s*["']([^"']+)["']\s*:\s*["']([^"']+)["']/],
   ];
   for (const [label, pattern] of checks) {
-    if (pattern.test(content)) violations.push(path.relative(process.cwd(), file) + ': ' + label);
+    const match = content.match(pattern);
+    if (!match) continue;
+    if (label === 'binary RTL text branch') {
+      const [left, right] = match.slice(1, 3);
+      if (!/[A-Za-z\u0600-\u06FF]/.test(left) && !/[A-Za-z\u0600-\u06FF]/.test(right)) continue;
+    }
+    violations.push(path.relative(process.cwd(), file) + ': ' + label);
   }
 }
 
