@@ -49,6 +49,7 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Assistant chat sends user input through the selected-locale → canonical-language gateway and translates assistant responses back before rendering.
 - Assistant TTS now follows the selected app locale rather than a Persian/English-only switch.
 - The backend local assistant provider no longer emits hard-coded Persian response strings; canonical assistant responses are language-neutral English so the mobile gateway has a stable source language.
+- Mobile onboarding now consumes the shared `isRTL()` language registry, so representative RTL locales are not forced into the Persian-only RTL branch.
 - `docs/project-brain/18_GLOBAL_MULTILINGUAL_ASSISTANT.md` is the canonical architecture and quality contract for this feature.
 
 ## Automated evidence for the previously verified baseline
