@@ -32,7 +32,6 @@ The Global Multilingual Assistant foundation is implemented. Current main Backen
 - Local PostgreSQL startup and Prisma migration execution: completed by the laptop validation runner.
 - One real local global-price collection: completed by the laptop validation runner; observed 195-country coverage is still not numerically recorded.
 - Laptop-local scheduler lifecycle validation across restart/sleep conditions.
-- Laptop-local scheduler lifecycle validation across restart/sleep conditions.
 - Production deployment validation for Auth/RLS/Storage/API connectivity and observability.
 - Real notification delivery and background/foreground lifecycle behavior.
 - Real microphone/location/speech behavior on physical devices.
@@ -56,8 +55,8 @@ Implemented repository-side:
 Verification remaining:
 1. Record the observed 195-country Open Prices coverage numerically from a non-error-only price run.
 2. Confirm the Open Prices/ODbL attribution appears correctly in the built mobile app.
-4. Validate the monthly FPMA collector locally when benchmark data is needed.
-5. Keep provider coverage truthful: no fresh observation remains no_data or stale; no fabricated prices.
+3. Validate the monthly FPMA collector locally when benchmark data is needed.
+4. Keep provider coverage truthful: no fresh observation remains no_data or stale; no fabricated prices.
 
 ## Infrastructure direction
 
