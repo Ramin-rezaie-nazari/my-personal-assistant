@@ -1,6 +1,6 @@
 # MYPA Open Work
 
-Last updated: 2026-09-17
+Last updated: 2026-09-18
 Status: MULTILINGUAL FOUNDATION IMPLEMENTED / FRESH CI + DEVICE VERIFICATION REQUIRED
 
 This file contains currently actionable work and evidence gaps. Historical audit observations remain preserved in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents.
@@ -42,7 +42,7 @@ A multilingual work item is green only after implementation, relevant automated 
 
 ## Global Daily Price Intelligence
 
-Status: IMPLEMENTED / FRESH CI + PRODUCTION ACTIVATION REQUIRED
+Status: MERGED / PRODUCTION ACTIVATION REQUIRED
 
 Implemented repository-side:
 - Open Prices global daily feed with bounded recent ingestion.
@@ -53,9 +53,8 @@ Implemented repository-side:
 - Dedicated public GitHub Actions daily scheduler.
 
 Verification remaining:
-1. Fresh Backend CI after the latest hardening.
-2. Merge/activate the workflow on the default branch.
-3. Configure production `DATABASE_URL` as a GitHub Actions secret.
+1. Configure/verify production `DATABASE_URL` as a GitHub Actions secret against an active production database.
+2. Run one real daily collection and review the 195-country coverage output.
 4. Run one real collection and review the 195-country coverage output.
 5. Add required Open Prices/ODbL attribution wherever its data is exposed in user-facing UI.
-6. Verify the monthly FPMA workflow once in production..
+6. Verify the monthly FPMA workflow once in production.
