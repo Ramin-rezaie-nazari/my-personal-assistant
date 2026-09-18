@@ -49,6 +49,20 @@ Defaults:
 
 The laptop must be running and the scheduler process must remain alive for scheduled collection. An OS-level Task Scheduler / launchd / cron can start the same one-shot command when the machine wakes or boots.
 
+## Native Android development
+
+Native Android verification is local-first. From the repository root, the canonical local path is:
+
+```bash
+cd apps/mobile
+pnpm typecheck
+pnpm exec expo prebuild --platform android
+cd android
+./gradlew assembleRelease --no-daemon
+```
+
+The release APK is produced under apps/mobile/android/app/build/outputs/apk/release/app-release.apk. Cloud EAS preview builds are not part of the current development architecture.
+
 ## Release architecture
 
 VPS deployment is a later release-stage concern. The application database remains standard PostgreSQL and the application does not depend on Supabase-specific APIs or services.
