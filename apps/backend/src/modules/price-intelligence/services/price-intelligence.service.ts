@@ -12,8 +12,8 @@ export class PriceIntelligenceService {
     private readonly persistence: PricePersistenceService,
   ) {}
 
-  async getLatestPrices(productKey?: string) {
-    const items = await this.persistence.latest(productKey);
+  async getLatestPrices(productKey?: string, countryCode?: string) {
+    const items = await this.persistence.latest(productKey, countryCode);
     return { items };
   }
 
@@ -22,21 +22,46 @@ export class PriceIntelligenceService {
     from?: Date,
     to?: Date,
     sourceId?: string,
+    countryCode?: string,
   ) {
     const items = await this.persistence.history(
       productKey,
       from,
       to,
       sourceId,
+      countryCode,
     );
     return { productKey, items };
   }
 
-  async analyze(productKey: string) {
+  async analyze(productKey: string, countryCode?: string) {
     const rows = (await this.persistence.history(
       productKey,
       new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-    )) as Array<{ amount: number; observedAt: Date }>;
+      undefined,
+      undefined,
+      countryCode,
+    )) as Array<{ amount: number; observedAt: Date; currency?: string }>;
+    const currencies = new Set(
+      rows.map((row) => String(row.currency ?? '')).filter(Boolean),
+    );
+    if (!countryCode && currencies.size > 1) {
+      return {
+        productKey,
+        scopeRequired: true,
+        reason: 'mixed_currency_data_requires_country_scope',
+        current: null,
+        average7d: null,
+        average30d: null,
+        min30d: null,
+        max30d: null,
+        changeVs7d: null,
+        changeVs30d: null,
+        trend: 'insufficient_data',
+        buyScore: 0,
+        recommendation: 'unavailable',
+      };
+    }
     const prices = rows
       .map((row) => Number(row.amount))
       .filter((value) => Number.isFinite(value) && value > 0);
