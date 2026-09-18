@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useAppLocale, isRTL } from '../../lib/i18n';
+import { useAppLocale } from '../../lib/i18n';
 import { localizedCopy } from '../../lib/localized-copy';
 import { getMeals, hasAuthSession, Meal } from '../../lib/api';
 
@@ -21,7 +21,7 @@ const copy = localizedCopy({
 
 export default function MealDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { locale } = useAppLocale();
+  const { locale, rtl } = useAppLocale();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +37,6 @@ export default function MealDetailsScreen() {
 
   const meal = useMemo(() => meals.find((item) => item.id === id), [meals, id]);
   const text = copy[locale];
-  const rtl = isRTL(locale);
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
 
   if (error || !meal) {
