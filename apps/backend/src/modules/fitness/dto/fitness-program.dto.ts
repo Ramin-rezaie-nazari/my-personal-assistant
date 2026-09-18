@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsIn, IsInt, IsNotEmpty, IsOptional, Max, Min } from 'class-validator';
 
 const PROGRAM_DISCIPLINES = ['gym', 'calisthenics', 'yoga', 'cardio', 'running', 'mobility'] as const;
 const PROGRAM_GOALS = ['strength', 'hypertrophy', 'fat_loss', 'body_sculpt', 'mobility', 'conditioning', 'skill', 'general_fitness'] as const;
@@ -6,9 +6,9 @@ const PROGRAM_LEVELS = ['beginner', 'foundation', 'intermediate', 'advanced', 'e
 const ASSIGNMENT_STATUSES = ['active', 'paused', 'completed', 'cancelled'] as const;
 
 export class FitnessProgramQueryDto {
-  @IsOptional() @IsString() @Max(60) discipline?: (typeof PROGRAM_DISCIPLINES)[number];
-  @IsOptional() @IsString() @Max(80) goal?: (typeof PROGRAM_GOALS)[number];
-  @IsOptional() @IsString() @Max(40) level?: (typeof PROGRAM_LEVELS)[number];
+  @IsOptional() @IsIn(PROGRAM_DISCIPLINES) discipline?: (typeof PROGRAM_DISCIPLINES)[number];
+  @IsOptional() @IsIn(PROGRAM_GOALS) goal?: (typeof PROGRAM_GOALS)[number];
+  @IsOptional() @IsIn(PROGRAM_LEVELS) level?: (typeof PROGRAM_LEVELS)[number];
   @IsOptional() @IsInt() @Min(1) @Max(50) limit?: number;
   @IsOptional() @IsInt() @Min(0) offset?: number;
 }
