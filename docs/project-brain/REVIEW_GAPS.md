@@ -9,11 +9,9 @@ The source-level audit and remediation records are reconciled through the canoni
 
 ## Canonical remaining evidence boundaries
 
-1. Native Android build after current-main multilingual/local-first changes is not yet captured in a fresh post-merge workflow run.
-2. Physical Android/iOS validation is still required for representative RTL/LTR locales, translation-model availability, TTS voice availability and dynamic-content localization.
-3. Local price runtime validation still requires the user's laptop: local PostgreSQL, one-shot collection and observed 195-country coverage.
-4. User-facing Open Prices attribution is now implemented in the price-history screen and must be confirmed in the built app during UI/device validation.
-5. Release/deployment validation remains deferred to the VPS/release phase.
+1. Physical Android/iOS validation is the remaining product gate: representative RTL/LTR locales, locale persistence, translation-model availability, TTS voice availability, dynamic-content localization and real device capabilities.
+2. Open Prices attribution is implemented and must be confirmed visually in the built app during the same device pass.
+3. Local scheduler restart/sleep lifecycle, exact observed 195-country coverage reporting and VPS/release validation remain operational follow-up items; they do not block the physical mobile validation pass.
 
 ## Historical evidence retained
 
@@ -28,11 +26,11 @@ The source-level audit and remediation records are reconciled through the canoni
 - DB reader/writer/relation/index/transaction/migration reconciliation: CLOSED FOR SOURCE EVIDENCE.
 - Security/ownership/auth/session/retention source review: CLOSED FOR SOURCE EVIDENCE.
 - CI/workflow/package/operational source review: CLOSED FOR SOURCE EVIDENCE.
-- Canonical findings/duplicate/false-positive reconciliation: CLOSED through PB-270.
+- Canonical findings/duplicate/false-positive reconciliation: CLOSED through PB-276.
 - Project Brain synchronization: ACTIVE maintenance, with current-state corrections kept alongside implementation evidence.
 
 ## Important boundary
 
-Unavailable deployed/runtime/device evidence is not represented as PASS. It remains explicitly environment-bound until executed and recorded.
+Unavailable device evidence is not represented as PASS. It remains explicitly unvalidated until the physical mobile test is executed and recorded; release/deployment evidence remains intentionally separate.
 
 No production source code changed during the original audit phase; subsequent remediation and feature work are tracked through normal PR/CI evidence.
