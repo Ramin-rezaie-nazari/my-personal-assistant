@@ -50,7 +50,8 @@ export class PriceCollectionSchedulerService {
     productKeys: string[],
     sourceIds?: string[],
     scheduledFor = new Date(),
+    countryCode?: string,
   ): Promise<NightlyRunResult> {
-    return this.nightly.run(productKeys, sourceIds, scheduledFor);
+    return this.nightly.run(productKeys, sourceIds, scheduledFor, countryCode);
   }
 }
