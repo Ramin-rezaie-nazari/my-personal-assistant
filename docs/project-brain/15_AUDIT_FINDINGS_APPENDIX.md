@@ -201,3 +201,9 @@ The canonical MYPA development path is self-hosted/local-first: PostgreSQL + Pri
 | Finding | Current status | Resolution / evidence |
 |---|---|---|
 | PB-275 | OPEN → REMEDIATED | Meals, Daily, Inventory, Smart Meals, Meal Builder, Shopping, Meal Details and Insights maintained independent locale state via \`getStoredLocale()\`, creating duplicated presentation-language state and possible stale UI after locale changes. These routes now consume \`useAppLocale()\` as the shared locale/RTL source of truth. CI validation remains required before merge; physical-device locale capability remains environment-bound. |
+
+## New Planning/data-contract finding — PB-276
+
+| Finding | Current status | Resolution / evidence |
+|---|---|---|
+| PB-276 | OPEN → REMEDIATED | Smart Planning's raw-query fallback still referenced legacy compatibility tables TaskDependency and TaskEvent and the compatibility LifeTask.energy column, while the canonical domain/service writes LifeTaskDependency, LifeTaskEvent and LifeTask.energyLevel. The fallback now joins LifeTaskDependency and reads energyLevel, and a regression test verifies the generated raw-query source uses the canonical tables/column and not the legacy names. The legacy tables remain migration-history compatibility artifacts and are no longer part of the active planning path. |

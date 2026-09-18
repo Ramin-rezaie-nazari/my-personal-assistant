@@ -36,12 +36,12 @@ export class SmartPlanningService {
           orderBy: [{ priority: 'asc' }, { dueAt: 'asc' }],
         })
       : this.prisma.$queryRaw<TaskRow[]>`
-        SELECT t."id",t."title",t."priority",COALESCE(t."estimatedMinutes",0) AS "estimatedMinutes",t."energy" AS "energyLevel",
+        SELECT t."id",t."title",t."priority",COALESCE(t."estimatedMinutes",0) AS "estimatedMinutes",t."energyLevel" AS "energyLevel",
                t."dueAt",t."scheduledAt",t."goalId",g."title" AS "goalTitle",
                COALESCE(array_agg(dep."status") FILTER (WHERE dep."id" IS NOT NULL),ARRAY[]::text[]) AS "dependencyStatus"
         FROM "LifeTask" t
         LEFT JOIN "Goal" g ON g."id"=t."goalId"
-        LEFT JOIN "TaskDependency" d ON d."taskId"=t."id"
+        LEFT JOIN "LifeTaskDependency" d ON d."taskId"=t."id"
         LEFT JOIN "LifeTask" dep ON dep."id"=d."dependsOnTaskId"
         WHERE t."userId"=${userId} AND t."status" IN ('pending','in_progress')
           AND (t."scheduledAt">=${start} AND t."scheduledAt"<${end} OR t."scheduledAt" IS NULL)

@@ -1,3 +1,4 @@
+# Canonical post-merge native gate: pre-device validation only.
 name: Android APK
 
 on:
