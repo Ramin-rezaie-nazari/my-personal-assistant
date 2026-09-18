@@ -51,7 +51,10 @@ export class PriceSourceService {
     const ids = sourceIds?.length
       ? sourceIds
       : this.registry
-        ? this.registry.listForCollection(countryCode).map((source) => source.id)
+        ? this.registry
+            .listForCollection(countryCode)
+            .filter((source) => source.refreshCadence === 'realtime' || source.refreshCadence === 'daily')
+            .map((source) => source.id)
         : [...this.adapters.keys()];
 
     const results = await Promise.allSettled(
