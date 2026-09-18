@@ -9,6 +9,9 @@ export type PriceSourceDefinition = {
   searchUrlTemplate: string;
   enabled: boolean;
   adapterId: string;
+  scope: 'global' | 'country';
+  countryCodes?: string[];
+  refreshCadence: 'realtime' | 'daily' | 'weekly' | 'monthly';
   notes?: string;
 };
 
