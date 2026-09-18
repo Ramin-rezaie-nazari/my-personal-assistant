@@ -662,3 +662,22 @@ Muscle-up
 ## 13.4 Skill Unlock Engine
 
 A... (truncated)
+---
+
+## Global Daily Price Intelligence (2026-09-18)
+
+MYPA price collection is now split by data cadence rather than treating every provider as a nightly retail feed.
+
+```text
+Daily / realtime-capable
+  └─ Open Prices
+
+Slower reference
+  └─ FAO FPMA (monthly)
+```
+
+Open Prices is collected by a dedicated GitHub Actions workflow. The daily path calls the existing NightlyMarketIntelligenceService with an explicit `open-prices` source id so it does not depend on user tracked-product keys for global observations.
+
+Daily coverage is defined as the state of Open Prices observations in the last day for the canonical 195-country registry. A country without a current observation is represented as stale/no_data; no synthetic value is produced.
+
+PriceSnapshot identity preserves source record ids when available and otherwise incorporates country/city/currency/time/value context to prevent cross-market collisions.
