@@ -55,6 +55,7 @@ export class OpenPricesSourceAdapter {
     url.searchParams.set('size', '100');
     url.searchParams.set('page', String(page));
     url.searchParams.set('order_by', '-date');
+    url.searchParams.set('type', 'PRODUCT');
     return url.toString();
   }
 
