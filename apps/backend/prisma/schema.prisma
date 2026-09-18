@@ -236,6 +236,8 @@ model PriceSnapshot {
   id String @id
   productKey String
   sourceId String
+  sourceRecordId String?
+  countryCode String @default("IR")
   title String
   url String?
   currency String @default("IRR")
@@ -246,9 +248,12 @@ model PriceSnapshot {
   availability String @default("unknown")
   observedAt DateTime
   createdAt DateTime @default(now())
+  @@index([countryCode, productKey, observedAt])
+  @@index([countryCode, observedAt])
   @@index([productKey, observedAt])
   @@index([sourceId, observedAt])
   @@index([productKey, sourceId, observedAt])
+  @@unique([sourceId, sourceRecordId])
 }
 
 model PriceCollectionRun {
