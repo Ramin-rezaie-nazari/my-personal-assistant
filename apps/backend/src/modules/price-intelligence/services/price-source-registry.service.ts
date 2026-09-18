@@ -179,10 +179,7 @@ export class PriceSourceRegistryService {
 
   listForCollection(countryCode?: string): PriceSourceDefinition[] {
     const normalized = countryCode?.trim().toUpperCase();
-    if (!normalized)
-      return this.definitions.filter(
-        (source) => source.enabled && source.scope === 'global',
-      );
+    if (!normalized) return this.definitions.filter((source) => source.enabled);
     return this.definitions.filter(
       (source) =>
         source.enabled &&
