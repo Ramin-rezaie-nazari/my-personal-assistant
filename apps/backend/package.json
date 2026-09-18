@@ -22,16 +22,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "node ./test/prepare-e2e-db.cjs && jest --config ./test/jest-e2e.json --runInBand",
     "pretest:e2e": "prisma generate",
-    "recipe-images:import": "node ./scripts/recipe-image-import.mjs",
-    "recipe-images:dataset": "node ./scripts/recipe-image-dataset-import-v2.mjs",
-    "recipe-images:reprocess-quality": "node ./scripts/recipe-image-reprocess-quality.mjs",
-    "recipe-images:retry-quality": "node ./scripts/recipe-image-reprocess-retry.mjs",
-    "recipe-intelligence:classify": "node ./scripts/recipe-intelligence-classify.mjs",
-    "recipe-intelligence:profile": "node ./scripts/recipe-intelligence-profile.mjs",
     "recipe-intelligence:country": "node ./scripts/recipe-country-intelligence-final.mjs",
-    "recipe-intelligence:ingredients": "node ./scripts/recipe-ingredient-intelligence.mjs",
-    "recipe-intelligence:nutrition": "node ./scripts/recipe-nutrition-estimate.mjs",
-    "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs",
     "food-intelligence:self-test": "node ./scripts/food-intelligence-final-self-test.mjs",
     "recipe:content:import": "node ./scripts/recipe-content-import.mjs",
     "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs",
@@ -40,7 +31,8 @@
     "price-intelligence:daily-daemon": "node ./dist/scripts/local-price-scheduler.js",
     "local:db:up": "docker compose -f ../../docker-compose.local.yml up -d postgres",
     "local:db:down": "docker compose -f ../../docker-compose.local.yml down",
-    "local:db:logs": "docker compose -f ../../docker-compose.local.yml logs -f postgres"
+    "local:db:logs": "docker compose -f ../../docker-compose.local.yml logs -f postgres",
+    "recipe-images:local-only": "node ./scripts/recipe-images-local-only-v1.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
