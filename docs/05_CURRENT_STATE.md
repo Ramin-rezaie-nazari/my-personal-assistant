@@ -79,3 +79,16 @@ These are explicit evidence limits, not silently marked green findings.
 ## Project Brain
 
 `docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` is the reference-product gap analysis. `docs/project-brain/17_EXERCISE_CONTENT_MEDIA_IMPLEMENTATION.md` documents the exercise/media foundation. `docs/project-brain/18_GLOBAL_MULTILINGUAL_ASSISTANT.md` documents the multilingual language contract and implementation boundary. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` must remain synchronized with the same verification boundary.
+
+## Global Daily Price Intelligence foundation — implemented, fresh verification pending
+
+- Added Open Prices as a bounded global food-price provider.
+- Added country-aware price snapshots and durable provider/country freshness tracking.
+- Reused the canonical 195-country currency registry instead of creating a second country list.
+- Added country-scoped latest/history/analysis and mixed-market analysis protection.
+- Added deterministic multi-country snapshot identity to prevent daily retry/city collisions.
+- Added durable global collection run metadata.
+- Added a public-repository GitHub Actions daily collector using `ubuntu-slim`.
+- Added `docs/project-brain/19_GLOBAL_DAILY_PRICE_INTELLIGENCE.md`.
+
+Evidence limitation: fresh Backend CI and a production database activation/manual collection run are still required. Complete fresh daily price coverage across all 195 countries is measured from provider data and is not assumed.
