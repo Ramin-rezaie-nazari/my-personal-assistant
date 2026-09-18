@@ -1,13 +1,13 @@
 # MYPA Open Work
 
 Last updated: 2026-09-18
-Status: LOCAL RUNTIME VERIFIED / NATIVE DEVICE VERIFICATION REQUIRED
+Status: PRE-DEVICE ENGINEERING GATES GREEN / PHYSICAL DEVICE VALIDATION REQUIRED
 
 This file contains currently actionable work and evidence gaps. Historical audit observations remain preserved in docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md and dated continuation documents.
 
 ## Current repository work — multilingual feature slice
 
-The Global Multilingual Assistant foundation is implemented. Current main Backend CI (35318539437) and Mobile CI (35318539524) are green; remaining validation is native APK/device capability rather than source/CI health.
+The Global Multilingual Assistant foundation and the pre-device engineering remediation pass are implemented. Current source/CI evidence is green, including PR #97 Backend CI run 35377244969; remaining product validation is the physical device gate.
 
 ### Implemented
 
@@ -19,23 +19,21 @@ The Global Multilingual Assistant foundation is implemented. Current main Backen
 - Assistant TTS follows the selected application locale with locale-specific BCP-47 speech tags.
 - Local backend assistant responses are canonical English to prevent foreign-language leakage.
 - Open Prices attribution is now shown in the price-history UI with a source link; the attribution must still be confirmed in the built app/device.
-- UI/i18n audit slices PB-272 through PB-275 are remediated and CI-verified; the repository-wide audit remains open for remaining hard-coded or isolated locale paths.
+- UI/i18n audit slices PB-272 through PB-275 are remediated and CI-verified; the repository-wide audit has no known pre-device blocker.
 
 ## Verification still required
 
-1. Native Android verification: CLOSED — local validation completed Expo prebuild and the Android release Gradle build with no error output.
+1. Native Android verification: CLOSED — repository native evidence is green on run 34772364209 and the user's local error-only validator completed Expo prebuild and Android release Gradle build with no error output.
 2. Physical Android/iOS device validation: test representative Latin, Cyrillic, Arabic-script and Indic locales; verify locale persistence, RTL, translation input/output, TTS voice selection and no unexpected fallback language.
 3. Full 51-locale matrix: verify translation-model and TTS availability per target OS/device and record unsupported combinations explicitly.
-4. Repository-wide UI audit: continue replacing remaining route/component user-visible hard-coded strings with the shared locale layer; PB-272 through PB-274 cover the latest completed slices.
+4. Repository-wide UI audit: source audit is green for the current known slices PB-272 through PB-275; newly discovered isolated locale surfaces should be remediated before release.
 
-## Existing environment-bound work
+## Remaining after the physical mobile gate
 
-- Local PostgreSQL startup and Prisma migration execution: completed by the laptop validation runner.
-- One real local global-price collection: completed by the laptop validation runner; observed 195-country coverage is still not numerically recorded.
-- Laptop-local scheduler lifecycle validation across restart/sleep conditions.
+- Local scheduler lifecycle validation across restart/sleep conditions.
+- Exact observed 195-country Open Prices coverage reporting from a non-error-only run.
 - Production deployment validation for Auth/RLS/Storage/API connectivity and observability.
 - Real notification delivery and background/foreground lifecycle behavior.
-- Real microphone/location/speech behavior on physical devices.
 - Production exercise dataset/media approval and ingestion.
 
 ## Global Daily Price Intelligence
@@ -53,11 +51,14 @@ Implemented repository-side:
 - No Supabase dependency and no cloud scheduler in the canonical development path.
 - Open Prices/ODbL source attribution in the price-history screen.
 
-Verification remaining:
-1. Record the observed 195-country Open Prices coverage numerically from a non-error-only price run.
-2. Confirm the Open Prices/ODbL attribution appears correctly in the built mobile app.
-3. Validate the monthly FPMA collector locally when benchmark data is needed.
-4. Keep provider coverage truthful: no fresh observation remains no_data or stale; no fabricated prices.
+Verification remaining before release:
+1. Physical Android/iOS validation and full 51-locale device matrix.
+2. Confirm the Open Prices/ODbL attribution visually during the same mobile pass.
+
+Operational follow-up after device validation:
+- record numerical 195-country coverage from a non-error-only local price run;
+- validate the monthly FPMA collector when benchmark data is needed;
+- validate scheduler restart/sleep lifecycle and release deployment.
 
 ## Infrastructure direction
 
