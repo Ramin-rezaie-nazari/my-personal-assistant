@@ -27,4 +27,24 @@ describe('SmartPlanningService', () => {
     expect(plan.bestAction?.id).toBe('available');
     expect(plan.blocked[0]?.id).toBe('blocked');
   });
+  it('uses canonical LifeTask dependency storage in the raw-query fallback', async () => {
+    const tasks = [
+      { id: 'task-a', title: 'Task A', priority: 2, estimatedMinutes: 30, energyLevel: 'medium', dueAt: null, scheduledAt: null, goalId: null, goalTitle: null, dependencyStatus: [] },
+    ];
+    const queryRaw = jest.fn().mockResolvedValue(tasks);
+    const prisma = {
+      userSettings: { findUnique: jest.fn().mockResolvedValue({ timezone: 'UTC' }) },
+      $queryRaw: queryRaw,
+    } as any;
+    const outcomeLearning = { decisionAdjustments: jest.fn().mockResolvedValue({}) } as any;
+    const service = new SmartPlanningService(prisma, makeLearning(), outcomeLearning);
+
+    await service.getPlan('user-1', new Date('2026-08-14T10:00:00Z'));
+
+    const querySource = String(queryRaw.mock.calls[0]?.[0] ?? '');
+    expect(querySource).toContain('LifeTaskDependency');
+    expect(querySource).not.toContain('TaskDependency');
+    expect(querySource).toContain('t."energyLevel"');
+  });
+
 });
