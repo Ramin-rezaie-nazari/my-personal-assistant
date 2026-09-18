@@ -11,9 +11,10 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Target canonical branch: `main`
-- Latest repository baseline: `a862adcd730a420a69283837121fd46b3b395396` (PR #95 merged 2026-09-18).
+- Latest code baseline: `d7eac6fa16487f8f92af46ffcbde035e832ba5ec` (PR #97 merged 2026-09-18).
 - The user's development laptop completed `pnpm local:verify-errors` with no error output on 2026-09-18.
 - PR #92, PR #93 and PR #95 mobile changes are covered by successful Mobile CI runs `35326240789`, `35326989917` and `35327595866` respectively.
+- PR #97 Backend CI run `35377244969` is green through Prisma validation/generation, migrations/idempotence, backend build, unit tests and API E2E.
 - Exercise Content/Media and Global Multilingual Assistant foundations are now covered by fresh main-branch Backend/Mobile CI; native and physical-device verification remain environment-bound.
 - Scope of the latest previously verified baseline: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
 
@@ -32,7 +33,7 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Personal Brain runtime DI metadata was hardened so the full application bootstrap can resolve `DecisionExecutionCoordinatorService`.
 - Mobile brain-execution credentials use `expo-secure-store` with device-only keychain accessibility and clear both credentials after refresh failure.
 - Security/privacy documentation was reconciled to current remediation evidence.
-- Audit findings PB-258 through PB-268 are recorded in the canonical appendix and were closed/remediated in the previous verified slice.
+- Audit findings PB-258 through PB-276 are recorded in the canonical appendix with current statuses; PB-272 through PB-276 are closed/remediated in the latest pre-device engineering pass.
 - Android Expo SDK 53 autolinking is explicitly pinned through `apps/mobile/react-native.config.js`, with the supporting pnpm hoisting remediation retained.
 
 ## Exercise Content/Media foundation — automated CI verified; native/device verification pending
