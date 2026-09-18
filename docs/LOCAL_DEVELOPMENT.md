@@ -2,6 +2,16 @@
 
 MYPA development and data storage are self-hosted/local-first.
 
+## Error-only local validation
+
+Run the complete local verification from the repository root:
+
+```bash
+pnpm local:verify-errors
+```
+
+Successful checks produce no command output. Only failed steps and matching error lines are printed; the process exits with code 1 if any step fails.
+
 ## Database
 
 Start the local PostgreSQL container:
