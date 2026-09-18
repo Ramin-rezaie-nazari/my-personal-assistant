@@ -1,7 +1,7 @@
 # Global Daily Price Intelligence
 
 Last updated: 2026-09-18
-Status: IMPLEMENTED / FRESH CI + PRODUCTION SCHEDULE ACTIVATION PENDING
+Status: MERGED / PRODUCTION ACTIVATION PENDING
 
 ## Goal
 
@@ -73,4 +73,4 @@ The workflow still needs a production `DATABASE_URL` Actions secret and a reacha
 
 Automated tests cover source normalization, daily source routing and 195-country coverage enumeration.
 
-Production daily operation remains unverified until the workflow is merged to the default branch, `DATABASE_URL` exists, and at least one real run has been observed with actual country coverage.
+Backend CI and Mobile CI passed for the merged implementation. The daily workflow is now on the default branch. Production daily operation remains unverified until `DATABASE_URL` is configured against an active production database and at least one real run has been observed with actual country coverage.
