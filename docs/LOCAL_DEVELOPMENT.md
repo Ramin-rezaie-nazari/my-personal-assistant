@@ -1,0 +1,56 @@
+# MYPA Local Development
+
+MYPA development and data storage are self-hosted/local-first.
+
+## Database
+
+Start the local PostgreSQL container:
+
+```bash
+docker compose -f docker-compose.local.yml up -d postgres
+```
+
+The canonical local development connection is:
+
+`postgresql://postgres:postgres@localhost:5432/my_personal_assistant`
+
+Then:
+
+```bash
+cp apps/backend/.env.example apps/backend/.env
+cd apps/backend
+pnpm prisma generate
+pnpm prisma migrate deploy
+pnpm start:dev
+```
+
+## Daily global prices
+
+The laptop, not Supabase or GitHub, owns the daily price refresh during development.
+
+One-shot collection:
+
+```bash
+cd apps/backend
+pnpm price-intelligence:global-daily
+```
+
+Continuous laptop-local scheduler:
+
+```bash
+cd apps/backend
+pnpm price-intelligence:daily-daemon
+```
+
+Defaults:
+- daily run at 03:30 in the laptop's local timezone;
+- set `LOCAL_PRICE_DAILY_HOUR` and `LOCAL_PRICE_DAILY_MINUTE` to change it;
+- set `LOCAL_PRICE_RUN_IMMEDIATELY=true` to collect once at process start before waiting for the next scheduled time.
+
+The laptop must be running and the scheduler process must remain alive for scheduled collection. An OS-level Task Scheduler / launchd / cron can start the same one-shot command when the machine wakes or boots.
+
+## Release architecture
+
+VPS deployment is a later release-stage concern. The application database remains standard PostgreSQL and the application does not depend on Supabase-specific APIs or services.
+
+CI may use ephemeral PostgreSQL supplied by the CI runner for automated validation. That is test infrastructure, not application infrastructure.
