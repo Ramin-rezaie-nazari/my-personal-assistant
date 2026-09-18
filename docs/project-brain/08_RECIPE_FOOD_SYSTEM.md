@@ -1,12 +1,12 @@
 # Recipe and Food System
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-18
+Review status: CURRENT SOURCE RECONCILED / PRODUCT CONTENT INGESTION + DEVICE VALIDATION PENDING
 Scope actually read: complete identified `foods` module source/test files; complete identified `recipes` module source/controller/DTO/data/service/test files; complete identified `nutrition` module source/controller/DTO/service/test plus `recipe-intelligence` source/test files; complete identified `meals` module source/controller/DTO/service/test files; complete identified `recommendation-intelligence` module source/controller/DTO/service files; complete identified `budget-intelligence` module/data/controller/DTO/service/test files; relevant `apps/backend/scripts/recipe-nutrition-estimate.mjs`.
-Scope not yet read: image/media/import scripts beyond the identified nutrition-estimate script; repository-wide consumers of these modules; full route/mobile/DB reader-writer mapping; runtime test execution.
+Historical scope notes remain as the original audit snapshot. Current recipe/food source, migrations and CI evidence are reconciled; production content/media ingestion and physical mobile validation remain separate delivery gates.
 Evidence roots: `apps/backend/src/modules/foods/`; `apps/backend/src/modules/recipes/`; `apps/backend/src/modules/nutrition/`; `apps/backend/src/modules/meals/`; `apps/backend/src/modules/recommendation-intelligence/`; `apps/backend/src/modules/budget-intelligence/`; `apps/backend/scripts/recipe-nutrition-estimate.mjs`; `apps/backend/prisma/`.
 Confidence level: HIGH for the file-level code behavior documented here; MEDIUM for end-to-end semantics because runtime execution and repository-wide consumers are not yet validated.
-Open questions: authoritative FoodItem nutrient basis; canonical unit-conversion system; actual deployed RecipeStep/RecipeMedia/price-intelligence structures; country-data maintenance and governance; downstream mobile contract.
+Open questions: authoritative production content provenance, licensed media ingestion, country-data maintenance/governance and physical-device UX. The current Prisma contract includes RecipeStep/RecipeMedia and price-intelligence structures.
 
 ## Foods
 
@@ -71,10 +71,10 @@ See `docs/project-brain/12_OPEN_WORK.md`:
 
 ### BATCH-0005A — Food/Recipe/Nutrition/Meals/Recommendation/Budget file read
 Status: COMPLETE for the enumerated file-level scope.
-Important: this is file-read completion only; no runtime test command has been executed in the current connector session.
+Runtime source/build evidence is now provided by current Backend/Mobile CI and the user's local validation run; production catalog population and device behavior are still environment-bound.
 
 ### BATCH-0005B — Food support reconciliation
-Status: IN_PROGRESS
+Status: SOURCE RECONCILED / PRE-DEVICE ENGINEERING GATES GREEN
 Remaining: exact inventory consistency pass, support matrix synchronization, any additional relevant media/import script discovery, then continue to Shopping.
 
 ## Next
