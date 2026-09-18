@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "local:verify-errors": "node ./scripts/local-validation-errors.mjs"
+    "local:verify-errors": "node ./scripts/local-validation-errors.mjs",
+    "mobile:locale-audit": "node ./scripts/mobile-locale-regression-audit.mjs"
   }
 }
