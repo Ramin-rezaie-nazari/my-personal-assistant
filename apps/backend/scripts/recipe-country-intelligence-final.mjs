@@ -2,12 +2,12 @@ import 'dotenv/config';
 import pg from 'pg';
 
 const { Client } = pg;
-const DATABASE_URL = process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
+const DATABASE_URL = process.env.DATABASE_URL;
 const LIMIT = Math.max(Number(process.env.RECIPE_COUNTRY_LIMIT || '0'), 0);
 const DRY_RUN = /^(1|true|yes)$/i.test(process.env.RECIPE_COUNTRY_DRY_RUN || 'false');
 const VERSION = 'country-intelligence-final-v3';
 
-if (!DATABASE_URL) throw new Error('DATABASE_URL (or SUPABASE_DB_URL) is required.');
+if (!DATABASE_URL) throw new Error('DATABASE_URL is required.');
 const esc = (value) => String(value).replace(/'/g, "''");
 const originRules = [
   ['IT', 'origin', 0.96, 'distinctive Italian dish family', ['neapolitan pizza','pizza napoletana','carbonara','cacio e pepe','ossobuco','osso buco','risotto alla milanese','tiramisu','saltimbocca','panzanella','bresaola','arancini','vitello tonnato','bistecca alla fiorentina']],
