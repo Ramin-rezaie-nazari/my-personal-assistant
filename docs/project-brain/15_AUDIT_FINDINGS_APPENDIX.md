@@ -195,3 +195,9 @@ The canonical MYPA development path is self-hosted/local-first: PostgreSQL + Pri
 | Finding | Current status | Resolution / evidence |
 |---|---|---|
 | PB-274 | OPEN → REMEDIATED | Onboarding and Auth routes still selected visible copy using a binary RTL/Farsi-vs-English branch, so Arabic, Hebrew, Urdu, Kurdish and other supported locales could receive Persian or English instead of the selected locale. The routes now use the shared locale hook and runtime translation bridge for their user-visible bilingual source copy, while RTL direction remains driven by the canonical locale registry. CI/device validation remains the evidence boundary for actual translation-model availability. |
+
+## New UI/i18n finding — PB-275
+
+| Finding | Current status | Resolution / evidence |
+|---|---|---|
+| PB-275 | OPEN → REMEDIATED | Meals, Daily, Inventory, Smart Meals, Meal Builder, Shopping, Meal Details and Insights maintained independent locale state via \`getStoredLocale()\`, creating duplicated presentation-language state and possible stale UI after locale changes. These routes now consume \`useAppLocale()\` as the shared locale/RTL source of truth. CI validation remains required before merge; physical-device locale capability remains environment-bound. |
