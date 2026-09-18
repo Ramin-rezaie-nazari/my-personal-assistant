@@ -84,7 +84,8 @@ export class ExerciseContentService {
         "createdAt","updatedAt"
       ) VALUES (
         ${id},${exerciseId},${dto.kind},${dto.url},${dto.sourceUrl ?? null},${dto.sourceProvider},${dto.license},
-        ${dto.attribution ?? null},${dto.mimeType ?? null},${dto.durationSeconds ?? null},${dto.width ?? null},
+        ${dto.attribution ?? null},${dto.acquisitionMode ?? null},${dto.sourceReference ?? null},${dto.rightsBasis ?? null},
+        ${dto.creator ?? null},${dto.storageKey ?? null},${dto.mimeType ?? null},${dto.durationSeconds ?? null},${dto.width ?? null},
         ${dto.height ?? null},${dto.language ?? null},${dto.posterUrl ?? null},${dto.checksum ?? null},
         ${dto.status ?? 'pending'},${dto.position ?? 0},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
       )
