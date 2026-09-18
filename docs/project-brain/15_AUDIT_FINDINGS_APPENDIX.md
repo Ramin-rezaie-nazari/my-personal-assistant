@@ -188,7 +188,7 @@ The canonical MYPA development path is self-hosted/local-first: PostgreSQL + Pri
 
 | Finding | Current status | Resolution / evidence |
 |---|---|---|
-| PB-273 | CLOSED — REMEDIATED | A second mobile locale audit slice found Plan Status and Decision Trace components using isolated locale state and Farsi-vs-English conditionals, plus Reminder UI using Farsi-vs-English text and locale-limited time formatting. These surfaces now use the shared \`useAppLocale()\`, \`localizedCopy\`, and \`toIntlLocale()\` contracts. Physical-device locale rendering and voice availability remain environment-bound. |
+| PB-273 | CLOSED — REMEDIATED | A second mobile locale audit slice found Plan Status and Decision Trace components using isolated locale state and Farsi-vs-English conditionals, plus Reminder UI using Farsi-vs-English text and locale-limited time formatting. These surfaces now use the shared `useAppLocale()`, `localizedCopy`, and `toIntlLocale()` contracts. Physical-device locale rendering and voice availability remain environment-bound. |
 
 ## New UI/i18n finding — PB-274
 

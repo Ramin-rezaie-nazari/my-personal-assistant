@@ -19,13 +19,14 @@ The Global Multilingual Assistant foundation is implemented. Current main Backen
 - Assistant TTS follows the selected application locale with locale-specific BCP-47 speech tags.
 - Local backend assistant responses are canonical English to prevent foreign-language leakage.
 - Open Prices attribution is now shown in the price-history UI with a source link; the attribution must still be confirmed in the built app/device.
+- UI/i18n audit slices PB-272, PB-273 and PB-274 are remediated and CI-verified; the repository-wide audit remains open for remaining hard-coded or isolated locale paths.
 
 ## Verification still required
 
 1. Native Android verification: CLOSED — local validation completed Expo prebuild and the Android release Gradle build with no error output.
 2. Physical Android/iOS device validation: test representative Latin, Cyrillic, Arabic-script and Indic locales; verify locale persistence, RTL, translation input/output, TTS voice selection and no unexpected fallback language.
 3. Full 51-locale matrix: verify translation-model and TTS availability per target OS/device and record unsupported combinations explicitly.
-4. Repository-wide UI audit: continue replacing remaining route/component user-visible hard-coded strings with the shared locale layer.
+4. Repository-wide UI audit: continue replacing remaining route/component user-visible hard-coded strings with the shared locale layer; PB-272 through PB-274 cover the latest completed slices.
 
 ## Existing environment-bound work
 
