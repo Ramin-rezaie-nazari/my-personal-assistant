@@ -15,7 +15,7 @@ export type PriceCountryCoverage = {
 export class PriceCoverageService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getCoverage(maxAgeDays = 7) {
+  async getCoverage(maxAgeDays = 1, sourceId = 'open-prices') {
     const boundedAgeDays = Math.min(Math.max(Number(maxAgeDays) || 7, 1), 365);
     const cutoff = new Date(Date.now() - boundedAgeDays * 24 * 60 * 60 * 1000);
     const rows = await this.prisma.$queryRaw<
@@ -25,7 +25,7 @@ export class PriceCoverageService {
         priceCount: bigint;
         sourceCount: bigint;
       }>
-    >`SELECT "countryCode", MAX("observedAt") AS "latestObservedAt", COUNT(*) AS "priceCount", COUNT(DISTINCT "sourceId") AS "sourceCount" FROM "PriceSnapshot" GROUP BY "countryCode"`;
+    >`SELECT "countryCode", MAX("observedAt") AS "latestObservedAt", COUNT(*) AS "priceCount", COUNT(DISTINCT "sourceId") AS "sourceCount" FROM "PriceSnapshot" WHERE "sourceId" = ${sourceId} GROUP BY "countryCode"`;
 
     const byCountry = new Map(rows.map((row) => [row.countryCode.toUpperCase(), row]));
     const countries = Object.keys(GLOBAL_COUNTRY_CURRENCIES).map((countryCode) => {
@@ -48,6 +48,7 @@ export class PriceCoverageService {
 
     return {
       totalCountries: countries.length,
+      sourceId,
       freshnessWindowDays: boundedAgeDays,
       countriesWithData: countries.filter((country) => country.status !== 'no_data').length,
       countriesFresh: countries.filter((country) => country.status === 'fresh').length,
