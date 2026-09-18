@@ -39,3 +39,22 @@ The Global Multilingual Assistant foundation is implemented in source and docume
 ## Completion rule
 
 A multilingual work item is green only after implementation, relevant automated validation and documentation agree. Device/OS capability is not treated as verified until exercised and recorded on a real device.
+
+## Global Daily Price Intelligence
+
+Status: IMPLEMENTED / FRESH CI + PRODUCTION ACTIVATION REQUIRED
+
+Implemented repository-side:
+- Open Prices global daily feed with bounded recent ingestion.
+- FAO FPMA slower benchmark feed.
+- Country-native currency preservation.
+- Daily source routing excludes monthly sources.
+- 195-country daily coverage reporting with fresh/stale/no_data states.
+- Dedicated public GitHub Actions daily scheduler.
+
+Verification remaining:
+1. Fresh Backend CI after the latest hardening.
+2. Merge/activate the workflow on the default branch.
+3. Configure production `DATABASE_URL` as a GitHub Actions secret.
+4. Run one real collection and review the 195-country coverage output.
+5. Add required Open Prices/ODbL attribution wherever its data is exposed in user-facing UI.
