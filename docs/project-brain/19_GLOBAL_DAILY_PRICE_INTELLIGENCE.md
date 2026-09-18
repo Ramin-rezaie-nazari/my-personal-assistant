@@ -45,7 +45,7 @@ GET /price-intelligence/coverage
 
 Daily collection is intentionally separate from the in-process application scheduler. This prevents the app server lifecycle from being the only mechanism responsible for daily global refresh.
 
-FAO FPMA has its own monthly collector (`.github/workflows/global-fpma-monthly.yml`) because its provider cadence is slower than Open Prices.
+FAO FPMA has its own monthly one-shot collector (`apps/backend/src/scripts/fao-fpma-monthly.ts`) because its provider cadence is slower than Open Prices. No cloud scheduler is required.
 
 ## Coverage semantics
 
@@ -74,3 +74,7 @@ The local PostgreSQL database is provided by `docker-compose.local.yml`. VPS dep
 Automated tests cover source normalization, daily source routing and 195-country coverage enumeration.
 
 Backend CI and Mobile CI passed for the merged implementation before the local-first infrastructure pivot. The source-level local scheduler is now on the development branch. Real local daily operation remains unverified until it is run on the user's laptop and actual country coverage is measured.
+
+## Infrastructure policy
+
+Supabase is not a required dependency of the current MYPA application architecture. The canonical development data plane is PostgreSQL via `docker-compose.local.yml`. VPS hosting is a future release concern only.
