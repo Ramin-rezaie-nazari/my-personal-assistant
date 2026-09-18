@@ -1,12 +1,12 @@
 # Feature Completeness Matrix
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-18
+Review status: HISTORICAL COMPLETENESS MATRIX / CURRENT GATE IS PHYSICAL-DEVICE VALIDATION
 Scope actually read: complete Core, Assistant, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget backend file-level scopes; substantial Shopping/Inventory/Price/Life/Health/Fitness; Platform/Test/CI enumerated scope; substantial Mobile app/lib/components/native route/client scope; BATCH-0013 operational recipe/food/image scripts; backend common/config/database/i18n/image boundary; historical high-value PR/branch reconciliation.
 Scope not yet read: remaining repository source outside closed enumerations, complete backend↔mobile route/DTO/consumer mapping, exhaustive database reader/writer/transaction graph, full security/privacy closure, full runtime/device validation, remaining legacy/duplicate script families and historical branches.
 Evidence roots: `apps/backend/src/modules/`, `apps/backend/src/common/`, `apps/backend/prisma/`, `apps/backend/scripts/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
 Confidence level: HIGH for file-read status; MEDIUM for end-to-end completeness until consumer, runtime and device gates are closed.
-Open questions: exact repository-wide source inventory, live DB drift, all route/mobile consumers, all transaction boundaries, CI/device results, complete historical reconciliation.
+The historical matrix should not be used as a current completion score. Current implementation/evidence truth is maintained by 05_CURRENT_STATE, 09_TEST_AND_VALIDATION_MATRIX, 12_OPEN_WORK and 15_AUDIT_FINDINGS_APPENDIX.
 
 | Feature | Backend | Mobile | Tests | Completeness |
 |---|---|---|---|---|
@@ -27,9 +27,6 @@ Open questions: exact repository-wide source inventory, live DB drift, all route
 | Fitness core modules | READ_SUBSTANTIALLY | READ_SUBSTANTIALLY | READ_PARTIALLY | READ_PARTIALLY — complete consumer/DTO/security closure remains |
 | Platform/common/config/database/shared/images/CI | READ_SUBSTANTIALLY | READ_SUBSTANTIALLY | READ_PARTIALLY | READ_PARTIALLY — exhaustive inventory/runtime validation remains |
 
-## Current blockers to a complete rating
+## Current gating note
 
-- Source-level findings PB-156..PB-204 remain open unless explicitly corrected to NOT_APPLICABLE.
-- Several current-main and branch-only contracts cannot be called green until their route/schema/test/mobile/runtime evidence is reconciled.
-- Runtime execution and physical-device validation are not established by the audit connector session.
-- The final completeness percentage must not be inferred from source-file counts alone.
+The old `OPEN`/`IN_PROGRESS` entries in this matrix describe the 2026-09-11 audit snapshot and are not current blockers. The source-level remediation and CI/runtime evidence is reconciled in the canonical findings appendix. The remaining product gate is physical-device validation; production/VPS readiness remains a separate release phase. A numerical completeness percentage is intentionally not invented.
