@@ -1,7 +1,7 @@
 # MYPA Current State
 
 Last updated: 2026-09-18
-Review status: MULTILINGUAL + GLOBAL PRICE FOUNDATIONS IMPLEMENTED / RUNTIME DEVICE VERIFICATION PENDING
+Review status: MULTILINGUAL + GLOBAL PRICE FOUNDATIONS IMPLEMENTED / LOCAL RUNTIME + DEVICE VERIFICATION PENDING
 
 ## Canonical ownership
 
@@ -11,8 +11,8 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Target canonical branch: `main`
-- Latest fully verified functional baseline before the current feature slice: `0d19d2b7dad5e9100505205328fbd523e544445b`
-- Subsequent commits now include the Exercise Content/Media foundation and the Global Multilingual Assistant foundation; those new slices require fresh CI/device verification before they can be treated as fully verified.
+- Latest repository/CI verified baseline: `1b8b1799970026230162392f8ee101a13e12d99c`.
+- Exercise Content/Media and Global Multilingual Assistant foundations are now covered by fresh main-branch Backend/Mobile CI; native and physical-device verification remain environment-bound.
 - Scope of the latest previously verified baseline: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
 
 ## Remediation completed in verified baseline
@@ -33,7 +33,7 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Audit findings PB-258 through PB-268 are recorded in the canonical appendix and were closed/remediated in the previous verified slice.
 - Android Expo SDK 53 autolinking is explicitly pinned through `apps/mobile/react-native.config.js`, with the supporting pnpm hoisting remediation retained.
 
-## Exercise Content/Media foundation — pending fresh verification
+## Exercise Content/Media foundation — automated CI verified; native/device verification pending
 
 - Canonical `Exercise`, `ExerciseMedia` and `ExerciseRelationship` Prisma models were added as a multi-file schema slice.
 - A migration was added for the new exercise content/media tables and indexes.
@@ -41,7 +41,7 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 - Exercise media now carries provider, license, attribution, approval status, dimensions, duration, poster and checksum metadata.
 - Existing fitness generators are intentionally not yet rewritten against the new catalog; that integration follows runtime verification of this foundation.
 
-## Global Multilingual Assistant foundation — pending fresh verification
+## Global Multilingual Assistant foundation — automated CI verified; native/device verification pending
 
 - The canonical UI language registry continues to contain exactly 51 base languages.
 - Azerbaijani Turkish in Iran is represented as a separate regional locale (`az`) while Turkish (Türkiye) remains `tr`.
@@ -53,13 +53,13 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 ## Automated evidence for the previously verified baseline
 
-### Backend CI — GREEN on previous baseline
+### Backend CI — GREEN on current main
 
-The latest previously verified Backend CI line completed successfully through dependency installation, Prisma schema validation/generation, migration deployment and idempotence, food-intelligence self-test, backend build, unit tests and API E2E tests.
+Fresh main-branch Backend CI run `35318539437` completed successfully through dependency installation, Prisma schema validation/generation, migration deployment and idempotence, food-intelligence self-test, backend build, unit tests and API E2E tests.
 
-### Mobile CI — GREEN on previous baseline
+### Mobile CI — GREEN on current main
 
-The latest previously verified Mobile CI line completed successfully through dependency installation, mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling.
+Fresh main-branch Mobile CI run `35318539524` completed successfully through dependency installation, mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling.
 
 ### Android native APK — GREEN on previous baseline
 
@@ -67,8 +67,7 @@ The canonical native evidence path is `.github/workflows/android-apk.yml`. Workf
 
 ## Evidence limitations
 
-- The Exercise Content/Media foundation has not yet received fresh CI evidence after its commits.
-- The Global Multilingual Assistant foundation has not yet received fresh CI evidence after the current commits.
+- Fresh Backend/Mobile CI evidence now covers the Exercise Content/Media and Global Multilingual Assistant foundations on current `main`.
 - Translation-model availability and TTS voice availability for every locale remain device/OS capabilities and cannot be proven from repository source alone.
 - Real physical-device UX remains unvalidated, including RTL rendering, locale-specific speech, translation model availability, startup language switching and dynamic-content translation.
 - Production deployment behavior, production Auth/RLS/Storage configuration and real notification delivery remain environment-limited.

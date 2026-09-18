@@ -1,13 +1,13 @@
 # MYPA Open Work
 
 Last updated: 2026-09-18
-Status: MULTILINGUAL FOUNDATION IMPLEMENTED / FRESH CI + DEVICE VERIFICATION REQUIRED
+Status: MULTILINGUAL FOUNDATION IMPLEMENTED / NATIVE + DEVICE VERIFICATION REQUIRED
 
 This file contains currently actionable work and evidence gaps. Historical audit observations remain preserved in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents.
 
 ## Current repository work — multilingual feature slice
 
-The Global Multilingual Assistant foundation is implemented in source and documented in `docs/project-brain/18_GLOBAL_MULTILINGUAL_ASSISTANT.md`. The remaining repository-side verification is to run fresh CI after the current commits and resolve any typecheck/source/native failures that appear.
+The Global Multilingual Assistant foundation is implemented in source and documented in `docs/project-brain/18_GLOBAL_MULTILINGUAL_ASSISTANT.md`. Fresh main-branch Backend CI (`35318539437`) and Mobile CI (`35318539524`) are green; remaining validation is native APK/device capability rather than source/CI health.
 
 ### Implemented
 
@@ -22,12 +22,10 @@ The Global Multilingual Assistant foundation is implemented in source and docume
 
 ## Verification still required
 
-1. **Fresh Mobile CI:** run mobile typecheck/source tests after the multilingual commits.
-2. **Fresh Backend CI:** run backend build/unit/E2E after canonical response changes.
-3. **Native Android verification:** build the canonical APK after the multilingual changes and verify the custom translation module still autolinks correctly.
-4. **Physical Android/iOS device validation:** test representative locales from Latin, Cyrillic, Arabic-script and Indic families; verify locale persistence, RTL, input translation, response translation, TTS voice selection and no unexpected fallback language.
-5. **Full 51-locale matrix:** verify translation-model and TTS availability per target OS/device and record explicit unsupported combinations rather than silently substituting another language.
-6. **Repository-wide UI audit:** continue replacing remaining route/component hard-coded UI strings with the shared locale layer, especially older screens that predate the current localization work.
+1. **Native Android verification:** build the canonical APK after the multilingual changes and verify the custom translation module still autolinks correctly.
+2. **Physical Android/iOS device validation:** test representative locales from Latin, Cyrillic, Arabic-script and Indic families; verify locale persistence, RTL, input translation, response translation, TTS voice selection and no unexpected fallback language.
+3. **Full 51-locale matrix:** verify translation-model and TTS availability per target OS/device and record explicit unsupported combinations rather than silently substituting another language.
+4. **Repository-wide UI audit:** continue replacing remaining route/component hard-coded UI strings with the shared locale layer, especially older screens that predate the current localization work.
 
 ## Existing environment-bound work
 

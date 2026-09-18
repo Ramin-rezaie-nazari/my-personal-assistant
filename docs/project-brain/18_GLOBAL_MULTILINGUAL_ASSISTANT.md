@@ -1,7 +1,7 @@
 # Global Multilingual Assistant Contract
 
 Last updated: 2026-09-17
-Status: IMPLEMENTED / RUNTIME DEVICE VERIFICATION PENDING
+Status: IMPLEMENTED / AUTOMATED CI VERIFIED / RUNTIME DEVICE VERIFICATION PENDING
 
 ## Goal
 
@@ -88,3 +88,8 @@ A multilingual implementation is not considered complete merely because the lang
 ## Evidence boundary
 
 The repository can verify source contracts and automated tests. It cannot, from GitHub CI alone, prove that every platform/device has every translation model and TTS voice installed and operational. Those are explicitly environment-limited checks and must remain marked as such until real-device validation is captured.
+
+
+## Automated verification evidence — 2026-09-18
+
+Current `main` is covered by Backend CI run `35318539437` and Mobile CI run `35318539524`, both completed successfully after the local-first infrastructure merge. The evidence includes backend build/unit/API E2E plus mobile typecheck/source tests/Expo validation/Android JavaScript bundling. Native APK and physical-device locale/TTS/translation capabilities remain explicitly environment-bound.
