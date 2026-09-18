@@ -1,5 +1,8 @@
 {
   "name": "my-personal-assistant",
   "version": "0.1.0",
-  "private": true
+  "private": true,
+  "scripts": {
+    "local:verify-errors": "node ./scripts/local-validation-errors.mjs"
+  }
 }
