@@ -14,10 +14,13 @@ import { PriceCollectionSchedulerService } from './services/price-collection-sch
 import { AutomaticPriceSchedulerService } from './services/automatic-price-scheduler.service';
 import { MarketIntelligenceOrchestratorService } from './services/market-intelligence-orchestrator.service';
 import { ProductMatchingService } from './services/product-matching.service';
+import { OpenPricesSourceAdapter } from './services/open-prices-source.adapter';
+import { GlobalPriceCollectionService } from './services/global-price-collection.service';
+import { BudgetIntelligenceModule } from '../budget-intelligence/budget-intelligence.module';
 import { PrismaModule } from '../../common/database/prisma.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, BudgetIntelligenceModule],
   controllers: [PriceIntelligenceController],
   providers: [
     PriceIntelligenceService,
@@ -34,6 +37,8 @@ import { PrismaModule } from '../../common/database/prisma.module';
     AutomaticPriceSchedulerService,
     MarketIntelligenceOrchestratorService,
     ProductMatchingService,
+    OpenPricesSourceAdapter,
+    GlobalPriceCollectionService,
   ],
   exports: [
     PriceIntelligenceService,
@@ -50,6 +55,8 @@ import { PrismaModule } from '../../common/database/prisma.module';
     AutomaticPriceSchedulerService,
     MarketIntelligenceOrchestratorService,
     ProductMatchingService,
+    OpenPricesSourceAdapter,
+    GlobalPriceCollectionService,
   ],
 })
 export class PriceIntelligenceModule {}
