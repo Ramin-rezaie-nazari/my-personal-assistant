@@ -687,3 +687,8 @@ FAO FPMA is collected through a separate explicit monthly entrypoint/workflow, p
 ## Local-first infrastructure reconciliation (2026-09-18)
 
 The canonical development architecture is self-hosted/local-first: PostgreSQL via `docker-compose.local.yml`, a laptop-local price scheduler, and filesystem-backed development media. Supabase is not a target dependency. Legacy Supabase-only recipe batch scripts and their cloud workflows were retired from the active surface on 2026-09-18; historical audit references remain only for traceability. VPS deployment is deferred to release.
+
+
+## Fresh verification evidence — 2026-09-18
+
+The current `main` baseline `1b8b1799970026230162392f8ee101a13e12d99c` has fresh green Backend CI run `35318539437` and Mobile CI run `35318539524`. These runs validate the current repository after the local-first/Supabase retirement work. Physical-device behavior, native APK compilation for the latest main, local PostgreSQL execution, and provider/device capability remain outside automated repository evidence.
