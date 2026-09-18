@@ -1732,7 +1732,7 @@ PriceSnapshot
        ↓
 PriceCoverageService (195 markets)
 
-FAO FPMA remains a slower reference provider and is excluded from default daily source routing.
+FAO FPMA remains a slower reference provider and is excluded from default daily source routing. `.github/workflows/global-fpma-monthly.yml` owns its monthly refresh.
 ```
 
 The HTTP provider adapter path still handles existing tracked-product local sources. Public global providers expose their own adapter contracts so pagination, freshness, and provider-specific semantics remain isolated.
