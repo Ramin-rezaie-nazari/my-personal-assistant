@@ -51,7 +51,6 @@ model FitnessProgramSession {
   sessionPayload Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   programVersion FitnessProgramVersion @relation(fields: [programVersionId], references: [id], onDelete: Cascade)
   @@unique([programVersionId, weekNumber, dayNumber])
   @@index([programVersionId, weekNumber, dayNumber])
@@ -61,6 +60,7 @@ model FitnessPlanAssignment {
   id String @id
   userId String
   programVersionId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   startedOn DateTime
   status String @default("active")
