@@ -4,7 +4,7 @@ import { buildSmartMealSuggestions, SmartMealSuggestion } from '../lib/meal-inte
 import { getFoods, getNutritionSummary, hasAuthSession, NutritionSummary } from '../lib/api';
 import { getInventory, InventoryItem } from '../lib/inventory-api';
 import { router } from 'expo-router';
-import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
+import { useAppLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 
 type Copy = {
@@ -18,10 +18,10 @@ const copy=localizedCopy({
 });
 
 export default function SmartMealsScreen() {
-  const [locale, setLocale] = useState<AppLocale>('en'); const [summary, setSummary] = useState<NutritionSummary | null>(null); const [suggestions, setSuggestions] = useState<SmartMealSuggestion[]>([]); const [inventory, setInventory] = useState<InventoryItem[]>([]); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState<string | null>(null);
+  const { locale, rtl } = useAppLocale(); const [summary, setSummary] = useState<NutritionSummary | null>(null); const [suggestions, setSuggestions] = useState<SmartMealSuggestion[]>([]); const [inventory, setInventory] = useState<InventoryItem[]>([]); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => { try { setError(null); const [nutrition, foods, stock] = await Promise.all([getNutritionSummary(), getFoods(), getInventory()]); const availableIds = new Set(stock.filter(item => item.quantity > 0).map(item => item.foodId)); setSummary(nutrition); setInventory(stock); setSuggestions(buildSmartMealSuggestions(foods.filter(food => availableIds.has(food.id)), nutrition)); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to build meal suggestions.'); } finally { setLoading(false); setRefreshing(false); } }, []);
-  useEffect(() => { void getStoredLocale().then(v => setLocale(v ?? 'en')); void hasAuthSession().then(ok => { if (ok) void load(); else router.replace('/'); }); }, [load]);
-  const text = copy[locale]; const rtl = isRTL(locale); if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>; const lowStock = inventory.filter(item => item.urgency === 'critical' || item.urgency === 'soon');
+  useEffect(() => { void hasAuthSession().then(ok => { if (ok) void load(); else router.replace('/'); }); }, [load]);
+  const text = copy[locale];  if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>; const lowStock = inventory.filter(item => item.urgency === 'critical' || item.urgency === 'soon');
   return <ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}><View style={[styles.nav, rtl && styles.rtl]}><Pressable onPress={() => router.back()}><Text style={styles.navText}>{text.back}</Text></Pressable><Pressable onPress={() => router.push('/inventory')}><Text style={styles.navText}>{text.inventory}</Text></Pressable></View>
     <Text style={[styles.eyebrow, rtl && styles.rtlText]}>{text.eyebrow}</Text><Text style={[styles.title, rtl && styles.rtlText]}>{text.title}</Text><Text style={[styles.subtitle, rtl && styles.rtlText]}>{text.subtitle}</Text>
     {summary ? <View style={styles.targetCard}><Text style={[styles.targetTitle, rtl && styles.rtlText]}>{text.remaining}</Text><View style={[styles.targetRow, rtl && styles.rtl]}><Target label={text.calories} value={summary.remaining.calories} unit="kcal" rtl={rtl} /><Target label={text.protein} value={summary.remaining.protein} unit="g" rtl={rtl} /></View><Text style={[styles.stockHint, rtl && styles.rtlText]}>{inventory.filter(item => item.quantity > 0).length} {text.homeFoods}</Text></View> : null}
