@@ -129,7 +129,7 @@ export default function OnboardingScreen() {
               {screen === 0 && <Text style={[styles.privacyNote, rtl && styles.rtl]}><MaterialCommunityIcons name="shield-check-outline" size={14} color={BRAND.colors.primary} />{' '}{localizedText(locale, 'Every permission is optional and can be changed later.', 'هر دسترسی انتخابی است و بعداً هم می‌توانی تغییرش بدهی.')}</Text>}
               {screen === 1 && <Text style={[styles.privacyNote, rtl && styles.rtl]}>{localizedText(locale, 'Nothing here is required to continue.', 'برای ادامه لازم نیست هیچ‌کدام را فعال کنی.')}</Text>}
               <Pressable onPress={next} disabled={busy || !stepComplete} style={({ pressed }) => [styles.primary, pressed && styles.primaryPressed, (!stepComplete || busy) && styles.primaryDisabled]}>
-                {busy ? <ActivityIndicator color={BRAND.colors.white} /> : <><Text style={styles.primaryText}>{copy.cta}</Text><MaterialCommunityIcons name={localizedText(locale, 'arrow-right', 'arrow-left')} size={22} color={BRAND.colors.white} /></>}
+                {busy ? <ActivityIndicator color={BRAND.colors.white} /> : <><Text style={styles.primaryText}>{copy.cta}</Text><MaterialCommunityIcons name={rtl ? 'arrow-left' : 'arrow-right'} size={22} color={BRAND.colors.white} /></>}
               </Pressable>
             </View>
           </Animated.View>
@@ -137,6 +137,19 @@ export default function OnboardingScreen() {
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
+}
+
+const localizationFallbacks = new Map<string, string>();
+function localizedText(locale: AppLocale, en: string, fa: string): string {
+  if (locale === 'en') return en;
+  if (locale === 'fa') return fa;
+  const key = `${locale}\u0000${en}\u0000${fa}`;
+  const cached = localizationFallbacks.get(key);
+  if (cached) return cached;
+  const translated = getLocalizedCopy(locale, { en: { value: en }, fa: { value: fa } }).value;
+  if (translated === '…') return en;
+  localizationFallbacks.set(key, translated);
+  return translated;
 }
 
 const localizationFallbacks = new Map<string, string>();
