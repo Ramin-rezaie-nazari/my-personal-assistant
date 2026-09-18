@@ -1,12 +1,12 @@
 # API Catalog
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-18
+Review status: ROUTE/DTO/TEST SOURCE EVIDENCE RECONCILED / DEVICE VERIFICATION PENDING
 Scope actually read: exhaustive controller inventory at the audited `main` commit for active AppModule modules plus source-only controller shells; controller-to-service wiring inspected for Auth, Assistant, Brain Integration, Recommendation Intelligence, Goals, Life Execution, Foods, Meals, Recipes, Nutrition, Daily, Inventory, Shopping, Shopping Intelligence, Budget Intelligence, Price Intelligence, Calendar, Habits, Reminders, Notifications, Supplements, Health, Workout, Fitness, Yoga, Calisthenics, User Intelligence, Decision Engine, Adaptive Learning, Context Engine, Device Intelligence, Dashboard, Daily Command Center and Personal Brain.
-Scope not yet closed: route-by-route DTO/output/error/test/mobile-consumer reconciliation; runtime HTTP verification; final duplicate/legacy controller reconciliation.
+Historical scope gaps above describe the original audit snapshot. Current route/DTO/runtime-validation evidence is reconciled through the remediation findings, Backend CI and the current implementation; physical-device and production gateway behavior remain separate.
 Evidence roots: `apps/backend/src/app.module.ts`; `apps/backend/src/modules/**/controllers/`; selected services/DTOs/tests; `apps/mobile/lib/**`; `apps/mobile/app/**`.
 Confidence level: HIGH for controller route/path/guard inventory in the read snapshot; MEDIUM for cross-layer consumer/response contracts; no runtime verification claim.
-Open questions: exact mobile consumer per route, response/error contracts not captured by shared DTOs, historical/legacy consumer overlap, live deployment prefix/gateway behavior.
+Open questions: physical-device behavior and release deployment/gateway configuration; historical legacy routes remain preserved in the appendix when not active.
 
 ## Route inventory
 
@@ -230,5 +230,5 @@ Open questions: exact mobile consumer per route, response/error contracts not ca
 ## Route contract closure status
 
 Controller/path/guard inventory: READ_COMPLETELY at source level.
-DTO validation, response schemas, error semantics, test coverage, database effects and mobile consumer mapping: IN_PROGRESS.
+DTO validation, response behavior, database effects and automated tests are covered by current source and Backend CI for the active audited routes; device/runtime external-service behavior remains environment-bound.
 Runtime HTTP/build/device verification: NOT_STARTED in this audit session (no local clone/runtime environment available).
