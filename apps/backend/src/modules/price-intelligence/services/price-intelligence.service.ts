@@ -41,15 +41,18 @@ export class PriceIntelligenceService {
       undefined,
       undefined,
       countryCode,
-    )) as Array<{ amount: number; observedAt: Date; currency?: string }>;
+    )) as Array<{ amount: number; observedAt: Date; currency?: string; countryCode?: string }>;
     const currencies = new Set(
       rows.map((row) => String(row.currency ?? '')).filter(Boolean),
     );
-    if (!countryCode && currencies.size > 1) {
+    const countries = new Set(
+      rows.map((row) => String(row.countryCode ?? '')).filter(Boolean),
+    );
+    if (!countryCode && (currencies.size > 1 || countries.size > 1)) {
       return {
         productKey,
         scopeRequired: true,
-        reason: 'mixed_currency_data_requires_country_scope',
+        reason: 'mixed_market_data_requires_country_scope',
         current: null,
         average7d: null,
         average30d: null,
