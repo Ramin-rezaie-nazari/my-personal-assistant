@@ -1,51 +1,51 @@
 # Repository Audit
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
-Scope actually read: repository metadata/baseline manifests; complete identified Core/Auth source; AppModule wiring; complete Prisma schema + all 39 migrations; enumerated Assistant/Brain/Food/Recipe/Nutrition/Meals/Shopping/Inventory/Price/Life/Health/Fitness/Platform/Test/CI scopes; substantial Mobile app/lib/routes/components/native/API clients; backend common/config/auth/fitness cross-contracts; package-wired and legacy operational recipe/food/image scripts; relevant release workflows; selected historical PR/branch metadata and patches; current Project Brain documents and findings appendix.
-Scope not yet read: remaining repository source outside closed enumerations; exhaustive route↔DTO↔test↔mobile mapping; exhaustive database reader/writer/transaction/relation/index mapping; full security/privacy retention and deletion proof; full runtime validation; physical-device validation; complete historical branch/doc reconciliation; remaining legacy/duplicate operational scripts.
-Evidence roots: repository `Ramin-rezaie-nazari/my-personal-assistant`, current-main baseline `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`, audit branch `audit/project-brain-2026-09-11`, `apps/backend/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
-Confidence level: HIGH for completed file-level observations; MEDIUM for cross-module conclusions; runtime/deployment state remains unverified.
+Last updated: 2026-09-18
+Review status: SOURCE-LEVEL AUDIT CLOSED / ENVIRONMENTAL VALIDATION REMAINS
 
-## Environment limitation
+## Scope and evidence
 
-No local repository clone is available in this runtime. A safe clone attempt could not resolve `github.com`; therefore local dirty/untracked state, local dependency installation, live database contents, user-machine background processes, and physical-device behavior cannot be honestly verified. The audit uses GitHub repository/branch/file/PR evidence only for source-level review.
+The 2026-09-11 source audit and subsequent remediation are represented by the Project Brain deep-reads, matrices, validation ledger and canonical findings appendix. Current main is the source of truth for runtime architecture; historical audit branches are evidence only until explicitly merged.
 
-## Current audit governance
+The source-level audit gates are closed for the recorded repository scope. The canonical findings appendix preserves all recoverable findings and marks remediated, withdrawn, reconciled and evidence-limited items explicitly.
 
-- Audit changes are documentation-only on `audit/project-brain-2026-09-11`.
-- No production-code modification has been made by this audit branch work.
-- `docs/05_CURRENT_STATE.md` is the root canonical audit-state path required by the protocol; `apps/backend/docs/05_CURRENT_STATE.md` remains a legacy/operational document until deliberate reconciliation.
-- All newly discovered issues are required to be recorded in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md` with exact location, evidence and impact.
-- Remediation is intentionally deferred until the Master Prompt audit scope is fully closed, except for immediate containment if a newly established safety-critical condition requires it.
+## Current architecture boundary
 
-## Verified repository facts
+- Backend: modular NestJS + Prisma.
+- Database: PostgreSQL; local development uses docker-compose.local.yml.
+- Mobile: Expo/React Native.
+- Global daily prices: Open Prices daily collector with FAO FPMA as slower benchmark/reference data.
+- Daily price scheduler: laptop-local Node scheduler; no cloud scheduler is part of the current development architecture.
+- Supabase: not a current application dependency.
+- VPS: deferred to the release phase.
 
-Default branch is `main`; audit work is performed against `audit/project-brain-2026-09-11` so current-main production behavior is not altered during the audit.
+## Current source-level security/remediation state
 
-`apps/backend/src/app.module.ts` currently imports the active core/domain modules including Auth, Users, Profile, Onboarding, Assistant, Food/Recipe/Nutrition/Meals, Shopping/Inventory, LifeExecution, Fitness/Yoga/Calisthenics, Brain/Decision/Adaptive/Context, Dashboard/Daily Command Center, Price/Shopping/Budget Intelligence and Content. Earlier orphan assertions for `ContentModule` were corrected to NOT_APPLICABLE.
+The canonical findings appendix records the completed auth/session, runtime DTO, ownership, transaction, recipe/media, price-intelligence, mobile transport and native-build remediation work. PB-156 through PB-270 have explicit current statuses; no finding is silently treated as green solely from its historical label.
 
-Known source-present but not active in `AppModule` remain documented separately, notably LifeTasks, RecommendationIntelligence and GoalIntelligence; exact module/runtime evidence is retained in the findings appendix and contract/open-work documents.
+## Current CI evidence
 
-## Major current audit findings
+Current main Backend CI run 35318539437 is GREEN through Prisma validation/generation, migrations and idempotence, food-intelligence self-test, backend build, unit tests and API E2E.
 
-- Auth lifecycle: persisted refresh-session lifetime differs from configurable JWT lifetime; refresh rotation does not revoke the previous session; refresh tokens are persisted in plaintext; stored session expiry is not enforced in the refresh-token lookup path.
-- Mobile auth: access/refresh tokens are persisted in AsyncStorage, and several domain API clients bypass the canonical 401→refresh→retry behavior.
-- Backend↔Mobile: onboarding completion is local-only and does not synchronize the authenticated backend onboarding/profile state; Mobile `getBrainContext()` targets an unexposed backend route.
-- Recipe/food operational layer: content importer/schema drift, non-restartable first-batch behavior, non-transactional related writes, image contract drift, destructive image reset behavior, broken v8 image orchestration and country preference scorer/query mismatch remain open.
-- CI/release: recipe content release workflow references undefined backend package scripts.
-- Data quality: recipe quality-score unit mismatch and nutrition-estimation provenance gap remain open.
+Current main Mobile CI run 35318539524 is GREEN through frozen-lockfile installation, typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
 
-## Historical workstream status
+A fresh Android native APK run after the multilingual/local-first merge is still an environment/repository-evidence gate. The canonical workflow is .github/workflows/android-apk.yml.
 
-High-value branches and PRs are not treated as merged production behavior without explicit merge evidence. PR #48 is open/unmergeable, PR #49 is open/mergeable only against its feature base, PR #66 is draft/branch-scoped, and PR #60 is a draft validation branch. Their patches are evidence for historical divergence only until merged.
+## Remaining validation boundaries
 
-## Next closure gates
+- Local PostgreSQL startup and Prisma migration execution on the user's laptop.
+- One real local global-price collection plus observed 195-country coverage.
+- Laptop-local scheduler lifecycle across restart/sleep conditions.
+- Native Android APK build after current-main changes.
+- Physical Android/iOS locale, RTL, translation-model, TTS and dynamic-content validation.
+- Full 51-locale translation/TTS capability matrix on target devices.
+- Real notification/microphone/location/speech runtime behavior.
+- VPS/release deployment and production observability.
 
-1. Exhaustive repository-wide route↔DTO↔test↔mobile consumer mapping.
-2. Exhaustive database reader/writer/transaction/relation/index reconciliation.
-3. Full security/privacy authorization, retention, deletion and deployment-boundary review.
-4. Remaining common/platform/test/legacy operational source closure.
-5. Complete historical branch/PR and documentation reconciliation.
-6. Runtime/test/device validation ledger where execution is actually possible.
-7. Freeze the canonical findings catalog only after the preceding gates are complete; then begin separate remediation.
+## Governance
+
+New audit findings must be recorded in docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md with exact evidence and impact. Project Brain must be updated alongside implementation changes. Unavailable runtime or device evidence remains explicitly unvalidated rather than inferred.
+
+## Historical note
+
+The exact prose of PB-001 through PB-155 is not recoverable from the exposed audit history. The limitation is documented and no missing finding text is fabricated.

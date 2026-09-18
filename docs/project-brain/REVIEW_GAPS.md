@@ -1,46 +1,38 @@
 # Review Gaps
 
-Last updated: 2026-09-11
-Review status: SOURCE-LEVEL AUDIT COMPLETE; ENVIRONMENTAL VALIDATION BLOCKED
+Last updated: 2026-09-18
+Review status: SOURCE-LEVEL AUDIT RECONCILED / ENVIRONMENTAL VALIDATION REMAINS
 
 ## Final status
 
-The former review-gap list has been reconciled against the canonical Audit Findings Appendix, DB Audit Matrix, Reading Checkpoints, File Review Index and Validation Ledger. Items that were source-review gaps are now closed for the available repository evidence or represented as explicit canonical findings. Items requiring deployed/runtime/device access remain BLOCKED/UNVERIFIED and are not falsely marked PASS.
+The source-level audit and remediation records are reconciled through the canonical findings appendix. Current repository and CI evidence no longer supports treating the historical 2026-09-11 CI/test-gap descriptions as active defects.
 
-## Canonical unresolved findings / validation boundaries
+## Canonical remaining evidence boundaries
 
-1. Open source findings remain in `15_AUDIT_FINDINGS_APPENDIX.md`; they are not unreviewed gaps and will be handled during the separate remediation phase.
-2. PB-252 remains provisional pending architectural intent for the dormant Content Recommendation provider.
-3. PB-254/PB-211 remain account-erasure workflow findings because no composed User/Auth/Storage/migration-only deletion workflow was found.
-4. PB-257 remains a source-level missing composite-index finding; production row counts/query plans are required before sizing remediation.
-5. PB-242 is a real CI failure: frozen-lockfile installation failed in run `34613481370`.
-6. PB-246 remains a main-Mobile-CI test-gating gap.
-7. Historical PB-001..PB-155 exact Appendix prose is not recoverable from exposed Git history; `12_OPEN_WORK.md` remains the historical ID/index source and no text is fabricated.
-8. Runtime HTTP, physical-device, deployed PostgreSQL/Supabase/RLS/Storage, external Auth configuration and production push-delivery validation are environmental blockers.
+1. Native Android build after current-main multilingual/local-first changes is not yet captured in a fresh post-merge workflow run.
+2. Physical Android/iOS validation is still required for representative RTL/LTR locales, translation-model availability, TTS voice availability and dynamic-content localization.
+3. Local price runtime validation still requires the user's laptop: local PostgreSQL, one-shot collection and observed 195-country coverage.
+4. User-facing Open Prices attribution is now implemented in the price-history screen and must be confirmed in the built app during UI/device validation.
+5. Release/deployment validation remains deferred to the VPS/release phase.
 
-## Source-level gates closed
+## Historical evidence retained
 
-- Repository source/file review for the recorded audit scope: CLOSED.
-- Route/controller/DTO/guard/mobile-consumer source reconciliation: CLOSED FOR SOURCE EVIDENCE.
-- DB reader/writer/relation/index/transaction/migration-only source reconciliation: CLOSED FOR SOURCE EVIDENCE.
+- Historical PB-001..PB-155 exact Appendix prose is not recoverable from the exposed repository history; no missing text is fabricated.
+- Historical CI failures and audit observations remain preserved in the dated ledgers/continuation documents and canonical appendix. They are not reclassified as current defects without current evidence.
+- Account erasure, authentication hardening, recipe/media, price, DTO and native-build findings are tracked by their current statuses in 15_AUDIT_FINDINGS_APPENDIX.md.
+
+## Source-level gates
+
+- Repository source/file review for the recorded audit scope: CLOSED FOR SOURCE EVIDENCE.
+- Route/controller/guard/DTO/mobile-consumer reconciliation: CLOSED FOR SOURCE EVIDENCE.
+- DB reader/writer/relation/index/transaction/migration reconciliation: CLOSED FOR SOURCE EVIDENCE.
 - Security/ownership/auth/session/retention source review: CLOSED FOR SOURCE EVIDENCE.
 - CI/workflow/package/operational source review: CLOSED FOR SOURCE EVIDENCE.
-- Canonical findings/duplicate/false-positive reconciliation through PB-257: CLOSED.
-- Project Brain checkpoint/index/ledger synchronization: CLOSED.
-
-## Historical correction controls
-
-- PB-250 merged into PB-160.
-- PB-251 withdrawn after current-main direct file verification.
-- PB-253 withdrawn after active consumer verification.
-- PB-255 merged into PB-203.
-- PB-256 withdrawn after current-main direct file verification.
-- PB-232/PB-237 runtime ValidationPipe collision claims withdrawn/reclassified because inline `Object` metatypes are skipped by Nest validation.
-- PB-234 narrowed to the concrete class DTO validation contract.
-- PB-243 reconciled into historical PB-077/PB-083/PB-085/PB-093 rather than counted as a duplicate umbrella finding.
+- Canonical findings/duplicate/false-positive reconciliation: CLOSED through PB-270.
+- Project Brain synchronization: ACTIVE maintenance, with current-state corrections kept alongside implementation evidence.
 
 ## Important boundary
 
-This file no longer treats unavailable runtime/deployed evidence as a repository-review gap. Those are explicitly environmental validation blockers. Open findings are real findings to remediate; they are not hidden inside an artificial "gap" count.
+Unavailable deployed/runtime/device evidence is not represented as PASS. It remains explicitly environment-bound until executed and recorded.
 
-No production source code changed during audit.
+No production source code changed during the original audit phase; subsequent remediation and feature work are tracked through normal PR/CI evidence.
