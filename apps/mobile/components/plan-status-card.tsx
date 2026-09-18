@@ -11,7 +11,8 @@ const copy = localizedCopy({
     blocked: 'Waiting',
     partial: 'Needs attention',
     nextStep: 'Next step: ',
-    failed: 'failed step(s)',
+    stepsTemplate: '{done} of {total} steps completed',
+    failedTemplate: '{count} failed step(s)',
   },
   fa: {
     eyebrow: 'وضعیت اجرای Brain',
@@ -20,7 +21,8 @@ const copy = localizedCopy({
     blocked: 'منتظر تأیید',
     partial: 'نیازمند ادامه',
     nextStep: 'مرحله بعدی: ',
-    failed: 'مرحله ناموفق',
+    stepsTemplate: '{done} مرحله از {total} انجام شده',
+    failedTemplate: '{count} مرحله ناموفق',
   },
 });
 
@@ -37,9 +39,9 @@ export function PlanStatusCard({ plan, rtl }: { plan: PlanExecutionState | null;
     <View style={styles.card}>
       <View style={[styles.header, effectiveRTL && styles.rtl]}><View style={styles.titleWrap}><Text style={[styles.eyebrow, effectiveRTL && styles.rtlText]}>{text.eyebrow}</Text><Text style={[styles.title, effectiveRTL && styles.rtlText]}>{statusLabel}</Text></View><Text style={styles.progress}>{progress}%</Text></View>
       <View style={styles.track}><View style={[styles.fill, { width: `${progress}%` }]} /></View>
-      <Text style={[styles.meta, effectiveRTL && styles.rtlText]}>{locale === 'fa' ? `${done} مرحله از ${total} انجام شده` : `${done} of ${total} steps completed`}</Text>
+      <Text style={[styles.meta, effectiveRTL && styles.rtlText]}>{text.stepsTemplate.replace('{done}', String(done)).replace('{total}', String(total))}</Text>
       {plan.currentStep ? <Text style={[styles.next, effectiveRTL && styles.rtlText]}>{text.nextStep}{plan.currentStep}</Text> : null}
-      {plan.failed.length ? <Text style={[styles.warning, effectiveRTL && styles.rtlText]}>{`${plan.failed.length} ${text.failed}`}</Text> : null}
+      {plan.failed.length ? <Text style={[styles.warning, effectiveRTL && styles.rtlText]}>{text.failedTemplate.replace('{count}', String(plan.failed.length))}</Text> : null}
       <Text style={[styles.assistive, effectiveRTL && styles.rtlText]}>{t(locale, 'progress')}</Text>
     </View>
   );
