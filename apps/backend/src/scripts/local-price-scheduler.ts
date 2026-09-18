@@ -36,7 +36,7 @@ async function runOnce(scheduledFor: Date) {
       scheduledFor,
     );
     console.log(JSON.stringify({
-      kind: 'm ypa.price.daily'.replace(' ',''),
+      kind: 'mypa.price.daily',
       scheduledFor,
       runId: result.runId,
       status: result.status,
@@ -66,7 +66,7 @@ async function main() {
   while (true) {
     const next = localScheduledFor(hour, minute);
     console.log(JSON.stringify({
-      kind: 'm ypa.price.scheduler'.replace(' ',''),
+      kind: 'mypa.price.scheduler',
       nextRunAt: next,
       localTimezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       hour,
