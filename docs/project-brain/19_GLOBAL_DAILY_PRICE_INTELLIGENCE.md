@@ -45,6 +45,8 @@ GET /price-intelligence/coverage
 
 Daily collection is intentionally separate from the in-process application scheduler. This prevents the app server lifecycle from being the only mechanism responsible for daily global refresh.
 
+FAO FPMA has its own monthly collector (`.github/workflows/global-fpma-monthly.yml`) because its provider cadence is slower than Open Prices.
+
 ## Coverage semantics
 
 `GET /price-intelligence/coverage` now defaults to:
