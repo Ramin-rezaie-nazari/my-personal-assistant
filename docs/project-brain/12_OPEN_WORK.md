@@ -39,3 +39,20 @@ The Global Multilingual Assistant foundation is implemented in source and docume
 ## Completion rule
 
 A multilingual work item is green only after implementation, relevant automated validation and documentation agree. Device/OS capability is not treated as verified until exercised and recorded on a real device.
+
+## Global Daily Price Intelligence — explicit workstream
+
+Status: IMPLEMENTED / FRESH CI + PRODUCTION DB ACTIVATION REQUIRED
+
+Implemented:
+- Open Prices global adapter with bounded recent-window ingestion.
+- Country-aware snapshots plus 195-country `fresh` / `stale` / `missing` coverage.
+- Mixed-market analysis guard.
+- Deterministic snapshot identity and durable global run metadata.
+- Free public-repository scheduled workflow.
+
+Remaining:
+1. Fresh Backend CI after this feature slice.
+2. Add production `DATABASE_URL` as a GitHub Actions secret.
+3. Run one real production/manual collection and inspect actual country coverage.
+4. Review ODbL attribution in any user-facing price screens.
