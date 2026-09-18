@@ -4,6 +4,7 @@ import { PriceIntelligenceService } from '../services/price-intelligence.service
 import { PriceCollectionSchedulerService } from '../services/price-collection-scheduler.service';
 import { PriceSourceRegistryService } from '../services/price-source-registry.service';
 import { PricePersistenceService } from '../services/price-persistence.service';
+import { PriceCoverageService } from '../services/price-coverage.service';
 import { MatchProductDto, NightlyPreviewDto, NightlyRunDto } from '../dto/price-intelligence.dto';
 
 @Controller('price-intelligence')
@@ -14,6 +15,7 @@ export class PriceIntelligenceController {
     private readonly scheduler: PriceCollectionSchedulerService,
     private readonly sources: PriceSourceRegistryService,
     private readonly persistence: PricePersistenceService,
+    private readonly coverage: PriceCoverageService,
   ) {}
 
   @Get()
@@ -79,6 +81,11 @@ export class PriceIntelligenceController {
     const now = dto.now ? new Date(dto.now) : new Date();
     const lastSuccessfulRunAt = dto.lastSuccessfulRunAt ? new Date(dto.lastSuccessfulRunAt) : undefined;
     return this.scheduler.shouldRun(now, lastSuccessfulRunAt);
+  }
+
+  @Get('coverage')
+  getCoverage(@Query('maxAgeDays') maxAgeDays?: string) {
+    return this.coverage.getCoverage(maxAgeDays ? Number(maxAgeDays) : 7);
   }
 
   @Get('registry')
