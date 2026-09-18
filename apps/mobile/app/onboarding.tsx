@@ -9,6 +9,7 @@ import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
 import { AppLocale, getStoredLocale } from '../lib/i18n';
+import { isRTL } from '../lib/languages';
 import { DEFAULT_ONBOARDING, OnboardingState, calculateBMI, setOnboardingState } from '../lib/onboarding';
 import { BRAND } from '../lib/branding';
 import { BrandWordmark } from '../components/BrandWordmark';
@@ -30,7 +31,7 @@ export default function OnboardingScreen() {
   const [, requestMicrophonePermission] = useMicrophonePermissions();
   const fade = useRef(new Animated.Value(0)).current;
   const slide = useRef(new Animated.Value(18)).current;
-  const rtl = locale === 'fa';
+  const rtl = isRTL(locale);
 
   useEffect(() => { void getStoredLocale().then((value) => value && setLocale(value)); }, []);
   useEffect(() => {
