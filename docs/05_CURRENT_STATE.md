@@ -1,7 +1,7 @@
 # MYPA Current State
 
-Last updated: 2026-09-17
-Review status: GLOBAL MULTILINGUAL ASSISTANT FOUNDATION IMPLEMENTED / RUNTIME DEVICE VERIFICATION PENDING
+Last updated: 2026-09-18
+Review status: MULTILINGUAL + GLOBAL PRICE FOUNDATIONS IMPLEMENTED / RUNTIME DEVICE + PRODUCTION VERIFICATION PENDING
 
 ## Canonical ownership
 
@@ -90,6 +90,8 @@ These are explicit evidence limits, not silently marked green findings.
 - Price persistence now reports actual inserted rows and includes city/market context in fallback snapshot identity.
 - Added `docs/project-brain/19_GLOBAL_DAILY_PRICE_INTELLIGENCE.md` as the canonical contract.
 
-Fresh CI for this branch and a real production collection run are still required before this slice can be marked fully green. Complete fresh daily coverage for all 195 countries is provider-data dependent and must be measured rather than assumed.
+Backend CI and Mobile CI for the price-intelligence PR completed successfully, and PR #79 was squash-merged to `main` as commit `760b868b089a949c3301a336095cca51bce01c92`.
+
+Production daily execution remains unverified because the connected Supabase projects are currently inactive and a production `DATABASE_URL` Actions secret/reachable database has not been verified. Complete fresh daily coverage for all 195 countries is provider-data dependent and must be measured rather than assumed.
 
 The daily workflow is `.github/workflows/global-price-intelligence.yml`; the slower FAO FPMA reference feed is refreshed by `.github/workflows/global-fpma-monthly.yml`.
