@@ -14,8 +14,9 @@ describe('PriceCoverageService', () => {
     };
     const service = new PriceCoverageService(prisma as never);
 
-    const result = await service.getCoverage(7);
+    const result = await service.getCoverage(1, 'open-prices');
 
+    expect(result.sourceId).toBe('open-prices');
     expect(result.totalCountries).toBe(195);
     expect(result.countriesWithData).toBe(1);
     expect(result.countriesFresh).toBe(1);
