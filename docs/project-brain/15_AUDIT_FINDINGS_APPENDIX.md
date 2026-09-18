@@ -200,7 +200,7 @@ The canonical MYPA development path is self-hosted/local-first: PostgreSQL + Pri
 
 | Finding | Current status | Resolution / evidence |
 |---|---|---|
-| PB-275 | OPEN → REMEDIATED | Meals, Daily, Inventory, Smart Meals, Meal Builder, Shopping, Meal Details and Insights maintained independent locale state via \`getStoredLocale()\`, creating duplicated presentation-language state and possible stale UI after locale changes. These routes now consume \`useAppLocale()\` as the shared locale/RTL source of truth. CI validation remains required before merge; physical-device locale capability remains environment-bound. |
+| PB-275 | CLOSED — REMEDIATED + CI VERIFIED | Meals, Daily, Inventory, Smart Meals, Meal Builder, Shopping, Meal Details and Insights maintained independent locale state via `getStoredLocale()`, creating duplicated presentation-language state and possible stale UI after locale changes. These routes now consume `useAppLocale()` as the shared locale/RTL source of truth. Mobile CI run `35327595866` verified typecheck, source tests, Jest specs, Expo validation and Android JS bundling. |
 
 ## New Planning/data-contract finding — PB-276
 
