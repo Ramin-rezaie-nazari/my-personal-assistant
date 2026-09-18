@@ -149,7 +149,7 @@ This file is the canonical current status of the findings catalog covered by the
 
 | Finding | Current status | Resolution / current evidence |
 |---|---|---|
-| PB-271 | CLOSED — REMEDIATED + CI PENDING | `apps/mobile/app/onboarding.tsx` previously enabled RTL only when the locale was `fa`, which could leave Arabic, Hebrew, Urdu and Kurdish onboarding layouts in LTR despite the canonical language registry marking them RTL. The route now consumes the shared `isRTL()` registry function. Existing `languages.spec.ts` coverage verifies representative RTL locales. |
+| PB-271 | CLOSED — REMEDIATED + CI VERIFIED | `apps/mobile/app/onboarding.tsx` previously enabled RTL only when the locale was `fa`, which could leave Arabic, Hebrew, Urdu and Kurdish onboarding layouts in LTR despite the canonical language registry marking them RTL. The route now consumes the shared `isRTL()` registry function. Existing `languages.spec.ts` coverage verifies representative RTL locales. |
 
 ## Historical catalog boundary
 
