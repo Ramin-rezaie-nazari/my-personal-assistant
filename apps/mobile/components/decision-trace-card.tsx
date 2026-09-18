@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { DecisionTrace } from '../lib/api';
-import { useAppLocale, isRTL, t } from '../lib/i18n';
+import { useAppLocale, isRTL, t, toIntlLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 
 const copy = localizedCopy({
@@ -19,7 +19,7 @@ export function DecisionTraceCard({ trace, rtl }: { trace: DecisionTrace | null;
     <View style={styles.card}>
       <View style={[styles.row, effectiveRTL && styles.rtl]}><Text style={[styles.title, effectiveRTL && styles.rtlText]}>{text.title}</Text><Text style={styles.state}>{state}</Text></View>
       <Text style={[styles.reason, effectiveRTL && styles.rtlText]} numberOfLines={2}>{trace.reason}</Text>
-      <Text style={[styles.meta, effectiveRTL && styles.rtlText]}>{new Date(trace.createdAt).toLocaleString(locale === 'fa' ? 'fa-IR' : 'en-US')}</Text>
+      <Text style={[styles.meta, effectiveRTL && styles.rtlText]}>{new Date(trace.createdAt).toLocaleString(toIntlLocale(locale))}</Text>
       <Text style={[styles.label, effectiveRTL && styles.rtlText]}>{t(locale, 'progress')}</Text>
     </View>
   );
