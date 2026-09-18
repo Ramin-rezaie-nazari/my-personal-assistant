@@ -158,6 +158,7 @@ export class PricePersistenceService {
         "lastObservedAt" = GREATEST("PriceCoverageSnapshot"."lastObservedAt", EXCLUDED."lastObservedAt"),
         "lastCollectedAt" = CURRENT_TIMESTAMP,
         "observationCount" = EXCLUDED."observationCount",
+        "updatedAt" = CURRENT_TIMESTAMP,
         "status" = CASE
           WHEN GREATEST("PriceCoverageSnapshot"."lastObservedAt", EXCLUDED."lastObservedAt") IS NULL THEN 'missing'
           WHEN GREATEST("PriceCoverageSnapshot"."lastObservedAt", EXCLUDED."lastObservedAt")::date = CURRENT_DATE THEN 'fresh'
