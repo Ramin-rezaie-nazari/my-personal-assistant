@@ -42,7 +42,7 @@ A multilingual work item is green only after implementation, relevant automated 
 
 ## Global Daily Price Intelligence
 
-Status: MERGED / LOCAL RUNTIME VERIFICATION REQUIRED
+Status: IMPLEMENTED / LOCAL RUNTIME VERIFICATION REQUIRED
 
 Implemented repository-side:
 - Open Prices global daily feed with bounded recent ingestion.
@@ -50,11 +50,20 @@ Implemented repository-side:
 - Country-native currency preservation.
 - Daily source routing excludes monthly sources.
 - 195-country daily coverage reporting with fresh/stale/no_data states.
-- Dedicated public GitHub Actions daily scheduler.
+- Laptop-local daily scheduler with configurable local execution time.
+- Persistent local PostgreSQL via `docker-compose.local.yml`.
+- No Supabase dependency and no cloud scheduler in the canonical development path.
 
 Verification remaining:
-1. Configure/verify production `DATABASE_URL` as a GitHub Actions secret against an active production database.
-2. Run one real daily collection and review the 195-country coverage output.
-4. Run one real collection and review the 195-country coverage output.
-5. Add required Open Prices/ODbL attribution wherever its data is exposed in user-facing UI.
-6. Verify the monthly FPMA workflow once in production.
+1. Run the local PostgreSQL container and apply Prisma migrations on the development laptop.
+2. Run one real local global-price collection and record the observed 195-country coverage.
+3. Add required Open Prices/ODbL attribution wherever its data is exposed in user-facing UI.
+4. Validate the monthly FPMA collector locally when the benchmark feed is needed.
+5. Keep provider coverage truthful: a country with no fresh observation remains `no_data` or `stale`; values must not be fabricated.
+
+## Infrastructure direction
+
+- Development: local PostgreSQL + local Node scheduler on the laptop.
+- Release: move the same PostgreSQL/Prisma architecture to a VPS.
+- CI: ephemeral PostgreSQL is acceptable for automated tests only.
+- Supabase: explicitly out of the canonical application architecture.
