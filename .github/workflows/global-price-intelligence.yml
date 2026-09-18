@@ -1,0 +1,58 @@
+name: MYPA Global Daily Price Intelligence
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 2 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mypa-global-daily-price-intelligence
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      OPEN_PRICES_MAX_PAGES: '20'
+      OPEN_PRICES_MAX_AGE_DAYS: '2'
+      OPEN_PRICES_TIMEOUT_MS: '15000'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 11.18.0
+          run_install: false
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate Prisma schema
+        working-directory: apps/backend
+        run: pnpm exec prisma validate
+
+      - name: Apply production migrations
+        working-directory: apps/backend
+        run: pnpm exec prisma migrate deploy
+
+      - name: Build backend
+        working-directory: apps/backend
+        run: pnpm build
+
+      - name: Collect global daily prices
+        working-directory: apps/backend
+        run: node ./dist/scripts/global-price-daily.js
