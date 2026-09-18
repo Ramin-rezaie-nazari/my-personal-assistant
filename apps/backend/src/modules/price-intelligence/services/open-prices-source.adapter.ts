@@ -12,7 +12,7 @@ export class OpenPricesSourceAdapter {
 
   async fetchPrices(_productKeys: string[]): Promise<NormalizedPrice[]> {
     const maxPages = Math.min(Math.max(Number(process.env.OPEN_PRICES_MAX_PAGES ?? 20), 1), 200);
-    const maxAgeDays = Math.min(Math.max(Number(process.env.OPEN_PRICES_MAX_AGE_DAYS ?? 45), 1), 365);
+    const maxAgeDays = Math.min(Math.max(Number(process.env.OPEN_PRICES_MAX_AGE_DAYS ?? 2), 1), 365);
     const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
     const output: NormalizedPrice[] = [];
     let nextUrl: string | null = this.buildUrl(1);
