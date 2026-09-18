@@ -10,8 +10,8 @@ import { localizedCopy } from '../lib/localized-copy';
 import { FitnessLocalizedText } from '../components/fitness-localized-text';
 
 const ui = localizedCopy({
-  en: { eyebrow:'PROGRAMS', title:'Choose your path', subtitle:'Structured plans with goals, weeks, sessions and progress built in.', current:'Current plan', next:'Next session', noCurrent:'No active program yet.', catalog:'Program library', start:'Explore', calc:'Calculators', back:'Back', loading:'Loading programs…', empty:'No programs match your filters.' },
-  fa: { eyebrow:'برنامه‌ها', title:'مسیرت را انتخاب کن', subtitle:'برنامه‌های ساختاریافته با هدف، هفته، جلسه و پیشرفت.', current:'برنامه فعلی', next:'جلسه بعدی', noCurrent:'هنوز برنامه فعالی نداری.', catalog:'کتابخانه برنامه‌ها', start:'مشاهده', calc:'محاسبات', back:'برگشت', loading:'در حال بارگذاری برنامه‌ها…', empty:'برنامه‌ای با این شرایط پیدا نشد.' },
+  en: { eyebrow:'PROGRAMS', title:'Choose your path', subtitle:'Structured plans with goals, weeks, sessions and progress built in.', current:'Current plan', sessionsDone:'sessions done', next:'Next session', noCurrent:'No active program yet.', catalog:'Program library', start:'Explore', calc:'Calculators', back:'Back', loading:'Loading programs…', empty:'No programs match your filters.' },
+  fa: { eyebrow:'برنامه‌ها', title:'مسیرت را انتخاب کن', subtitle:'برنامه‌های ساختاریافته با هدف، هفته، جلسه و پیشرفت.', current:'برنامه فعلی', sessionsDone:'جلسه انجام شده', next:'جلسه بعدی', noCurrent:'هنوز برنامه فعالی نداری.', catalog:'کتابخانه برنامه‌ها', start:'مشاهده', calc:'محاسبات', back:'برگشت', loading:'در حال بارگذاری برنامه‌ها…', empty:'برنامه‌ای با این شرایط پیدا نشد.' },
 });
 
 export default function FitnessProgramsScreen() {
