@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { PlanExecutionState } from '../lib/api';
 import { useAppLocale, isRTL, t } from '../lib/i18n';
@@ -11,7 +10,6 @@ const copy = localizedCopy({
     running: 'Running',
     blocked: 'Waiting',
     partial: 'Needs attention',
-    progress: (done: string) => done,
     nextStep: 'Next step: ',
     failed: 'failed step(s)',
   },
@@ -21,7 +19,6 @@ const copy = localizedCopy({
     running: 'در حال اجرا',
     blocked: 'منتظر تأیید',
     partial: 'نیازمند ادامه',
-    progress: (done: string) => done,
     nextStep: 'مرحله بعدی: ',
     failed: 'مرحله ناموفق',
   },
