@@ -4,7 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { hasAuthSession } from '../lib/api';
 import { getInventory, InventoryItem, setInventoryQuantity } from '../lib/inventory-api';
-import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
+import { useAppLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 
 const copy=localizedCopy({en:{back:'← Back',recipes:'Recipes',basket:'Basket',eyebrow:'HOUSEHOLD',title:'Inventory',subtitle:'Know what you have, what is running low, and what the assistant should buy next.',tracked:'Items tracked',attention:'Need attention',critical:'Critical',cook:'Cook with what you have',cookBody:'Match recipes against your real household stock.',smart:'Smart Basket',smartBody:'Turn low-stock forecasts into your next shopping list.',update:'Inventory update',stock:'Stock',days:'Days left',buy:'Buy',enough:'Enough',empty:'Your pantry is empty here',emptyBody:'Start adding foods to inventory and the assistant will forecast when they need replenishing.',units:'days'},fa:{back:'برگشت ←',recipes:'دستورها',basket:'سبد',eyebrow:'خانه',title:'موجودی',subtitle:'بدان چه چیزهایی داری، چه چیزی رو به اتمام است و دستیار چه چیزی را بعدی بخرد.',tracked:'اقلام ثبت‌شده',attention:'نیازمند توجه',critical:'بحرانی',cook:'با موجودی خانه غذا درست کن',cookBody:'دستورها را با موجودی واقعی خانه هماهنگ کن.',smart:'سبد هوشمند',smartBody:'پیش‌بینی کمبود را به لیست خرید بعدی تبدیل کن.',update:'به‌روزرسانی موجودی',stock:'موجودی',days:'روز باقی‌مانده',buy:'خرید',enough:'کافی است',empty:'اینجا موجودی خالی است',emptyBody:'غذاها را به موجودی اضافه کن تا دستیار زمان تمام شدنشان را پیش‌بینی کند.',units:'روز'}});
@@ -12,7 +12,7 @@ const copy=localizedCopy({en:{back:'← Back',recipes:'Recipes',basket:'Basket',
 export default function InventoryScreen(){
  const [locale,setLocale]=useState<AppLocale>('en');const [items,setItems]=useState<InventoryItem[]>([]);const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState<string|null>(null);
  const load=useCallback(async()=>{try{setError(null);setItems(await getInventory())}catch(err){setError(err instanceof Error?err.message:'Unable to load inventory.')}finally{setLoading(false);setRefreshing(false)}},[]);
- useEffect(()=>{void getStoredLocale().then(v=>setLocale(v??'en'));void hasAuthSession().then(ok=>{if(ok)void load();else router.replace('/')})},[load]);
+ useEffect(()=>{ void hasAuthSession().then(ok=>{if(ok)void load();else router.replace('/')})},[load]);
  const urgent=useMemo(()=>items.filter(item=>item.urgency==='critical'||item.urgency==='soon'),[items]);const text=copy[locale],rtl=isRTL(locale);if(loading)return <View style={styles.center}><ActivityIndicator size="large"/></View>;
  const adjust=async(item:InventoryItem,delta:number)=>{const quantity=Math.max(0,item.quantity+delta);try{const updated=await setInventoryQuantity(item.id,quantity);setItems(current=>current.map(entry=>entry.id===item.id?{...entry,...updated}:entry))}catch(err){setError(err instanceof Error?err.message:'Unable to update stock.')}};
  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{setRefreshing(true);void load()}}/>}>
