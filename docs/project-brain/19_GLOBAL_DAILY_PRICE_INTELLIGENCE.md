@@ -1,7 +1,7 @@
 # Global Daily Price Intelligence
 
 Last updated: 2026-09-18
-Status: MERGED / LOCAL RUNTIME VERIFICATION PENDING
+Status: IMPLEMENTED / LOCAL RUNTIME VERIFICATION PENDING
 
 ## Goal
 
@@ -65,15 +65,19 @@ Persistence now increments its `written` count only when an INSERT actually crea
 
 ## Local scheduling
 
-The current development scheduler runs on the user's laptop. It uses standard Node.js timers and the laptop's local timezone, so no external scheduler or paid service is required.
+The development scheduler runs on the user's laptop. It uses standard Node.js timers and the laptop's local timezone, so no external scheduler or paid service is required.
 
-The local PostgreSQL database is provided by `docker-compose.local.yml`. VPS deployment is intentionally deferred to the release phase.
+The local PostgreSQL database is provided by `docker-compose.local.yml`. VPS deployment is intentionally deferred until the release phase.
+
+The one-shot command and daemon are exposed from `apps/backend/package.json`:
+- `pnpm price-intelligence:global-daily`
+- `pnpm price-intelligence:daily-daemon`
 
 ## Evidence boundary
 
-Automated tests cover source normalization, daily source routing and 195-country coverage enumeration.
+Automated tests cover source normalization, daily source routing, scheduler timing and 195-country coverage enumeration.
 
-Backend CI and Mobile CI passed for the merged implementation before the local-first infrastructure pivot. The source-level local scheduler is now on the development branch. Real local daily operation remains unverified until it is run on the user's laptop and actual country coverage is measured.
+Backend CI passed for the local-first infrastructure branch, including backend API E2E. Real local daily operation remains unverified until it is run on the user's laptop and actual country coverage is measured.
 
 ## Infrastructure policy
 
