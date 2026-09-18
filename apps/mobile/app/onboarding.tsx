@@ -152,19 +152,6 @@ function localizedText(locale: AppLocale, en: string, fa: string): string {
   return translated;
 }
 
-const localizationFallbacks = new Map<string, string>();
-function localizedText(locale: AppLocale, en: string, fa: string): string {
-  if (locale === 'en') return en;
-  if (locale === 'fa') return fa;
-  const key = `${locale}\u0000${en}\u0000${fa}`;
-  const cached = localizationFallbacks.get(key);
-  if (cached) return cached;
-  const translated = getLocalizedCopy(locale, { en: { value: en }, fa: { value: fa } }).value;
-  if (translated === '…') return en;
-  localizationFallbacks.set(key, translated);
-  return translated;
-}
-
 function getCopy(locale: AppLocale, screen: number) {
   const en = [
     ['WELCOME', 'Meet the assistant that gets to know you.', 'A beautiful little setup now. Then your goals, food and routine work together every day.', 'Let’s build it'],
@@ -214,28 +201,28 @@ function RhythmCard({ rtl, locale, state, onUpdate, detectedCountry }: { rtl:boo
 function MiniSetup({ selected, icon, label, onPress }: {selected:boolean; icon:IconName; label:string; onPress:()=>void}) { return <Pressable onPress={onPress} style={[styles.setupChoice, selected && styles.genderSelected]}><MaterialCommunityIcons name={icon} size={18} color={selected ? BRAND.colors.primary : BRAND.colors.muted} /><Text style={[styles.setupText, selected && styles.genderTextSelected]}>{label}</Text></Pressable>; }
 
 const goalChoices = (locale: AppLocale):Choice[] => [
-  {key:'fat_loss',label:rtl?'کاهش چربی':'Lose body fat',icon:'fire',hint:rtl?'سبک‌تر و پرانرژی‌تر':'Feel lighter & more energetic'},
-  {key:'body_sculpt',label:rtl?'فرم بهتر بدن':'Shape my body',icon:'human-handsup',hint:rtl?'عضله‌سازی و فرم‌دهی':'Tone up with balance'},
-  {key:'strength',label:rtl?'قوی‌تر شدن':'Get stronger',icon:'dumbbell',hint:rtl?'قدرت و عملکرد بیشتر':'Build strength & performance'},
-  {key:'general_fitness',label:rtl?'سلامت و تناسب عمومی':'Feel fitter',icon:'heart-pulse',hint:rtl?'یک روال سالم و پایدار':'A healthy routine that sticks'},
+  {key:'fat_loss',label:localizedText(locale,'Lose body fat','کاهش چربی'),icon:'fire',hint:localizedText(locale,'Feel lighter & more energetic','سبک‌تر و پرانرژی‌تر')},
+  {key:'body_sculpt',label:localizedText(locale,'Shape my body','فرم بهتر بدن'),icon:'human-handsup',hint:localizedText(locale,'Tone up with balance','عضله‌سازی و فرم‌دهی')},
+  {key:'strength',label:localizedText(locale,'Get stronger','قوی‌تر شدن'),icon:'dumbbell',hint:localizedText(locale,'Build strength & performance','قدرت و عملکرد بیشتر')},
+  {key:'general_fitness',label:localizedText(locale,'Feel fitter','سلامت و تناسب عمومی'),icon:'heart-pulse',hint:localizedText(locale,'A healthy routine that sticks','یک روال سالم و پایدار')},
 ];
 const levelChoices = (locale: AppLocale):Choice[] => [
-  {key:'beginner',label:rtl?'تازه‌کارم':'I’m just starting',icon:'sprout',hint:rtl?'آرام و قدم‌به‌قدم':'Gentle, guided, no pressure'},
-  {key:'foundation',label:rtl?'یکم تجربه دارم':'I have some experience',icon:'walk',hint:rtl?'ساختن پایه‌های محکم':'Build a strong foundation'},
-  {key:'intermediate',label:rtl?'منظم تمرین می‌کنم':'I train regularly',icon:'run-fast',hint:rtl?'چالش مناسب برای رشد':'Ready for a real challenge'},
-  {key:'advanced',label:rtl?'پیشرفته':'I know my way around',icon:'trophy-outline',hint:rtl?'برنامه‌ریزی دقیق‌تر':'Smarter, more precise planning'},
+  {key:'beginner',label:localizedText(locale,'I’m just starting','تازه‌کارم'),icon:'sprout',hint:localizedText(locale,'Gentle, guided, no pressure','آرام و قدم‌به‌قدم')},
+  {key:'foundation',label:localizedText(locale,'I have some experience','یکم تجربه دارم'),icon:'walk',hint:localizedText(locale,'Build a strong foundation','ساختن پایه‌های محکم')},
+  {key:'intermediate',label:localizedText(locale,'I train regularly','منظم تمرین می‌کنم'),icon:'run-fast',hint:localizedText(locale,'Ready for a real challenge','چالش مناسب برای رشد')},
+  {key:'advanced',label:localizedText(locale,'I know my way around','پیشرفته'),icon:'trophy-outline',hint:localizedText(locale,'Smarter, more precise planning','برنامه‌ریزی دقیق‌تر')},
 ];
 const dietChoices = (locale: AppLocale):Choice[] => [
-  {key:'balanced',label:rtl?'متعادل':'Balanced',icon:'scale-balance',hint:rtl?'تنوع و تعادل':'A little of everything'},
-  {key:'high_protein',label:rtl?'پروتئین بالا':'High protein',icon:'food-steak',hint:rtl?'تمرکز بیشتر روی پروتئین':'Protein-forward meals'},
-  {key:'vegetarian',label:rtl?'گیاهخواری':'Vegetarian',icon:'leaf',hint:rtl?'بدون گوشت':'Plant-focused, no meat'},
-  {key:'vegan',label:rtl?'وگان':'Vegan',icon:'sprout-outline',hint:rtl?'کاملاً گیاهی':'Fully plant-based'},
-  {key:'halal',label:rtl?'حلال':'Halal',icon:'food-halal',hint:rtl?'انتخاب‌های سازگار با حلال':'Halal-friendly suggestions'},
+  {key:'balanced',label:localizedText(locale,'Balanced','متعادل'),icon:'scale-balance',hint:localizedText(locale,'A little of everything','تنوع و تعادل')},
+  {key:'high_protein',label:localizedText(locale,'High protein','پروتئین بالا'),icon:'food-steak',hint:localizedText(locale,'Protein-forward meals','تمرکز بیشتر روی پروتئین')},
+  {key:'vegetarian',label:localizedText(locale,'Vegetarian','گیاهخواری'),icon:'leaf',hint:localizedText(locale,'Plant-focused, no meat','بدون گوشت')},
+  {key:'vegan',label:localizedText(locale,'Vegan','وگان'),icon:'sprout-outline',hint:localizedText(locale,'Fully plant-based','کاملاً گیاهی')},
+  {key:'halal',label:localizedText(locale,'Halal','حلال'),icon:'food-halal',hint:localizedText(locale,'Halal-friendly suggestions','انتخاب‌های سازگار با حلال')},
 ];
 const placeChoices = (locale: AppLocale):Choice[] => [
-  {key:'home',label:rtl?'بیشتر در خانه':'Mostly at home',icon:'home-heart',hint:rtl?'ساده و قابل اجرا':'Simple sessions that fit home life'},
-  {key:'gym',label:rtl?'بیشتر باشگاه':'Mostly at the gym',icon:'dumbbell',hint:rtl?'گزینه‌های بیشتر با تجهیزات':'More equipment, more options'},
-  {key:'both',label:rtl?'هردو':'A mix of both',icon:'swap-horizontal-circle',hint:rtl?'انعطاف کامل':'Stay flexible wherever you are'},
+  {key:'home',label:localizedText(locale,'Mostly at home','بیشتر در خانه'),icon:'home-heart',hint:localizedText(locale,'Simple sessions that fit home life','ساده و قابل اجرا')},
+  {key:'gym',label:localizedText(locale,'Mostly at the gym','بیشتر باشگاه'),icon:'dumbbell',hint:localizedText(locale,'More equipment, more options','گزینه‌های بیشتر با تجهیزات')},
+  {key:'both',label:localizedText(locale,'A mix of both','هردو'),icon:'swap-horizontal-circle',hint:localizedText(locale,'Stay flexible wherever you are','انعطاف کامل')},
 ];
 
 const styles = StyleSheet.create({
