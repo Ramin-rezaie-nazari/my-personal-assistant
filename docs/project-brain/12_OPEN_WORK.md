@@ -58,3 +58,4 @@ Verification remaining:
 3. Configure production `DATABASE_URL` as a GitHub Actions secret.
 4. Run one real collection and review the 195-country coverage output.
 5. Add required Open Prices/ODbL attribution wherever its data is exposed in user-facing UI.
+6. Verify the monthly FPMA workflow once in production..
