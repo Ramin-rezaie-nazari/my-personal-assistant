@@ -41,7 +41,7 @@ export class ExerciseContentService {
   }
 
   async get(id: string) {
-    const exercises = await this.prisma.$queryRaw<any[]>(Prisma.sql`SELECT * FROM "Exercise" WHERE "id" = ${id} LIMIT 1`);
+    const exercises = await this.prisma.$queryRaw<any[]>(Prisma.sql`SELECT * FROM "Exercise" WHERE "id" = ${id} AND "contentStatus" = 'published' LIMIT 1`);
     if (!exercises[0]) throw new NotFoundException('Exercise not found');
     const [media, relationships] = await Promise.all([
       this.prisma.$queryRaw<any[]>(Prisma.sql`SELECT * FROM "ExerciseMedia" WHERE "exerciseId" = ${id} AND "status" = 'approved' ORDER BY "position" ASC, "createdAt" ASC`),
@@ -79,7 +79,7 @@ export class ExerciseContentService {
     const id = randomUUID();
     await this.prisma.$executeRaw(Prisma.sql`
       INSERT INTO "ExerciseMedia" (
-        "id","exerciseId","kind","url","sourceUrl","sourceProvider","license","attribution",
+        "id","exerciseId","kind","url","sourceUrl","sourceProvider","license","attribution","acquisitionMode","sourceReference","rightsBasis","creator","storageKey",
         "mimeType","durationSeconds","width","height","language","posterUrl","checksum","status","position",
         "createdAt","updatedAt"
       ) VALUES (
