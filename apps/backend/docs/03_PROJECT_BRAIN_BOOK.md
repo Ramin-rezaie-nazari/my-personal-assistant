@@ -681,3 +681,5 @@ Open Prices is collected by a dedicated GitHub Actions workflow. The daily path 
 Daily coverage is defined as the state of Open Prices observations in the last day for the canonical 195-country registry. A country without a current observation is represented as stale/no_data; no synthetic value is produced.
 
 PriceSnapshot identity preserves source record ids when available and otherwise incorporates country/city/currency/time/value context to prevent cross-market collisions.
+
+FAO FPMA is collected through a separate explicit monthly entrypoint/workflow, preserving source cadence rather than forcing slower benchmark data through the daily path.
