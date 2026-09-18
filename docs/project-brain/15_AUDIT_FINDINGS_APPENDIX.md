@@ -178,3 +178,8 @@ These findings were discovered while extending the global price workstream. They
 ## Infrastructure decision — 2026-09-18
 
 The canonical MYPA development path is self-hosted/local-first: PostgreSQL + Prisma on the developer laptop, with VPS deferred to release. Supabase is not a target dependency. Remaining legacy Supabase-only scripts/workflows are tracked separately and must not be promoted into the canonical runtime path.
+## New UI/i18n finding — PB-272
+
+| Finding | Current status | Resolution / evidence |
+|---|---|---|
+| PB-272 | CLOSED — REMEDIATED | The mobile locale audit found Yoga preview copy selected Persian solely when \`locale === 'fa'\`, while non-Farsi locales received English, and Yoga backend cues were rendered without the runtime translation bridge. The Yoga screen now uses the shared \`localizedCopy\` contract for preview/phase copy and \`translateDynamicText()\` for backend cue text, with English fallback only when translation is unavailable. The Supplements screen also now uses the shared \`useAppLocale()\` hook instead of maintaining an isolated locale snapshot. Automated CI/native build coverage remains the validation boundary; physical-device language/voice behavior is still environment-bound. |
