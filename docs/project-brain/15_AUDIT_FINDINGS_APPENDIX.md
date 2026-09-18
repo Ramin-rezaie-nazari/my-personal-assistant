@@ -139,6 +139,12 @@ This file is the canonical current status of the findings catalog covered by the
 |---|---|---|
 | PB-269 | CLOSED — REMEDIATED | Supabase-only recipe batch scripts/workflows were removed from the active package/workflow surface. The remaining country-intelligence script now accepts `DATABASE_URL` only, and local recipe media documentation/pipeline wording no longer treats Supabase as the current storage dependency. VPS migration is deferred to release. |
 
+## New evidence finding — PB-270
+
+| Finding | Current status | Resolution / current evidence |
+|---|---|---|
+| PB-270 | RECLASSIFIED — HISTORICAL / NOT ACTIONABLE AGAINST CURRENT MAIN | The original Sherpa-ONNX Android mutex crash issue (#67) described a native WIP implementation that is no longer present in the current repository. Current main uses `expo-speech` for assistant TTS and contains no `react-native-sherpa-onnx` TtsEngine lifecycle. The old issue is closed as not planned; any future reintroduction of Sherpa/ONNX native TTS must be tracked with fresh device/native reproduction evidence. |
+
 ## Historical catalog boundary
 
 The exact prose of PB-001 through PB-155 is not recoverable from the repository history exposed to the remediation environment. `docs/project-brain/12_OPEN_WORK.md` preserves the historical ID/index information, but missing historical text is not reconstructed or invented. This is an evidence limitation, not a silently omitted finding.
