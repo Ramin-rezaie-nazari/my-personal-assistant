@@ -41,10 +41,19 @@ export class PricePersistenceService {
         .$executeRaw`INSERT INTO "PriceTrackedProduct" ("id","productKey","name","city") VALUES (${randomUUID()},${price.productKey},${price.title},${price.city ?? null}) ON CONFLICT ("productKey") DO UPDATE SET "updatedAt"=CURRENT_TIMESTAMP`;
       const id = price.sourceRecordId
         ? price.sourceId + ':' + price.sourceRecordId
-        : countryCode + ':' + price.productKey + ':' + price.sourceId + ':' + price.observedAt.getTime();
-      await this.prisma
+        : [
+            countryCode,
+            price.productKey,
+            price.sourceId,
+            price.city ?? '',
+            price.observedAt.toISOString(),
+            price.amount,
+            price.currency,
+            price.unit ?? '',
+          ].join(':');
+      const inserted = await this.prisma
         .$executeRaw`INSERT INTO "PriceSnapshot" ("id","productKey","sourceId","sourceRecordId","countryCode","title","url","currency","amount","unit","unitPrice","city","availability","observedAt") VALUES (${id},${price.productKey},${price.sourceId},${price.sourceRecordId ?? null},${countryCode},${price.title},${price.url ?? null},${price.currency},${price.amount},${price.unit ?? null},${price.unitPrice ?? null},${price.city ?? null},${price.availability ?? 'unknown'},${price.observedAt}) ON CONFLICT ("id") DO NOTHING`;
-      written += 1;
+      written += Number(inserted > 0);
     }
     return written;
   }
