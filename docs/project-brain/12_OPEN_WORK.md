@@ -42,7 +42,7 @@ A multilingual work item is green only after implementation, relevant automated 
 
 ## Global Daily Price Intelligence
 
-Status: MERGED / PRODUCTION ACTIVATION REQUIRED
+Status: MERGED / LOCAL RUNTIME VERIFICATION REQUIRED
 
 Implemented repository-side:
 - Open Prices global daily feed with bounded recent ingestion.
