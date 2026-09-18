@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { DecisionTrace } from '../lib/api';
 import { useAppLocale, isRTL, t, toIntlLocale } from '../lib/i18n';
