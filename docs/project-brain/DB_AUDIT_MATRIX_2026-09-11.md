@@ -20,7 +20,7 @@ This is broad modeled-record deletion coverage, but it is not complete account-e
 |---|---|---|---|---|---|
 | Goal / GoalCheckin | GoalsService raw SQL for create/read/update/check-in/delete | Missing | Migration FK/unique contract verified in prior DB pass | Check-in parent/child writes are separate | PB-073, PB-074, PB-235 |
 | LifeTask / dependency/event compatibility | LifeTasksService + Personal Brain adapters | Missing | Migration-only relationship contract reconciled | Related writes require explicit review | PB-156/157 + historical DB findings |
-| LifeExecution legacy TaskDependency/TaskEvent | LifeExecutionService raw SQL | Missing | Legacy relation semantics differ from LifeTasks | Parallel aggregate semantics remain | PB-157, PB-084 |
+| LifeExecution legacy TaskDependency/TaskEvent | Historical compatibility migration | Legacy / no active canonical consumer | Canonical LifeTasksService uses LifeTaskDependency/LifeTaskEvent; Smart Planning fallback was corrected to canonical tables in PB-276 | Retained only for migration compatibility/history | PB-157, PB-084, PB-276 |
 | RecipeStep / RecipeMedia | RecipePresentationService raw SQL; content scripts use Prisma delegates | Missing | Migration tables exist outside final Prisma client model | Importer can partially persist | PB-036/037, PB-188/193 |
 | ConversationTurn | ConversationHistoryService raw SQL | Missing | Outside final Prisma cascade graph | Retention not durably enforced | PB-005, PB-210 |
 | DecisionOutcome | DecisionOutcomeLearningService raw SQL | Missing | Outside final Prisma relation graph | Learning persistence independent | PB-004 |
