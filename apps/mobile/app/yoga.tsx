@@ -4,15 +4,39 @@ import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } fr
 import { AppLocale, getStoredLocale, isRTL, t } from '../lib/i18n';
 import { getYogaCue, getYogaSession, startYogaCoach, tickYogaCoach, YogaCoachState, YogaSession } from '../lib/api';
 import { CameraBridgeState, UnconfiguredYogaCameraBridge } from '../lib/yoga-camera-bridge';
+import { localizedCopy } from '../lib/localized-copy';
+import { translateDynamicText } from '../lib/runtime-translator';
 
 const TypedCameraView = CameraView as unknown as React.ComponentType<any>;
 const cameraBridge = new UnconfiguredYogaCameraBridge();
+
+const copy = localizedCopy({
+  en: {
+    guideHint: 'When you are ready, turn on live training mode.',
+    idle: 'Idle',
+    enter: 'Get ready',
+    hold: 'Hold',
+    exit: 'Release',
+    rest: 'Rest',
+    completed: 'Complete',
+  },
+  fa: {
+    readyCue: 'آماده‌ای؟ آرام شروع می‌کنیم.',
+    guideHint: 'وقتی آماده‌ای، حالت تمرین زنده را روشن کن.',
+    idle: 'آماده',
+    enter: 'آماده شو',
+    hold: 'نگه‌دار',
+    exit: 'رها کن',
+    rest: 'استراحت',
+    completed: 'تمام شد',
+  },
+});
 
 export default function YogaScreen() {
   const [locale, setLocale] = useState<AppLocale>('en');
   const [session, setSession] = useState<YogaSession | null>(null);
   const [state, setState] = useState<YogaCoachState | null>(null);
-  const [cue, setCue] = useState('آماده‌ای؟ آرام شروع می‌کنیم.');
+  const [cue, setCue] = useState('Get ready. We’ll start calmly.');
   const [loading, setLoading] = useState(true);
   const [trainingMode, setTrainingMode] = useState(false);
   const [cameraState, setCameraState] = useState<CameraBridgeState | null>(null);
@@ -48,14 +72,24 @@ export default function YogaScreen() {
         currentState = next;
         setState(next);
         const currentCue = await getYogaCue(next);
-        if (!cancelled && currentCue?.text) setCue(currentCue.text);
+        if (!cancelled && currentCue?.text) {
+          try {
+            const localizedCue = await translateDynamicText(locale, currentCue.text);
+            if (!cancelled) setCue(localizedCue);
+          } catch {
+            if (!cancelled) setCue(currentCue.text);
+          }
+        }
       } finally {
         if (!cancelled && currentState.phase !== 'completed') timer = setTimeout(() => { void tick(); }, 1000);
       }
     };
     timer = setTimeout(() => { void tick(); }, 1000);
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [session, state?.phase]);
+  }, [locale, session, state?.phase]);
+
+  const localized = copy[locale];
+  const guideHint = localized.guideHint === '…' ? copy.en.guideHint : localized.guideHint;
 
   const currentPose = useMemo(() => {
     if (!session || !state) return null;
@@ -75,10 +109,10 @@ export default function YogaScreen() {
     <SafeAreaView style={styles.safe}>
       <View style={[styles.top, rtl && styles.rtl]}><View><Text style={[styles.eyebrow, rtl && styles.rtlText]}>{t(locale, 'yogaCoach')}</Text><Text style={[styles.title, rtl && styles.rtlText]}>{t(locale, 'calmSteady')}</Text></View><Text style={styles.level}>{session.level}</Text></View>
       <View style={styles.cameraStage}>
-        {trainingMode ? <TypedCameraView style={styles.camera} facing="front" active /> : <View style={styles.previewFallback}><Text style={styles.guideText}>{t(locale, 'trainingMode')}</Text><Text style={styles.guidePose}>{currentPose?.poseId.replaceAll('_', ' ') ?? 'ready'}</Text><Text style={styles.guideHint}>{locale === 'fa' ? 'وقتی آماده‌ای، حالت تمرین زنده را روشن کن.' : 'When you are ready, turn on live training mode.'}</Text></View>}
+        {trainingMode ? <TypedCameraView style={styles.camera} facing="front" active /> : <View style={styles.previewFallback}><Text style={styles.guideText}>{t(locale, 'trainingMode')}</Text><Text style={styles.guidePose}>{currentPose?.poseId.replaceAll('_', ' ') ?? 'ready'}</Text><Text style={styles.guideHint}>{guideHint}</Text></View>}
         {trainingMode ? <View pointerEvents="none" style={styles.overlay}><View style={styles.alignmentFrame} /><View style={styles.overlayTopRow}><View style={styles.livePill}><View style={styles.liveDot} /><Text style={styles.liveText}>{t(locale, 'live')}</Text></View><View style={styles.privacyPill}><Text style={styles.privacyText}>{cameraState?.provider === 'on_device' ? t(locale, 'onDeviceAnalysis') : t(locale, 'noRecording')}</Text></View></View><View style={styles.overlayBottom}><Text style={[styles.overlayPose, rtl && styles.rtlText]}>{currentPose?.poseId.replaceAll('_', ' ') ?? 'ready'}</Text><Text style={[styles.overlayHint, rtl && styles.rtlText]}>{t(locale, 'keepInFrame')}</Text></View></View> : null}
       </View>
-      <View style={styles.card}><Text style={[styles.poseTitle, rtl && styles.rtlText]}>{currentPose?.poseId.replaceAll('_', ' ') ?? t(locale, 'sessionComplete')}</Text><Text style={styles.phase}>{state.phase}</Text><Text style={styles.timer}>{Math.floor(state.remainingSec / 60).toString().padStart(2, '0')}:{(state.remainingSec % 60).toString().padStart(2, '0')}</Text><Text style={[styles.cue, rtl && styles.rtlText]}>{state.phase === 'completed' ? t(locale, 'greatSession') : cue}</Text></View>
+      <View style={styles.card}><Text style={[styles.poseTitle, rtl && styles.rtlText]}>{currentPose?.poseId.replaceAll('_', ' ') ?? t(locale, 'sessionComplete')}</Text><Text style={styles.phase}>{localized[state.phase] === '…' ? copy.en[state.phase] : localized[state.phase]}</Text><Text style={styles.timer}>{Math.floor(state.remainingSec / 60).toString().padStart(2, '0')}:{(state.remainingSec % 60).toString().padStart(2, '0')}</Text><Text style={[styles.cue, rtl && styles.rtlText]}>{state.phase === 'completed' ? t(locale, 'greatSession') : cue}</Text></View>
       <View style={[styles.actions, rtl && styles.rtl]}><Pressable style={[styles.modeButton, trainingMode && styles.modeButtonActive]} onPress={() => void handleTrainingMode()}><Text style={[styles.modeButtonText, trainingMode && styles.modeButtonTextActive, rtl && styles.rtlText]}>{trainingMode ? t(locale, 'stopCamera') : t(locale, 'startCamera')}</Text></Pressable><Pressable style={styles.nextButton} onPress={() => { if (session && state) void tickYogaCoach(session, { ...state, remainingSec: 0 }, 1); }}><Text style={styles.nextText}>{state.phase === 'completed' ? t(locale, 'end') : t(locale, 'next')}</Text></Pressable></View>
     </SafeAreaView>
   );

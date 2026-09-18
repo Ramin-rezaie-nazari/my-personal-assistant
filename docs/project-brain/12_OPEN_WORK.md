@@ -1,7 +1,7 @@
 # MYPA Open Work
 
 Last updated: 2026-09-18
-Status: NATIVE + DEVICE VERIFICATION REQUIRED / LOCAL PRICE RUNTIME PENDING
+Status: LOCAL RUNTIME VERIFIED / NATIVE DEVICE VERIFICATION REQUIRED
 
 This file contains currently actionable work and evidence gaps. Historical audit observations remain preserved in docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md and dated continuation documents.
 
@@ -22,15 +22,15 @@ The Global Multilingual Assistant foundation is implemented. Current main Backen
 
 ## Verification still required
 
-1. Native Android verification: build the canonical APK after the multilingual/local-first merge and verify the custom translation module still autolinks correctly.
+1. Native Android verification: CLOSED — local validation completed Expo prebuild and the Android release Gradle build with no error output.
 2. Physical Android/iOS device validation: test representative Latin, Cyrillic, Arabic-script and Indic locales; verify locale persistence, RTL, translation input/output, TTS voice selection and no unexpected fallback language.
 3. Full 51-locale matrix: verify translation-model and TTS availability per target OS/device and record unsupported combinations explicitly.
 4. Repository-wide UI audit: continue replacing remaining route/component user-visible hard-coded strings with the shared locale layer.
 
 ## Existing environment-bound work
 
-- Local PostgreSQL startup and Prisma migration execution.
-- One real local global-price collection and observed 195-country coverage.
+- Local PostgreSQL startup and Prisma migration execution: completed by the laptop validation runner.
+- One real local global-price collection: completed by the laptop validation runner; observed 195-country coverage is still not numerically recorded.
 - Laptop-local scheduler lifecycle validation across restart/sleep conditions.
 - Production deployment validation for Auth/RLS/Storage/API connectivity and observability.
 - Real notification delivery and background/foreground lifecycle behavior.
@@ -39,7 +39,7 @@ The Global Multilingual Assistant foundation is implemented. Current main Backen
 
 ## Global Daily Price Intelligence
 
-Status: IMPLEMENTED / LOCAL RUNTIME VERIFICATION REQUIRED
+Status: IMPLEMENTED / LOCAL RUNTIME VERIFIED; COVERAGE MEASUREMENT STILL REQUIRED
 
 Implemented repository-side:
 - Open Prices daily feed with bounded recent ingestion.
@@ -53,11 +53,10 @@ Implemented repository-side:
 - Open Prices/ODbL source attribution in the price-history screen.
 
 Verification remaining:
-1. Run local PostgreSQL and apply Prisma migrations on the development laptop.
-2. Run one real local global-price collection and record observed 195-country coverage.
-3. Confirm the attribution appears correctly in the built mobile app.
-4. Validate the monthly FPMA collector locally when benchmark data is needed.
-5. Keep provider coverage truthful: no fresh observation remains no_data or stale; no fabricated prices.
+1. Record the observed 195-country Open Prices coverage numerically from a non-error-only price run.
+2. Confirm the Open Prices/ODbL attribution appears correctly in the built mobile app.
+3. Validate the monthly FPMA collector locally when benchmark data is needed.
+4. Keep provider coverage truthful: no fresh observation remains no_data or stale; no fabricated prices.
 
 ## Infrastructure direction
 
