@@ -1,7 +1,7 @@
 # Exercise Content + Media Implementation
 
-Last updated: 2026-09-14
-Status: FOUNDATION IMPLEMENTED / RUNTIME VERIFICATION PENDING
+Last updated: 2026-09-18
+Status: FOUNDATION + CI VERIFIED / PRODUCTION CONTENT INGESTION + DEVICE VALIDATION PENDING
 
 ## Goal
 
@@ -96,10 +96,12 @@ The app should not depend on a third-party webpage remaining available in order 
 - No production exercise dataset has been imported yet.
 - No production video catalog has been approved yet.
 - No mobile exercise library/detail UI has been connected yet.
-- CI/runtime verification of the new migration and API is still pending.
+- Backend CI now verifies the Prisma schema/migrations and backend API E2E on current main; production dataset/media approval remains pending.
 - Existing Gym/Calisthenics/Yoga generators have not yet been migrated to consume the canonical Exercise entity.
 
 These are real remaining steps, not hidden placeholders.
+
+These remaining content/catalog items are not blockers for the current physical mobile validation pass.
 
 ## Next implementation sequence
 
