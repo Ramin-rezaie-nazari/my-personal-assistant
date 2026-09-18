@@ -1714,3 +1714,35 @@ It is:
 ## Living status note — 2026-08-13
 
 This atlas reflects the repository state and the architecture work completed so far. It intentionally distinguishes current implementations from future device/provider hardening. Percentages and roadmap estimates belong in the chat progress reports, not in this file, because they are implementation estimates rather than architectural facts.
+
+---
+
+# Global Daily Price Intelligence
+
+The Price Intelligence domain now has two distinct collection modes:
+
+```text
+Tracked-product collection
+  └─ existing local retailer/marketplace adapters
+
+Global recent collection
+  └─ OpenPricesSourceAdapter
+       ├─ countryCode
+       ├─ source currency
+       ├─ observation date
+       └─ bounded pagination
+```
+
+`PriceSourceDefinition.collectionMode` prevents the global stream from being pushed through the tracked-product HTTP adapter loop.
+
+`PriceCoverageSnapshot` is the compact provider/country operational state for the canonical 195 markets.
+
+API additions:
+- country-scoped latest prices;
+- country-scoped history;
+- country-scoped analysis;
+- `GET /price-intelligence/global-coverage`.
+
+Global analysis requires country scope when observations span multiple markets.
+
+Daily production collection is scheduled from `.github/workflows/global-daily-price-intelligence.yml`; the existing process-local scheduler continues to own the current local retailer collection.
