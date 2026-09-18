@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { getMeals, getNutritionSummary, hasAuthSession, Meal, NutritionSummary } from '../lib/api';
 import { router } from 'expo-router';
-import { AppLocale, getStoredLocale, isRTL, t, toIntlLocale } from '../lib/i18n';
+import { type AppLocale, useAppLocale, t, toIntlLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 
 const copy = localizedCopy({
@@ -13,12 +13,12 @@ const copy = localizedCopy({
 type Copy = ReturnType<typeof localizedCopy<typeof copy.en>> extends Record<AppLocale, infer T> ? T : never;
 
 export default function MealsScreen() {
-  const [locale, setLocale] = useState<AppLocale>('en');
+  const { locale, rtl } = useAppLocale();
   const [meals, setMeals] = useState<Meal[]>([]); const [summary, setSummary] = useState<NutritionSummary | null>(null); const [query, setQuery] = useState(''); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => { try { setError(null); const [mealData, nutrition] = await Promise.all([getMeals(), getNutritionSummary()]); setMeals(mealData); setSummary(nutrition); } catch (err) { setError(err instanceof Error ? err.message : 'Unable to load meals.'); } finally { setLoading(false); setRefreshing(false); } }, []);
-  useEffect(() => { void getStoredLocale().then(v => setLocale(v ?? 'en')); void hasAuthSession().then(ok => { if (ok) void load(); else router.replace('/'); }); }, [load]);
+  useEffect(() => { void hasAuthSession().then(ok => { if (ok) void load(); else router.replace('/'); }); }, [load]);
   const filtered = useMemo(() => meals.filter(meal => { const value = query.trim().toLowerCase(); return !value || meal.name.toLowerCase().includes(value) || meal.type.toLowerCase().includes(value) || meal.items.some(item => item.food.name.toLowerCase().includes(value)); }), [meals, query]);
-  const caloriesGoal = summary?.goals.calories ?? null; const calories = summary?.meals.calories ?? 0; const proteinGoal = summary?.goals.protein ?? null; const protein = summary?.meals.protein ?? 0; const text: Copy = copy[locale]; const rtl = isRTL(locale);
+  const caloriesGoal = summary?.goals.calories ?? null; const calories = summary?.meals.calories ?? 0; const proteinGoal = summary?.goals.protein ?? null; const protein = summary?.meals.protein ?? 0; const text: Copy = copy[locale]; 
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); void load(); }} />}>
     <View style={[styles.nav, rtl && styles.rtl]}><Pressable onPress={() => router.back()}><Text style={styles.navText}>{text.back}</Text></Pressable><Pressable onPress={() => router.push('/daily')}><Text style={styles.navText}>{text.today}</Text></Pressable></View>

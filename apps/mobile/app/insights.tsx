@@ -5,17 +5,17 @@ import { Link } from 'expo-router';
 import { PersonalInsightsResponse, getPersonalInsights, hasAuthSession } from '../lib/api';
 import { colors, radius, spacing, typography, shadows } from '../lib/design-system';
 import { AnimatedIn, MotionPress } from '../lib/motion-components';
-import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
+import { useAppLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 
 const categoryEmoji: Record<string, string> = { nutrition: '🍽️', hydration: '💧', fitness: '🏋️', consistency: '📈' };
 const copy=localizedCopy({en:{home:'← Home',brain:'🧠 Brain',today:'☀️ Today',reminders:'⏰ Reminders',eyebrow:'PERSONAL BRAIN',title:'What I noticed ✨',fallback:'I am learning from your recent activity.',unavailable:'Insights unavailable',retry:'Try again',keep:'Keep going 🌱',more:'A little more daily activity will give your assistant more signal and better recommendations.',footer:'Generated from your recent activity · no external AI required',priority:'Priority'},fa:{home:'خانه ←',brain:'🧠 مغز',today:'☀️ امروز',reminders:'⏰ یادآوری‌ها',eyebrow:'مغز شخصی',title:'چیزهایی که متوجه شدم ✨',fallback:'دارم از فعالیت‌های اخیرت یاد می‌گیرم.',unavailable:'بینش‌ها در دسترس نیستند',retry:'تلاش دوباره',keep:'ادامه بده 🌱',more:'کمی فعالیت روزانه بیشتر به دستیار تو سیگنال بهتری می‌دهد و پیشنهادها را دقیق‌تر می‌کند.',footer:'بر اساس فعالیت اخیر تو · بدون نیاز به هوش مصنوعی خارجی',priority:'اولویت'}});
 
 export default function InsightsScreen(){
-  const [locale,setLocale]=useState<AppLocale>('en'); const [data,setData]=useState<PersonalInsightsResponse|null>(null); const [loading,setLoading]=useState(true); const [refreshing,setRefreshing]=useState(false); const [error,setError]=useState<string|null>(null);
+  const { locale, rtl } = useAppLocale(); const [data,setData]=useState<PersonalInsightsResponse|null>(null); const [loading,setLoading]=useState(true); const [refreshing,setRefreshing]=useState(false); const [error,setError]=useState<string|null>(null);
   const load=useCallback(async()=>{try{setError(null);setData(await getPersonalInsights())}catch(err){setError(err instanceof Error?err.message:'Unable to load insights')}finally{setLoading(false);setRefreshing(false)}},[]);
-  useEffect(()=>{void getStoredLocale().then((v)=>setLocale(v??'en'));void hasAuthSession().then((ok)=>{if(ok)void load();else setLoading(false)})},[load]);
-  const text=copy[locale],rtl=isRTL(locale); if(loading)return <View style={styles.center}><ActivityIndicator size="large" color={colors.ink}/></View>;
+  useEffect(()=>{void hasAuthSession().then((ok)=>{if(ok)void load();else setLoading(false)})},[load]);
+  const text=copy[locale]; if(loading)return <View style={styles.center}><ActivityIndicator size="large" color={colors.ink}/></View>;
   return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={()=>{setRefreshing(true);void load()}}/>}>
     <AnimatedIn><View style={[styles.navRow,rtl&&styles.rtl]}><Link href="/" asChild><MotionPress style={styles.back}><Text style={[styles.backText,rtl&&styles.rtlText]}>{text.home}</Text></MotionPress></Link><View style={[styles.navLinks,rtl&&styles.rtl]}><Link href="/brain-overview" asChild><MotionPress style={styles.navLink}><Text style={styles.navLinkText}>{text.brain}</Text></MotionPress></Link><Link href="/daily" asChild><MotionPress style={styles.navLink}><Text style={styles.navLinkText}>{text.today}</Text></MotionPress></Link><Link href="/reminders" asChild><MotionPress style={styles.navLink}><Text style={styles.navLinkText}>{text.reminders}</Text></MotionPress></Link></View></View></AnimatedIn>
     <AnimatedIn delay={90}><Text style={[styles.eyebrow,rtl&&styles.rtlText]}>{text.eyebrow}</Text><Text style={[styles.title,rtl&&styles.rtlText]}>{text.title}</Text><Text style={[styles.subtitle,rtl&&styles.rtlText]}>{data?.summary??text.fallback}</Text></AnimatedIn>

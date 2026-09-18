@@ -5,7 +5,7 @@ import { Link } from 'expo-router';
 import { DailyCommandCenterResponse, generateSmartNotifications, getDailyCommandCenter, hasAuthSession } from '../lib/api';
 import { colors, radius, spacing, typography, shadows } from '../lib/design-system';
 import { AnimatedIn, MotionPress } from '../lib/motion-components';
-import { AppLocale, getStoredLocale, isRTL, toIntlLocale } from '../lib/i18n';
+import { type AppLocale, useAppLocale, toIntlLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 import { translateDynamicText } from '../lib/runtime-translator';
 
@@ -32,7 +32,7 @@ function DynamicText({ value, locale, rtl, style }: { value: string | null | und
 }
 
 export default function DailyCommandCenterScreen() {
-  const [locale, setLocale] = useState<AppLocale>('en');
+  const { locale, rtl } = useAppLocale();
   const [data, setData] = useState<DailyCommandCenterResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,10 +44,10 @@ export default function DailyCommandCenterScreen() {
     finally { setLoading(false); setRefreshing(false); }
   }, []);
 
-  useEffect(() => { void getStoredLocale().then((stored) => setLocale(stored ?? 'en')); void hasAuthSession().then((ok) => { if (ok) void load(); else setLoading(false); }); }, [load]);
+  useEffect(() => { void hasAuthSession().then((ok) => { if (ok) void load(); else setLoading(false); }); }, [load]);
 
   const text = copy[locale];
-  const rtl = isRTL(locale);
+  
   const dateLocale = toIntlLocale(locale);
   if (loading) return <View style={styles.center} accessibilityLabel={text.loading}><ActivityIndicator size="large" color={colors.ink} /></View>;
 

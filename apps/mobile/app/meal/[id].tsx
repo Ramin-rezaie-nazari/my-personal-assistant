@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router, useLocalSearchParams } from 'expo-router';
-import { AppLocale, getStoredLocale, isRTL } from '../../lib/i18n';
+import { useAppLocale } from '../../lib/i18n';
 import { localizedCopy } from '../../lib/localized-copy';
 import { getMeals, hasAuthSession, Meal } from '../../lib/api';
 
@@ -21,26 +21,22 @@ const copy = localizedCopy({
 
 export default function MealDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const [locale, setLocale] = useState<AppLocale>('en');
+  const { locale, rtl } = useAppLocale();
   const [meals, setMeals] = useState<Meal[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    let active = true;
-    void getStoredLocale().then((stored) => { if (active && stored) setLocale(stored); });
     void hasAuthSession().then(async (ok) => {
       if (!ok) { router.replace('/'); return; }
       try { setMeals(await getMeals()); }
       catch (err) { setError(err instanceof Error ? err.message : 'Unable to load meal.'); }
       finally { setLoading(false); }
     });
-    return () => { active = false; };
   }, []);
 
   const meal = useMemo(() => meals.find((item) => item.id === id), [meals, id]);
   const text = copy[locale];
-  const rtl = isRTL(locale);
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
 
   if (error || !meal) {

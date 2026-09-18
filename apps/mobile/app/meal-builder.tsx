@@ -3,22 +3,22 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { createMeal, FoodItem, getFoods, hasAuthSession } from '../lib/api';
-import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
+import { useAppLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 
 const MEAL_TYPES=['breakfast','lunch','dinner','snack'] as const; type MealType=typeof MEAL_TYPES[number]; type SelectedFood=FoodItem&{quantity:number};
 const copy=localizedCopy({en:{back:'← Meals',eyebrow:'LOG A MEAL',title:'Build your meal',subtitle:'Pick foods and quantities. Nutrition totals come from your saved food data.',mealName:'Meal name',namePlaceholder:'e.g. Chicken & rice bowl',type:'Type',find:'Find a food',search:'Search foods...',selected:'Selected foods',empty:'Your meal is empty. Add a food above.',add:'+ Add',nutrition:'Meal nutrition',calories:'Calories',protein:'Protein',carbs:'Carbs',fat:'Fat',save:'Save meal',saving:'Saving…',invalid:'Add a meal name and at least one food.'},fa:{back:'وعده‌ها ←',eyebrow:'ثبت وعده',title:'وعده‌ات را بساز',subtitle:'غذا و مقدار را انتخاب کن؛ جمع تغذیه از داده‌های ذخیره‌شده محاسبه می‌شود.',mealName:'نام وعده',namePlaceholder:'مثلاً کاسه مرغ و برنج',type:'نوع',find:'پیدا کردن غذا',search:'جست‌وجوی غذا...',selected:'غذاهای انتخاب‌شده',empty:'وعده خالی است؛ یک غذا از بالا اضافه کن.',add:'+ افزودن',nutrition:'ارزش غذایی وعده',calories:'کالری',protein:'پروتئین',carbs:'کربوهیدرات',fat:'چربی',save:'ذخیره وعده',saving:'در حال ذخیره…',invalid:'نام وعده و حداقل یک غذا را اضافه کن.'}});
 
 export default function MealBuilderScreen(){
- const [locale,setLocale]=useState<AppLocale>('en');const [name,setName]=useState('');const [type,setType]=useState<MealType>('lunch');const [query,setQuery]=useState('');const [foods,setFoods]=useState<FoodItem[]>([]);const [selected,setSelected]=useState<SelectedFood[]>([]);const [loading,setLoading]=useState(true);const [saving,setSaving]=useState(false);const [error,setError]=useState<string|null>(null);
+ const { locale, rtl } = useAppLocale();const [name,setName]=useState('');const [type,setType]=useState<MealType>('lunch');const [query,setQuery]=useState('');const [foods,setFoods]=useState<FoodItem[]>([]);const [selected,setSelected]=useState<SelectedFood[]>([]);const [loading,setLoading]=useState(true);const [saving,setSaving]=useState(false);const [error,setError]=useState<string|null>(null);
  const loadFoods=useCallback(async(value='')=>{try{setError(null);setFoods(await getFoods(value.trim()||undefined))}catch(err){setError(err instanceof Error?err.message:'Unable to load foods.')}finally{setLoading(false)}},[]);
- useEffect(()=>{void getStoredLocale().then(v=>setLocale(v??'en'));void hasAuthSession().then(ok=>{if(!ok)router.replace('/');else void loadFoods()})},[loadFoods]);
+ useEffect(()=>{ void hasAuthSession().then(ok=>{if(!ok)router.replace('/');else void loadFoods()})},[loadFoods]);
  useEffect(()=>{const timer=setTimeout(()=>{if(query.trim())void loadFoods(query)},250);return()=>clearTimeout(timer)},[query,loadFoods]);
  const totals=useMemo(()=>selected.reduce((sum,food)=>({calories:sum.calories+food.calories*food.quantity,protein:sum.protein+food.protein*food.quantity,carbs:sum.carbs+food.carbs*food.quantity,fat:sum.fat+food.fat*food.quantity}),{calories:0,protein:0,carbs:0,fat:0}),[selected]);
  const addFood=(food:FoodItem)=>setSelected(current=>current.some(item=>item.id===food.id)?current.map(item=>item.id===food.id?{...item,quantity:item.quantity+1}:item):[...current,{...food,quantity:1}]);
  const changeQuantity=(id:string,delta:number)=>setSelected(current=>current.flatMap(item=>item.id!==id?[item]:item.quantity+delta>0?[{...item,quantity:item.quantity+delta}]:[]));
  const save=async()=>{if(!name.trim()||!selected.length){setError(copy[locale].invalid);return}try{setSaving(true);setError(null);const now=new Date();await createMeal({name:name.trim(),type,eatenAt:now.toISOString(),dateKey:now.toISOString().slice(0,10),items:selected.map(food=>({foodId:food.id,quantity:food.quantity}))});router.replace('/meals')}catch(err){setError(err instanceof Error?err.message:'Unable to save meal.')}finally{setSaving(false)}};
- const text=copy[locale],rtl=isRTL(locale); if(loading)return <View style={styles.center}><ActivityIndicator size="large"/></View>;
+ const text=copy[locale]; if(loading)return <View style={styles.center}><ActivityIndicator size="large"/></View>;
  return <SafeAreaView style={styles.safe}><ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
    <View style={[styles.nav,rtl&&styles.rtl]}><Pressable onPress={()=>router.back()}><Text style={styles.navText}>{text.back}</Text></Pressable><Text style={styles.eyebrow}>{text.eyebrow}</Text></View>
    <Text style={[styles.title,rtl&&styles.rtlText]}>{text.title}</Text><Text style={[styles.subtitle,rtl&&styles.rtlText]}>{text.subtitle}</Text>
