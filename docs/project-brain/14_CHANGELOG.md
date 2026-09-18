@@ -1,7 +1,7 @@
 # Project Brain Changelog
 
-Last updated: 2026-09-13
-Review status: FINAL VERIFICATION / EVIDENCE-LIMITED DEPLOYMENT ITEMS REMAIN
+Last updated: 2026-09-18
+Review status: PRE-DEVICE ENGINEERING GATES GREEN / PHYSICAL-DEVICE VALIDATION REMAINS
 
 ## 2026-09-11 — BATCH-0001 through BATCH-0013
 - Initialized durable Project Brain and completed the enumerated Core, Prisma/migration, Assistant/Brain, Food/Recipe/Nutrition/Meals, Shopping/Inventory/Price, Life/Health/Fitness, Platform/Test/CI, Mobile, operational-script and historical branch/PR audit scopes.
@@ -34,6 +34,15 @@ Review status: FINAL VERIFICATION / EVIDENCE-LIMITED DEPLOYMENT ITEMS REMAIN
 - Audited `AsyncStorage` usage and confirmed current authentication credentials are handled by `expo-secure-store`; remaining AsyncStorage usage is for non-credential local state such as onboarding, push-registration device state and locale persistence.
 - Reclassified `docs/project-brain/03_MOBILE_FEATURE_CATALOG.md` as a historical audit baseline so its old per-feature `OPEN_GAP` labels cannot be mistaken for current blockers, and corrected its authentication-storage note to reflect the current SecureStore implementation.
 - Checked open GitHub issues; the only open issue is the older P0 Sherpa-ONNX Android voice-crash investigation. Current `main` no longer contains the referenced `react-native-sherpa-onnx`/local Persian TTS implementation, so this remains a legacy/device-history item rather than a repository blocker and was not silently closed.
+
+## 2026-09-18 — Pre-device engineering gate closure
+- Merged PR #92: Yoga/Supplements multilingual UI remediation (PB-272).
+- Merged PR #93: onboarding/auth multilingual UI remediation (PB-274).
+- Merged PR #95: shared locale hook across major food/shopping/insights routes (PB-275).
+- Merged PR #96: Project Brain baseline synchronization.
+- Merged PR #97: Smart Planning canonical legacy-fallback remediation (PB-276) with Backend CI verification.
+- Local laptop error-only validator completed successfully on 2026-09-18; no error output.
+- Current pre-device engineering gate is green; physical-device validation remains the next product gate.
 
 ## Current evidence boundary
 - Backend CI: green on the verified remediation line.
