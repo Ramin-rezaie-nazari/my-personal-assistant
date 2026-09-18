@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { createMeal, FoodItem, getFoods, hasAuthSession } from '../lib/api';
-import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
+import { useAppLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 
 const MEAL_TYPES=['breakfast','lunch','dinner','snack'] as const; type MealType=typeof MEAL_TYPES[number]; type SelectedFood=FoodItem&{quantity:number};
@@ -12,7 +12,7 @@ const copy=localizedCopy({en:{back:'← Meals',eyebrow:'LOG A MEAL',title:'Build
 export default function MealBuilderScreen(){
  const [locale,setLocale]=useState<AppLocale>('en');const [name,setName]=useState('');const [type,setType]=useState<MealType>('lunch');const [query,setQuery]=useState('');const [foods,setFoods]=useState<FoodItem[]>([]);const [selected,setSelected]=useState<SelectedFood[]>([]);const [loading,setLoading]=useState(true);const [saving,setSaving]=useState(false);const [error,setError]=useState<string|null>(null);
  const loadFoods=useCallback(async(value='')=>{try{setError(null);setFoods(await getFoods(value.trim()||undefined))}catch(err){setError(err instanceof Error?err.message:'Unable to load foods.')}finally{setLoading(false)}},[]);
- useEffect(()=>{void getStoredLocale().then(v=>setLocale(v??'en'));void hasAuthSession().then(ok=>{if(!ok)router.replace('/');else void loadFoods()})},[loadFoods]);
+ useEffect(()=>{ void hasAuthSession().then(ok=>{if(!ok)router.replace('/');else void loadFoods()})},[loadFoods]);
  useEffect(()=>{const timer=setTimeout(()=>{if(query.trim())void loadFoods(query)},250);return()=>clearTimeout(timer)},[query,loadFoods]);
  const totals=useMemo(()=>selected.reduce((sum,food)=>({calories:sum.calories+food.calories*food.quantity,protein:sum.protein+food.protein*food.quantity,carbs:sum.carbs+food.carbs*food.quantity,fat:sum.fat+food.fat*food.quantity}),{calories:0,protein:0,carbs:0,fat:0}),[selected]);
  const addFood=(food:FoodItem)=>setSelected(current=>current.some(item=>item.id===food.id)?current.map(item=>item.id===food.id?{...item,quantity:item.quantity+1}:item):[...current,{...food,quantity:1}]);
