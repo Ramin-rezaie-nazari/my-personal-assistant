@@ -65,7 +65,6 @@ async function syncCompletedOnboarding(state: OnboardingState) {
     workoutPlace: state.workoutPlace,
     rhythm: `${state.trainingDaysPerWeek} days/week · ${state.sessionMinutes} min`,
     detectedCountry: state.detectedCountry || undefined,
-    detectedCountryCode: state.detectedCountryCode || undefined,
     equipment: state.equipment || undefined,
     sessionMinutes: state.sessionMinutes,
     trainingDaysPerWeek: state.trainingDaysPerWeek,
