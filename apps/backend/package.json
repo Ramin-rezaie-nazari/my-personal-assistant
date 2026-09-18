@@ -36,7 +36,11 @@
     "recipe:content:import": "node ./scripts/recipe-content-import.mjs",
     "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs",
     "price-intelligence:global-daily": "node ./dist/scripts/global-price-daily.js",
-    "price-intelligence:fao-monthly": "node ./dist/scripts/fao-fpma-monthly.js"
+    "price-intelligence:fao-monthly": "node ./dist/scripts/fao-fpma-monthly.js",
+    "price-intelligence:daily-daemon": "node ./dist/scripts/local-price-scheduler.js",
+    "local:db:up": "docker compose -f ../../docker-compose.local.yml up -d postgres",
+    "local:db:down": "docker compose -f ../../docker-compose.local.yml down",
+    "local:db:logs": "docker compose -f ../../docker-compose.local.yml logs -f postgres"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
