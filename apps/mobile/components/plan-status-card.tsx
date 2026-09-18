@@ -1,24 +1,48 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import type { PlanExecutionState } from '../lib/api';
-import { AppLocale, getStoredLocale, isRTL, t } from '../lib/i18n';
+import { useAppLocale, isRTL, t } from '../lib/i18n';
+import { localizedCopy } from '../lib/localized-copy';
+
+const copy = localizedCopy({
+  en: {
+    eyebrow: 'BRAIN EXECUTION',
+    completed: 'Completed',
+    running: 'Running',
+    blocked: 'Waiting',
+    partial: 'Needs attention',
+    progress: (done: string) => done,
+    nextStep: 'Next step: ',
+    failed: 'failed step(s)',
+  },
+  fa: {
+    eyebrow: 'وضعیت اجرای Brain',
+    completed: 'تمام شد',
+    running: 'در حال اجرا',
+    blocked: 'منتظر تأیید',
+    partial: 'نیازمند ادامه',
+    progress: (done: string) => done,
+    nextStep: 'مرحله بعدی: ',
+    failed: 'مرحله ناموفق',
+  },
+});
 
 export function PlanStatusCard({ plan, rtl }: { plan: PlanExecutionState | null; rtl?: boolean }) {
-  const [locale, setLocale] = useState<AppLocale>('en');
-  useEffect(() => { let active = true; void getStoredLocale().then((stored) => { if (active && stored) setLocale(stored); }); return () => { active = false; }; }, []);
+  const { locale } = useAppLocale();
   if (!plan) return null;
   const effectiveRTL = rtl ?? isRTL(locale);
   const total = plan.stepIds.length;
   const done = plan.completed.length;
   const progress = total ? Math.round((done / total) * 100) : 0;
-  const statusLabel = plan.status === 'completed' ? (locale === 'fa' ? 'تمام شد' : 'Completed') : plan.status === 'running' ? (locale === 'fa' ? 'در حال اجرا' : 'Running') : plan.status === 'blocked' ? (locale === 'fa' ? 'منتظر تأیید' : 'Waiting') : plan.status === 'partial' ? (locale === 'fa' ? 'نیازمند ادامه' : 'Needs attention') : plan.status;
+  const text = copy[locale];
+  const statusLabel = plan.status === 'completed' ? text.completed : plan.status === 'running' ? text.running : plan.status === 'blocked' ? text.blocked : plan.status === 'partial' ? text.partial : plan.status;
   return (
     <View style={styles.card}>
-      <View style={[styles.header, effectiveRTL && styles.rtl]}><View style={styles.titleWrap}><Text style={[styles.eyebrow, effectiveRTL && styles.rtlText]}>{locale === 'fa' ? 'وضعیت اجرای Brain' : 'BRAIN EXECUTION'}</Text><Text style={[styles.title, effectiveRTL && styles.rtlText]}>{statusLabel}</Text></View><Text style={styles.progress}>{progress}%</Text></View>
+      <View style={[styles.header, effectiveRTL && styles.rtl]}><View style={styles.titleWrap}><Text style={[styles.eyebrow, effectiveRTL && styles.rtlText]}>{text.eyebrow}</Text><Text style={[styles.title, effectiveRTL && styles.rtlText]}>{statusLabel}</Text></View><Text style={styles.progress}>{progress}%</Text></View>
       <View style={styles.track}><View style={[styles.fill, { width: `${progress}%` }]} /></View>
       <Text style={[styles.meta, effectiveRTL && styles.rtlText]}>{locale === 'fa' ? `${done} مرحله از ${total} انجام شده` : `${done} of ${total} steps completed`}</Text>
-      {plan.currentStep ? <Text style={[styles.next, effectiveRTL && styles.rtlText]}>{locale === 'fa' ? 'مرحله بعدی: ' : 'Next step: '}{plan.currentStep}</Text> : null}
-      {plan.failed.length ? <Text style={[styles.warning, effectiveRTL && styles.rtlText]}>{locale === 'fa' ? `${plan.failed.length} مرحله ناموفق` : `${plan.failed.length} failed step(s)`}</Text> : null}
+      {plan.currentStep ? <Text style={[styles.next, effectiveRTL && styles.rtlText]}>{text.nextStep}{plan.currentStep}</Text> : null}
+      {plan.failed.length ? <Text style={[styles.warning, effectiveRTL && styles.rtlText]}>{`${plan.failed.length} ${text.failed}`}</Text> : null}
       <Text style={[styles.assistive, effectiveRTL && styles.rtlText]}>{t(locale, 'progress')}</Text>
     </View>
   );
