@@ -1,7 +1,7 @@
 # Global Daily Price Intelligence
 
 Last updated: 2026-09-18
-Status: MERGED / PRODUCTION ACTIVATION PENDING
+Status: MERGED / LOCAL RUNTIME VERIFICATION PENDING
 
 ## Goal
 
@@ -26,7 +26,7 @@ The canonical market universe remains the repository's 195-country registry. Act
 ## Daily pipeline
 
 ```text
-GitHub Actions schedule
+local-price-scheduler.ts (laptop)
       ↓
 global-price-daily.ts
       ↓
@@ -63,14 +63,14 @@ Price snapshots with a provider record id use `sourceId:sourceRecordId` as ident
 
 Persistence now increments its `written` count only when an INSERT actually creates a row.
 
-## Free scheduling
+## Local scheduling
 
-The repository is public and the daily workflow uses the standard `ubuntu-slim` GitHub-hosted runner. GitHub documents these standard runners as free and unlimited for public repositories.
+The current development scheduler runs on the user's laptop. It uses standard Node.js timers and the laptop's local timezone, so no external scheduler or paid service is required.
 
-The workflow still needs a production `DATABASE_URL` Actions secret and a reachable production database. Those are environment dependencies, not a code-level cost.
+The local PostgreSQL database is provided by `docker-compose.local.yml`. VPS deployment is intentionally deferred to the release phase.
 
 ## Evidence boundary
 
 Automated tests cover source normalization, daily source routing and 195-country coverage enumeration.
 
-Backend CI and Mobile CI passed for the merged implementation. The daily workflow is now on the default branch. Production daily operation remains unverified until `DATABASE_URL` is configured against an active production database and at least one real run has been observed with actual country coverage.
+Backend CI and Mobile CI passed for the merged implementation before the local-first infrastructure pivot. The source-level local scheduler is now on the development branch. Real local daily operation remains unverified until it is run on the user's laptop and actual country coverage is measured.
