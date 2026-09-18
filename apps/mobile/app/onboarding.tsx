@@ -61,7 +61,8 @@ export default function OnboardingScreen() {
             const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
             const places = await Location.reverseGeocodeAsync(position.coords);
             const country = places[0]?.country ?? '';
-            if (country) { setDetectedCountry(country); update({ detectedCountry: country }); }
+            const countryCode = String(places[0]?.isoCountryCode ?? '').trim().toUpperCase();
+            if (country) { setDetectedCountry(country); update({ detectedCountry: country, detectedCountryCode: countryCode }); }
           } catch {}
         }
       } else if (key === 'notifications') {
