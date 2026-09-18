@@ -17,7 +17,7 @@ export class PriceSourceService {
   private readonly adapters = new Map<string, PriceSourceAdapter>();
   constructor(private readonly registry?: PriceSourceRegistryService) {
     if (registry)
-      for (const s of registry.list(true))
+      for (const s of registry.list(true).filter((item) => item.collectionMode === 'tracked_products'))
         this.register(new HttpPriceSourceAdapter(s));
   }
   register(a: PriceSourceAdapter) {
@@ -52,7 +52,15 @@ export class PriceSourceService {
     return this.registry
       ? this.registry
           .list(true)
-          .map(({ id, name, kind, baseUrl }) => ({ id, name, kind, baseUrl }))
+          .map(({ id, name, kind, baseUrl, scope, collectionMode, license }) => ({
+          id,
+          name,
+          kind,
+          baseUrl,
+          scope,
+          collectionMode,
+          license,
+        }))
       : [];
   }
 }
