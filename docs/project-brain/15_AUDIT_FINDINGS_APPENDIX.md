@@ -189,3 +189,9 @@ The canonical MYPA development path is self-hosted/local-first: PostgreSQL + Pri
 | Finding | Current status | Resolution / evidence |
 |---|---|---|
 | PB-273 | CLOSED — REMEDIATED | A second mobile locale audit slice found Plan Status and Decision Trace components using isolated locale state and Farsi-vs-English conditionals, plus Reminder UI using Farsi-vs-English text and locale-limited time formatting. These surfaces now use the shared \`useAppLocale()\`, \`localizedCopy\`, and \`toIntlLocale()\` contracts. Physical-device locale rendering and voice availability remain environment-bound. |
+
+## New UI/i18n finding — PB-274
+
+| Finding | Current status | Resolution / evidence |
+|---|---|---|
+| PB-274 | OPEN → REMEDIATED | Onboarding and Auth routes still selected visible copy using a binary RTL/Farsi-vs-English branch, so Arabic, Hebrew, Urdu, Kurdish and other supported locales could receive Persian or English instead of the selected locale. The routes now use the shared locale hook and runtime translation bridge for their user-visible bilingual source copy, while RTL direction remains driven by the canonical locale registry. CI/device validation remains the evidence boundary for actual translation-model availability. |

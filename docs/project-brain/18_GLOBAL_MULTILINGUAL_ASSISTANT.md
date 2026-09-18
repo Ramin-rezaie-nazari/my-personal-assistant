@@ -55,6 +55,7 @@ The Brain remains deterministic and language-neutral for business-critical decis
 - `apps/mobile/lib/runtime-translator.ts` provides a bidirectional translation bridge instead of only English → target translation.
 - `apps/mobile/app/assistant.tsx` translates selected-language input to the canonical assistant language before sending it to the backend, and localizes assistant responses before rendering them.
 - `apps/mobile/app/yoga.tsx` now localizes dynamic backend coach cues through the same runtime translation boundary and uses locale-layered preview/phase copy.
+- `apps/mobile/app/onboarding.tsx` and `apps/mobile/app/auth.tsx` now route bilingual source copy through the runtime translation bridge rather than treating every non-Farsi locale as English.
 - `apps/mobile/lib/assistant-tts.ts` now uses the selected locale instead of a hard-coded Persian/English switch.
 - `apps/mobile/lib/voice-language.ts` maps the application locale set to locale-specific speech tags.
 - The backend local assistant provider and AssistantService now emit canonical English responses rather than hard-coded Persian text; this prevents a Persian response from leaking into another selected locale and gives the mobile language gateway a stable source language.

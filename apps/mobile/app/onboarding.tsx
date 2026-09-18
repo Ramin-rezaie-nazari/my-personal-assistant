@@ -8,8 +8,9 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import * as Notifications from 'expo-notifications';
 import { useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
-import { AppLocale, getStoredLocale } from '../lib/i18n';
+import { type AppLocale, useAppLocale } from '../lib/i18n';
 import { isRTL } from '../lib/languages';
+import { getLocalizedCopy } from '../lib/runtime-translator';
 import { DEFAULT_ONBOARDING, OnboardingState, calculateBMI, setOnboardingState } from '../lib/onboarding';
 import { BRAND } from '../lib/branding';
 import { BrandWordmark } from '../components/BrandWordmark';
@@ -23,7 +24,7 @@ type Choice = { key: string; label: string; icon: IconName; hint?: string };
 export default function OnboardingScreen() {
   const [screen, setScreen] = useState(0);
   const [state, setState] = useState<OnboardingState>(DEFAULT_ONBOARDING);
-  const [locale, setLocale] = useState<AppLocale>('en');
+  const { locale } = useAppLocale();
   const [busy, setBusy] = useState(false);
   const [permissionBusy, setPermissionBusy] = useState<PermissionKey | null>(null);
   const [detectedCountry, setDetectedCountry] = useState('');
@@ -33,7 +34,6 @@ export default function OnboardingScreen() {
   const slide = useRef(new Animated.Value(18)).current;
   const rtl = isRTL(locale);
 
-  useEffect(() => { void getStoredLocale().then((value) => value && setLocale(value)); }, []);
   useEffect(() => {
     fade.setValue(0); slide.setValue(18);
     Animated.parallel([
@@ -42,7 +42,7 @@ export default function OnboardingScreen() {
     ]).start();
   }, [fade, screen, slide]);
 
-  const copy = useMemo(() => getCopy(rtl, screen), [rtl, screen]);
+  const copy = useMemo(() => getCopy(locale, screen), [locale, screen]);
   const bmi = calculateBMI(Number(state.heightCm), Number(state.weightKg));
   const update = (patch: Partial<OnboardingState>) => setState((current) => ({ ...current, ...patch }));
   const updatePermission = (key: PermissionKey, value: boolean) => setState((current) => ({ ...current, permissions: { ...current.permissions, [key]: value } }));
@@ -108,26 +108,26 @@ export default function OnboardingScreen() {
               <View style={styles.progressRail}><View style={[styles.progressFill, { width: `${screen < 2 ? 12 : ((screen - 1) / 6) * 100}%` }]} /></View>
             </View>
           </View>
-          {screen > 0 && <Pressable onPress={() => setScreen((value) => Math.max(0, value - 1))} style={styles.backButton}><MaterialCommunityIcons name={rtl ? 'arrow-right' : 'arrow-left'} size={19} color={BRAND.colors.inkSoft} /><Text style={styles.backText}>{rtl ? 'برگشت' : 'Back'}</Text></Pressable>}
+          {screen > 0 && <Pressable onPress={() => setScreen((value) => Math.max(0, value - 1))} style={styles.backButton}><MaterialCommunityIcons name={rtl ? 'arrow-right' : 'arrow-left'} size={19} color={BRAND.colors.inkSoft} /><Text style={styles.backText}>{localizedText(locale, 'Back', 'برگشت')}</Text></Pressable>}
 
           <Animated.View style={[styles.content, { opacity: fade, transform: [{ translateY: slide }] }]}>
             <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
               <Text style={[styles.eyebrow, rtl && styles.rtl]}>{copy.eyebrow}</Text>
               <Text style={[styles.title, rtl && styles.rtl]}>{copy.title}</Text>
               <Text style={[styles.subtitle, rtl && styles.rtl]}>{copy.subtitle}</Text>
-              {screen === 0 && <WelcomeCard rtl={rtl} />}
-              {screen === 1 && <PermissionsCard rtl={rtl} state={state} permissionBusy={permissionBusy} requestPermission={requestPermission} />}
-              {screen === 2 && <ProfileCard rtl={rtl} state={state} bmi={bmi} onUpdate={update} />}
-              {screen === 3 && <ChoiceCard rtl={rtl} choices={goalChoices(rtl)} value={state.goal} onSelect={(value) => update({ goal: value as OnboardingState['goal'] })} />}
-              {screen === 4 && <ChoiceCard rtl={rtl} choices={levelChoices(rtl)} value={state.fitnessLevel} onSelect={(value) => update({ fitnessLevel: value as OnboardingState['fitnessLevel'] })} />}
-              {screen === 5 && <ChoiceCard rtl={rtl} choices={dietChoices(rtl)} value={state.diet} onSelect={(value) => update({ diet: value as OnboardingState['diet'] })} />}
-              {screen === 6 && <ChoiceCard rtl={rtl} choices={placeChoices(rtl)} value={state.workoutPlace} onSelect={(value) => update({ workoutPlace: value as OnboardingState['workoutPlace'] })} />}
-              {screen === 7 && <RhythmCard rtl={rtl} state={state} onUpdate={update} detectedCountry={detectedCountry || state.detectedCountry} />}
-              {screen === 2 && !profileComplete && <Text style={[styles.validation, rtl && styles.rtl]}>{rtl ? 'نام، جنسیت، تاریخ تولد، قد و وزن را کامل و منطقی وارد کن.' : 'Complete your profile with a valid name, gender, birth date, height and weight.'}</Text>}
+              {screen === 0 && <WelcomeCard rtl={rtl} locale={locale} />}
+              {screen === 1 && <PermissionsCard rtl={rtl} locale={locale} state={state} permissionBusy={permissionBusy} requestPermission={requestPermission} />}
+              {screen === 2 && <ProfileCard rtl={rtl} locale={locale} state={state} bmi={bmi} onUpdate={update} />}
+              {screen === 3 && <ChoiceCard rtl={rtl} choices={goalChoices(locale)} value={state.goal} onSelect={(value) => update({ goal: value as OnboardingState['goal'] })} />}
+              {screen === 4 && <ChoiceCard rtl={rtl} choices={levelChoices(locale)} value={state.fitnessLevel} onSelect={(value) => update({ fitnessLevel: value as OnboardingState['fitnessLevel'] })} />}
+              {screen === 5 && <ChoiceCard rtl={rtl} choices={dietChoices(locale)} value={state.diet} onSelect={(value) => update({ diet: value as OnboardingState['diet'] })} />}
+              {screen === 6 && <ChoiceCard rtl={rtl} choices={placeChoices(locale)} value={state.workoutPlace} onSelect={(value) => update({ workoutPlace: value as OnboardingState['workoutPlace'] })} />}
+              {screen === 7 && <RhythmCard rtl={rtl} locale={locale} state={state} onUpdate={update} detectedCountry={detectedCountry || state.detectedCountry} />}
+              {screen === 2 && !profileComplete && <Text style={[styles.validation, rtl && styles.rtl]}>{localizedText(locale, 'Complete your profile with a valid name, gender, birth date, height and weight.', 'نام، جنسیت، تاریخ تولد، قد و وزن را کامل و منطقی وارد کن.')}</Text>}
             </ScrollView>
             <View style={styles.bottomBar}>
-              {screen === 0 && <Text style={[styles.privacyNote, rtl && styles.rtl]}><MaterialCommunityIcons name="shield-check-outline" size={14} color={BRAND.colors.primary} />{' '}{rtl ? 'هر دسترسی انتخابی است و بعداً هم می‌توانی تغییرش بدهی.' : 'Every permission is optional and can be changed later.'}</Text>}
-              {screen === 1 && <Text style={[styles.privacyNote, rtl && styles.rtl]}>{rtl ? 'برای ادامه لازم نیست هیچ‌کدام را فعال کنی.' : 'Nothing here is required to continue.'}</Text>}
+              {screen === 0 && <Text style={[styles.privacyNote, rtl && styles.rtl]}><MaterialCommunityIcons name="shield-check-outline" size={14} color={BRAND.colors.primary} />{' '}{localizedText(locale, 'Every permission is optional and can be changed later.', 'هر دسترسی انتخابی است و بعداً هم می‌توانی تغییرش بدهی.')}</Text>}
+              {screen === 1 && <Text style={[styles.privacyNote, rtl && styles.rtl]}>{localizedText(locale, 'Nothing here is required to continue.', 'برای ادامه لازم نیست هیچ‌کدام را فعال کنی.')}</Text>}
               <Pressable onPress={next} disabled={busy || !stepComplete} style={({ pressed }) => [styles.primary, pressed && styles.primaryPressed, (!stepComplete || busy) && styles.primaryDisabled]}>
                 {busy ? <ActivityIndicator color={BRAND.colors.white} /> : <><Text style={styles.primaryText}>{copy.cta}</Text><MaterialCommunityIcons name={rtl ? 'arrow-left' : 'arrow-right'} size={22} color={BRAND.colors.white} /></>}
               </Pressable>
@@ -139,7 +139,20 @@ export default function OnboardingScreen() {
   );
 }
 
-function getCopy(rtl: boolean, screen: number) {
+const localizationFallbacks = new Map<string, string>();
+function localizedText(locale: AppLocale, en: string, fa: string): string {
+  if (locale === 'en') return en;
+  if (locale === 'fa') return fa;
+  const key = `${locale}\u0000${en}\u0000${fa}`;
+  const cached = localizationFallbacks.get(key);
+  if (cached) return cached;
+  const translated = getLocalizedCopy(locale, { en: { value: en }, fa: { value: fa } }).value;
+  if (translated === '…') return en;
+  localizationFallbacks.set(key, translated);
+  return translated;
+}
+
+function getCopy(locale: AppLocale, screen: number) {
   const en = [
     ['WELCOME', 'Meet the assistant that gets to know you.', 'A beautiful little setup now. Then your goals, food and routine work together every day.', 'Let’s build it'],
     ['OPTIONAL SETUP', 'Give your assistant a few senses.', 'Location, reminders, camera and voice unlock helpful features. You stay in control.', 'Continue'],
@@ -160,12 +173,12 @@ function getCopy(rtl: boolean, screen: number) {
     ['۰۴ · فضای تو', 'کجا بیشتر دوست داری تمرین کنی؟', 'برنامه را با زندگی واقعی‌ات هماهنگ می‌کنیم، نه یک زندگی ایده‌آل روی کاغذ.', 'همینه'],
     ['۰۵ · ریتم تو', 'حالا جا بدهش در هفته‌ات.', 'ریتمی را انتخاب کن که واقعاً بتوانی تکرارش کنی. استمرار برنده است.', 'برنامه‌ام را بساز'],
   ];
-  const row = (rtl ? fa : en)[screen] ?? (rtl ? fa[0] : en[0]);
-  return { eyebrow: row[0], title: row[1], subtitle: row[2], cta: row[3] };
+  const index = Math.min(Math.max(screen, 0), en.length - 1);
+  return { eyebrow: localizedText(locale, en[index][0], fa[index][0]), title: localizedText(locale, en[index][1], fa[index][1]), subtitle: localizedText(locale, en[index][2], fa[index][2]), cta: localizedText(locale, en[index][3], fa[index][3]) };
 }
 
-function WelcomeCard({ rtl }: { rtl: boolean }) {
-  return <View style={styles.welcomeCard}><View style={styles.welcomeHalo} /><View style={styles.welcomeHaloSmall} /><View style={styles.sparkleBox}><MaterialCommunityIcons name="star" size={36} color={BRAND.colors.white} /></View><View style={styles.welcomeCopy}><View style={styles.badge}><Text style={styles.badgeText}>{rtl ? 'کمتر از ۲ دقیقه' : 'UNDER 2 MINUTES'}</Text></View><Text style={[styles.welcomeTitle, rtl && styles.rtl]}>{rtl ? 'هر چیزی که لازم داری، یک‌جا.' : 'Everything useful. In one place.'}</Text><Text style={[styles.welcomeBody, rtl && styles.rtl]}>{rtl ? 'بدون فرم‌های خسته‌کننده. فقط چند انتخاب هوشمند تا دستیارت بفهمد چه چیزی برایت مهم است.' : 'No boring forms. Just a few thoughtful choices so your assistant understands what matters to you.'}</Text></View><View style={styles.featureRow}><FeaturePill icon="food-apple" text={rtl ? 'غذا' : 'Food'} /><FeaturePill icon="dumbbell" text={rtl ? 'تمرین' : 'Training'} /><FeaturePill icon="calendar-check" text={rtl ? 'روزت' : 'Your day'} /></View></View>;
+function WelcomeCard({ rtl, locale }: { rtl: boolean; locale: AppLocale }) {
+  return <View style={styles.welcomeCard}><View style={styles.welcomeHalo} /><View style={styles.welcomeHaloSmall} /><View style={styles.sparkleBox}><MaterialCommunityIcons name="star" size={36} color={BRAND.colors.white} /></View><View style={styles.welcomeCopy}><View style={styles.badge}><Text style={styles.badgeText}>{localizedText(locale, 'UNDER 2 MINUTES', 'کمتر از ۲ دقیقه')}</Text></View><Text style={[styles.welcomeTitle, rtl && styles.rtl]}>{localizedText(locale, 'Everything useful. In one place.', 'هر چیزی که لازم داری، یک‌جا.')}</Text><Text style={[styles.welcomeBody, rtl && styles.rtl]}>{localizedText(locale, 'No boring forms. Just a few thoughtful choices so your assistant understands what matters to you.', 'بدون فرم‌های خسته‌کننده. فقط چند انتخاب هوشمند تا دستیارت بفهمد چه چیزی برایت مهم است.')}</Text></View><View style={styles.featureRow}><FeaturePill icon="food-apple" text={localizedText(locale, 'Food', 'غذا')} /><FeaturePill icon="dumbbell" text={localizedText(locale, 'Training', 'تمرین')} /><FeaturePill icon="calendar-check" text={localizedText(locale, 'Your day', 'روزت')} /></View></View>;
 }
 function FeaturePill({ icon, text }: { icon: IconName; text: string }) { return <View style={styles.featurePill}><MaterialCommunityIcons name={icon} size={15} color={BRAND.colors.violet} /><Text style={styles.featureText}>{text}</Text></View>; }
 
@@ -175,41 +188,41 @@ const permissionItems: { key: PermissionKey; icon: IconName; en: string; fa: str
   { key:'microphone',icon:'microphone-outline',en:'Voice assistant',fa:'دستیار صوتی',enHint:'Talk naturally when voice features are available.',faHint:'وقتی قابلیت صوتی فعال باشد، طبیعی صحبت کن.' },
   { key:'camera',icon:'camera-outline',en:'Movement coaching',fa:'مربی حرکات',enHint:'Camera-based movement analysis when you choose it.',faHint:'تحلیل حرکات با دوربین، فقط وقتی خودت انتخاب کنی.' },
 ];
-function PermissionsCard({ rtl, state, permissionBusy, requestPermission }: { rtl: boolean; state: OnboardingState; permissionBusy: PermissionKey | null; requestPermission: (key: PermissionKey) => Promise<void> }) { return <View style={styles.card}>{permissionItems.map((item) => { const granted = state.permissions[item.key]; return <Pressable key={item.key} onPress={() => void requestPermission(item.key)} style={[styles.permissionRow, granted && styles.permissionGranted]}><View style={styles.permissionIcon}><MaterialCommunityIcons name={item.icon} size={21} color={BRAND.colors.primary} /></View><View style={styles.flex}><Text style={[styles.permissionTitle, rtl && styles.rtl]}>{rtl ? item.fa : item.en}</Text><Text style={[styles.permissionHint, rtl && styles.rtl]}>{rtl ? item.faHint : item.enHint}</Text></View>{permissionBusy === item.key ? <ActivityIndicator color={BRAND.colors.primary} /> : <View style={[styles.permissionDot, granted && styles.permissionDotGranted]}>{granted ? <MaterialCommunityIcons name="check" size={13} color={BRAND.colors.white} /> : null}</View>}</Pressable>; })}</View>; }
+function PermissionsCard({ rtl, locale, state, permissionBusy, requestPermission }: { rtl: boolean; locale: AppLocale; state: OnboardingState; permissionBusy: PermissionKey | null; requestPermission: (key: PermissionKey) => Promise<void> }) { return <View style={styles.card}>{permissionItems.map((item) => { const granted = state.permissions[item.key]; return <Pressable key={item.key} onPress={() => void requestPermission(item.key)} style={[styles.permissionRow, granted && styles.permissionGranted]}><View style={styles.permissionIcon}><MaterialCommunityIcons name={item.icon} size={21} color={BRAND.colors.primary} /></View><View style={styles.flex}><Text style={[styles.permissionTitle, rtl && styles.rtl]}>{localizedText(locale, item.en, item.fa)}</Text><Text style={[styles.permissionHint, rtl && styles.rtl]}>{localizedText(locale, item.enHint, item.faHint)}</Text></View>{permissionBusy === item.key ? <ActivityIndicator color={BRAND.colors.primary} /> : <View style={[styles.permissionDot, granted && styles.permissionDotGranted]}>{granted ? <MaterialCommunityIcons name="check" size={13} color={BRAND.colors.white} /> : null}</View>}</Pressable>; })}</View>; }
 
-function ProfileCard({ rtl, state, bmi, onUpdate }: { rtl: boolean; state: OnboardingState; bmi: number | null; onUpdate: (patch: Partial<OnboardingState>) => void }) { return <View style={styles.card}><View style={styles.cardTop}><View style={styles.iconCircle}><MaterialCommunityIcons name="account-heart-outline" size={21} color={BRAND.colors.primary} /></View><View><Text style={styles.cardTitle}>{rtl ? 'پروفایل تو' : 'Your profile'}</Text><Text style={styles.cardHint}>{rtl ? 'فقط برای شخصی‌سازی تجربه' : 'Just enough to personalize the experience'}</Text></View></View><LabeledInput rtl={rtl} label={rtl ? 'نام' : 'Your name'} value={state.fullName} onChangeText={(value) => onUpdate({ fullName: value })} placeholder={rtl ? 'مثلاً رامین' : 'e.g. Alex'} /><Text style={[styles.fieldLabel, rtl && styles.rtl]}>{rtl ? 'جنسیت' : 'Gender'}</Text><View style={styles.genderGrid}><GenderChip selected={state.gender === 'male'} icon="human-male" label={rtl ? 'مرد' : 'Male'} onPress={() => onUpdate({ gender:'male' })} /><GenderChip selected={state.gender === 'female'} icon="human-female" label={rtl ? 'زن' : 'Female'} onPress={() => onUpdate({ gender:'female' })} /><GenderChip selected={state.gender === 'other'} icon="account-question-outline" label={rtl ? 'دیگر' : 'Other'} onPress={() => onUpdate({ gender:'other' })} /><GenderChip selected={state.gender === 'prefer_not_to_say'} icon="eye-off-outline" label={rtl ? 'ترجیح می‌دهم نگویم' : 'Prefer not to say'} onPress={() => onUpdate({ gender:'prefer_not_to_say' })} /></View><LabeledInput rtl={rtl} label={rtl ? 'تاریخ تولد' : 'Birth date'} value={state.birthDate} onChangeText={(value) => onUpdate({ birthDate:value })} placeholder={rtl ? 'مثلاً ۱۳۷۰/۰۵/۱۲' : 'e.g. 1992-08-03'} keyboardType="numbers-and-punctuation" /><View style={styles.twoColumns}><View style={styles.flex}><LabeledInput rtl={rtl} label={rtl ? 'قد · سانتی‌متر' : 'Height · cm'} value={state.heightCm} onChangeText={(value) => onUpdate({ heightCm:value.replace(/[^0-9.]/g,'') })} placeholder="175" keyboardType="numeric" /></View><View style={styles.flex}><LabeledInput rtl={rtl} label={rtl ? 'وزن · کیلو' : 'Weight · kg'} value={state.weightKg} onChangeText={(value) => onUpdate({ weightKg:value.replace(/[^0-9.]/g,'') })} placeholder="75" keyboardType="numeric" /></View></View>{bmi ? <View style={styles.bmi}><MaterialCommunityIcons name="chart-donut" size={21} color={BRAND.colors.primary} /><View style={styles.flex}><Text style={[styles.bmiLabel, rtl && styles.rtl]}> {rtl ? 'BMI تقریبی' : 'Estimated BMI'}</Text><Text style={[styles.bmiValue, rtl && styles.rtl]}>{bmi}</Text></View><Text style={styles.bmiTag}>{rtl ? 'قابل تنظیم' : 'Personalized'}</Text></View> : null}</View>; }
+function ProfileCard({ rtl, locale, state, bmi, onUpdate }: { rtl: boolean; locale: AppLocale; state: OnboardingState; bmi: number | null; onUpdate: (patch: Partial<OnboardingState>) => void }) { return <View style={styles.card}><View style={styles.cardTop}><View style={styles.iconCircle}><MaterialCommunityIcons name="account-heart-outline" size={21} color={BRAND.colors.primary} /></View><View><Text style={styles.cardTitle}>{localizedText(locale, 'Your profile', 'پروفایل تو')}</Text><Text style={styles.cardHint}>{localizedText(locale, 'Just enough to personalize the experience', 'فقط برای شخصی‌سازی تجربه')}</Text></View></View><LabeledInput locale={locale} rtl={rtl} label={localizedText(locale, 'Your name', 'نام')} value={state.fullName} onChangeText={(value) => onUpdate({ fullName: value })} placeholder={localizedText(locale, 'e.g. Alex', 'مثلاً رامین')} /><Text style={[styles.fieldLabel, rtl && styles.rtl]}>{localizedText(locale, 'Gender', 'جنسیت')}</Text><View style={styles.genderGrid}><GenderChip selected={state.gender === 'male'} icon="human-male" label={localizedText(locale, 'Male', 'مرد')} onPress={() => onUpdate({ gender:'male' })} /><GenderChip selected={state.gender === 'female'} icon="human-female" label={localizedText(locale, 'Female', 'زن')} onPress={() => onUpdate({ gender:'female' })} /><GenderChip selected={state.gender === 'other'} icon="account-question-outline" label={localizedText(locale, 'Other', 'دیگر')} onPress={() => onUpdate({ gender:'other' })} /><GenderChip selected={state.gender === 'prefer_not_to_say'} icon="eye-off-outline" label={localizedText(locale, 'Prefer not to say', 'ترجیح می‌دهم نگویم')} onPress={() => onUpdate({ gender:'prefer_not_to_say' })} /></View><LabeledInput locale={locale} rtl={rtl} label={localizedText(locale, 'Birth date', 'تاریخ تولد')} value={state.birthDate} onChangeText={(value) => onUpdate({ birthDate:value })} placeholder={localizedText(locale, 'e.g. 1992-08-03', 'مثلاً ۱۳۷۰/۰۵/۱۲')} keyboardType="numbers-and-punctuation" /><View style={styles.twoColumns}><View style={styles.flex}><LabeledInput locale={locale} rtl={rtl} label={localizedText(locale, 'Height · cm', 'قد · سانتی‌متر')} value={state.heightCm} onChangeText={(value) => onUpdate({ heightCm:value.replace(/[^0-9.]/g,'') })} placeholder="175" keyboardType="numeric" /></View><View style={styles.flex}><LabeledInput locale={locale} rtl={rtl} label={localizedText(locale, 'Weight · kg', 'وزن · کیلو')} value={state.weightKg} onChangeText={(value) => onUpdate({ weightKg:value.replace(/[^0-9.]/g,'') })} placeholder="75" keyboardType="numeric" /></View></View>{bmi ? <View style={styles.bmi}><MaterialCommunityIcons name="chart-donut" size={21} color={BRAND.colors.primary} /><View style={styles.flex}><Text style={[styles.bmiLabel, rtl && styles.rtl]}> {localizedText(locale, 'Estimated BMI', 'BMI تقریبی')}</Text><Text style={[styles.bmiValue, rtl && styles.rtl]}>{bmi}</Text></View><Text style={styles.bmiTag}>{localizedText(locale, 'Personalized', 'قابل تنظیم')}</Text></View> : null}</View>; }
 
-function LabeledInput({ rtl, label, value, onChangeText, placeholder, keyboardType }: { rtl:boolean; label:string; value:string; onChangeText:(value:string)=>void; placeholder:string; keyboardType?:'default'|'numeric'|'numbers-and-punctuation' }) { return <View style={styles.inputBlock}><Text style={[styles.fieldLabel, rtl && styles.rtl]}>{label}</Text><TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#9CA3AF" keyboardType={keyboardType} selectionColor={BRAND.colors.primary} style={[styles.input, rtl && styles.rtl]} /></View>; }
+function LabeledInput({ rtl, locale, label, value, onChangeText, placeholder, keyboardType }: { rtl:boolean; locale: AppLocale; label:string; value:string; onChangeText:(value:string)=>void; placeholder:string; keyboardType?:'default'|'numeric'|'numbers-and-punctuation' }) { return <View style={styles.inputBlock}><Text style={[styles.fieldLabel, rtl && styles.rtl]}>{label}</Text><TextInput value={value} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor="#9CA3AF" keyboardType={keyboardType} selectionColor={BRAND.colors.primary} style={[styles.input, rtl && styles.rtl]} /></View>; }
 function GenderChip({ selected, icon, label, onPress }: { selected:boolean; icon:IconName; label:string; onPress:()=>void }) { return <Pressable onPress={onPress} style={[styles.genderChip, selected && styles.genderSelected]}><MaterialCommunityIcons name={icon} size={17} color={selected ? BRAND.colors.primary : BRAND.colors.muted} /><Text style={[styles.genderText, selected && styles.genderTextSelected]}>{label}</Text>{selected && <MaterialCommunityIcons name="check" size={15} color={BRAND.colors.primary} />}</Pressable>; }
 
 function ChoiceCard({ rtl, choices, value, onSelect }: { rtl:boolean; choices:Choice[]; value:string; onSelect:(value:string)=>void }) { return <View style={styles.card}>{choices.map((choice) => { const selected = value === choice.key; return <Pressable key={choice.key} onPress={() => onSelect(choice.key)} style={({pressed}) => [styles.choice, selected && styles.choiceSelected, pressed && styles.choicePressed]}><View style={[styles.choiceIcon, selected && styles.choiceIconSelected]}><MaterialCommunityIcons name={choice.icon} size={22} color={selected ? BRAND.colors.white : BRAND.colors.primary} /></View><View style={styles.flex}><Text style={[styles.choiceTitle, rtl && styles.rtl]}>{choice.label}</Text>{choice.hint && <Text style={[styles.choiceHint, rtl && styles.rtl]}>{choice.hint}</Text>}</View><View style={[styles.radio, selected && styles.radioSelected]}>{selected && <View style={styles.radioDot} />}</View></Pressable>; })}</View>; }
 
-function RhythmCard({ rtl, state, onUpdate, detectedCountry }: { rtl:boolean; state:OnboardingState; onUpdate:(patch:Partial<OnboardingState>)=>void; detectedCountry:string }) { return <View style={styles.card}><View style={styles.cardTop}><View style={styles.iconCircle}><MaterialCommunityIcons name="calendar-clock-outline" size={21} color={BRAND.colors.primary} /></View><View><Text style={styles.cardTitle}>{rtl ? 'ریتم تمرین' : 'Your training rhythm'}</Text><Text style={styles.cardHint}>{rtl ? 'واقعی انتخاب کن، نه ایده‌آل' : 'Choose realistic, not ideal'}</Text></View></View><Text style={[styles.fieldLabel, rtl && styles.rtl]}>{rtl ? 'چند روز در هفته؟' : 'How many days per week?'}</Text><View style={styles.numberRow}>{([2,3,4,5,6] as const).map((value) => { const selected = state.trainingDaysPerWeek === value; return <Pressable key={value} onPress={() => onUpdate({ trainingDaysPerWeek:value })} style={[styles.dayChoice, selected && styles.choiceSelected]}><Text style={[styles.dayNumber, selected && styles.selectedText]}>{value}</Text><Text style={[styles.dayLabel, selected && styles.selectedText]}>{rtl ? 'روز' : 'days'}</Text></Pressable>; })}</View><Text style={[styles.fieldLabel, styles.topField, rtl && styles.rtl]}>{rtl ? 'مدت هر جلسه؟' : 'Session length?'}</Text><View style={styles.numberRow}>{([20,30,45,60] as const).map((value) => { const selected=state.sessionMinutes===value; return <Pressable key={value} onPress={() => onUpdate({ sessionMinutes:value })} style={[styles.timeChoice, selected && styles.choiceSelected]}><Text style={[styles.timeNumber, selected && styles.selectedText]}>{value}</Text><Text style={[styles.dayLabel, selected && styles.selectedText]}>min</Text></Pressable>; })}</View><Text style={[styles.fieldLabel, styles.topField, rtl && styles.rtl]}>{rtl ? 'محل تمرین؟' : 'Training setup?'}</Text><View style={styles.setupRow}><MiniSetup selected={state.equipment==='none'} icon="gesture-tap-hold" label={rtl ? 'بدون تجهیزات' : 'None'} onPress={() => onUpdate({ equipment:'none' })} /><MiniSetup selected={state.equipment==='home'} icon="home-outline" label={rtl ? 'خانه' : 'Home'} onPress={() => onUpdate({ equipment:'home' })} /><MiniSetup selected={state.equipment==='gym'} icon="dumbbell" label={rtl ? 'باشگاه' : 'Gym'} onPress={() => onUpdate({ equipment:'gym' })} /></View>{detectedCountry && <View style={styles.detected}><MaterialCommunityIcons name="map-marker-check-outline" size={18} color={BRAND.colors.primary} /><Text style={[styles.detectedText, rtl && styles.rtl]}>{rtl ? `منطقه شناسایی‌شده: ${detectedCountry}` : `Location detected: ${detectedCountry}`}</Text></View>}</View>; }
+function RhythmCard({ rtl, locale, state, onUpdate, detectedCountry }: { rtl:boolean; locale: AppLocale; state:OnboardingState; onUpdate:(patch:Partial<OnboardingState>)=>void; detectedCountry:string }) { return <View style={styles.card}><View style={styles.cardTop}><View style={styles.iconCircle}><MaterialCommunityIcons name="calendar-clock-outline" size={21} color={BRAND.colors.primary} /></View><View><Text style={styles.cardTitle}>{localizedText(locale, 'Your training rhythm', 'ریتم تمرین')}</Text><Text style={styles.cardHint}>{localizedText(locale, 'Choose realistic, not ideal', 'واقعی انتخاب کن، نه ایده‌آل')}</Text></View></View><Text style={[styles.fieldLabel, rtl && styles.rtl]}>{localizedText(locale, 'How many days per week?', 'چند روز در هفته؟')}</Text><View style={styles.numberRow}>{([2,3,4,5,6] as const).map((value) => { const selected = state.trainingDaysPerWeek === value; return <Pressable key={value} onPress={() => onUpdate({ trainingDaysPerWeek:value })} style={[styles.dayChoice, selected && styles.choiceSelected]}><Text style={[styles.dayNumber, selected && styles.selectedText]}>{value}</Text><Text style={[styles.dayLabel, selected && styles.selectedText]}>{localizedText(locale, 'days', 'روز')}</Text></Pressable>; })}</View><Text style={[styles.fieldLabel, styles.topField, rtl && styles.rtl]}>{localizedText(locale, 'Session length?', 'مدت هر جلسه؟')}</Text><View style={styles.numberRow}>{([20,30,45,60] as const).map((value) => { const selected=state.sessionMinutes===value; return <Pressable key={value} onPress={() => onUpdate({ sessionMinutes:value })} style={[styles.timeChoice, selected && styles.choiceSelected]}><Text style={[styles.timeNumber, selected && styles.selectedText]}>{value}</Text><Text style={[styles.dayLabel, selected && styles.selectedText]}>min</Text></Pressable>; })}</View><Text style={[styles.fieldLabel, styles.topField, rtl && styles.rtl]}>{localizedText(locale, 'Training setup?', 'محل تمرین؟')}</Text><View style={styles.setupRow}><MiniSetup selected={state.equipment==='none'} icon="gesture-tap-hold" label={localizedText(locale, 'None', 'بدون تجهیزات')} onPress={() => onUpdate({ equipment:'none' })} /><MiniSetup selected={state.equipment==='home'} icon="home-outline" label={localizedText(locale, 'Home', 'خانه')} onPress={() => onUpdate({ equipment:'home' })} /><MiniSetup selected={state.equipment==='gym'} icon="dumbbell" label={localizedText(locale, 'Gym', 'باشگاه')} onPress={() => onUpdate({ equipment:'gym' })} /></View>{detectedCountry && <View style={styles.detected}><MaterialCommunityIcons name="map-marker-check-outline" size={18} color={BRAND.colors.primary} /><Text style={[styles.detectedText, rtl && styles.rtl]}>{localizedText(locale, `Location detected: ${detectedCountry}`, `منطقه شناسایی‌شده: ${detectedCountry}`)}</Text></View>}</View>; }
 function MiniSetup({ selected, icon, label, onPress }: {selected:boolean; icon:IconName; label:string; onPress:()=>void}) { return <Pressable onPress={onPress} style={[styles.setupChoice, selected && styles.genderSelected]}><MaterialCommunityIcons name={icon} size={18} color={selected ? BRAND.colors.primary : BRAND.colors.muted} /><Text style={[styles.setupText, selected && styles.genderTextSelected]}>{label}</Text></Pressable>; }
 
-const goalChoices = (rtl:boolean):Choice[] => [
-  {key:'fat_loss',label:rtl?'کاهش چربی':'Lose body fat',icon:'fire',hint:rtl?'سبک‌تر و پرانرژی‌تر':'Feel lighter & more energetic'},
-  {key:'body_sculpt',label:rtl?'فرم بهتر بدن':'Shape my body',icon:'human-handsup',hint:rtl?'عضله‌سازی و فرم‌دهی':'Tone up with balance'},
-  {key:'strength',label:rtl?'قوی‌تر شدن':'Get stronger',icon:'dumbbell',hint:rtl?'قدرت و عملکرد بیشتر':'Build strength & performance'},
-  {key:'general_fitness',label:rtl?'سلامت و تناسب عمومی':'Feel fitter',icon:'heart-pulse',hint:rtl?'یک روال سالم و پایدار':'A healthy routine that sticks'},
+const goalChoices = (locale: AppLocale):Choice[] => [
+  {key:'fat_loss',label:localizedText(locale,'Lose body fat','کاهش چربی'),icon:'fire',hint:localizedText(locale,'Feel lighter & more energetic','سبک‌تر و پرانرژی‌تر')},
+  {key:'body_sculpt',label:localizedText(locale,'Shape my body','فرم بهتر بدن'),icon:'human-handsup',hint:localizedText(locale,'Tone up with balance','عضله‌سازی و فرم‌دهی')},
+  {key:'strength',label:localizedText(locale,'Get stronger','قوی‌تر شدن'),icon:'dumbbell',hint:localizedText(locale,'Build strength & performance','قدرت و عملکرد بیشتر')},
+  {key:'general_fitness',label:localizedText(locale,'Feel fitter','سلامت و تناسب عمومی'),icon:'heart-pulse',hint:localizedText(locale,'A healthy routine that sticks','یک روال سالم و پایدار')},
 ];
-const levelChoices = (rtl:boolean):Choice[] => [
-  {key:'beginner',label:rtl?'تازه‌کارم':'I’m just starting',icon:'sprout',hint:rtl?'آرام و قدم‌به‌قدم':'Gentle, guided, no pressure'},
-  {key:'foundation',label:rtl?'یکم تجربه دارم':'I have some experience',icon:'walk',hint:rtl?'ساختن پایه‌های محکم':'Build a strong foundation'},
-  {key:'intermediate',label:rtl?'منظم تمرین می‌کنم':'I train regularly',icon:'run-fast',hint:rtl?'چالش مناسب برای رشد':'Ready for a real challenge'},
-  {key:'advanced',label:rtl?'پیشرفته':'I know my way around',icon:'trophy-outline',hint:rtl?'برنامه‌ریزی دقیق‌تر':'Smarter, more precise planning'},
+const levelChoices = (locale: AppLocale):Choice[] => [
+  {key:'beginner',label:localizedText(locale,'I’m just starting','تازه‌کارم'),icon:'sprout',hint:localizedText(locale,'Gentle, guided, no pressure','آرام و قدم‌به‌قدم')},
+  {key:'foundation',label:localizedText(locale,'I have some experience','یکم تجربه دارم'),icon:'walk',hint:localizedText(locale,'Build a strong foundation','ساختن پایه‌های محکم')},
+  {key:'intermediate',label:localizedText(locale,'I train regularly','منظم تمرین می‌کنم'),icon:'run-fast',hint:localizedText(locale,'Ready for a real challenge','چالش مناسب برای رشد')},
+  {key:'advanced',label:localizedText(locale,'I know my way around','پیشرفته'),icon:'trophy-outline',hint:localizedText(locale,'Smarter, more precise planning','برنامه‌ریزی دقیق‌تر')},
 ];
-const dietChoices = (rtl:boolean):Choice[] => [
-  {key:'balanced',label:rtl?'متعادل':'Balanced',icon:'scale-balance',hint:rtl?'تنوع و تعادل':'A little of everything'},
-  {key:'high_protein',label:rtl?'پروتئین بالا':'High protein',icon:'food-steak',hint:rtl?'تمرکز بیشتر روی پروتئین':'Protein-forward meals'},
-  {key:'vegetarian',label:rtl?'گیاهخواری':'Vegetarian',icon:'leaf',hint:rtl?'بدون گوشت':'Plant-focused, no meat'},
-  {key:'vegan',label:rtl?'وگان':'Vegan',icon:'sprout-outline',hint:rtl?'کاملاً گیاهی':'Fully plant-based'},
-  {key:'halal',label:rtl?'حلال':'Halal',icon:'food-halal',hint:rtl?'انتخاب‌های سازگار با حلال':'Halal-friendly suggestions'},
+const dietChoices = (locale: AppLocale):Choice[] => [
+  {key:'balanced',label:localizedText(locale,'Balanced','متعادل'),icon:'scale-balance',hint:localizedText(locale,'A little of everything','تنوع و تعادل')},
+  {key:'high_protein',label:localizedText(locale,'High protein','پروتئین بالا'),icon:'food-steak',hint:localizedText(locale,'Protein-forward meals','تمرکز بیشتر روی پروتئین')},
+  {key:'vegetarian',label:localizedText(locale,'Vegetarian','گیاهخواری'),icon:'leaf',hint:localizedText(locale,'Plant-focused, no meat','بدون گوشت')},
+  {key:'vegan',label:localizedText(locale,'Vegan','وگان'),icon:'sprout-outline',hint:localizedText(locale,'Fully plant-based','کاملاً گیاهی')},
+  {key:'halal',label:localizedText(locale,'Halal','حلال'),icon:'food-halal',hint:localizedText(locale,'Halal-friendly suggestions','انتخاب‌های سازگار با حلال')},
 ];
-const placeChoices = (rtl:boolean):Choice[] => [
-  {key:'home',label:rtl?'بیشتر در خانه':'Mostly at home',icon:'home-heart',hint:rtl?'ساده و قابل اجرا':'Simple sessions that fit home life'},
-  {key:'gym',label:rtl?'بیشتر باشگاه':'Mostly at the gym',icon:'dumbbell',hint:rtl?'گزینه‌های بیشتر با تجهیزات':'More equipment, more options'},
-  {key:'both',label:rtl?'هردو':'A mix of both',icon:'swap-horizontal-circle',hint:rtl?'انعطاف کامل':'Stay flexible wherever you are'},
+const placeChoices = (locale: AppLocale):Choice[] => [
+  {key:'home',label:localizedText(locale,'Mostly at home','بیشتر در خانه'),icon:'home-heart',hint:localizedText(locale,'Simple sessions that fit home life','ساده و قابل اجرا')},
+  {key:'gym',label:localizedText(locale,'Mostly at the gym','بیشتر باشگاه'),icon:'dumbbell',hint:localizedText(locale,'More equipment, more options','گزینه‌های بیشتر با تجهیزات')},
+  {key:'both',label:localizedText(locale,'A mix of both','هردو'),icon:'swap-horizontal-circle',hint:localizedText(locale,'Stay flexible wherever you are','انعطاف کامل')},
 ];
 
 const styles = StyleSheet.create({
