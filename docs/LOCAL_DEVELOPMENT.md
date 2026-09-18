@@ -57,7 +57,7 @@ Defaults:
 - set `LOCAL_PRICE_DAILY_HOUR` and `LOCAL_PRICE_DAILY_MINUTE` to change it;
 - set `LOCAL_PRICE_RUN_IMMEDIATELY=true` to collect once at process start before waiting for the next scheduled time.
 
-The laptop must be running and the scheduler process must remain alive for scheduled collection. An OS-level Task Scheduler / launchd / cron can start the same one-shot command when the machine wakes or boots.
+The laptop must be running and the scheduler process must remain alive for scheduled collection. The scheduler is restart-safe: if it starts after the local scheduled window was missed, the catch-up policy can execute the missed daily run rather than waiting for the next calendar day. An OS-level Task Scheduler / launchd / cron can start the same one-shot command when the machine wakes or boots.
 
 ## Native Android development
 
