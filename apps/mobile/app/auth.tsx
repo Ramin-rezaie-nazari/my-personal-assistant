@@ -7,11 +7,17 @@ import { useAppLocale, t } from '../lib/i18n';
 import { getLocalizedCopy } from '../lib/runtime-translator';
 import { hasCompletedOnboarding } from '../lib/onboarding';
 
+const authLocalizationCache = new Map<string, string>();
 function localizeAuthText(locale: ReturnType<typeof useAppLocale>['locale'], en: string, fa: string): string {
   if (locale === 'en') return en;
   if (locale === 'fa') return fa;
+  const key = `${locale}\\u0000${en}\\u0000${fa}`;
+  const cached = authLocalizationCache.get(key);
+  if (cached) return cached;
   const translated = getLocalizedCopy(locale, { en: { value: en }, fa: { value: fa } }).value;
-  return translated === '…' ? en : translated;
+  if (translated === '…') return en;
+  authLocalizationCache.set(key, translated);
+  return translated;
 }
 
 export default function AuthScreen() {
