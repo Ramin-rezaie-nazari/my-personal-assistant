@@ -84,8 +84,14 @@ export class PriceIntelligenceController {
   }
 
   @Get('coverage')
-  getCoverage(@Query('maxAgeDays') maxAgeDays?: string) {
-    return this.coverage.getCoverage(maxAgeDays ? Number(maxAgeDays) : 7);
+  getCoverage(
+    @Query('maxAgeDays') maxAgeDays?: string,
+    @Query('sourceId') sourceId?: string,
+  ) {
+    return this.coverage.getCoverage(
+      maxAgeDays ? Number(maxAgeDays) : 1,
+      sourceId ?? 'open-prices',
+    );
   }
 
   @Get('registry')
