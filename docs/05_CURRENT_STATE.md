@@ -79,3 +79,15 @@ These are explicit evidence limits, not silently marked green findings.
 ## Project Brain
 
 `docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` is the reference-product gap analysis. `docs/project-brain/17_EXERCISE_CONTENT_MEDIA_IMPLEMENTATION.md` documents the exercise/media foundation. `docs/project-brain/18_GLOBAL_MULTILINGUAL_ASSISTANT.md` documents the multilingual language contract and implementation boundary. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` must remain synchronized with the same verification boundary.
+
+## Global Daily Price Intelligence — implemented, verification pending
+
+- PR branch `feat/global-price-intelligence` now contains the global Open Prices + FAO FPMA provider layer.
+- Open Prices is the daily global feed; its ingestion default was reduced to a two-day recent window.
+- FAO FPMA is retained as a monthly benchmark/reference provider and is excluded from default daily collection.
+- `PriceCoverageService` now reports daily coverage against Open Prices by default across the canonical 195-country registry.
+- Global daily collection has a dedicated GitHub Actions workflow using `ubuntu-slim`.
+- Price persistence now reports actual inserted rows and includes city/market context in fallback snapshot identity.
+- Added `docs/project-brain/19_GLOBAL_DAILY_PRICE_INTELLIGENCE.md` as the canonical contract.
+
+Fresh CI for this branch and a real production collection run are still required before this slice can be marked fully green. Complete fresh daily coverage for all 195 countries is provider-data dependent and must be measured rather than assumed.
