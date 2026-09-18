@@ -174,7 +174,7 @@ export class NightlyMarketIntelligenceService {
     if (lastSuccessfulRunAt.getTime() > now.getTime()) return false;
     const currentMinute = Number(current.hour) * 60 + Number(current.minute);
     const scheduledMinute = policy.hour * 60 + policy.minute;
-    return currentMinute >= scheduledMinute;
+    return currentMinute > scheduledMinute;
   }
 
   private isScheduledMinute(now: Date, policy: NightlyMarketConfig) {
