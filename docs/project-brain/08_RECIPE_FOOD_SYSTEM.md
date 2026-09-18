@@ -46,7 +46,7 @@ The module is structurally present and exported, but its concrete services are p
 
 ## Related script / migration contracts
 
-`apps/backend/scripts/recipe-nutrition-estimate.mjs` performs an independent heuristic nutrition estimate from raw ingredient strings using an embedded food table and unit parser, then PATCHes `recipe_intelligence_profiles.evidence` through Supabase REST. It expects separate tables/columns (`recipes`, `recipe_source_raw`, `recipe_intelligence_profiles`, `kcal_per_serving`, etc.) and a service-role key. This is a separate persistence contract from the Prisma Recipe/RecipeIngredient model inspected in this audit and must be reconciled before being treated as an authoritative recipe nutrition pipeline.
+The former `apps/backend/scripts/recipe-nutrition-estimate.mjs` heuristic batch was retired on 2026-09-18 because it depended on a separate Supabase REST persistence contract (`recipe_source_raw`, `recipe_intelligence_profiles`, and service-role credentials) that is not canonical for the current Prisma/PostgreSQL application model. The retained application nutrition path is the Prisma-backed domain implementation; any future batch estimator must target that canonical contract directly.
 
 ## Evidence-backed open issues from this scope
 
@@ -79,3 +79,8 @@ Remaining: exact inventory consistency pass, support matrix synchronization, any
 
 ## Next
 Continue BATCH-0005B and then move to Shopping/Inventory/Price/Budget deeper cross-contracts. After all deep-read domains are complete, perform route/mobile/database/security/validation/historical reconciliation before any repair work.
+
+
+## Infrastructure reconciliation — 2026-09-18
+
+The repository is now self-hosted/local-first for development. Supabase-only recipe batch scripts and their cloud workflows were retired from the active surface; local PostgreSQL + Prisma is canonical, and recipe media stays on the developer laptop during this phase. Historical audit documents may still mention retired scripts for traceability.
