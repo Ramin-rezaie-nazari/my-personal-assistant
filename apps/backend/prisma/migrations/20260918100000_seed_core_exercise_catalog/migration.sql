@@ -1,7 +1,7 @@
 INSERT INTO "Exercise" (
   "id","slug","name","nameFa","aliases","discipline","movementPattern","primaryMuscles","secondaryMuscles",
   "equipment","difficulty","goals","instructions","coachCues","commonMistakes","cautions","contentStatus",
-  "sourceProvider","sourceLicense","sourceAttribution","createdAt","updatedAt"
+  "sourceProvider","sourceLicense","sourceAttribution"
 ) VALUES
 ('ex-0001','bodyweight-squat','Bodyweight Squat','اسکوات وزن بدن','["air squat","squat"]','calisthenics','squat','["quadriceps","glutes"]','["hamstrings","core"]','["bodyweight"]','beginner','["strength","fat_loss","general_fitness"]','Stand with feet about shoulder-width apart, sit the hips back and down, then drive through the floor to stand.','Keep knees tracking over toes and keep the torso controlled.','Knees collapsing inward; heels lifting; excessive forward lean.','Stop if you have sharp pain or loss of balance.','published','MYPA Curated','MYPA-owned exercise content','Core curated exercise catalog'),
 ('ex-0002','push-up','Push-up','شنا','["push up"]','calisthenics','horizontal_push','["chest","triceps"]','["shoulders","core"]','["bodyweight"]','beginner','["strength","body_sculpt","general_fitness"]','Brace the body in a straight line, lower the chest with control, then press the floor away.','Keep ribs down and elbows slightly angled back.','Hips sagging; elbows flaring; partial range.','Use an incline regression when full push-ups are not yet controlled.','published','MYPA Curated','MYPA-owned exercise content','Core curated exercise catalog'),
