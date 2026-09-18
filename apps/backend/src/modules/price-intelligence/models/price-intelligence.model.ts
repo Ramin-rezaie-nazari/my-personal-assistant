@@ -1,5 +1,5 @@
 export type PriceSourceKind =
-  'web_store' | 'marketplace' | 'retailer' | 'manual';
+  'web_store' | 'marketplace' | 'retailer' | 'manual' | 'open_dataset';
 export type PriceTrend = 'rising' | 'falling' | 'stable' | 'insufficient_data';
 
 export type NormalizedPrice = {
@@ -10,6 +10,7 @@ export type NormalizedPrice = {
   url?: string;
   currency: string;
   amount: number;
+  countryCode?: string;
   unit?: string;
   unitPrice?: number;
   city?: string;
