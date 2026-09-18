@@ -1,7 +1,7 @@
 # MYPA Current State
 
 Last updated: 2026-09-18
-Review status: MULTILINGUAL + GLOBAL PRICE FOUNDATIONS IMPLEMENTED / LOCAL RUNTIME + DEVICE VERIFICATION PENDING
+Review status: MULTILINGUAL + GLOBAL PRICE FOUNDATIONS IMPLEMENTED / LOCAL RUNTIME VERIFIED / PHYSICAL-DEVICE VERIFICATION PENDING
 
 ## Canonical ownership
 
@@ -11,7 +11,8 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Target canonical branch: `main`
-- Latest repository/CI verified baseline: `1b8b1799970026230162392f8ee101a13e12d99c`.
+- Latest repository baseline: `4e48d7fd4a51a7ef268c9fbe942095f31dcef38d`.
+- The user's development laptop completed `pnpm local:verify-errors` with no error output on 2026-09-18.
 - Exercise Content/Media and Global Multilingual Assistant foundations are now covered by fresh main-branch Backend/Mobile CI; native and physical-device verification remain environment-bound.
 - Scope of the latest previously verified baseline: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
 
@@ -62,7 +63,9 @@ Fresh main-branch Backend CI run `35318539437` completed successfully through de
 
 Fresh main-branch Mobile CI run `35318539524` completed successfully through dependency installation, mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling.
 
-### Android native APK — GREEN on previous baseline
+### Android native APK — GREEN on previous CI baseline
+
+The local validation runner also completed the Android release Gradle build on the development laptop with no error output.
 
 The canonical native evidence path is `.github/workflows/android-apk.yml`. Workflow run `34772364209` (run #79), head `0d19d2b7dad5e9100505205328fbd523e544445b`, completed successfully through Expo prebuild, real Gradle `assembleDebug`, and APK upload.
 
@@ -72,14 +75,14 @@ The canonical native evidence path is `.github/workflows/android-apk.yml`. Workf
 - Translation-model availability and TTS voice availability for every locale remain device/OS capabilities and cannot be proven from repository source alone.
 - Real physical-device UX remains unvalidated, including RTL rendering, locale-specific speech, translation model availability, startup language switching and dynamic-content translation.
 - Production deployment behavior, production Auth/RLS/Storage configuration and real notification delivery remain environment-limited.
-- Direct local repository execution is unavailable in the remediation container; local PostgreSQL startup and real daily price collection still require the user's laptop environment.
+- The remediation container itself cannot run the laptop-local runtime; local runtime validation is recorded from the user's development machine.
 - These are explicit evidence limits, not silently marked green findings.
 
 ## Project Brain
 
 `docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` is the reference-product gap analysis. `docs/project-brain/17_EXERCISE_CONTENT_MEDIA_IMPLEMENTATION.md` documents the exercise/media foundation. `docs/project-brain/18_GLOBAL_MULTILINGUAL_ASSISTANT.md` documents the multilingual language contract and implementation boundary. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` must remain synchronized with the same verification boundary.
 
-## Global Daily Price Intelligence — implemented, local runtime verification pending
+## Global Daily Price Intelligence — implemented, local runtime verified
 
 - The global Open Prices + FAO FPMA provider layer is implemented.
 - Open Prices is the daily global feed; its ingestion default is bounded to a two-day recent window.
@@ -91,7 +94,9 @@ The canonical native evidence path is `.github/workflows/android-apk.yml`. Workf
 - Price persistence reports actual inserted rows and includes city/market context in fallback snapshot identity.
 - `docs/project-brain/19_GLOBAL_DAILY_PRICE_INTELLIGENCE.md` is the canonical price-intelligence contract.
 
-Backend CI for the local-first infrastructure PR completed successfully, including backend API E2E. Real laptop execution and measured country coverage remain environment-dependent.
+- One real local global-price collection has been completed through the laptop validation runner; numerical observed country coverage is still not recorded.
+
+Backend CI for the local-first infrastructure PR completed successfully, including backend API E2E. The user's laptop has now completed the local runtime validator; the validator's error-only output does not expose the numeric 195-country coverage result.
 
 ## Local-first infrastructure decision — 2026-09-18
 
