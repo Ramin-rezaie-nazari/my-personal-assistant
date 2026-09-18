@@ -79,13 +79,13 @@ export class ExerciseContentService {
     const id = randomUUID();
     await this.prisma.$executeRaw(Prisma.sql`
       INSERT INTO "ExerciseMedia" (
-        "id","exerciseId","kind","url","sourceUrl","sourceProvider","license","attribution","acquisitionMode","sourceReference","rightsBasis","creator","storageKey",
+        "id","exerciseId","kind","url","sourceUrl","sourceProvider","license","attribution","acquisitionMode","sourceReference","rightsBasis","creator","storageKey","transformed","reviewer","reviewedAt","contentVersion",
         "mimeType","durationSeconds","width","height","language","posterUrl","checksum","status","position",
         "createdAt","updatedAt"
       ) VALUES (
         ${id},${exerciseId},${dto.kind},${dto.url},${dto.sourceUrl ?? null},${dto.sourceProvider},${dto.license},
         ${dto.attribution ?? null},${dto.acquisitionMode ?? null},${dto.sourceReference ?? null},${dto.rightsBasis ?? null},
-        ${dto.creator ?? null},${dto.storageKey ?? null},${dto.mimeType ?? null},${dto.durationSeconds ?? null},${dto.width ?? null},
+        ${dto.creator ?? null},${dto.storageKey ?? null},${dto.transformed ?? false},${dto.reviewer ?? null},${dto.reviewedAt ? new Date(dto.reviewedAt) : null},${dto.contentVersion ?? null},${dto.mimeType ?? null},${dto.durationSeconds ?? null},${dto.width ?? null},
         ${dto.height ?? null},${dto.language ?? null},${dto.posterUrl ?? null},${dto.checksum ?? null},
         ${dto.status ?? 'pending'},${dto.position ?? 0},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
       )
