@@ -194,7 +194,7 @@ async function main() {
   const catalog = await loadCatalog();
   const { map, datasetRows, imageCount } = await loadDatasetMap(dataset);
   const existing = await loadLatestManifest();
-  console.log(JSON.stringify({ pipeline: 'recipe-images-local-guaranteed-v7', supabase: 'DISABLED', catalogRecipes: catalog.length, datasetRows, datasetImages: imageCount, exactTitleIndex: map.size, targetImagesPerRecipe: `1-${MAX_IMAGES}` }, null, 2));
+  console.log(JSON.stringify({ pipeline: 'recipe-images-local-guaranteed-v7', storage: 'local-filesystem', catalogRecipes: catalog.length, datasetRows, datasetImages: imageCount, exactTitleIndex: map.size, targetImagesPerRecipe: `1-${MAX_IMAGES}` }, null, 2));
 
   let matched = 0;
   let ambiguous = 0;
