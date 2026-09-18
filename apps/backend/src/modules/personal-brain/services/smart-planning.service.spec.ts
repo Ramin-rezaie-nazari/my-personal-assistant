@@ -43,7 +43,7 @@ describe('SmartPlanningService', () => {
 
     const querySource = String(queryRaw.mock.calls[0]?.[0] ?? '');
     expect(querySource).toContain('LifeTaskDependency');
-    expect(querySource).not.toContain('TaskDependency');
+    expect(querySource).not.toContain('"TaskDependency"');
     expect(querySource).toContain('t."energyLevel"');
   });
 
