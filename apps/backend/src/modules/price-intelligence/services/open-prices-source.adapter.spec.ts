@@ -30,6 +30,7 @@ describe('OpenPricesSourceAdapter', () => {
       expect(prices[0]).toMatchObject({
         sourceId: 'open-prices',
         sourceRecordId: '123',
+        productKey: 'off:1234567890123',
         countryCode: 'FR',
         currency: 'EUR',
         amount: 4.99,
@@ -65,3 +66,41 @@ describe('OpenPricesSourceAdapter', () => {
     }
   });
 });
+
+
+  it('stops at the configured recent-data boundary instead of retaining stale observations', async () => {
+    const adapter = new OpenPricesSourceAdapter();
+    const originalFetch = global.fetch;
+    const previousMaxAge = process.env.OPEN_PRICES_MAX_AGE_DAYS;
+    process.env.OPEN_PRICES_MAX_AGE_DAYS = '2';
+    global.fetch = jest.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          items: [
+            {
+              id: 2,
+              price: 5,
+              currency: 'EUR',
+              date: '2026-09-18',
+              product: { code: '2', product_name: 'Fresh oil', osm_address_country_code: 'FR' },
+            },
+            {
+              id: 1,
+              price: 4,
+              currency: 'EUR',
+              date: '2026-09-10',
+              product: { code: '1', product_name: 'Old oil', osm_address_country_code: 'FR' },
+            },
+          ],
+          next: 'https://prices.openfoodfacts.org/api/v1/prices?page=2',
+        }),
+      ),
+    );
+    try {
+      await expect(adapter.fetchPrices([])).resolves.toHaveLength(1);
+    } finally {
+      global.fetch = originalFetch;
+      if (previousMaxAge === undefined) delete process.env.OPEN_PRICES_MAX_AGE_DAYS;
+      else process.env.OPEN_PRICES_MAX_AGE_DAYS = previousMaxAge;
+    }
+  });
