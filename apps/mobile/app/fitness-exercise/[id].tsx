@@ -33,7 +33,6 @@ export default function FitnessExerciseDetailScreen() {
   if (loading) return <View style={styles.center}><ActivityIndicator size="large" color={BRAND.colors.primaryStrong} /><Text style={styles.centerText}>{text.loading}</Text></View>;
   if (error || !exercise) return <SafeAreaView style={styles.safe}><View style={styles.center}><Text style={styles.errorTitle}>{text.unavailable}</Text><Text style={styles.errorBody}>{error ?? text.noMedia}</Text><Pressable onPress={() => { setLoading(true); void load(); }} style={styles.retry}><Text style={styles.retryText}>{text.retry}</Text></Pressable></View></SafeAreaView>;
 
-  const titleText = locale === 'fa' && exercise.nameFa ? exercise.nameFa : exercise.name;
   const videos = exercise.media.filter((item) => item.kind === 'video');
   const images = exercise.media.filter((item) => item.kind !== 'video');
 
