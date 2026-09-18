@@ -683,3 +683,7 @@ Daily coverage is defined as the state of Open Prices observations in the last d
 PriceSnapshot identity preserves source record ids when available and otherwise incorporates country/city/currency/time/value context to prevent cross-market collisions.
 
 FAO FPMA is collected through a separate explicit monthly entrypoint/workflow, preserving source cadence rather than forcing slower benchmark data through the daily path.
+
+## Local-first infrastructure reconciliation (2026-09-18)
+
+The canonical development architecture is self-hosted/local-first: PostgreSQL via `docker-compose.local.yml`, a laptop-local price scheduler, and filesystem-backed development media. Supabase is not a target dependency. Legacy Supabase-only recipe batch scripts and their cloud workflows were retired from the active surface on 2026-09-18; historical audit references remain only for traceability. VPS deployment is deferred to release.
