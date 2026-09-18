@@ -1,7 +1,7 @@
 # MYPA Current State
 
 Last updated: 2026-09-18
-Review status: MULTILINGUAL + GLOBAL PRICE FOUNDATIONS IMPLEMENTED / RUNTIME DEVICE + PRODUCTION VERIFICATION PENDING
+Review status: MULTILINGUAL + GLOBAL PRICE FOUNDATIONS IMPLEMENTED / RUNTIME DEVICE VERIFICATION PENDING
 
 ## Canonical ownership
 
@@ -10,7 +10,7 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 ## Repository state
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
-- Branch: `main`
+- Target canonical branch: `main`
 - Latest fully verified functional baseline before the current feature slice: `0d19d2b7dad5e9100505205328fbd523e544445b`
 - Subsequent commits now include the Exercise Content/Media foundation and the Global Multilingual Assistant foundation; those new slices require fresh CI/device verification before they can be treated as fully verified.
 - Scope of the latest previously verified baseline: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
@@ -72,26 +72,36 @@ The canonical native evidence path is `.github/workflows/android-apk.yml`. Workf
 - Translation-model availability and TTS voice availability for every locale remain device/OS capabilities and cannot be proven from repository source alone.
 - Real physical-device UX remains unvalidated, including RTL rendering, locale-specific speech, translation model availability, startup language switching and dynamic-content translation.
 - Production deployment behavior, production Auth/RLS/Storage configuration and real notification delivery remain environment-limited.
-- Direct local repository execution is unavailable in the remediation container because outbound GitHub network access is blocked; GitHub Actions remains the authoritative automated execution evidence for this pass.
-
-These are explicit evidence limits, not silently marked green findings.
+- Direct local repository execution is unavailable in the remediation container; local PostgreSQL startup and real daily price collection still require the user's laptop environment.
+- These are explicit evidence limits, not silently marked green findings.
 
 ## Project Brain
 
 `docs/project-brain/12_OPEN_WORK.md` contains current actionable work/evidence gaps. `docs/project-brain/16_BODINEXT_TO_MYPA_FEATURE_MAPPING.md` is the reference-product gap analysis. `docs/project-brain/17_EXERCISE_CONTENT_MEDIA_IMPLEMENTATION.md` documents the exercise/media foundation. `docs/project-brain/18_GLOBAL_MULTILINGUAL_ASSISTANT.md` documents the multilingual language contract and implementation boundary. Historical audit observations remain preserved in `15_AUDIT_FINDINGS_APPENDIX.md` and dated continuation documents. `10_SECURITY_AND_PRIVACY.md` must remain synchronized with the same verification boundary.
 
-## Global Daily Price Intelligence — implemented, verification pending
+## Global Daily Price Intelligence — implemented, local runtime verification pending
 
-- PR branch `feat/global-price-intelligence` now contains the global Open Prices + FAO FPMA provider layer.
-- Open Prices is the daily global feed; its ingestion default was reduced to a two-day recent window.
+- The global Open Prices + FAO FPMA provider layer is implemented.
+- Open Prices is the daily global feed; its ingestion default is bounded to a two-day recent window.
 - FAO FPMA is retained as a monthly benchmark/reference provider and is excluded from default daily collection.
-- `PriceCoverageService` now reports daily coverage against Open Prices by default across the canonical 195-country registry.
-- Global daily collection has a dedicated GitHub Actions workflow using `ubuntu-slim`.
-- Price persistence now reports actual inserted rows and includes city/market context in fallback snapshot identity.
-- Added `docs/project-brain/19_GLOBAL_DAILY_PRICE_INTELLIGENCE.md` as the canonical contract.
+- `PriceCoverageService` reports daily coverage against Open Prices by default across the canonical 195-country registry.
+- `apps/backend/src/scripts/local-price-scheduler.ts` is the canonical development scheduler and runs on the laptop in its local timezone.
+- `docker-compose.local.yml` provides the persistent local PostgreSQL database.
+- No Supabase dependency and no cloud price scheduler are part of the current development architecture.
+- Price persistence reports actual inserted rows and includes city/market context in fallback snapshot identity.
+- `docs/project-brain/19_GLOBAL_DAILY_PRICE_INTELLIGENCE.md` is the canonical price-intelligence contract.
 
-Backend CI and Mobile CI for the price-intelligence PR completed successfully, and PR #79 was squash-merged to `main` as commit `760b868b089a949c3301a336095cca51bce01c92`.
+Backend CI for the local-first infrastructure PR completed successfully, including backend API E2E. Real laptop execution and measured country coverage remain environment-dependent.
 
-Production daily execution remains unverified because the connected Supabase projects are currently inactive and a production `DATABASE_URL` Actions secret/reachable database has not been verified. Complete fresh daily coverage for all 195 countries is provider-data dependent and must be measured rather than assumed.
+## Local-first infrastructure decision — 2026-09-18
 
-The daily workflow is `.github/workflows/global-price-intelligence.yml`; the slower FAO FPMA reference feed is refreshed by `.github/workflows/global-fpma-monthly.yml`.
+- Supabase is not a development or production dependency for the current MYPA architecture.
+- Local PostgreSQL is the canonical development database.
+- `docker-compose.local.yml` provides the persistent PostgreSQL container.
+- `apps/backend/src/scripts/local-price-scheduler.ts` owns daily global price scheduling on the development laptop.
+- VPS deployment is intentionally deferred until the release phase.
+- CI may use ephemeral PostgreSQL for automated validation only.
+
+## Infrastructure policy — local-first
+
+Supabase is not part of the current canonical development architecture. Use local PostgreSQL + Prisma during development; defer VPS deployment until release. Legacy scripts that still mention Supabase are tracked separately for retirement/migration and are not part of the target runtime path.

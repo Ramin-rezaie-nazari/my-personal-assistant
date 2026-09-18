@@ -155,3 +155,8 @@ These findings were discovered while extending the global price workstream. They
 | Persistence metrics | record() previously counted attempted inserts as written rows. | written now increments only when the INSERT actually creates a row. |
 | Product identity | Name-only global product identity could merge different product variants. | Open Prices uses the Open Food Facts barcode as productKey when present, with normalized-name fallback. |
 | Coverage completeness | A 195-country registry must not imply 195-country provider coverage. | Coverage remains measured from actual observations and reports fresh/stale/no_data; no synthetic prices are generated. |
+
+
+## Infrastructure decision — 2026-09-18
+
+The canonical MYPA development path is self-hosted/local-first: PostgreSQL + Prisma on the developer laptop, with VPS deferred to release. Supabase is not a target dependency. Remaining legacy Supabase-only scripts/workflows are tracked separately and must not be promoted into the canonical runtime path.

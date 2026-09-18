@@ -1,7 +1,7 @@
 # Global Daily Price Intelligence
 
 Last updated: 2026-09-18
-Status: MERGED / PRODUCTION ACTIVATION PENDING
+Status: IMPLEMENTED / LOCAL RUNTIME VERIFICATION PENDING
 
 ## Goal
 
@@ -26,7 +26,7 @@ The canonical market universe remains the repository's 195-country registry. Act
 ## Daily pipeline
 
 ```text
-GitHub Actions schedule
+local-price-scheduler.ts (laptop)
       ↓
 global-price-daily.ts
       ↓
@@ -45,7 +45,7 @@ GET /price-intelligence/coverage
 
 Daily collection is intentionally separate from the in-process application scheduler. This prevents the app server lifecycle from being the only mechanism responsible for daily global refresh.
 
-FAO FPMA has its own monthly collector (`.github/workflows/global-fpma-monthly.yml`) because its provider cadence is slower than Open Prices.
+FAO FPMA has its own monthly one-shot collector (`apps/backend/src/scripts/fao-fpma-monthly.ts`) because its provider cadence is slower than Open Prices. No cloud scheduler is required.
 
 ## Coverage semantics
 
@@ -63,14 +63,22 @@ Price snapshots with a provider record id use `sourceId:sourceRecordId` as ident
 
 Persistence now increments its `written` count only when an INSERT actually creates a row.
 
-## Free scheduling
+## Local scheduling
 
-The repository is public and the daily workflow uses the standard `ubuntu-slim` GitHub-hosted runner. GitHub documents these standard runners as free and unlimited for public repositories.
+The development scheduler runs on the user's laptop. It uses standard Node.js timers and the laptop's local timezone, so no external scheduler or paid service is required.
 
-The workflow still needs a production `DATABASE_URL` Actions secret and a reachable production database. Those are environment dependencies, not a code-level cost.
+The local PostgreSQL database is provided by `docker-compose.local.yml`. VPS deployment is intentionally deferred until the release phase.
+
+The one-shot command and daemon are exposed from `apps/backend/package.json`:
+- `pnpm price-intelligence:global-daily`
+- `pnpm price-intelligence:daily-daemon`
 
 ## Evidence boundary
 
-Automated tests cover source normalization, daily source routing and 195-country coverage enumeration.
+Automated tests cover source normalization, daily source routing, scheduler timing and 195-country coverage enumeration.
 
-Backend CI and Mobile CI passed for the merged implementation. The daily workflow is now on the default branch. Production daily operation remains unverified until `DATABASE_URL` is configured against an active production database and at least one real run has been observed with actual country coverage.
+Backend CI passed for the local-first infrastructure branch, including backend API E2E. Real local daily operation remains unverified until it is run on the user's laptop and actual country coverage is measured.
+
+## Infrastructure policy
+
+Supabase is not a required dependency of the current MYPA application architecture. The canonical development data plane is PostgreSQL via `docker-compose.local.yml`. VPS hosting is a future release concern only.
