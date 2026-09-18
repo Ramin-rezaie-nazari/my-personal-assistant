@@ -236,6 +236,7 @@ model PriceSnapshot {
   id String @id
   productKey String
   sourceId String
+  countryCode String?
   title String
   url String?
   currency String @default("IRR")
@@ -247,6 +248,7 @@ model PriceSnapshot {
   observedAt DateTime
   createdAt DateTime @default(now())
   @@index([productKey, observedAt])
+  @@index([countryCode, productKey, observedAt])
   @@index([sourceId, observedAt])
   @@index([productKey, sourceId, observedAt])
 }
@@ -262,7 +264,25 @@ model PriceCollectionRun {
   failedSources Json @default("[]")
   attemptedSources Json @default("[]")
   error String?
+  scope String @default("local")
+  sourceId String?
   @@index([status, startedAt])
+  @@index([scope, startedAt])
+}
+
+model PriceCoverageSnapshot {
+  id String @id
+  countryCode String
+  sourceId String
+  lastObservedAt DateTime?
+  lastCollectedAt DateTime
+  observationCount Int @default(0)
+  status String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([sourceId, countryCode])
+  @@index([countryCode, status])
+  @@index([sourceId, updatedAt])
 }
 
 model AssistantProfile {
