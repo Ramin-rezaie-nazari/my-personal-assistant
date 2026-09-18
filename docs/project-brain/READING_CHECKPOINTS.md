@@ -1,14 +1,14 @@
 # Reading Checkpoints
 
-Last updated: 2026-09-11
-Review status: SOURCE-LEVEL AUDIT COMPLETE; ENVIRONMENTAL VALIDATION BLOCKED
+Last updated: 2026-09-18
+Review status: SOURCE-LEVEL AUDIT + PRE-DEVICE ENGINEERING GATES RECONCILED
 
 ## Scope and evidence baseline
 Scope read/reconciled: current-main manifests/AppModule; complete identified Core source files; full Prisma schema; all 39 migration SQL files; complete enumerated Assistant/Brain/Food/Recipe/Nutrition/Meals/Recommendation/Budget/Shopping/Inventory/Price/Life/Health/Fitness/Workout/Calisthenics/Gym/Yoga scopes; Platform/Test/CI manifests/E2E/workflows; substantial Mobile routes/clients/components/native/library contracts; backend route/controller/DTO/guard and consumer reconciliation; operational recipe scripts; backend common/config/bootstrap/database/i18n/images; Project Brain security/control documents; historical high-value PR/branch and Audit Appendix history checks; direct current-main revalidation of recipe intelligence/operational script paths; Prisma User cascade/ownership surface; Workout/UserBehavior query/index reconciliation; canonical Appendix reconciliation through PB-257; DB matrix closure; File Review Index/Validation Ledger synchronization.
 
-Source-level closure is complete for the recorded audit scope. No production-code remediation was performed.
+Source-level closure is complete for the recorded audit scope, and subsequent remediation/pre-device engineering work is merged through PB-276. Physical-device validation is now the next product gate.
 
-Evidence roots: target `main` @ `e38d4d16b0cf6e6ea714fa0bcc048e80187bcb3b`; audit branch `audit/project-brain-2026-09-11`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; `docs/`; `docs/project-brain/`; `tools/`.
+Evidence roots: current `main`; `apps/backend/`; `apps/mobile/`; `.github/workflows/`; `docs/`; `docs/project-brain/`; local validation runner evidence; current CI runs.
 
 Confidence: HIGH for completed file reads/direct current-main checks; MEDIUM for cross-module semantic conclusions; runtime/deployed environment remains explicitly unavailable.
 
@@ -44,10 +44,11 @@ Completed:
 | DB reader/writer/relation/index/transaction source matrix | CLOSED FOR SOURCE EVIDENCE | DB_AUDIT_MATRIX + all 39 migrations previously read |
 | Security/privacy/authorization/retention source review | CLOSED FOR SOURCE EVIDENCE | Auth/ownership/delete/retention/account-erasure sweeps + findings |
 | CI/workflow/package/operational source review | CLOSED FOR SOURCE EVIDENCE | Workflow/package comparison + real run evidence |
-| Canonical findings Appendix | CLOSED FOR SOURCE EVIDENCE | Appendix reconciled through PB-257 |
+| Canonical findings Appendix | CLOSED FOR SOURCE EVIDENCE | Appendix reconciled through PB-276 |
 | Duplicate/false-positive control | CLOSED | Reconciliation log in Appendix/Validation Ledger |
 | Historical PB-001..PB-155 exact text | NOT RECOVERABLE | Explicit repository-history limitation |
-| Runtime HTTP/device/deployed infrastructure | BLOCKED | Connector/environment limitation |
+| Physical-device validation | REQUIRED | Translation/TTS/RTL/device capability cannot be proven by repository CI |
+| Operational/release validation | POST-DEVICE | Scheduler lifecycle, exact price coverage measurement and VPS/production deployment |
 
 ## Important evidence boundary
 
