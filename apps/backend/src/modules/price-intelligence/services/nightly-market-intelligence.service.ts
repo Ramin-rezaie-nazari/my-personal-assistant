@@ -72,6 +72,7 @@ export class NightlyMarketIntelligenceService {
     productKeys?: string[],
     sourceIds?: string[],
     scheduledFor = new Date(),
+    countryCode?: string,
   ): Promise<NightlyRunResult> {
     const startedAt = new Date();
     const lock = await this.persistence.createRun(scheduledFor, startedAt);
@@ -107,7 +108,7 @@ export class NightlyMarketIntelligenceService {
         attempts += 1
       ) {
         try {
-          const result = await this.sources.collectDetailed(keys, sourceIds);
+          const result = await this.sources.collectDetailed(keys, sourceIds, countryCode);
           collected = result.prices;
           failedSources = result.failedSourceIds;
           attemptedSources = result.attemptedSourceIds;
