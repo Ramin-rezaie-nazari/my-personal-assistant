@@ -133,6 +133,12 @@ This file is the canonical current status of the findings catalog covered by the
 |---|---|---|
 | PB-268 | CLOSED — REMEDIATED | Canonical Android native CI initially reproduced Expo SDK 53/pnpm autolinking generating legacy `expo.core.ExpoModulesPackage` in `PackageList.java`. The repository first strengthened pnpm hoisting with `node-linker=hoisted` plus `*expo*`, `*react-native*`, `@react-native/*`, and `metro*` public-hoist patterns, then added `apps/mobile/react-native.config.js` to explicitly pin Expo Android `packageImportPath` to `import expo.modules.ExpoModulesPackage;`. Fresh canonical Android workflow run `34772364209` on commit `0d19d2b7dad5e9100505205328fbd523e544445b` completed real Gradle `assembleDebug` and APK upload successfully; artifact `my-personal-assistant-debug-apk` was produced with SHA-256 `622b90eeef0898ab7d3eac9af75fac6e486da46eb4f741116d601f3d727f23da`. |
 
+## New infrastructure finding — PB-269
+
+| Finding | Current status | Resolution / current evidence |
+|---|---|---|
+| PB-269 | CLOSED — REMEDIATED | Supabase-only recipe batch scripts/workflows were removed from the active package/workflow surface. The remaining country-intelligence script now accepts `DATABASE_URL` only, and local recipe media documentation/pipeline wording no longer treats Supabase as the current storage dependency. VPS migration is deferred to release. |
+
 ## Historical catalog boundary
 
 The exact prose of PB-001 through PB-155 is not recoverable from the repository history exposed to the remediation environment. `docs/project-brain/12_OPEN_WORK.md` preserves the historical ID/index information, but missing historical text is not reconstructed or invented. This is an evidence limitation, not a silently omitted finding.
