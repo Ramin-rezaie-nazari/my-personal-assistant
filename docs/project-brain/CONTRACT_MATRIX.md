@@ -1,12 +1,12 @@
 # Contract Matrix
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-18
+Review status: SOURCE CONTRACTS RECONCILED / DEVICE VERIFICATION PENDING
 Scope actually read: current-main Core, complete Brain file-level scope, complete enumerated Food/Recipe/Nutrition/Meals/Recommendation/Budget backend contracts; substantial Shopping/Life/Health/Fitness; substantial Mobile API and screen consumers; backend common/config/auth/fitness cross-contracts; selected operational scripts and historical PRs; current-main direct revalidation of mobile route aliases and recipe-intelligence scripts.
 Scope not yet read: exhaustive repository-wide route↔DTO↔test↔mobile mapping, complete database readers/writers/transactions, runtime HTTP validation, physical-device validation, remaining source/legacy scripts.
 Evidence roots: backend controllers/services/DTOs/modules; mobile `app/` and `lib/`; Project Brain deep-reads; Prisma schema/migrations; CI workflows.
 Confidence level: HIGH for directly read source contracts and confirmed consumers; MEDIUM for end-to-end correctness until runtime tests and exhaustive mappings are closed.
-Open questions: global prefixes/middleware, deployed DB drift, remaining mobile consumers, transaction boundaries for all routes, runtime error payload parity.
+Open questions: physical-device behavior and production/VPS deployment configuration. Historical route overlaps remain documented as historical findings rather than active blockers.
 
 | Contract | Input | Output/Effect | Auth | Persistence | Consumer |
 |---|---|---|---|---|---|
@@ -90,4 +90,4 @@ Direct repository searches confirm the following active consumers:
 
 Inline `@Body()` object/interface types are not treated as equivalent to class DTOs for the global Nest ValidationPipe whitelist analysis. PB-232 and PB-237 therefore do not retain their earlier claim of a guaranteed whitelist runtime collision; PB-234 is narrowed to the concrete class DTO (`CreateCalendarEventDto`) unless independent runtime evidence establishes another defect. PB-243 remains a grouped active-class-DTO validation finding pending historical overlap reconciliation with PB-077/PB-083/PB-085/PB-089/PB-093.
 
-The matrix remains intentionally incomplete until every backend route has a direct DTO/error/test/mobile consumer mapping and runtime validation. No endpoint is marked green solely from matching names.
+The active route/DTO/guard/test contracts are reconciled through current source, Backend CI and the findings appendix. This matrix remains a semantic contract inventory; it is not a substitute for physical-device validation or production deployment evidence.
