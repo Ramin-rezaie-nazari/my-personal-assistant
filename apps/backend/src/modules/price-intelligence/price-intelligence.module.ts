@@ -10,6 +10,7 @@ import { PricePersistenceService } from './services/price-persistence.service';
 import { MarketAnalysisService } from './services/market-analysis.service';
 import { MarketBudgetImpactService } from './services/market-budget-impact.service';
 import { NightlyMarketIntelligenceService } from './services/nightly-market-intelligence.service';
+import { PriceCoverageService } from './services/price-coverage.service';
 import { PriceCollectionSchedulerService } from './services/price-collection-scheduler.service';
 import { AutomaticPriceSchedulerService } from './services/automatic-price-scheduler.service';
 import { MarketIntelligenceOrchestratorService } from './services/market-intelligence-orchestrator.service';
@@ -27,6 +28,8 @@ import { PrismaModule } from '../../common/database/prisma.module';
     PriceSourceRegistryService,
     PriceHistoryStoreService,
     PricePersistenceService,
+    PriceCoverageService,
+    PriceCoverageService,
     MarketAnalysisService,
     MarketBudgetImpactService,
     NightlyMarketIntelligenceService,
