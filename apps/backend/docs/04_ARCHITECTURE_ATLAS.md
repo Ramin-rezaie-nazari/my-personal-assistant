@@ -1722,7 +1722,7 @@ This atlas reflects the repository state and the architecture work completed so 
 Price collection is cadence-aware:
 
 ```text
-GitHub Actions daily schedule
+local-price-scheduler.ts (laptop)
        ↓
 global-price-daily.ts
        ↓
@@ -1732,7 +1732,11 @@ PriceSnapshot
        ↓
 PriceCoverageService (195 markets)
 
-FAO FPMA remains a slower reference provider and is excluded from default daily source routing. `.github/workflows/global-fpma-monthly.yml` owns its monthly refresh.
+FAO FPMA remains a slower reference provider and is excluded from default daily source routing. The monthly collector is an explicit local one-shot operation; no cloud scheduler is part of the current architecture.
 ```
 
 The HTTP provider adapter path still handles existing tracked-product local sources. Public global providers expose their own adapter contracts so pagination, freshness, and provider-specific semantics remain isolated.
+
+## 31. Current local-first infrastructure boundary
+
+Development data and operational scripts are self-hosted on the developer laptop: PostgreSQL via `docker-compose.local.yml`, local filesystem-backed recipe media, and the laptop-local daily price scheduler. Supabase is not a target dependency. VPS migration is a release-stage deployment concern only. Retired Supabase-only batch scripts are preserved in Git history but removed from the active package/workflow surface.
