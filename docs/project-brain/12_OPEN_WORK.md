@@ -25,7 +25,7 @@ The Global Multilingual Assistant foundation is implemented in source and docume
 1. **Native Android verification:** build the canonical APK after the multilingual changes and verify the custom translation module still autolinks correctly.
 2. **Physical Android/iOS device validation:** test representative locales from Latin, Cyrillic, Arabic-script and Indic families; verify locale persistence, RTL, input translation, response translation, TTS voice selection and no unexpected fallback language.
 3. **Full 51-locale matrix:** verify translation-model and TTS availability per target OS/device and record explicit unsupported combinations rather than silently substituting another language.
-4. **Repository-wide UI audit:** continue replacing remaining route/component hard-coded UI strings with the shared locale layer, especially older screens that predate the current localization work.
+4. **Repository-wide UI audit:** continue replacing remaining route/component hard-coded UI strings with the shared locale layer, especially older screens that predate the current localization work. The onboarding RTL branch was hardened on 2026-09-18; broader copy centralization remains pending.
 
 ## Existing environment-bound work
 
