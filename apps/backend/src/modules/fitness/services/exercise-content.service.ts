@@ -35,7 +35,7 @@ export class ExerciseContentService {
         LEFT JOIN "ExerciseMedia" m ON m."exerciseId" = e."id"
         WHERE ${where} GROUP BY e."id" ORDER BY e."name" ASC LIMIT ${limit} OFFSET ${offset}
       `),
-      this.prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`SELECT COUNT(*)::bigint AS count FROM "Exercise" WHERE ${where}`),
+      this.prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`SELECT COUNT(*)::bigint AS count FROM "Exercise" e WHERE ${where}`),
     ]);
     return { items, total: Number(countRows[0]?.count ?? 0), limit, offset };
   }
