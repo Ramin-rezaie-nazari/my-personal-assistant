@@ -5,7 +5,7 @@ import { Link } from 'expo-router';
 import { DailyCommandCenterResponse, generateSmartNotifications, getDailyCommandCenter, hasAuthSession } from '../lib/api';
 import { colors, radius, spacing, typography, shadows } from '../lib/design-system';
 import { AnimatedIn, MotionPress } from '../lib/motion-components';
-import { useAppLocale, toIntlLocale } from '../lib/i18n';
+import { type AppLocale, useAppLocale, toIntlLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 import { translateDynamicText } from '../lib/runtime-translator';
 
