@@ -11,6 +11,8 @@
 > - `03_PROJECT_BRAIN_BOOK.md` — long-form engineering history and Brain design.
 > - **This file** — the architecture/tree atlas and relationship map.
 >
+> **2026-09-18 current boundary:** development is local-first PostgreSQL + Prisma; Supabase is not part of the target architecture and VPS migration is deferred to release. Physical mobile/device validation is the next product gate after repository/CI/local verification.
+>
 > **Important:** Git is the source of truth for the exact live file tree. This document is the semantic source of truth for the *meaning* of the tree and the relationships between major files/folders. When a major architectural boundary, domain, database model, memory layer, or integration changes, update both this atlas and the Brain Book.
 
 ---
