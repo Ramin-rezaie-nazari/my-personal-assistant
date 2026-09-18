@@ -39,6 +39,7 @@ export class NightlyRunDto {
   sourceIds?: string[];
 
   @IsOptional() @IsISO8601() scheduledFor?: string;
+  @IsOptional() @IsString() @MaxLength(3) countryCode?: string;
 }
 
 export class NightlyPreviewDto {

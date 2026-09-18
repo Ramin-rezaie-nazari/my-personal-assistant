@@ -3,6 +3,11 @@ import { randomUUID } from 'node:crypto';
 import { PrismaService } from '../../../common/database/prisma.service';
 import { NormalizedPrice } from '../models/price-intelligence.model';
 
+const STARTER_PRODUCTS = [
+  'rice', 'wheat flour', 'maize', 'cooking oil', 'sugar', 'salt', 'milk',
+  'eggs', 'beef', 'chicken', 'potatoes', 'onions', 'tomatoes',
+];
+
 @Injectable()
 export class PricePersistenceService {
   constructor(private readonly prisma: PrismaService) {}
@@ -11,12 +16,14 @@ export class PricePersistenceService {
     const foods = await this.prisma.$queryRaw<
       Array<{ id: string; name: string }>
     >`SELECT id, name FROM "FoodItem" WHERE "userId" IS NULL ORDER BY "createdAt" ASC`;
-    for (const food of foods) {
-      const productKey = this.normalizeKey(food.name);
+    const names = new Map<string, string>();
+    for (const name of STARTER_PRODUCTS) names.set(this.normalizeKey(name), name);
+    for (const food of foods) names.set(this.normalizeKey(food.name), food.name);
+    for (const [productKey, name] of names) {
       await this.prisma
-        .$executeRaw`INSERT INTO "PriceTrackedProduct" ("id","productKey","name") VALUES (${randomUUID()},${productKey},${food.name}) ON CONFLICT ("productKey") DO NOTHING`;
+        .$executeRaw`INSERT INTO "PriceTrackedProduct" ("id","productKey","name") VALUES (${randomUUID()},${productKey},${name}) ON CONFLICT ("productKey") DO NOTHING`;
     }
-    return foods.length;
+    return names.size;
   }
 
   async trackedProductKeys() {
@@ -29,44 +36,63 @@ export class PricePersistenceService {
   async record(prices: NormalizedPrice[]) {
     let written = 0;
     for (const price of prices) {
+      const countryCode = (price.countryCode ?? 'IR').trim().toUpperCase();
       await this.prisma
         .$executeRaw`INSERT INTO "PriceTrackedProduct" ("id","productKey","name","city") VALUES (${randomUUID()},${price.productKey},${price.title},${price.city ?? null}) ON CONFLICT ("productKey") DO UPDATE SET "updatedAt"=CURRENT_TIMESTAMP`;
-      const id = `${price.productKey}:${price.sourceId}:${price.observedAt.getTime()}`;
-      await this.prisma
-        .$executeRaw`INSERT INTO "PriceSnapshot" ("id","productKey","sourceId","title","url","currency","amount","unit","unitPrice","city","availability","observedAt") VALUES (${id},${price.productKey},${price.sourceId},${price.title},${price.url ?? null},${price.currency},${price.amount},${price.unit ?? null},${price.unitPrice ?? null},${price.city ?? null},${price.availability ?? 'unknown'},${price.observedAt}) ON CONFLICT ("id") DO NOTHING`;
-      written += 1;
+      const id = price.sourceRecordId
+        ? price.sourceId + ':' + price.sourceRecordId
+        : [
+            countryCode,
+            price.productKey,
+            price.sourceId,
+            price.city ?? '',
+            price.observedAt.toISOString(),
+            price.amount,
+            price.currency,
+            price.unit ?? '',
+          ].join(':');
+      const inserted = await this.prisma
+        .$executeRaw`INSERT INTO "PriceSnapshot" ("id","productKey","sourceId","sourceRecordId","countryCode","title","url","currency","amount","unit","unitPrice","city","availability","observedAt") VALUES (${id},${price.productKey},${price.sourceId},${price.sourceRecordId ?? null},${countryCode},${price.title},${price.url ?? null},${price.currency},${price.amount},${price.unit ?? null},${price.unitPrice ?? null},${price.city ?? null},${price.availability ?? 'unknown'},${price.observedAt}) ON CONFLICT ("id") DO NOTHING`;
+      written += Number(inserted > 0);
     }
     return written;
   }
 
-  async latest(productKey?: string) {
+  async latest(productKey?: string, countryCode?: string) {
+    if (productKey && countryCode)
+      return this.prisma.$queryRaw`SELECT DISTINCT ON ("sourceId") * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND "countryCode"=${countryCode} ORDER BY "sourceId", "observedAt" DESC`;
     if (productKey)
-      return this.prisma
-        .$queryRaw`SELECT DISTINCT ON ("sourceId") * FROM "PriceSnapshot" WHERE "productKey"=${productKey} ORDER BY "sourceId", "observedAt" DESC`;
-    return this.prisma
-      .$queryRaw`SELECT DISTINCT ON ("productKey","sourceId") * FROM "PriceSnapshot" ORDER BY "productKey","sourceId","observedAt" DESC`;
+      return this.prisma.$queryRaw`SELECT DISTINCT ON ("sourceId","countryCode") * FROM "PriceSnapshot" WHERE "productKey"=${productKey} ORDER BY "sourceId","countryCode","observedAt" DESC`;
+    if (countryCode)
+      return this.prisma.$queryRaw`SELECT DISTINCT ON ("productKey","sourceId") * FROM "PriceSnapshot" WHERE "countryCode"=${countryCode} ORDER BY "productKey","sourceId","observedAt" DESC`;
+    return this.prisma.$queryRaw`SELECT DISTINCT ON ("productKey","sourceId","countryCode") * FROM "PriceSnapshot" ORDER BY "productKey","sourceId","countryCode","observedAt" DESC`;
   }
 
-  async history(productKey: string, from?: Date, to?: Date, sourceId?: string) {
+  async history(
+    productKey: string,
+    from?: Date,
+    to?: Date,
+    sourceId?: string,
+    countryCode?: string,
+  ) {
     const start = from ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
     const end = to ?? new Date();
+    if (sourceId && countryCode)
+      return this.prisma.$queryRaw`SELECT * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND "sourceId"=${sourceId} AND "countryCode"=${countryCode} AND "observedAt" BETWEEN ${start} AND ${end} ORDER BY "observedAt" ASC`;
     if (sourceId)
-      return this.prisma
-        .$queryRaw`SELECT * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND "sourceId"=${sourceId} AND "observedAt" BETWEEN ${start} AND ${end} ORDER BY "observedAt" ASC`;
-    return this.prisma
-      .$queryRaw`SELECT * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND "observedAt" BETWEEN ${start} AND ${end} ORDER BY "observedAt" ASC`;
+      return this.prisma.$queryRaw`SELECT * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND "sourceId"=${sourceId} AND "observedAt" BETWEEN ${start} AND ${end} ORDER BY "observedAt" ASC`;
+    if (countryCode)
+      return this.prisma.$queryRaw`SELECT * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND "countryCode"=${countryCode} AND "observedAt" BETWEEN ${start} AND ${end} ORDER BY "observedAt" ASC`;
+    return this.prisma.$queryRaw`SELECT * FROM "PriceSnapshot" WHERE "productKey"=${productKey} AND "observedAt" BETWEEN ${start} AND ${end} ORDER BY "observedAt" ASC`;
   }
 
   async sources() {
-    return this.prisma
-      .$queryRaw`SELECT id,name,kind,"baseUrl",enabled,"adapterId" FROM "PriceSource" ORDER BY name`;
+    return this.prisma.$queryRaw`SELECT id,name,kind,"baseUrl",enabled,"adapterId","scope","countryCodes","refreshCadence" FROM "PriceSource" ORDER BY name`;
   }
 
   async createRun(scheduledFor: Date, startedAt: Date) {
-    const id = `market:${scheduledFor.toISOString()}`;
-    const rows = await this.prisma.$queryRaw<
-      Array<{ id: string }>
-    >`INSERT INTO "PriceCollectionRun" ("id","scheduledFor","startedAt","status") VALUES (${id},${scheduledFor},${startedAt},'running') ON CONFLICT ("scheduledFor") DO NOTHING RETURNING "id"`;
+    const id = 'market:' + scheduledFor.toISOString();
+    const rows = await this.prisma.$queryRaw<Array<{ id: string }>>`INSERT INTO "PriceCollectionRun" ("id","scheduledFor","startedAt","status") VALUES (${id},${scheduledFor},${startedAt},'running') ON CONFLICT ("scheduledFor") DO NOTHING RETURNING "id"`;
     return { id, acquired: rows.length === 1 };
   }
 
@@ -81,21 +107,16 @@ export class PricePersistenceService {
       error?: string;
     },
   ) {
-    await this.prisma
-      .$executeRaw`UPDATE "PriceCollectionRun" SET "completedAt"=${new Date()},"status"=${result.status},"attempts"=${result.attempts},"collected"=${result.collected},"failedSources"=${JSON.stringify(result.failedSources)}::jsonb,"attemptedSources"=${JSON.stringify(result.attemptedSources)}::jsonb,"error"=${result.error ?? null} WHERE "id"=${id}`;
+    await this.prisma.$executeRaw`UPDATE "PriceCollectionRun" SET "completedAt"=${new Date()},"status"=${result.status},"attempts"=${result.attempts},"collected"=${result.collected},"failedSources"=${JSON.stringify(result.failedSources)}::jsonb,"attemptedSources"=${JSON.stringify(result.attemptedSources)}::jsonb,"error"=${result.error ?? null} WHERE "id"=${id}`;
   }
 
   async latestSuccessfulRun() {
-    const rows = await this.prisma.$queryRaw<
-      Array<{ completedAt: Date | null }>
-    >`SELECT "completedAt" FROM "PriceCollectionRun" WHERE "status" IN ('completed','partial') ORDER BY "completedAt" DESC LIMIT 1`;
+    const rows = await this.prisma.$queryRaw<Array<{ completedAt: Date | null }>>`SELECT "completedAt" FROM "PriceCollectionRun" WHERE "status" IN ('completed','partial') ORDER BY "completedAt" DESC LIMIT 1`;
     return rows[0]?.completedAt;
   }
 
   private normalizeKey(value: string) {
-    return value
-      .trim()
-      .toLocaleLowerCase('fa-IR')
+    return value.trim().toLocaleLowerCase('en-US')
       .replace(/[\u200c\s]+/g, '-')
       .replace(/[^\p{L}\p{N}-]+/gu, '')
       .slice(0, 180);

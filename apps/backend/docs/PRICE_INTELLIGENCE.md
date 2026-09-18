@@ -1,40 +1,67 @@
 # Price Intelligence
 
 ## هدف
-قیمت اقلام غذایی از چند منبع ایرانی به‌صورت روزانه جمع‌آوری می‌شود، همه قیمت‌ها به تومان استاندارد می‌شوند، تاریخچه حذف نمی‌شود و اپ می‌تواند کمترین/بیشترین/میانگین و روند قیمت را نمایش دهد.
+
+MYPA قیمت‌های غذایی را به‌صورت source-native جمع‌آوری می‌کند، برای هر مشاهده کشور و ارز منبع را نگه می‌دارد، تاریخچه را حفظ می‌کند و تحلیل را فقط در یک market/currency context انجام می‌دهد.
+
+## منابع
+
+### منابع عمومی جهانی
+
+- Open Prices (Open Food Facts) — API عمومی read-only برای داده‌های crowdsourced قیمت محصولات؛ پوشش کشورها و محصولات متغیر است.
+- FAO FPMA — API عمومی قیمت‌های داخلی مواد غذایی پایه و سری‌های market/commodity؛ عمدتاً داده‌های روزانه/هفتگی/ماهانه بسته به سری و انتشار رسمی FAO.
+
+این دو منبع به‌صورت global در registry هستند و در جمع‌آوری روزانه قابل استفاده‌اند. برای هر مشاهده، countryCode، currency، sourceId و زمان مشاهده ذخیره می‌شود.
+
+### منابع کشور-محور فعلی
+
+منابع retailer/marketplace ایران شامل اُکالا، اسنپ‌مارکت، دیجی‌کالا، دیجی‌شهروند، دیجی‌کالا جت، پینکت، فی‌نما، ترب و ایمالز هستند.
 
 ## زمان‌بندی
-- پیش‌فرض: هر روز ساعت 03:30 به وقت `Asia/Tehran`.
-- `PRICE_SCHEDULER_ENABLED=false` برای خاموش کردن job.
-- `PRICE_SCHEDULER_TIMEZONE`، `PRICE_SCHEDULER_HOUR` و `PRICE_SCHEDULER_MINUTE` قابل تنظیم‌اند.
-- اجرای همزمان چند instance با unique key روی `PriceCollectionRun` کنترل می‌شود.
-- اجرای ناموفق با retry و ثبت وضعیت sourceها همراه است.
 
-## منابع اولیه
-- اُکالا
-- اسنپ‌مارکت
-- دیجی‌کالا
-- دیجی‌شهروند
-- دیجی‌کالا جت
-- پینکت
-- فی‌نما
-- ترب و ایمالز به‌عنوان منابع تکمیلی
-
-URL جستجوی هر منبع با متغیر محیطی `PRICE_<SOURCE>_SEARCH_URL` قابل override است. این موضوع مهم است چون مسیر جستجو یا ساختار HTML فروشگاه‌ها ممکن است تغییر کند.
+- اجرای خودکار پیش‌فرض: هر روز ساعت 03:30 به وقت Asia/Tehran.
+- PRICE_SCHEDULER_ENABLED=false برای خاموش کردن job.
+- PRICE_SCHEDULER_TIMEZONE، PRICE_SCHEDULER_HOUR و PRICE_SCHEDULER_MINUTE قابل تنظیم‌اند.
+- یک sweep خودکار به همه sourceهای فعال انجام می‌شود؛ sourceهای global همه بازارهای قابل‌دریافت را می‌خوانند و sourceهای country-scoped فقط بازارهای تعریف‌شده خودشان را پوشش می‌دهند.
+- اجرای همزمان چند instance با unique key روی PriceCollectionRun کنترل می‌شود.
+- خطاها با retry و ثبت failed sourceها مدیریت می‌شوند.
 
 ## استاندارد پول
-تمام مقادیر داخلی `PriceSnapshot` با `currency=IRT` و واحد تومان ذخیره می‌شوند. اگر منبع مقدار را با `IRR` اعلام کند، قبل از ذخیره بر 10 تقسیم می‌شود؛ در ایران 1 تومان برابر 10 ریال است.
 
-## تاریخچه و تحلیل
-هر snapshot شامل منبع، محصول، قیمت، موجودی، URL و زمان مشاهده است. تاریخچه برای 7/30/90/365 روز از API قابل خواندن است و تحلیل شامل current، average، min/max، تغییر درصدی، trend و buy score است.
+قیمت خام به ارز منبع ذخیره می‌شود. برای ایران، IRR در adapter فعلی به IRT تبدیل می‌شود چون تجربه کاربری ایران با تومان نمایش داده می‌شود؛ برای سایر کشورها ارز منبع دست‌نخورده می‌ماند.
+
+تبدیل ارز برای مقایسه باید در لایه FX انجام شود و نباید مقدار خام source را overwrite کند.
+
+## تشخیص محصول
+
+برای sourceهای retailer/marketplace، parser عمومی JSON-LD/HTML را امتحان می‌کند. Sourceهای global شناسه خارجی خود (sourceRecordId) را حفظ می‌کنند تا ingest تکراری کنترل شود.
+
+## محدودیت پوشش
+
+«195 کشور» در MYPA به معنی پشتیبانی از country/currency context است، نه تضمین اینکه برای هر 195 کشور در هر روز و برای تک‌تک SKUهای فروشگاهی، قیمت واقعی و تازه وجود داشته باشد. داده‌های public sourceها بر اساس آنچه منبع واقعاً منتشر می‌کند وارد می‌شوند؛ کشور یا محصول بدون داده باید به‌صورت no data / stale / partial گزارش شود و نباید قیمت تخمینی به‌عنوان قیمت واقعی ثبت شود.
 
 ## API
-- `GET /price-intelligence`
-- `GET /price-intelligence/sources`
-- `GET /price-intelligence/products/:productKey/history`
-- `GET /price-intelligence/products/:productKey/analysis`
-- `POST /price-intelligence/nightly/run`
-- `POST /price-intelligence/nightly/preview`
 
-## نکته عملیاتی
-Adapter عمومی ابتدا JSON-LD و سپس الگوهای HTML قیمت را بررسی می‌کند. برای سایت‌هایی که rendering اختصاصی یا API اختصاصی دارند، adapter اختصاصی همان منبع باید جایگزین شود؛ هسته Price Intelligence نیازی به تغییر ندارد.
+- GET /price-intelligence
+- GET /price-intelligence/sources
+- GET /price-intelligence/schedule
+- GET /price-intelligence/products/:productKey/history
+- GET /price-intelligence/products/:productKey/analysis
+- POST /price-intelligence/nightly/run
+- POST /price-intelligence/nightly/preview
+- GET /price-intelligence/registry
+
+برای endpointهای price می‌توان countryCode را به‌عنوان فیلتر market ارسال کرد.
+
+## عملیات
+
+برای sourceهای جهانی تنظیم‌های محیطی زیر در دسترس‌اند:
+
+- OPEN_PRICES_API_URL
+- OPEN_PRICES_MAX_PAGES
+- OPEN_PRICES_MAX_AGE_DAYS
+- OPEN_PRICES_TIMEOUT_MS
+- FPMA_SERIES_PAGE_SIZE
+- FPMA_TIMEOUT_MS
+
+قبل از ادعای پوشش کامل global، باید fresh live-source validation و coverage reporting اجرا شود. اجرای موفق تست‌های کد به‌تنهایی ثابت نمی‌کند که هر کشور داده تازه دارد.

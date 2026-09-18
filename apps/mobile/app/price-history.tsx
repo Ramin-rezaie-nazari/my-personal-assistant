@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { getPriceAnalysis, getPriceHistory, getPriceSources, normalizeProductKey, PriceAnalysis, PriceSnapshot, PriceSource } from '../lib/price-api';
 import { isRTL, toIntlLocale, useAppLocale, type AppLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
+import { getOnboardingState } from '../lib/onboarding';
 
 const copy = localizedCopy({
   en: {
@@ -57,7 +58,13 @@ export default function PriceHistoryScreen() {
       try {
         setLoading(true);
         setError(null);
-        const [h, a, s] = await Promise.all([getPriceHistory(key, days), getPriceAnalysis(key), getPriceSources()]);
+        const onboarding = await getOnboardingState();
+        const detected = onboarding.detectedCountryCode?.trim().toUpperCase() ?? '';
+        const [h, a, s] = await Promise.all([
+          getPriceHistory(key, days, detected || undefined),
+          getPriceAnalysis(key, detected || undefined),
+          getPriceSources(),
+        ]);
         if (alive) {
           setHistory(h.items);
           setAnalysis(a);

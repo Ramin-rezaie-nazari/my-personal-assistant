@@ -144,3 +144,14 @@ Latest Backend CI is GREEN through dependency installation, Prisma schema valida
 The canonical Android APK workflow is now also GREEN: run `34772364209`, head `0d19d2b7dad5e9100505205328fbd523e544445b`, completed successfully through native project generation, real Gradle APK compilation and artifact upload. This closes PB-268 at repository-CI level.
 
 Local repository execution is unavailable because direct GitHub network access is blocked in the container environment. Production Supabase/Auth/Storage state, RLS configuration, push delivery and real-device UX remain outside the available runtime boundary.
+## Price Intelligence hardening observations — 2026-09-18
+
+These findings were discovered while extending the global price workstream. They are recorded here so the audit source-of-truth retains the reasoning and resulting safeguards.
+
+| Area | Finding | Resolution / evidence boundary |
+|---|---|---|
+| Daily freshness | Aggregating all price sources could make a slow monthly source appear to satisfy a daily-update requirement. | PriceCoverageService now defaults to Open Prices with a one-day freshness window. FAO FPMA is excluded from default daily routing and has a dedicated monthly workflow. |
+| Retry / idempotency | Snapshot fallback identity did not include city/value context when a provider record id was absent. | Fallback identity now includes country, product, source, city, observation time, amount, currency and unit. |
+| Persistence metrics | record() previously counted attempted inserts as written rows. | written now increments only when the INSERT actually creates a row. |
+| Product identity | Name-only global product identity could merge different product variants. | Open Prices uses the Open Food Facts barcode as productKey when present, with normalized-name fallback. |
+| Coverage completeness | A 195-country registry must not imply 195-country provider coverage. | Coverage remains measured from actual observations and reports fresh/stale/no_data; no synthetic prices are generated. |

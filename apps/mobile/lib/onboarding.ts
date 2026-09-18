@@ -19,6 +19,7 @@ export type OnboardingState = {
   equipment: 'none' | 'home' | 'gym';
   sessionMinutes: 20 | 30 | 45 | 60;
   detectedCountry: string;
+  detectedCountryCode: string;
   permissions: {
     location: boolean;
     notifications: boolean;
@@ -33,7 +34,7 @@ export const ONBOARDING_VERSION = 3;
 export const DEFAULT_ONBOARDING: OnboardingState = {
   completed: false,
   fullName: '', gender: '', birthDate: '', heightCm: '', weightKg: '', goal: 'general_fitness', fitnessLevel: 'beginner', diet: 'balanced', workoutPlace: 'home',
-  trainingDaysPerWeek: 3, equipment: 'none', sessionMinutes: 30, detectedCountry: '',
+  trainingDaysPerWeek: 3, equipment: 'none', sessionMinutes: 30, detectedCountry: '', detectedCountryCode: '',
   permissions: { location: false, notifications: false, camera: false, microphone: false },
 };
 

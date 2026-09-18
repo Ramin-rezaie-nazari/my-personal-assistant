@@ -10,6 +10,7 @@ export type HttpSourceConfig = {
   searchUrlTemplate: string;
   timeoutMs?: number;
   userAgent?: string;
+  countryCode?: string;
 };
 
 type JsonRecord = Record<string, unknown>;
@@ -228,6 +229,7 @@ export class HttpPriceSourceAdapter {
       title,
       sourceId: this.id,
       sourceKind: this.kind,
+      countryCode: this.config.countryCode,
       url,
       currency: normalizedCurrency,
       amount: isRial ? amount / 10 : amount,

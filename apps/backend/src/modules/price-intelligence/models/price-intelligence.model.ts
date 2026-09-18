@@ -1,5 +1,5 @@
 export type PriceSourceKind =
-  'web_store' | 'marketplace' | 'retailer' | 'manual';
+  'web_store' | 'marketplace' | 'retailer' | 'manual' | 'public_dataset';
 export type PriceTrend = 'rising' | 'falling' | 'stable' | 'insufficient_data';
 
 export type NormalizedPrice = {
@@ -7,6 +7,8 @@ export type NormalizedPrice = {
   title: string;
   sourceId: string;
   sourceKind: PriceSourceKind;
+  sourceRecordId?: string;
+  countryCode?: string;
   url?: string;
   currency: string;
   amount: number;
@@ -23,6 +25,7 @@ export type PriceSnapshot = NormalizedPrice & {
 
 export type PriceInsight = {
   productKey: string;
+  countryCode?: string;
   current: number | null;
   average7d: number | null;
   average30d: number | null;

@@ -34,7 +34,9 @@
     "recipe-intelligence:score": "node ./scripts/recipe-recommendation-score.mjs",
     "food-intelligence:self-test": "node ./scripts/food-intelligence-final-self-test.mjs",
     "recipe:content:import": "node ./scripts/recipe-content-import.mjs",
-    "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs"
+    "recipe:content:audit": "node ./scripts/recipe-content-audit.mjs",
+    "price-intelligence:global-daily": "node ./dist/scripts/global-price-daily.js",
+    "price-intelligence:fao-monthly": "node ./dist/scripts/fao-fpma-monthly.js"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -84,12 +86,22 @@
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
-    "moduleFileExtensions": ["js", "json", "ts"],
+    "moduleFileExtensions": [
+      "js",
+      "json",
+      "ts"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
-    "transform": {"^.+\\.(t|j)s$": "ts-jest"},
-    "moduleNameMapper": {"^(.+)\\.js$": "$1"},
-    "collectCoverageFrom": ["**/*.(t|j)s"],
+    "transform": {
+      "^.+\\.(t|j)s$": "ts-jest"
+    },
+    "moduleNameMapper": {
+      "^(.+)\\.js$": "$1"
+    },
+    "collectCoverageFrom": [
+      "**/*.(t|j)s"
+    ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }

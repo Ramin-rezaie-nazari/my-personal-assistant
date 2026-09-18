@@ -4,11 +4,8 @@ import { PriceIntelligenceService } from '../services/price-intelligence.service
 import { PriceCollectionSchedulerService } from '../services/price-collection-scheduler.service';
 import { PriceSourceRegistryService } from '../services/price-source-registry.service';
 import { PricePersistenceService } from '../services/price-persistence.service';
-import {
-  MatchProductDto,
-  NightlyPreviewDto,
-  NightlyRunDto,
-} from '../dto/price-intelligence.dto';
+import { PriceCoverageService } from '../services/price-coverage.service';
+import { MatchProductDto, NightlyPreviewDto, NightlyRunDto } from '../dto/price-intelligence.dto';
 
 @Controller('price-intelligence')
 @UseGuards(JwtAuthGuard)
@@ -18,11 +15,15 @@ export class PriceIntelligenceController {
     private readonly scheduler: PriceCollectionSchedulerService,
     private readonly sources: PriceSourceRegistryService,
     private readonly persistence: PricePersistenceService,
+    private readonly coverage: PriceCoverageService,
   ) {}
 
   @Get()
-  getPrices(@Query('productKey') productKey?: string) {
-    return this.priceService.getLatestPrices(productKey);
+  getPrices(
+    @Query('productKey') productKey?: string,
+    @Query('countryCode') countryCode?: string,
+  ) {
+    return this.priceService.getLatestPrices(productKey, countryCode?.trim().toUpperCase());
   }
 
   @Get('sources')
@@ -41,18 +42,23 @@ export class PriceIntelligenceController {
     @Query('from') from?: string,
     @Query('to') to?: string,
     @Query('sourceId') sourceId?: string,
+    @Query('countryCode') countryCode?: string,
   ) {
     return this.priceService.getHistory(
       productKey,
       from ? new Date(from) : undefined,
       to ? new Date(to) : undefined,
       sourceId,
+      countryCode?.trim().toUpperCase(),
     );
   }
 
   @Get('products/:productKey/analysis')
-  getAnalysis(@Param('productKey') productKey: string) {
-    return this.priceService.analyze(productKey);
+  getAnalysis(
+    @Param('productKey') productKey: string,
+    @Query('countryCode') countryCode?: string,
+  ) {
+    return this.priceService.analyze(productKey, countryCode?.trim().toUpperCase());
   }
 
   @Post('match')
@@ -66,16 +72,26 @@ export class PriceIntelligenceController {
       dto.productKeys,
       dto.sourceIds,
       dto.scheduledFor ? new Date(dto.scheduledFor) : new Date(),
+      dto.countryCode?.trim().toUpperCase(),
     );
   }
 
   @Post('nightly/preview')
   previewNightly(@Body() dto: NightlyPreviewDto) {
     const now = dto.now ? new Date(dto.now) : new Date();
-    const lastSuccessfulRunAt = dto.lastSuccessfulRunAt
-      ? new Date(dto.lastSuccessfulRunAt)
-      : undefined;
+    const lastSuccessfulRunAt = dto.lastSuccessfulRunAt ? new Date(dto.lastSuccessfulRunAt) : undefined;
     return this.scheduler.shouldRun(now, lastSuccessfulRunAt);
+  }
+
+  @Get('coverage')
+  getCoverage(
+    @Query('maxAgeDays') maxAgeDays?: string,
+    @Query('sourceId') sourceId?: string,
+  ) {
+    return this.coverage.getCoverage(
+      maxAgeDays ? Number(maxAgeDays) : 1,
+      sourceId ?? 'open-prices',
+    );
   }
 
   @Get('registry')

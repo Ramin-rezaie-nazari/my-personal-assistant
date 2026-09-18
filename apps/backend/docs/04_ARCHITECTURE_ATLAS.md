@@ -1714,3 +1714,25 @@ It is:
 ## Living status note — 2026-08-13
 
 This atlas reflects the repository state and the architecture work completed so far. It intentionally distinguishes current implementations from future device/provider hardening. Percentages and roadmap estimates belong in the chat progress reports, not in this file, because they are implementation estimates rather than architectural facts.
+
+---
+
+# Global Daily Price Intelligence
+
+Price collection is cadence-aware:
+
+```text
+GitHub Actions daily schedule
+       ↓
+global-price-daily.ts
+       ↓
+Open Prices adapter
+       ↓
+PriceSnapshot
+       ↓
+PriceCoverageService (195 markets)
+
+FAO FPMA remains a slower reference provider and is excluded from default daily source routing. `.github/workflows/global-fpma-monthly.yml` owns its monthly refresh.
+```
+
+The HTTP provider adapter path still handles existing tracked-product local sources. Public global providers expose their own adapter contracts so pagination, freshness, and provider-specific semantics remain isolated.

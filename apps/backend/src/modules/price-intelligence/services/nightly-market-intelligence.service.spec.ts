@@ -26,7 +26,7 @@ describe('NightlyMarketIntelligenceService', () => {
     };
     const service = new NightlyMarketIntelligenceService(sources as any, persistence as any);
     const result = await service.run(['ssd']);
-    expect(sources.collectDetailed).toHaveBeenCalledWith(['ssd'], undefined);
+    expect(sources.collectDetailed).toHaveBeenCalledWith(['ssd'], undefined, undefined);
     expect(result.status).toBe('failed');
     expect(result.collected).toBe(0);
     expect(persistence.createRun).toHaveBeenCalled();
