@@ -28,6 +28,22 @@ export class PriceIntelligenceService {
   }
 
   async analyze(productKey: string, countryCode?: string) {
+    if (!countryCode) {
+      return {
+        productKey,
+        countryCode: null,
+        current: null,
+        average7d: null,
+        average30d: null,
+        min30d: null,
+        max30d: null,
+        changeVs7d: null,
+        changeVs30d: null,
+        trend: 'insufficient_data' as const,
+        buyScore: 0,
+        recommendation: 'unavailable' as const,
+      };
+    }
     const rows = (await this.persistence.history(
       productKey,
       new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
