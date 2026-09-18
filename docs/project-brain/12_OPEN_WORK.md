@@ -19,7 +19,7 @@ The Global Multilingual Assistant foundation is implemented. Current main Backen
 - Assistant TTS follows the selected application locale with locale-specific BCP-47 speech tags.
 - Local backend assistant responses are canonical English to prevent foreign-language leakage.
 - Open Prices attribution is now shown in the price-history UI with a source link; the attribution must still be confirmed in the built app/device.
-- UI/i18n audit slices PB-272, PB-273 and PB-274 are remediated and CI-verified; the repository-wide audit remains open for remaining hard-coded or isolated locale paths.
+- UI/i18n audit slices PB-272 through PB-275 are remediated and CI-verified; the repository-wide audit remains open for remaining hard-coded or isolated locale paths.
 
 ## Verification still required
 
