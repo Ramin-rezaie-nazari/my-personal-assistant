@@ -1,12 +1,12 @@
 # Backend Module Catalog
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-18
+Review status: CURRENT MODULE CATALOG RECONCILED / DEVICE VERIFICATION PENDING
 Scope actually read: `AppModule` plus complete current-`main` Core modules.
-Scope not yet read: all non-Core module internals and common/shared infrastructure.
+The original non-Core read limitation is a historical audit snapshot. Current module ownership is reconciled against AppModule, current source and the remediation record; runtime/device validation remains a separate evidence gate.
 Evidence roots: `apps/backend/src/app.module.ts`; Core paths.
-Confidence level: MEDIUM for registered modules/Core implementation.
-Open questions: non-Core providers/routes/read-write contracts.
+Confidence level: HIGH for the registered module topology and documented ownership boundaries.
+Open questions: remaining device/runtime capabilities and future production integrations.
 
 ## Registered modules
 
