@@ -1,7 +1,7 @@
 # Global Daily Price Intelligence
 
 Last updated: 2026-09-18
-Status: IMPLEMENTED / LOCAL RUNTIME VERIFICATION PENDING
+Status: IMPLEMENTED / LOCAL RUNTIME VERIFIED / COVERAGE METRIC NOT RECORDED
 
 ## Goal
 
@@ -77,7 +77,7 @@ The one-shot command and daemon are exposed from `apps/backend/package.json`:
 
 Automated tests cover source normalization, daily source routing, scheduler timing and 195-country coverage enumeration.
 
-Backend CI passed for the local-first infrastructure branch, including backend API E2E. Real local daily operation remains unverified until it is run on the user's laptop and actual country coverage is measured.
+The user's laptop has now completed one real local daily price collection through the error-only validator. Because successful collector output is suppressed, the observed 195-country coverage number is not recorded. Scheduler restart/sleep lifecycle remains operational follow-up work rather than a blocker to physical mobile testing.
 
 ## Infrastructure policy
 
