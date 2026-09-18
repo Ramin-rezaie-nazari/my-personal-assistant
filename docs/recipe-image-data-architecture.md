@@ -15,7 +15,7 @@ My-Personal-Assistant-Data/
 └── backups/        # local backups
 ```
 
-The current extracted dataset can remain at `apps/backend/recipe-image-dataset/` during development. It is ignored by Git.
+The current extracted dataset can remain at `apps/backend/recipe-image-dataset/` during development. It is ignored by Git. All working recipe-media assets remain on the developer laptop.
 
 ## Processing contract
 
@@ -25,8 +25,8 @@ The current extracted dataset can remain at `apps/backend/recipe-image-dataset/`
 - Hard maximum is 60KB per stored recipe hero image.
 - The reprocessor prefers the best visual result that fits under 60KB rather than minimizing file size.
 - A failed DB update removes the newly uploaded object so partial records are not retained.
-- Supabase Storage is the application delivery layer; the local dataset is the development/master source.
+- The local filesystem is the current development storage/delivery layer; the local dataset remains the development/master source.
 
 ## Production migration
 
-When the application is ready for release, the same source-to-WebP pipeline can be run on a VPS/worker without changing the application data model. The local originals should remain as a backup/master copy until the production migration has been verified.
+When the application is ready for release, the same source-to-WebP pipeline can be moved to a VPS/worker without changing the application data model. The local originals should remain as a backup/master copy until the release migration has been verified.
