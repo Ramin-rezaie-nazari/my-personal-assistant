@@ -9,6 +9,9 @@ export type PriceSourceDefinition = {
   searchUrlTemplate: string;
   enabled: boolean;
   adapterId: string;
+  scope: 'local' | 'global';
+  collectionMode: 'tracked_products' | 'global_recent';
+  license?: string;
   notes?: string;
 };
 
@@ -25,6 +28,8 @@ export class PriceSourceRegistryService {
         'https://okala.com/search?query={query}',
       enabled: true,
       adapterId: 'okala',
+      scope: 'local',
+      collectionMode: 'tracked_products',
     },
     {
       id: 'snapp-market',
@@ -36,6 +41,8 @@ export class PriceSourceRegistryService {
         'https://snapp.market/search?query={query}',
       enabled: true,
       adapterId: 'snapp-market',
+      scope: 'local',
+      collectionMode: 'tracked_products',
     },
     {
       id: 'digikala',
@@ -47,6 +54,8 @@ export class PriceSourceRegistryService {
         'https://www.digikala.com/search/?q={query}',
       enabled: true,
       adapterId: 'digikala',
+      scope: 'local',
+      collectionMode: 'tracked_products',
     },
     {
       id: 'digishahrvand',
@@ -58,6 +67,8 @@ export class PriceSourceRegistryService {
         'https://www.digishahrvand.com/?s={query}',
       enabled: true,
       adapterId: 'digishahrvand',
+      scope: 'local',
+      collectionMode: 'tracked_products',
     },
     {
       id: 'digikala-jet',
@@ -69,6 +80,8 @@ export class PriceSourceRegistryService {
         'https://digikalajet.com/search?q={query}',
       enabled: true,
       adapterId: 'digikala-jet',
+      scope: 'local',
+      collectionMode: 'tracked_products',
     },
     {
       id: 'pinaket',
@@ -80,6 +93,8 @@ export class PriceSourceRegistryService {
         'https://pinaket.com/search?q={query}',
       enabled: true,
       adapterId: 'pinaket',
+      scope: 'local',
+      collectionMode: 'tracked_products',
     },
     {
       id: 'feenama',
@@ -91,6 +106,8 @@ export class PriceSourceRegistryService {
         'https://feenama.com/?s={query}',
       enabled: true,
       adapterId: 'feenama',
+      scope: 'local',
+      collectionMode: 'tracked_products',
     },
     {
       id: 'torob',
@@ -102,6 +119,8 @@ export class PriceSourceRegistryService {
         'https://torob.com/search/?query={query}',
       enabled: true,
       adapterId: 'torob',
+      scope: 'local',
+      collectionMode: 'tracked_products',
     },
     {
       id: 'emalls',
@@ -113,6 +132,21 @@ export class PriceSourceRegistryService {
         'https://emalls.ir/Search.aspx?Search={query}',
       enabled: true,
       adapterId: 'emalls',
+      scope: 'local',
+      collectionMode: 'tracked_products',
+    },
+    {
+      id: 'open-prices',
+      name: 'Open Prices (Open Food Facts)',
+      kind: 'open_dataset',
+      baseUrl: 'https://prices.openfoodfacts.org',
+      searchUrlTemplate: 'https://prices.openfoodfacts.org/api/v1/prices',
+      enabled: true,
+      adapterId: 'open-prices',
+      scope: 'global',
+      collectionMode: 'global_recent',
+      license: 'ODbL-1.0',
+      notes: 'Read-only global food-price observations with country/location metadata.',
     },
   ];
 
