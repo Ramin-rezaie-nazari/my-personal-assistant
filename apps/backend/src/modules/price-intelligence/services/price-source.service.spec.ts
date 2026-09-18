@@ -1,5 +1,5 @@
-import { PriceSourceService } from './price-source.service';
 import { PriceSourceRegistryService } from './price-source-registry.service';
+import { PriceSourceService } from './price-source.service';
 
 describe('PriceSourceService', () => {
   it('reports a failed adapter by source id while keeping successful prices', async () => {
@@ -7,24 +7,20 @@ describe('PriceSourceService', () => {
     service.register({
       id: 'good',
       kind: 'retailer',
-      fetchPrices: async () => [
-        {
-          productKey: 'p1',
-          title: 'Product',
-          sourceId: 'good',
-          sourceKind: 'retailer',
-          currency: 'IRR',
-          amount: 100,
-          observedAt: new Date(),
-        },
-      ],
+      fetchPrices: async () => [{
+        productKey: 'p1',
+        title: 'Product',
+        sourceId: 'good',
+        sourceKind: 'retailer',
+        currency: 'IRR',
+        amount: 100,
+        observedAt: new Date(),
+      }],
     });
     service.register({
       id: 'bad',
       kind: 'marketplace',
-      fetchPrices: async () => {
-        throw new Error('network');
-      },
+      fetchPrices: async () => { throw new Error('network'); },
     });
 
     const result = await service.collectDetailed(['p1']);
@@ -33,8 +29,6 @@ describe('PriceSourceService', () => {
     expect(result.failedSourceIds).toEqual(['bad']);
     expect(result.attemptedSourceIds).toEqual(['good', 'bad']);
   });
-});
-
 
   it('does not include monthly sources in the default daily collection set', async () => {
     const registry = new PriceSourceRegistryService();
@@ -49,3 +43,4 @@ describe('PriceSourceService', () => {
     expect(result.attemptedSourceIds).toContain('open-prices');
     expect(result.attemptedSourceIds).not.toContain('fao-fpma');
   });
+});
