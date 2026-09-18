@@ -48,6 +48,15 @@ model ExerciseMedia {
   position Int @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  acquisitionMode String?
+  sourceReference String?
+  rightsBasis String?
+  creator String?
+  storageKey String?
+  transformed Boolean @default(false)
+  reviewer String?
+  reviewedAt DateTime?
+  contentVersion String?
   exercise Exercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
   @@index([exerciseId, status])
   @@index([sourceProvider, license])

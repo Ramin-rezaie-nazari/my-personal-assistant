@@ -44,6 +44,7 @@ model User {
   userInsights UserInsight[]
   planExecutionStates PlanExecutionState[]
   fitnessProfileState FitnessProfileState?
+  fitnessPlanAssignments FitnessPlanAssignment[]
   decisionAudits DecisionAuditEntry[]
   goals Goal[]
   conversationTurns ConversationTurn[]

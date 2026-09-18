@@ -151,6 +151,12 @@ This file is the canonical current status of the findings catalog covered by the
 |---|---|---|
 | PB-271 | CLOSED — REMEDIATED + CI VERIFIED | `apps/mobile/app/onboarding.tsx` previously enabled RTL only when the locale was `fa`, which could leave Arabic, Hebrew, Urdu and Kurdish onboarding layouts in LTR despite the canonical language registry marking them RTL. The route now consumes the shared `isRTL()` registry function. Existing `languages.spec.ts` coverage verifies representative RTL locales. |
 
+## New Fitness device-gate findings — PB-278
+
+| Finding | Current status | Resolution / evidence |
+|---|---|---|
+| PB-278 | OPEN → REMEDIATED | Fitness Programs/Exercise Library introduced several pre-device gaps: an exercise detail path could expose non-published catalog rows; the curated program seed referenced non-existent exercise keys; exercise seed coaching fields were plain text instead of JSON arrays; media provenance fields existed in schema without a complete DTO/write path; and several new mobile states/units/status labels were not fully localized or recoverable on API failure. These are now corrected in the Fitness slice with regression tests and CI gates. Physical device UX and real media approval/storage remain environment-bound. |
+
 ## Historical catalog boundary
 
 The exact prose of PB-001 through PB-155 is not recoverable from the repository history exposed to the remediation environment. `docs/project-brain/12_OPEN_WORK.md` preserves the historical ID/index information, but missing historical text is not reconstructed or invented. This is an evidence limitation, not a silently omitted finding.

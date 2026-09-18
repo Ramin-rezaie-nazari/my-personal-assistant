@@ -1,4 +1,4 @@
-import { IsArray, IsIn, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, Max, MaxLength, Min } from 'class-validator';
+import { IsArray, IsBoolean, IsIn, IsInt, IsISO8601, IsNotEmpty, IsOptional, IsString, IsUrl, Max, MaxLength, Min } from 'class-validator';
 
 const DIFFICULTIES = ['beginner', 'intermediate', 'advanced', 'professional'] as const;
 const CONTENT_STATUSES = ['draft', 'published', 'archived'] as const;
@@ -50,6 +50,15 @@ export class AddExerciseMediaDto {
   @IsOptional() @IsString() @MaxLength(16) language?: string;
   @IsOptional() @IsUrl({ require_tld: false }) posterUrl?: string;
   @IsOptional() @IsString() @MaxLength(200) checksum?: string;
+  @IsOptional() @IsString() @MaxLength(80) acquisitionMode?: string;
+  @IsOptional() @IsString() @MaxLength(1000) sourceReference?: string;
+  @IsOptional() @IsString() @MaxLength(160) rightsBasis?: string;
+  @IsOptional() @IsString() @MaxLength(160) creator?: string;
+  @IsOptional() @IsString() @MaxLength(500) storageKey?: string;
+  @IsOptional() @IsBoolean() transformed?: boolean;
+  @IsOptional() @IsString() @MaxLength(160) reviewer?: string;
+  @IsOptional() @IsISO8601() reviewedAt?: string;
+  @IsOptional() @IsString() @MaxLength(80) contentVersion?: string;
   @IsOptional() @IsIn(MEDIA_STATUSES) status?: (typeof MEDIA_STATUSES)[number];
   @IsOptional() @IsInt() @Min(0) @Max(1000) position?: number;
 }

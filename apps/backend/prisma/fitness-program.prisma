@@ -1,0 +1,76 @@
+model FitnessProgram {
+  id String @id
+  slug String @unique
+  name String
+  nameFa String?
+  description String
+  discipline String
+  goal String
+  level String
+  durationWeeks Int
+  sessionsPerWeek Int
+  sessionDurationMin Int
+  equipment Json @default("[]")
+  targetAreas Json @default("[\"full_body\"]")
+  tags Json @default("[]")
+  coverMediaUrl String?
+  contentStatus String @default("published")
+  sourceProvider String?
+  sourceLicense String?
+  sourceAttribution String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  versions FitnessProgramVersion[]
+  @@index([discipline, goal, level])
+  @@index([contentStatus])
+}
+
+model FitnessProgramVersion {
+  id String @id
+  programId String
+  version Int
+  changeSummary String?
+  publishedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  program FitnessProgram @relation(fields: [programId], references: [id], onDelete: Cascade)
+  sessions FitnessProgramSession[]
+  assignments FitnessPlanAssignment[]
+  @@unique([programId, version])
+  @@index([programId, publishedAt])
+}
+
+model FitnessProgramSession {
+  id String @id
+  programVersionId String
+  weekNumber Int
+  dayNumber Int
+  title String
+  focus String
+  durationMin Int
+  sessionPayload Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  programVersion FitnessProgramVersion @relation(fields: [programVersionId], references: [id], onDelete: Cascade)
+  @@unique([programVersionId, weekNumber, dayNumber])
+  @@index([programVersionId, weekNumber, dayNumber])
+}
+
+model FitnessPlanAssignment {
+  id String @id
+  userId String
+  programVersionId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  startedOn DateTime
+  status String @default("active")
+  currentWeek Int @default(1)
+  currentDay Int @default(1)
+  completedSessions Int @default(0)
+  lastSessionAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  programVersion FitnessProgramVersion @relation(fields: [programVersionId], references: [id], onDelete: Cascade)
+  @@unique([userId, programVersionId])
+  @@index([userId, status, updatedAt])
+}

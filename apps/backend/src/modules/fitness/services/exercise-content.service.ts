@@ -11,33 +11,37 @@ export class ExerciseContentService {
   async list(query: ExerciseQueryDto) {
     const limit = Math.min(query.limit ?? 24, 100);
     const offset = query.offset ?? 0;
-    const filters: Prisma.Sql[] = [Prisma.sql`"contentStatus" = 'published'`];
+    const filters: Prisma.Sql[] = [Prisma.sql`e."contentStatus" = 'published'`];
     if (query.search) {
       const value = `%${query.search.trim()}%`;
-      filters.push(Prisma.sql`("name" ILIKE ${value} OR COALESCE("nameFa", '') ILIKE ${value} OR "aliases"::text ILIKE ${value})`);
+      filters.push(Prisma.sql`(e."name" ILIKE ${value} OR COALESCE(e."nameFa", '') ILIKE ${value} OR e."aliases"::text ILIKE ${value})`);
     }
-    if (query.discipline) filters.push(Prisma.sql`"discipline" = ${query.discipline}`);
-    if (query.muscle) filters.push(Prisma.sql`("primaryMuscles" @> ${JSON.stringify([query.muscle])}::jsonb OR "secondaryMuscles" @> ${JSON.stringify([query.muscle])}::jsonb)`);
-    if (query.equipment) filters.push(Prisma.sql`"equipment" @> ${JSON.stringify([query.equipment])}::jsonb`);
-    if (query.difficulty) filters.push(Prisma.sql`"difficulty" = ${query.difficulty}`);
-    if (query.goal) filters.push(Prisma.sql`"goals" @> ${JSON.stringify([query.goal])}::jsonb`);
+    if (query.discipline) filters.push(Prisma.sql`e."discipline" = ${query.discipline}`);
+    if (query.muscle) filters.push(Prisma.sql`(e."primaryMuscles" @> ${JSON.stringify([query.muscle])}::jsonb OR e."secondaryMuscles" @> ${JSON.stringify([query.muscle])}::jsonb)`);
+    if (query.equipment) filters.push(Prisma.sql`e."equipment" @> ${JSON.stringify([query.equipment])}::jsonb`);
+    if (query.difficulty) filters.push(Prisma.sql`e."difficulty" = ${query.difficulty}`);
+    if (query.goal) filters.push(Prisma.sql`e."goals" @> ${JSON.stringify([query.goal])}::jsonb`);
     const where = Prisma.join(filters, ' AND ');
 
     const [items, countRows] = await Promise.all([
       this.prisma.$queryRaw<any[]>(Prisma.sql`
-        SELECT "id","slug","name","nameFa","aliases","discipline","movementPattern",
-               "primaryMuscles","secondaryMuscles","equipment","difficulty","goals",
-               "instructions","coachCues","commonMistakes","cautions","contentStatus",
-               "sourceProvider","sourceLicense","sourceAttribution","createdAt","updatedAt"
-        FROM "Exercise" WHERE ${where} ORDER BY "name" ASC LIMIT ${limit} OFFSET ${offset}
+        SELECT e."id",e."slug",e."name",e."nameFa",e."aliases",e."discipline",e."movementPattern",
+               e."primaryMuscles",e."secondaryMuscles",e."equipment",e."difficulty",e."goals",
+               e."instructions",e."coachCues",e."commonMistakes",e."cautions",e."contentStatus",
+               e."sourceProvider",e."sourceLicense",e."sourceAttribution",e."createdAt",e."updatedAt",
+               COUNT(DISTINCT CASE WHEN m."status" = 'approved' THEN m."id" END)::int AS "approvedMediaCount",
+               COUNT(DISTINCT CASE WHEN m."status" = 'approved' AND m."kind" = 'video' THEN m."id" END)::int AS "approvedVideoCount"
+        FROM "Exercise" e
+        LEFT JOIN "ExerciseMedia" m ON m."exerciseId" = e."id"
+        WHERE ${where} GROUP BY e."id" ORDER BY e."name" ASC LIMIT ${limit} OFFSET ${offset}
       `),
-      this.prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`SELECT COUNT(*)::bigint AS count FROM "Exercise" WHERE ${where}`),
+      this.prisma.$queryRaw<Array<{ count: bigint }>>(Prisma.sql`SELECT COUNT(*)::bigint AS count FROM "Exercise" e WHERE ${where}`),
     ]);
     return { items, total: Number(countRows[0]?.count ?? 0), limit, offset };
   }
 
   async get(id: string) {
-    const exercises = await this.prisma.$queryRaw<any[]>(Prisma.sql`SELECT * FROM "Exercise" WHERE "id" = ${id} LIMIT 1`);
+    const exercises = await this.prisma.$queryRaw<any[]>(Prisma.sql`SELECT * FROM "Exercise" WHERE "id" = ${id} AND "contentStatus" = 'published' LIMIT 1`);
     if (!exercises[0]) throw new NotFoundException('Exercise not found');
     const [media, relationships] = await Promise.all([
       this.prisma.$queryRaw<any[]>(Prisma.sql`SELECT * FROM "ExerciseMedia" WHERE "exerciseId" = ${id} AND "status" = 'approved' ORDER BY "position" ASC, "createdAt" ASC`),
@@ -48,7 +52,7 @@ export class ExerciseContentService {
         ORDER BY r."kind" ASC, r."priority" ASC, e."name" ASC
       `),
     ]);
-    return { ...exercises[0], media, relationships };
+    return { ...exercises[0], media, relationships, mediaReady: media.length > 0, videoReady: media.some((item) => item.kind === 'video') };
   }
 
   async create(dto: CreateExerciseDto) {
@@ -75,12 +79,13 @@ export class ExerciseContentService {
     const id = randomUUID();
     await this.prisma.$executeRaw(Prisma.sql`
       INSERT INTO "ExerciseMedia" (
-        "id","exerciseId","kind","url","sourceUrl","sourceProvider","license","attribution",
+        "id","exerciseId","kind","url","sourceUrl","sourceProvider","license","attribution","acquisitionMode","sourceReference","rightsBasis","creator","storageKey","transformed","reviewer","reviewedAt","contentVersion",
         "mimeType","durationSeconds","width","height","language","posterUrl","checksum","status","position",
         "createdAt","updatedAt"
       ) VALUES (
         ${id},${exerciseId},${dto.kind},${dto.url},${dto.sourceUrl ?? null},${dto.sourceProvider},${dto.license},
-        ${dto.attribution ?? null},${dto.mimeType ?? null},${dto.durationSeconds ?? null},${dto.width ?? null},
+        ${dto.attribution ?? null},${dto.acquisitionMode ?? null},${dto.sourceReference ?? null},${dto.rightsBasis ?? null},
+        ${dto.creator ?? null},${dto.storageKey ?? null},${dto.transformed ?? false},${dto.reviewer ?? null},${dto.reviewedAt ? new Date(dto.reviewedAt) : null},${dto.contentVersion ?? null},${dto.mimeType ?? null},${dto.durationSeconds ?? null},${dto.width ?? null},
         ${dto.height ?? null},${dto.language ?? null},${dto.posterUrl ?? null},${dto.checksum ?? null},
         ${dto.status ?? 'pending'},${dto.position ?? 0},CURRENT_TIMESTAMP,CURRENT_TIMESTAMP
       )
