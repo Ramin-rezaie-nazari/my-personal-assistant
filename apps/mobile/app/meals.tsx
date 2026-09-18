@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { getMeals, getNutritionSummary, hasAuthSession, Meal, NutritionSummary } from '../lib/api';
 import { router } from 'expo-router';
-import { useAppLocale, t, toIntlLocale } from '../lib/i18n';
+import { type AppLocale, useAppLocale, t, toIntlLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 
 const copy = localizedCopy({
