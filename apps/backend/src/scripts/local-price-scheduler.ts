@@ -4,19 +4,19 @@ import { PricePersistenceService } from '../modules/price-intelligence/services/
 import { PriceSourceRegistryService } from '../modules/price-intelligence/services/price-source-registry.service';
 import { PriceSourceService } from '../modules/price-intelligence/services/price-source.service';
 
-function localScheduledFor(hour: number, minute: number, now = new Date()) {
+export function localScheduledFor(hour: number, minute: number, now = new Date()) {
   const scheduled = new Date(now);
   scheduled.setHours(hour, minute, 0, 0);
   if (scheduled <= now) scheduled.setDate(scheduled.getDate() + 1);
   return scheduled;
 }
 
-function configNumber(name: string, fallback: number, min: number, max: number) {
+export function configNumber(name: string, fallback: number, min: number, max: number) {
   const value = Number(process.env[name] ?? fallback);
   return Number.isFinite(value) ? Math.min(max, Math.max(min, value)) : fallback;
 }
 
-function sleep(ms: number) {
+export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, Math.max(1_000, ms)));
 }
 
@@ -81,7 +81,7 @@ async function main() {
   }
 }
 
-void main().catch((error) => {
+if (process.env.NODE_ENV !== 'test') void main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });
