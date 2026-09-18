@@ -1,12 +1,12 @@
 # Data Flow Map
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-18
+Review status: CURRENT DATA-FLOW RECONCILED / DEVICE VERIFICATION PENDING
 Scope actually read: current-`main` Core data flows.
-Scope not yet read: non-Core flows, mobile, background jobs and full DB model graph.
+Historical Core-only scope notes are retained as the original audit snapshot. Current flow boundaries are documented across the Project Brain deep-reads and implementation, with runtime/device evidence kept separate.
 Evidence roots: Core services/controllers.
-Confidence level: MEDIUM for Core.
-Open questions: transaction boundaries outside Users/Auth; event/background flow; mobile persistence.
+Confidence level: HIGH for the principal current backend/mobile/database data-flow boundaries.
+Open questions: physical device lifecycle and production deployment/observability.
 
 ## Auth
 
