@@ -11,7 +11,7 @@ pnpm install
 cp apps/backend/.env.example apps/backend/.env
 ```
 
-Set a real `DATABASE_URL` and unique development JWT secrets in `apps/backend/.env`.
+Use the local PostgreSQL setup documented in `docs/LOCAL_DEVELOPMENT.md`; the committed `.env.example` points to the local database.
 
 Generate Prisma Client and apply the migration history:
 
@@ -51,3 +51,7 @@ Recipe/image/intelligence operations are exposed through the scripts in `apps/ba
 ## Project Brain
 
 The repository-level engineering record is under `docs/project-brain/`. The root `docs/05_CURRENT_STATE.md` is the canonical current-state record for audit work. The Audit Findings Appendix is `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`.
+
+## Local-first infrastructure
+
+MYPA development and data storage are self-hosted/local-first. Use the repository-local PostgreSQL Docker setup and laptop-local daily price scheduler described in `docs/LOCAL_DEVELOPMENT.md`.
