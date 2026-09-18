@@ -1,7 +1,7 @@
 # MYPA Current State
 
 Last updated: 2026-09-18
-Review status: MULTILINGUAL + GLOBAL PRICE FOUNDATIONS IMPLEMENTED / RUNTIME DEVICE + PRODUCTION VERIFICATION PENDING
+Review status: MULTILINGUAL + GLOBAL PRICE FOUNDATIONS IMPLEMENTED / RUNTIME DEVICE VERIFICATION PENDING
 
 ## Canonical ownership
 
@@ -92,6 +92,15 @@ These are explicit evidence limits, not silently marked green findings.
 
 Backend CI and Mobile CI for the price-intelligence PR completed successfully, and PR #79 was squash-merged to `main` as commit `760b868b089a949c3301a336095cca51bce01c92`.
 
-Production daily execution remains unverified because the connected Supabase projects are currently inactive and a production `DATABASE_URL` Actions secret/reachable database has not been verified. Complete fresh daily coverage for all 195 countries is provider-data dependent and must be measured rather than assumed.
+Local daily execution is ready at source level and uses PostgreSQL via `DATABASE_URL`. A real laptop run still requires the user's local Docker/Node environment. Complete fresh daily coverage for all 195 countries remains provider-data dependent and must be measured rather than assumed.
 
-The daily workflow is `.github/workflows/global-price-intelligence.yml`; the slower FAO FPMA reference feed is refreshed by `.github/workflows/global-fpma-monthly.yml`.
+Global price scheduling is laptop-local via `apps/backend/src/scripts/local-price-scheduler.ts`; no Supabase or cloud price scheduler is part of the current development architecture.
+
+## Local-first infrastructure decision — 2026-09-18
+
+- Supabase is not a development or production dependency for the current MYPA architecture.
+- Local PostgreSQL is the canonical development database.
+- `docker-compose.local.yml` provides the persistent PostgreSQL container.
+- `apps/backend/src/scripts/local-price-scheduler.ts` owns daily global price scheduling on the development laptop.
+- VPS deployment is intentionally deferred until the release phase.
+- CI may use ephemeral PostgreSQL for automated validation only.
