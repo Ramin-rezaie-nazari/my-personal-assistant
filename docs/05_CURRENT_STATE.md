@@ -11,9 +11,9 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Target canonical branch: `main`
-- Latest repository baseline: `e68485154644cd3b82d4f5c860cfd8144d7dcc58` (PR #93 merged 2026-09-18).
+- Latest repository baseline: `a862adcd730a420a69283837121fd46b3b395396` (PR #95 merged 2026-09-18).
 - The user's development laptop completed `pnpm local:verify-errors` with no error output on 2026-09-18.
-- PR #92 and PR #93 mobile changes are covered by successful Mobile CI runs `35326240789` and `35326989917` respectively.
+- PR #92, PR #93 and PR #95 mobile changes are covered by successful Mobile CI runs `35326240789`, `35326989917` and `35327595866` respectively.
 - Exercise Content/Media and Global Multilingual Assistant foundations are now covered by fresh main-branch Backend/Mobile CI; native and physical-device verification remain environment-bound.
 - Scope of the latest previously verified baseline: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
 
@@ -64,7 +64,7 @@ Fresh main-branch Backend CI run `35318539437` completed successfully through de
 
 Fresh main-branch Mobile CI run `35318539524` completed successfully through dependency installation, mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling.
 
-The post-merge mobile audit slices are also CI-verified: PR #92 Mobile CI run `35326240789` and PR #93 Mobile CI run `35326989917` both completed successfully through mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling.
+The post-merge mobile audit slices are also CI-verified: PR #92 Mobile CI run `35326240789`, PR #93 Mobile CI run `35326989917` and PR #95 Mobile CI run `35327595866` all completed successfully through mobile typecheck, source tests, committed Jest specs, Expo project validation and Android JavaScript bundling.
 
 ### Android native APK — GREEN on previous CI baseline
 
