@@ -662,3 +662,40 @@ Muscle-up
 ## 13.4 Skill Unlock Engine
 
 A... (truncated)
+---
+
+## Global Daily Price Intelligence (2026-09-18)
+
+Price Intelligence now has an explicit global ingestion boundary. Open Prices is the first open-data provider and is treated as a stream of observations, not as a promise of complete daily coverage.
+
+The canonical 195-country registry remains `GlobalCountryFinanceService`. Global price observations may carry `countryCode`, while `PriceCoverageSnapshot` independently tracks actual source coverage and freshness.
+
+Pipeline:
+
+```text
+Open Prices API
+     ↓
+OpenPricesSourceAdapter
+     ↓
+bounded recent observation validation
+     ↓
+195-country registry filter
+     ↓
+deterministic PriceSnapshot identity
+     ↓
+PriceCoverageSnapshot
+     ↓
+country-scoped Price Intelligence
+```
+
+Core rules:
+- preserve provider currency;
+- do not aggregate prices across mixed markets without explicit country scope;
+- never mark unsupported or unobserved countries as fresh;
+- keep the daily provider pull bounded;
+- keep retries idempotent;
+- persist operational run state.
+
+The external scheduler is GitHub Actions because the existing in-process scheduler is not a durable distributed global scheduler.
+
+Open Prices reuse must retain the provider's ODbL attribution and reuse conditions.
