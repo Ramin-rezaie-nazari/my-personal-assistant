@@ -57,6 +57,11 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v4
+        with:
+          packages: ''
+
+      - name: Install required Android SDK packages
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Generate native Android project
         run: pnpm exec expo prebuild --platform android
