@@ -58,7 +58,7 @@ export default function AuthScreen() {
         <Text style={styles.eyebrow}>MY PERSONAL ASSISTANT</Text>
         <Text style={styles.title}>{mode === 'login' ? localizeAuthText(locale, 'Welcome back 👋', 'خوش اومدی 👋') : localizeAuthText(locale, 'Let’s get started ✨', 'بیا شروع کنیم ✨')}</Text>
         <Text style={styles.subtitle}>{mode === 'login' ? localizeAuthText(locale, 'Sign in to continue your day.', 'برای ادامه وارد حساب خودت شو.') : localizeAuthText(locale, 'Create your personal assistant account.', 'حساب دستیار شخصی خودت را بساز.')}</Text>
-        <View style={[styles.card, rtl]}>
+        <View style={[styles.card, rtl && styles.rtl]}>
           {mode === 'register' ? <View style={styles.row}><TextInput value={firstName} onChangeText={setFirstName} placeholder={t(locale, 'firstName')} placeholderTextColor="#9CA3AF" style={[styles.input, styles.half]} /><TextInput value={lastName} onChangeText={setLastName} placeholder={t(locale, 'lastName')} placeholderTextColor="#9CA3AF" style={[styles.input, styles.half]} /></View> : null}
           <TextInput value={email} onChangeText={setEmail} placeholder={t(locale, 'email')} placeholderTextColor="#9CA3AF" style={styles.input} autoCapitalize="none" autoCorrect={false} keyboardType="email-address" />
           <TextInput value={password} onChangeText={setPassword} placeholder={t(locale, 'password')} placeholderTextColor="#9CA3AF" style={styles.input} secureTextEntry />
