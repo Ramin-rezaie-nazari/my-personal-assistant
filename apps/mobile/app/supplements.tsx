@@ -3,15 +3,15 @@ import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, T
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
 import { Supplement, SupplementStatus, createSupplement, deleteSupplement, getSupplementStatus, hasAuthSession, takeSupplement } from '../lib/api';
-import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
+import { useAppLocale, isRTL } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 
 const copy=localizedCopy({en:{home:'← Home',eyebrow:'HEALTH ROUTINE',title:'Supplements',taken:'taken today',complete:'complete',add:'Add a supplement',name:'Name (e.g. Vitamin D)',dosage:'Dosage (optional)',addBtn:'Add supplement',noDosage:'No dosage',take:'Take',takenBtn:'Taken ✓',delete:'Delete',empty:'Your routine is empty',emptyBody:'Add the supplements you want your assistant to track.'},fa:{home:'خانه ←',eyebrow:'روتین سلامتی',title:'مکمل‌ها',taken:'امروز مصرف شده',complete:'تکمیل',add:'افزودن مکمل',name:'نام (مثلاً ویتامین D)',dosage:'مقدار مصرف (اختیاری)',addBtn:'افزودن مکمل',noDosage:'مقداری ثبت نشده',take:'مصرف',takenBtn:'مصرف شد ✓',delete:'حذف',empty:'روتین تو خالی است',emptyBody:'مکمل‌هایی را که می‌خواهی دستیار پیگیری کند اضافه کن.'}});
 
 export default function SupplementsScreen(){
- const [locale,setLocale]=useState<AppLocale>('en');const [status,setStatus]=useState<SupplementStatus|null>(null);const [name,setName]=useState('');const [dosage,setDosage]=useState('');const [time,setTime]=useState('09:00');const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState<string|null>(null);
+ const { locale } = useAppLocale();const [status,setStatus]=useState<SupplementStatus|null>(null);const [name,setName]=useState('');const [dosage,setDosage]=useState('');const [time,setTime]=useState('09:00');const [loading,setLoading]=useState(true);const [refreshing,setRefreshing]=useState(false);const [error,setError]=useState<string|null>(null);
  const load=useCallback(async()=>{try{setError(null);setStatus(await getSupplementStatus())}catch(e){setError(e instanceof Error?e.message:'Unable to load supplements')}finally{setLoading(false);setRefreshing(false)}},[]);
- useEffect(()=>{void getStoredLocale().then(v=>setLocale(v??'en'));void hasAuthSession().then(ok=>{if(ok)void load();else setLoading(false)})},[load]);
+ useEffect(()=>{void hasAuthSession().then(ok=>{if(ok)void load();else setLoading(false)})},[load]);
  async function addSupplement(){if(!name.trim())return;try{await createSupplement({name:name.trim(),dosage:dosage.trim()||undefined,scheduledTime:time});setName('');setDosage('');setTime('09:00');await load()}catch(e){setError(e instanceof Error?e.message:'Unable to add supplement')}}
  async function take(item:Supplement){try{await takeSupplement(item.id);await load()}catch(e){setError(e instanceof Error?e.message:'Unable to update supplement')}}
  async function remove(item:Supplement){try{await deleteSupplement(item.id);await load()}catch(e){setError(e instanceof Error?e.message:'Unable to delete supplement')}}
