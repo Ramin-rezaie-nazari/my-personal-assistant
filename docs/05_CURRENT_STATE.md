@@ -104,3 +104,8 @@ Global price scheduling is laptop-local via `apps/backend/src/scripts/local-pric
 - `apps/backend/src/scripts/local-price-scheduler.ts` owns daily global price scheduling on the development laptop.
 - VPS deployment is intentionally deferred until the release phase.
 - CI may use ephemeral PostgreSQL for automated validation only.
+
+
+## Infrastructure policy — local-first
+
+Supabase is not part of the current canonical development architecture. Use local PostgreSQL + Prisma during development; defer VPS deployment until release. Legacy scripts that still mention Supabase are tracked separately for retirement/migration and are not part of the target runtime path.
