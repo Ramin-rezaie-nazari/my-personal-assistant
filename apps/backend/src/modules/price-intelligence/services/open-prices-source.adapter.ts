@@ -73,10 +73,13 @@ export class OpenPricesSourceAdapter {
     const amount = this.number(item.price);
     if (!(amount > 0)) return null;
 
+    const productCode = this.clean(String(product?.code ?? ''));
     const productName =
       this.clean(String(product?.product_name ?? product?.brands ?? '')) ||
-      (product?.code ? 'Open Food Facts ' + String(product.code) : 'Food product');
-    const productKey = this.productKey(productName);
+      (productCode ? 'Open Food Facts ' + productCode : 'Food product');
+    const productKey = productCode
+      ? 'off:' + productCode
+      : this.productKey(productName);
     const currency =
       this.clean(String(item.currency ?? '')).toUpperCase() ||
       GLOBAL_COUNTRY_CURRENCIES[countryCode].currencyCode;
