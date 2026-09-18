@@ -9,8 +9,8 @@ import { useAppLocale } from '../../lib/i18n';
 import { ExerciseDetail, getExerciseDetail } from '../../lib/fitness-content-api';
 
 const ui = localizedCopy({
-  en: { eyebrow: 'EXERCISE', back: 'Back', loading: 'Loading movement…', unavailable: 'Exercise unavailable', retry: 'Try again', watch: 'Watch demonstration', noVideo: 'Video not available yet', instructions: 'How to perform', cues: 'Coach cues', mistakes: 'Common mistakes', cautions: 'Safety notes', equipment: 'Equipment', muscles: 'Primary muscles', alternatives: 'Alternatives', progression: 'Progression', regression: 'Regression', source: 'Source', noMedia: 'No approved demonstration media yet.' },
-  fa: { eyebrow: 'تمرین', back: 'برگشت', loading: 'در حال بارگذاری حرکت…', unavailable: 'تمرین در دسترس نیست', retry: 'تلاش دوباره', watch: 'مشاهده ویدئو', noVideo: 'ویدئو هنوز آماده نیست', instructions: 'روش اجرا', cues: 'نکات مربی', mistakes: 'اشتباهات رایج', cautions: 'نکات ایمنی', equipment: 'تجهیزات', muscles: 'عضلات اصلی', alternatives: 'جایگزین‌ها', progression: 'پیشرفت', regression: 'پسرفت', source: 'منبع', noMedia: 'هنوز مدیای تأییدشده‌ای برای این تمرین وجود ندارد.' },
+  en: { eyebrow: 'EXERCISE', back: 'Back', loading: 'Loading movement…', unavailable: 'Exercise unavailable', retry: 'Try again', watch: 'Watch demonstration', noVideo: 'Video not available yet', instructions: 'How to perform', cues: 'Coach cues', mistakes: 'Common mistakes', cautions: 'Safety notes', equipment: 'Equipment', muscles: 'Primary muscles', alternatives: 'Alternatives', progression: 'Progression', regression: 'Regression', source: 'Source', noMedia: 'No approved demonstration media yet.', video:'VIDEO', media:'MEDIA', bodyweight:'Bodyweight', error:'Unable to load exercise.' },
+  fa: { eyebrow: 'تمرین', back: 'برگشت', loading: 'در حال بارگذاری حرکت…', unavailable: 'تمرین در دسترس نیست', retry: 'تلاش دوباره', watch: 'مشاهده ویدئو', noVideo: 'ویدئو هنوز آماده نیست', instructions: 'روش اجرا', cues: 'نکات مربی', mistakes: 'اشتباهات رایج', cautions: 'نکات ایمنی', equipment: 'تجهیزات', muscles: 'عضلات اصلی', alternatives: 'جایگزین‌ها', progression: 'پیشرفت', regression: 'پسرفت', source: 'منبع', noMedia: 'هنوز مدیای تأییدشده‌ای برای این تمرین وجود ندارد.', video:'ویدئو', media:'مدیا', bodyweight:'وزن بدن', error:'بارگذاری تمرین انجام نشد.' },
 });
 
 export default function FitnessExerciseDetailScreen() {
@@ -25,7 +25,7 @@ export default function FitnessExerciseDetailScreen() {
   const load = async () => {
     if (!id) return;
     try { setError(null); setExercise(await getExerciseDetail(id)); }
-    catch (err) { setError(err instanceof Error ? err.message : 'Unable to load exercise.'); }
+    catch (err) { setError(err instanceof Error ? err.message : text.error); }
     finally { setLoading(false); }
   };
   useEffect(() => { void load(); }, [id]);
@@ -43,7 +43,7 @@ export default function FitnessExerciseDetailScreen() {
         <Text style={[styles.eyebrow, rtl && styles.rtlText]}>{text.eyebrow}</Text>
         <View style={[styles.titleRow, rtl && styles.rtlRow]}>
           <View style={styles.titleCopy}><FitnessLocalizedText en={exercise.name} fa={exercise.nameFa} locale={locale} style={{...styles.title, ...(rtl ? styles.rtlText : {})}} /><FitnessLocalizedText en={`${exercise.discipline} · ${exercise.difficulty}`} locale={locale} style={{...styles.subtitle, ...(rtl ? styles.rtlText : {})}} /></View>
-          <View style={styles.badge}><Text style={styles.badgeText}>{exercise.videoReady ? 'VIDEO' : 'MEDIA'}</Text></View>
+          <View style={styles.badge}><Text style={styles.badgeText}>{exercise.videoReady ? text.video : text.media}</Text></View>
         </View>
 
         {images.length ? <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.mediaScroller} contentContainerStyle={styles.mediaContent}>{images.map((item) => <Image key={item.id} source={{ uri: item.url }} style={styles.heroImage} resizeMode="cover" />)}</ScrollView> : <View style={styles.mediaPlaceholder}><Text style={styles.mediaPlaceholderTitle}>{exercise.videoReady ? text.watch : text.noMedia}</Text></View>}
@@ -51,7 +51,7 @@ export default function FitnessExerciseDetailScreen() {
         {videos.length ? <View style={styles.videoCard}><View style={styles.videoCardCopy}><Text style={[styles.videoTitle, rtl && styles.rtlText]}>{text.watch}</Text><Text style={[styles.videoMeta, rtl && styles.rtlText]}>{videos[0].sourceProvider} · {videos[0].durationSeconds ? `${videos[0].durationSeconds}s` : 'video'}</Text></View><Pressable onPress={() => void Linking.openURL(videos[0].url)} style={styles.playButton}><Text style={styles.playText}>▶</Text></Pressable></View> : <View style={styles.noVideo}><Text style={[styles.noVideoText, rtl && styles.rtlText]}>{text.noVideo}</Text></View>}
 
         <InfoCard title={text.muscles} values={exercise.primaryMuscles} rtl={rtl} locale={locale} />
-        <InfoCard title={text.equipment} values={exercise.equipment.length ? exercise.equipment : ['Bodyweight']} rtl={rtl} locale={locale} />
+        <InfoCard title={text.equipment} values={exercise.equipment.length ? exercise.equipment : [text.bodyweight]} rtl={rtl} locale={locale} />
         {exercise.instructions ? <TextBlock title={text.instructions} body={exercise.instructions} rtl={rtl} locale={locale} /> : null}
         <ListBlock title={text.cues} values={exercise.coachCues} rtl={rtl} locale={locale} />
         <ListBlock title={text.mistakes} values={exercise.commonMistakes} rtl={rtl} locale={locale} />
