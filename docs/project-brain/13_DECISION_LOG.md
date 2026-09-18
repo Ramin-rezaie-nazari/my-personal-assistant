@@ -1,7 +1,7 @@
 # Decision Log
 
-Last updated: 2026-09-13
-Review status: FINAL VERIFICATION / EVIDENCE-LIMITED DEPLOYMENT ITEMS REMAIN
+Last updated: 2026-09-18
+Review status: PRE-DEVICE ENGINEERING GATES GREEN / PHYSICAL-DEVICE VALIDATION REMAINS
 Scope: audit governance, remediation decisions and current verification gates.
 
 | Date | Decision | Reason | Evidence |
@@ -16,6 +16,15 @@ Scope: audit governance, remediation decisions and current verification gates.
 | 2026-09-13 | Close PB-268 only after the fresh native run completes Gradle and artifact upload successfully. | The successful build is the required native evidence, not merely prebuild success. | Run `34772364209` on `0d19d2b7dad5e9100505205328fbd523e544445b`. |
 | 2026-09-13 | Treat Android native repository verification as GREEN after run #79. | The run completed Expo prebuild, real Gradle `assembleDebug`, and APK artifact upload successfully. | Artifact `my-personal-assistant-debug-apk`, SHA-256 `622b90eeef0898ab7d3eac9af75fac6e486da46eb4f741116d601f3d727f23da`. |
 | 2026-09-13 | Keep physical-device and production controls explicitly unvalidated. | Those environments are unavailable to repository CI evidence. | Security/privacy and open-work evidence boundary. |
+
+## 2026-09-18 — Pre-device gate closure
+
+| Decision | Reason | Evidence |
+|---|---|---|
+| Treat local PostgreSQL + Prisma as canonical development infrastructure. | Supabase is explicitly out of the current architecture and VPS is deferred to release. | Current-state architecture and local validator evidence. |
+| Treat `useAppLocale()` as the shared mobile presentation-language source. | Route-local locale state caused stale/duplicated presentation state. | PB-272..PB-275 remediation and green Mobile CI. |
+| Treat canonical `LifeTaskDependency/LifeTaskEvent` as the active planning persistence path. | Legacy compatibility tables were still referenced by Smart Planning fallback. | PB-276 and Backend CI run 35377244969. |
+| Treat physical mobile behavior as the remaining product gate. | Repository and local engineering validation cannot prove device translation/TTS/RTL capabilities. | 09_TEST_AND_VALIDATION_MATRIX.md and current device evidence boundary. |
 
 ## Current verification policy
 
