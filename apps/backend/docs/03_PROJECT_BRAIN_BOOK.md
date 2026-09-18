@@ -6,6 +6,8 @@
 >
 > **Architecture map:** see **[04_ARCHITECTURE_ATLAS.md](./04_ARCHITECTURE_ATLAS.md)** for the complete repository tree, module ownership, file relationships, database map, decision pipeline, memory layers, Fitness architecture, and production-readiness boundaries.
 >
+> **2026-09-18 verification note:** The current development architecture is local-first PostgreSQL + Prisma with VPS deferred to release; Supabase is not a target dependency. The multilingual UI boundary uses a shared locale source and runtime translation bridge, and current pre-device engineering gates are green. Physical-device validation remains the next product gate.
+>
 > **Rule from this point forward:** every meaningful feature, architecture change, database change, safety rule, memory capability, integration, test layer, or mobile capability must add an entry to this document. The implementation is not considered fully documented until the book is updated.
 
 ---
