@@ -25,6 +25,9 @@ export class PriceSourceRegistryService {
         'https://okala.com/search?query={query}',
       enabled: true,
       adapterId: 'okala',
+      scope: 'country',
+      countryCodes: ['IR'],
+      refreshCadence: 'daily',
     },
     {
       id: 'snapp-market',
@@ -36,6 +39,9 @@ export class PriceSourceRegistryService {
         'https://snapp.market/search?query={query}',
       enabled: true,
       adapterId: 'snapp-market',
+      scope: 'country',
+      countryCodes: ['IR'],
+      refreshCadence: 'daily',
     },
     {
       id: 'digikala',
@@ -47,6 +53,9 @@ export class PriceSourceRegistryService {
         'https://www.digikala.com/search/?q={query}',
       enabled: true,
       adapterId: 'digikala',
+      scope: 'country',
+      countryCodes: ['IR'],
+      refreshCadence: 'daily',
     },
     {
       id: 'digishahrvand',
@@ -58,6 +67,9 @@ export class PriceSourceRegistryService {
         'https://www.digishahrvand.com/?s={query}',
       enabled: true,
       adapterId: 'digishahrvand',
+      scope: 'country',
+      countryCodes: ['IR'],
+      refreshCadence: 'daily',
     },
     {
       id: 'digikala-jet',
@@ -69,6 +81,9 @@ export class PriceSourceRegistryService {
         'https://digikalajet.com/search?q={query}',
       enabled: true,
       adapterId: 'digikala-jet',
+      scope: 'country',
+      countryCodes: ['IR'],
+      refreshCadence: 'daily',
     },
     {
       id: 'pinaket',
@@ -80,6 +95,9 @@ export class PriceSourceRegistryService {
         'https://pinaket.com/search?q={query}',
       enabled: true,
       adapterId: 'pinaket',
+      scope: 'country',
+      countryCodes: ['IR'],
+      refreshCadence: 'daily',
     },
     {
       id: 'feenama',
@@ -91,6 +109,9 @@ export class PriceSourceRegistryService {
         'https://feenama.com/?s={query}',
       enabled: true,
       adapterId: 'feenama',
+      scope: 'country',
+      countryCodes: ['IR'],
+      refreshCadence: 'daily',
     },
     {
       id: 'torob',
@@ -102,6 +123,9 @@ export class PriceSourceRegistryService {
         'https://torob.com/search/?query={query}',
       enabled: true,
       adapterId: 'torob',
+      scope: 'country',
+      countryCodes: ['IR'],
+      refreshCadence: 'daily',
     },
     {
       id: 'emalls',
@@ -113,6 +137,33 @@ export class PriceSourceRegistryService {
         'https://emalls.ir/Search.aspx?Search={query}',
       enabled: true,
       adapterId: 'emalls',
+      scope: 'country',
+      countryCodes: ['IR'],
+      refreshCadence: 'daily',
+    },
+    {
+      id: 'open-prices',
+      name: 'Open Prices (Open Food Facts)',
+      kind: 'public_dataset',
+      baseUrl: 'https://prices.openfoodfacts.org',
+      searchUrlTemplate: 'https://prices.openfoodfacts.org/api/v1/prices',
+      enabled: true,
+      adapterId: 'open-prices',
+      scope: 'global',
+      refreshCadence: 'realtime',
+      notes: 'Public read API; crowdsourced retail prices; coverage varies by country.',
+    },
+    {
+      id: 'fao-fpma',
+      name: 'FAO FPMA',
+      kind: 'public_dataset',
+      baseUrl: 'https://fpma.fao.org',
+      searchUrlTemplate: 'https://fpma.fao.org/giews/v4/global/price_module/api/v1/FpmaSerie/',
+      enabled: true,
+      adapterId: 'fao-fpma',
+      scope: 'global',
+      refreshCadence: 'monthly',
+      notes: 'Public domestic food-price API; coverage and cadence vary by market.',
     },
   ];
 
@@ -124,5 +175,19 @@ export class PriceSourceRegistryService {
 
   get(id: string): PriceSourceDefinition | null {
     return this.definitions.find((source) => source.id === id) ?? null;
+  }
+
+  listForCollection(countryCode?: string): PriceSourceDefinition[] {
+    const normalized = countryCode?.trim().toUpperCase();
+    if (!normalized)
+      return this.definitions.filter(
+        (source) => source.enabled && source.scope === 'global',
+      );
+    return this.definitions.filter(
+      (source) =>
+        source.enabled &&
+        (source.scope === 'global' ||
+          source.countryCodes?.includes(normalized)),
+    );
   }
 }
