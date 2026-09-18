@@ -1,12 +1,12 @@
 # MYPA Project Brain — Overview
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-18
+Review status: CURRENT SOURCE/CI RECONCILED / DEVICE VERIFICATION PENDING
 Scope actually read: current `main` repository metadata, root/backend/mobile package manifests, `apps/backend/src/app.module.ts`, and 47 current-`main` source files across the defined Core scopes (Auth, Users, Profile, Preferences, Onboarding, Settings, Context Engine, Device Intelligence, User Intelligence).
-Scope not yet read: complete repository source beyond Core; deterministic repository-wide inventory/line counts; Prisma schema/migrations; Brain/Food/Shopping/Life/Health/Fitness/Platform/Mobile internals; CI/runtime validation.
+Historical scope notes above describe the original 2026-09-11 audit snapshot. Current completion truth is maintained by docs/05_CURRENT_STATE.md, docs/project-brain/12_OPEN_WORK.md and docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md, with current CI/runtime evidence recorded there.
 Evidence roots: `package.json`; `apps/backend/package.json`; `apps/mobile/package.json`; `apps/backend/src/app.module.ts`; `apps/backend/src/modules/auth/`; `users/`; `profile/`; `preferences/`; `onboarding/`; `settings/`; `context-engine/`; `device-intelligence/`; `user-intelligence/`.
-Confidence level: MEDIUM for the read Core implementation; LOW for repository-wide completeness.
-Open questions: exact source-file count/line counts; local dirty/process state; full route/mobile/DB mapping; all remaining scopes.
+Confidence level: HIGH for the documented architecture/remediation evidence; device/production behavior remains environment-bound.
+Open questions: physical-device behavior, 51-locale device capability matrix, production/VPS release validation and non-blocking operational measurements.
 
 ## Baseline architecture
 
