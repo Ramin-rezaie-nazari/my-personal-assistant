@@ -21,6 +21,10 @@ const checks = [
   ['speech dependency declared', Boolean(pkg.dependencies?.['expo-speech'])],
   ['api uses SecureStore', api.includes("from 'expo-secure-store'")],
   ['assistant exposes TTS action', assistant.includes('speakAssistantText') && assistant.includes('🔊')],
+  ['assistant uses shared locale hook', assistant.includes('useAppLocale()')],
+  ['yoga uses shared locale hook', yoga.includes('useAppLocale()')],
+  ['daily read path does not generate notifications', !daily.includes('generateSmartNotifications(')],
+  ['meal builder lets backend resolve dateKey', !mealBuilder.includes('dateKey:now.toISOString().slice(0,10)')],
   ['notification runtime starts from app lifecycle', layout.includes('startNotificationRuntime') && layout.includes('registerForPushNotifications')],
   ['shared i18n exports locale hook', i18n.includes('export function useAppLocale')],
   ...routeSources.map(([file, source]) => [
