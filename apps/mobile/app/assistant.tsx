@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { useAppLocale } from '../lib/i18n';
+import { type AppLocale, useAppLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 import { AssistantHistoryTurn, getAssistantHistory, sendAssistantMessage } from '../lib/assistant-api';
 import { speakAssistantText } from '../lib/assistant-tts';
