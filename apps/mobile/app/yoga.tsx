@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { ActivityIndicator, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
-import { AppLocale, getStoredLocale, isRTL, t } from '../lib/i18n';
+import { useAppLocale, t } from '../lib/i18n';
 import { getYogaCue, getYogaSession, startYogaCoach, tickYogaCoach, YogaCoachState, YogaSession } from '../lib/api';
 import { CameraBridgeState, UnconfiguredYogaCameraBridge } from '../lib/yoga-camera-bridge';
 import { localizedCopy } from '../lib/localized-copy';
@@ -33,7 +33,7 @@ const copy = localizedCopy({
 });
 
 export default function YogaScreen() {
-  const [locale, setLocale] = useState<AppLocale>('en');
+  const { locale, rtl } = useAppLocale();
   const [session, setSession] = useState<YogaSession | null>(null);
   const [state, setState] = useState<YogaCoachState | null>(null);
   const [cue, setCue] = useState('Get ready. We’ll start calmly.');
@@ -44,7 +44,6 @@ export default function YogaScreen() {
 
   useEffect(() => {
     let mounted = true;
-    void getStoredLocale().then((stored) => { if (mounted && stored) setLocale(stored); });
     void (async () => {
       try {
         const next = await getYogaSession(20, 'beginner', 'mobility');
@@ -98,7 +97,6 @@ export default function YogaScreen() {
 
   if (loading || !session || !state) return <View style={styles.center}><ActivityIndicator size="large" /></View>;
 
-  const rtl = isRTL(locale);
   const handleTrainingMode = async () => {
     if (trainingMode) { setTrainingMode(false); setCameraState(await cameraBridge.stop()); return; }
     if (!permission?.granted) { const result = await requestPermission(); if (!result.granted) return; }
