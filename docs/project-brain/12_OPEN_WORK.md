@@ -1,13 +1,13 @@
 # MYPA Open Work
 
 Last updated: 2026-09-19
-Status: LOCAL RUNTIME VERIFIED / NATIVE DEVICE VERIFICATION REQUIRED
+Status: REPOSITORY PRE-DEVICE WORK CLOSED / DEVICE + ENVIRONMENT EXECUTION PENDING
 
 This file contains currently actionable work and evidence gaps. Historical audit observations remain preserved in docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md and dated continuation documents.
 
 ## Current repository work — multilingual feature slice
 
-The Global Multilingual Assistant foundation is implemented. Current main source/CI work through PR #100 is green; remaining validation is now dominated by environment-bound device/runtime checks rather than known repository defects.
+The Global Multilingual Assistant foundation is implemented. Current main source/CI work through PR #101 is green; there are no known repository-side implementation/audit gaps. Remaining validation is execution-bound to the laptop, native build/device and release environments.
 
 ### Implemented
 
@@ -19,7 +19,7 @@ The Global Multilingual Assistant foundation is implemented. Current main source
 - Assistant TTS follows the selected application locale with locale-specific BCP-47 speech tags.
 - Local backend assistant responses are canonical English to prevent foreign-language leakage.
 - Open Prices attribution is now shown in the price-history UI with a source link; the attribution must still be confirmed in the built app/device.
-- UI/i18n audit slices PB-272 through PB-279 are remediated or queued in the final pre-device audit batch; the remaining locale check is automated 51-language contract coverage plus physical-device capability.
+- UI/i18n audit slices PB-272 through PB-279 are remediated and merged; the automated 51-language contract checks are green. Device-specific locale/TTS capability remains environment-bound.
 
 ## Verification still required
 
@@ -40,7 +40,7 @@ The Global Multilingual Assistant foundation is implemented. Current main source
 
 ## Global Daily Price Intelligence
 
-Status: IMPLEMENTED / LOCAL RUNTIME VERIFIED; COVERAGE MEASUREMENT STILL REQUIRED
+Status: IMPLEMENTED / REPOSITORY + LOCAL RUNTIME VERIFIED; OBSERVED COVERAGE MEASUREMENT REMAINS ENVIRONMENT-BOUND
 
 Implemented repository-side:
 - Open Prices daily feed with bounded recent ingestion.
@@ -54,8 +54,8 @@ Implemented repository-side:
 - Open Prices/ODbL source attribution in the price-history screen.
 
 Verification remaining:
-1. Record the observed 195-country Open Prices coverage numerically from a non-error-only price run.
-2. Confirm the Open Prices/ODbL attribution appears correctly in the built mobile app.
+1. Record the observed 195-country Open Prices coverage numerically from the laptop's real collection output.
+2. Confirm the Open Prices/ODbL attribution in the built mobile app during device validation.
 3. Validate the monthly FPMA collector locally when benchmark data is needed.
 4. Keep provider coverage truthful: no fresh observation remains no_data or stale; no fabricated prices.
 
