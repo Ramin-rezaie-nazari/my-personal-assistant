@@ -7,6 +7,9 @@ const api = await readFile(resolve(root, 'lib/api.ts'), 'utf8');
 const assistant = await readFile(resolve(root, 'app/assistant.tsx'), 'utf8');
 const layout = await readFile(resolve(root, 'app/_layout.tsx'), 'utf8');
 const i18n = await readFile(resolve(root, 'lib/i18n.ts'), 'utf8');
+const yoga = await readFile(resolve(root, 'app/yoga.tsx'), 'utf8');
+const daily = await readFile(resolve(root, 'app/daily.tsx'), 'utf8');
+const mealBuilder = await readFile(resolve(root, 'app/meal-builder.tsx'), 'utf8');
 const localizedRoutes = [
   'daily.tsx', 'habits.tsx', 'inventory.tsx', 'insights.tsx', 'meals.tsx',
   'meal-builder.tsx', 'shopping.tsx', 'smart-meals.tsx', 'recipe-match.tsx',
