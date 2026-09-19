@@ -1,6 +1,6 @@
 # Review Gaps
 
-Last updated: 2026-09-18
+Last updated: 2026-09-19
 Review status: SOURCE-LEVEL AUDIT RECONCILED / ENVIRONMENTAL VALIDATION REMAINS
 
 ## Final status
@@ -9,11 +9,13 @@ The source-level audit and remediation records are reconciled through the canoni
 
 ## Canonical remaining evidence boundaries
 
-1. Native Android build after current-main multilingual/local-first changes is not yet captured in a fresh post-merge workflow run.
+1. Fresh Android native APK build after PR #101 is not yet captured in a post-merge workflow run.
 2. Physical Android/iOS validation is still required for representative RTL/LTR locales, translation-model availability, TTS voice availability and dynamic-content localization.
 3. Local price runtime validation still requires the user's laptop: local PostgreSQL, one-shot collection and observed 195-country coverage.
 4. User-facing Open Prices attribution is now implemented in the price-history screen and must be confirmed in the built app during UI/device validation.
 5. Release/deployment validation remains deferred to the VPS/release phase.
+
+No source-level repository gap remains after PR #101; the listed items are environment evidence boundaries.
 
 ## Historical evidence retained
 
@@ -28,7 +30,7 @@ The source-level audit and remediation records are reconciled through the canoni
 - DB reader/writer/relation/index/transaction/migration reconciliation: CLOSED FOR SOURCE EVIDENCE.
 - Security/ownership/auth/session/retention source review: CLOSED FOR SOURCE EVIDENCE.
 - CI/workflow/package/operational source review: CLOSED FOR SOURCE EVIDENCE.
-- Canonical findings/duplicate/false-positive reconciliation: CLOSED through PB-270.
+- Canonical findings/duplicate/false-positive reconciliation: CLOSED through PB-279.
 - Project Brain synchronization: ACTIVE maintenance, with current-state corrections kept alongside implementation evidence.
 
 ## Important boundary
