@@ -1,6 +1,6 @@
 # MYPA Current State
 
-Last updated: 2026-09-18
+Last updated: 2026-09-19
 Review status: MULTILINGUAL + GLOBAL PRICE FOUNDATIONS IMPLEMENTED / LOCAL RUNTIME VERIFIED / PHYSICAL-DEVICE VERIFICATION PENDING
 
 ## Canonical ownership
@@ -11,9 +11,10 @@ This root file is the canonical repository-wide current-state document. `apps/ba
 
 - Repository: `Ramin-rezaie-nazari/my-personal-assistant`
 - Target canonical branch: `main`
-- Latest repository baseline: `a862adcd730a420a69283837121fd46b3b395396` (PR #95 merged 2026-09-18).
+- Latest repository baseline: `6687b4100bc95ddca9a53a462cb248a8f2a83ed2` (PR #100 merged 2026-09-19).
 - The user's development laptop completed `pnpm local:verify-errors` with no error output on 2026-09-18.
 - PR #92, PR #93 and PR #95 mobile changes are covered by successful Mobile CI runs `35326240789`, `35326989917` and `35327595866` respectively.
+- PR #97, PR #98 and PR #100 are also merged on `main`; PR #97 closed the Smart Planning legacy dependency fallback, PR #98 hardened Fitness Programs/Exercise Library, and PR #100 made the local daily price scheduler restart-safe.
 - Exercise Content/Media and Global Multilingual Assistant foundations are now covered by fresh main-branch Backend/Mobile CI; native and physical-device verification remain environment-bound.
 - Scope of the latest previously verified baseline: audit remediation, request-boundary hardening, security/privacy reconciliation and final CI/native verification.
 
