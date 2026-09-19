@@ -9,6 +9,7 @@ const runtimeTranslator = await read('lib/runtime-translator.ts');
 const azBridge = await read('lib/az-language-bridge.ts');
 const voiceLanguage = await read('lib/voice-language.ts');
 const assistant = await read('app/assistant.tsx');
+const yoga = await read('app/yoga.tsx');
 const sourceSmoke = await read('scripts/source-smoke-test.mjs');
 
 const supportedBlock = languages.match(/export type SupportedAppLocale[\s\S]*?;/)?.[0] ?? '';
@@ -25,6 +26,8 @@ const checks = [
   ['Azerbaijani target bridges through Turkish', runtimeTranslator.includes("if (targetLangCode === 'az')") && runtimeTranslator.includes("translateRecordNative(sourceLangCode, 'tr', source)")],
   ['Azerbaijani source bridges through Turkish', runtimeTranslator.includes("if (sourceLangCode === 'az')") && runtimeTranslator.includes("translateRecordNative('tr', targetLangCode, normalizedTurkish)")],
   ['Iranian Azerbaijani lexical bridge exists', azBridge.includes('turkishToIranianAzerbaijani') && azBridge.includes('iranianAzerbaijaniToTurkish')],
+  ['assistant owns locale through shared hook', assistant.includes('useAppLocale()')],
+  ['yoga owns locale through shared hook', yoga.includes('useAppLocale()')],
   ['assistant canonicalizes input', assistant.includes("translateTextBetweenLocales(text, locale, 'en')")],
   ['assistant localizes output', assistant.includes('localizeAssistantText(response.message, locale)')],
   ['assistant TTS follows locale', assistant.includes('speakAssistantText(message.text, locale)')],
