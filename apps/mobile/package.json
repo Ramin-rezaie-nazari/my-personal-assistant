@@ -11,11 +11,6 @@
     "typecheck": "tsc --noEmit",
     "test": "node ./scripts/source-smoke-test.mjs && node ./scripts/multilingual-contract-test.mjs"
   },
-  "expo": {
-    "autolinking": {
-      "nativeModulesDir": "./modules"
-    }
-  },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "2.1.2",
