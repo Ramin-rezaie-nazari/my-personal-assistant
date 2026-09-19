@@ -43,7 +43,8 @@ const expo = spawn('npx', ['expo', 'start', '--dev-client', '--lan', ...process.
   cwd: process.cwd(),
   env: {
     ...process.env,
-    EXPO_PUBLIC_API_URL: process.env.EXPO_PUBLIC_API_URL ?? apiUrl,
+    EXPO_NO_DOTENV: '1',
+    EXPO_PUBLIC_API_URL: apiUrl,
   },
   stdio: 'inherit',
   shell: false,
