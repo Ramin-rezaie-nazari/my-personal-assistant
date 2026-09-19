@@ -9,7 +9,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "node ./scripts/source-smoke-test.mjs && node ./scripts/multilingual-contract-test.mjs"
+    "test": "node ./scripts/source-smoke-test.mjs && node ./scripts/multilingual-contract-test.mjs",
+    "dev:usb": "node scripts/start-usb.cjs",
+    "dev:lan": "node scripts/start-lan.cjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
