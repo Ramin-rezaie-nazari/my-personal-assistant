@@ -23,10 +23,10 @@ The Global Multilingual Assistant foundation is implemented. Current main source
 
 ## Verification still required
 
-1. Native Android verification: CLOSED — local validation completed Expo prebuild and the Android release Gradle build with no error output.
+1. Fresh post-PR #101 Android native APK evidence: run the canonical `.github/workflows/android-apk.yml` gate against current `main`.
 2. Physical Android/iOS device validation: test representative Latin, Cyrillic, Arabic-script and Indic locales; verify locale persistence, RTL, translation input/output, TTS voice selection and no unexpected fallback language.
 3. Full 51-locale matrix: verify translation-model and TTS availability per target OS/device and record unsupported combinations explicitly.
-4. Repository-wide UI audit: continue replacing remaining route/component user-visible hard-coded strings with the shared locale layer; PB-272 through PB-274 cover the latest completed slices.
+4. Laptop-only operational evidence: record the observed 195-country Open Prices coverage and exercise scheduler restart/sleep lifecycle.
 
 ## Existing environment-bound work
 
