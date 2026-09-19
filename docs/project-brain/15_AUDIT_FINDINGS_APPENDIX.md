@@ -1,6 +1,6 @@
 # Audit Findings Appendix
 
-Last updated: 2026-09-13
+Last updated: 2026-09-19
 Review status: FINAL VERIFICATION / EVIDENCE-LIMITED DEPLOYMENT ITEMS REMAIN
 
 This file is the canonical current status of the findings catalog covered by the 2026-09-11 source audit. The original `OPEN` labels below represented the state at audit time. Where current source and CI evidence now disprove the original defect, the finding is marked `CLOSED — REMEDIATED`. Withdrawn/reclassified findings are preserved explicitly and are not counted as open work.
@@ -219,3 +219,10 @@ The canonical MYPA development path is self-hosted/local-first: PostgreSQL + Pri
 | Finding | Current status | Resolution / evidence |
 |---|---|---|
 | PB-277 | OPEN → REMEDIATED | Local daily price scheduling could skip a same-day run after process restart because the scheduler policy only caught up after a 36-hour gap. The canonical NightlyMarketIntelligenceService now detects a missed scheduled window by comparing the current local calendar date/time with the last successful run in the configured timezone. Regression tests cover same-day catch-up and the no-duplicate case after a successful run. |
+
+
+## New Personal Brain scheduling finding — PB-279
+
+| Finding | Current status | Resolution / evidence |
+|---|---|---|
+| PB-279 | OPEN → REMEDIATED | `FullDaySchedulerService` still read legacy `TaskDependency` while active task writes use canonical `LifeTaskDependency`. The scheduler now joins `LifeTaskDependency`, and a direct service regression test verifies the raw query source contains the canonical table and no legacy dependency reference. |
