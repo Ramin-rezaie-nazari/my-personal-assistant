@@ -1,7 +1,7 @@
 # Contract Matrix
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-19
+Review status: HISTORICAL CONTRACT SNAPSHOT / CURRENT STATUS RECONCILED ELSEWHERE
 Scope actually read: current-main Core, complete Brain file-level scope, complete enumerated Food/Recipe/Nutrition/Meals/Recommendation/Budget backend contracts; substantial Shopping/Life/Health/Fitness; substantial Mobile API and screen consumers; backend common/config/auth/fitness cross-contracts; selected operational scripts and historical PRs; current-main direct revalidation of mobile route aliases and recipe-intelligence scripts.
 Scope not yet read: exhaustive repository-wide route↔DTO↔test↔mobile mapping, complete database readers/writers/transactions, runtime HTTP validation, physical-device validation, remaining source/legacy scripts.
 Evidence roots: backend controllers/services/DTOs/modules; mobile `app/` and `lib/`; Project Brain deep-reads; Prisma schema/migrations; CI workflows.
@@ -85,6 +85,10 @@ Direct repository searches confirm the following active consumers:
 - `apps/mobile/app/habits.tsx` calls `getHabits()` and `getHabitSummary()`; backend `HabitsController` and `HabitsService` expose matching list/summary contracts.
 - `apps/mobile/app/insights.tsx` calls `getPersonalInsights()` against the adaptive-learning endpoint.
 - `apps/mobile/app/command-center-v2.tsx` calls `getDailyCommandCenter()`, `getPlanHistory(1)`, `getDecisionTrace()`, and `getNutritionSummary()`.
+
+## Current-status note
+
+This matrix preserves the detailed 2026-09-11 contract mapping snapshot. Its historical IN_PROGRESS language does not override current-main remediation evidence. Current source truth is reconciled through `11_REPOSITORY_AUDIT.md`, `12_OPEN_WORK.md`, and `15_AUDIT_FINDINGS_APPENDIX.md`; runtime/device validation remains environment-bound.
 
 ## Validation-contract corrections
 

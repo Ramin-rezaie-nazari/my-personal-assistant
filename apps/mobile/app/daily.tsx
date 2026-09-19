@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Link } from 'expo-router';
-import { DailyCommandCenterResponse, generateSmartNotifications, getDailyCommandCenter, hasAuthSession } from '../lib/api';
+import { DailyCommandCenterResponse, getDailyCommandCenter, hasAuthSession } from '../lib/api';
 import { colors, radius, spacing, typography, shadows } from '../lib/design-system';
 import { AnimatedIn, MotionPress } from '../lib/motion-components';
 import { type AppLocale, useAppLocale, toIntlLocale } from '../lib/i18n';
@@ -39,7 +39,7 @@ export default function DailyCommandCenterScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    try { setError(null); await generateSmartNotifications(); setData(await getDailyCommandCenter()); }
+    try { setError(null); setData(await getDailyCommandCenter()); }
     catch (err) { setError(err instanceof Error ? err.message : 'Unable to load today'); }
     finally { setLoading(false); setRefreshing(false); }
   }, []);

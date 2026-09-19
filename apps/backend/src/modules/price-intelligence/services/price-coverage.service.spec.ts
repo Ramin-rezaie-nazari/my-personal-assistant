@@ -6,7 +6,7 @@ describe('PriceCoverageService', () => {
       $queryRaw: jest.fn().mockResolvedValue([
         {
           countryCode: 'IR',
-          latestObservedAt: new Date('2026-09-18T00:00:00Z'),
+          latestObservedAt: new Date(Date.now() - 60 * 60 * 1000),
           priceCount: 12n,
           sourceCount: 3n,
         },

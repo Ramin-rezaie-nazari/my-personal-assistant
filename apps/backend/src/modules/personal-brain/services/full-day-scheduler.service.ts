@@ -25,7 +25,7 @@ export class FullDaySchedulerService {
                COALESCE(array_agg(dep."status") FILTER (WHERE dep."id" IS NOT NULL),ARRAY[]::text[]) AS "dependencyStatus"
         FROM "LifeTask" t
         LEFT JOIN "Goal" g ON g."id"=t."goalId"
-        LEFT JOIN "TaskDependency" d ON d."taskId"=t."id"
+        LEFT JOIN "LifeTaskDependency" d ON d."taskId"=t."id"
         LEFT JOIN "LifeTask" dep ON dep."id"=d."dependsOnTaskId"
         WHERE t."userId"=${userId} AND t."status" IN ('pending','in_progress')
           AND (t."dueAt" <= ${next} OR (t."scheduledAt" >= ${day} AND t."scheduledAt" < ${next}) OR t."scheduledAt" IS NULL)

@@ -1,7 +1,7 @@
 # Mobile Deep Read
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-19
+Review status: HISTORICAL DEEP-READ SNAPSHOT — CURRENT STATUS RECONCILED ELSEWHERE
 Scope actually read: `apps/mobile/package.json`, `app.json`, Expo Router root/auth/language/index/command-center aliases, command-center-v2, daily, assistant, brain-overview, onboarding, calendar, reminders, habits, inventory, meals, meal-builder, `meal/[id].tsx`, recipe-match, shopping, smart-meals, supplements, notifications, yoga, insights, price-history; core clients `lib/api.ts`, `assistant-api.ts`, `brain-execution.ts`, `calendar-api.ts`, `inventory-api.ts`, `recipe-api.ts`, `shopping-api.ts`, `shopping-basket-api.ts`, `price-api.ts`, `command-actions.ts`, `onboarding.ts`, `i18n.ts`, `yoga-camera-bridge.ts`, `yoga-pose-pipeline.ts`, `local-persian-tts.ts`, `meal-intelligence.ts`, `voice.ts`, notifications push-registration/push-runtime/notification-actions/notification-contract plus related specs; all seven `components/*.tsx`; `lib/motion.tsx`, `lib/design-system.ts`, `lib/motion-components.tsx`, `lib/branding.ts`, `lib/branding.spec.ts`; both current `scripts/*.cjs`; selected Mobile specs. Runtime/device/build execution not performed.
 Scope not yet read: any Mobile source outside the currently inventoried `app/`, `lib/`, `components/`, `scripts/` trees if present; full native/generated media packaging review; physical-device behavior; full accessibility/responsive review; every mobile test execution; full backend-to-mobile contract matrix; offline implementation outside inspected clients; production build execution.
 Evidence roots: `apps/mobile/app/`; `apps/mobile/lib/`; `apps/mobile/components/`; `apps/mobile/scripts/`; `apps/mobile/package.json`; `apps/mobile/app.json`; `.github/workflows/mobile-ci.yml`, Android/EAS workflows; backend controllers/services used by clients.

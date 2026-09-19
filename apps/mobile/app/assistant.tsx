@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
-import { AppLocale, getStoredLocale, isRTL } from '../lib/i18n';
+import { type AppLocale, useAppLocale } from '../lib/i18n';
 import { localizedCopy } from '../lib/localized-copy';
 import { AssistantHistoryTurn, getAssistantHistory, sendAssistantMessage } from '../lib/assistant-api';
 import { speakAssistantText } from '../lib/assistant-tts';
@@ -39,7 +39,7 @@ const mapUserHistory = (turns: AssistantHistoryTurn[]): ChatMessage[] => turns.f
 }));
 
 export default function AssistantScreen() {
-  const [locale, setLocale] = useState<AppLocale>('en');
+  const { locale, rtl } = useAppLocale();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState('');
   const [sending, setSending] = useState(false);
@@ -50,10 +50,8 @@ export default function AssistantScreen() {
 
   useEffect(() => {
     let active = true;
-    void getStoredLocale().then(async (stored) => {
-      const next = stored ?? 'en';
-      if (!active) return;
-      setLocale(next);
+    void (async () => {
+      const next = locale;
       try {
         const history = await getAssistantHistory(40);
         if (!active) return;
@@ -72,10 +70,9 @@ export default function AssistantScreen() {
       }
     });
     return () => { active = false; };
-  }, []);
+  }, [locale]);
 
   const ui = copy[locale];
-  const rtl = useMemo(() => isRTL(locale), [locale]);
 
   const send = async () => {
     const text = draft.trim();

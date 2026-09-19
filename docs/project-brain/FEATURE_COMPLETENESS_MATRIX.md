@@ -1,7 +1,7 @@
 # Feature Completeness Matrix
 
-Last updated: 2026-09-11
-Review status: IN_PROGRESS
+Last updated: 2026-09-19
+Review status: HISTORICAL SOURCE-READ MATRIX / CURRENT STATUS RECONCILED ELSEWHERE
 Scope actually read: complete Core, Assistant, Brain, Food/Recipe/Nutrition/Meals/Recommendation/Budget backend file-level scopes; substantial Shopping/Inventory/Price/Life/Health/Fitness; Platform/Test/CI enumerated scope; substantial Mobile app/lib/components/native route/client scope; BATCH-0013 operational recipe/food/image scripts; backend common/config/database/i18n/image boundary; historical high-value PR/branch reconciliation.
 Scope not yet read: remaining repository source outside closed enumerations, complete backend↔mobile route/DTO/consumer mapping, exhaustive database reader/writer/transaction graph, full security/privacy closure, full runtime/device validation, remaining legacy/duplicate script families and historical branches.
 Evidence roots: `apps/backend/src/modules/`, `apps/backend/src/common/`, `apps/backend/prisma/`, `apps/backend/scripts/`, `apps/mobile/`, `.github/workflows/`, `docs/project-brain/`.
@@ -26,6 +26,10 @@ Open questions: exact repository-wide source inventory, live DB drift, all route
 | Life / health / calendar / habits / reminders / notifications | READ_SUBSTANTIALLY | READ_SUBSTANTIALLY | READ_PARTIALLY | READ_PARTIALLY — runtime consumer/authorization reconciliation remains |
 | Fitness core modules | READ_SUBSTANTIALLY | READ_SUBSTANTIALLY | READ_PARTIALLY | READ_PARTIALLY — complete consumer/DTO/security closure remains |
 | Platform/common/config/database/shared/images/CI | READ_SUBSTANTIALLY | READ_SUBSTANTIALLY | READ_PARTIALLY | READ_PARTIALLY — exhaustive inventory/runtime validation remains |
+
+## Current-status note
+
+This matrix preserves the detailed 2026-09-11 source-read snapshot and its row-level READ_PARTIALLY labels. Those labels are historical audit scope markers, not a current declaration that every row is still open. Current-main remediation status is tracked by `docs/project-brain/11_REPOSITORY_AUDIT.md`, `docs/project-brain/12_OPEN_WORK.md`, and `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`.
 
 ## Current blockers to a complete rating
 

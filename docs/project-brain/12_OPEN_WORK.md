@@ -1,13 +1,13 @@
 # MYPA Open Work
 
-Last updated: 2026-09-18
+Last updated: 2026-09-19
 Status: LOCAL RUNTIME VERIFIED / NATIVE DEVICE VERIFICATION REQUIRED
 
 This file contains currently actionable work and evidence gaps. Historical audit observations remain preserved in docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md and dated continuation documents.
 
 ## Current repository work — multilingual feature slice
 
-The Global Multilingual Assistant foundation is implemented. Current main Backend CI (35318539437) and Mobile CI (35318539524) are green; remaining validation is native APK/device capability rather than source/CI health.
+The Global Multilingual Assistant foundation is implemented. Current main source/CI work through PR #100 is green; remaining validation is now dominated by environment-bound device/runtime checks rather than known repository defects.
 
 ### Implemented
 
@@ -19,7 +19,7 @@ The Global Multilingual Assistant foundation is implemented. Current main Backen
 - Assistant TTS follows the selected application locale with locale-specific BCP-47 speech tags.
 - Local backend assistant responses are canonical English to prevent foreign-language leakage.
 - Open Prices attribution is now shown in the price-history UI with a source link; the attribution must still be confirmed in the built app/device.
-- UI/i18n audit slices PB-272 through PB-275 are remediated and CI-verified; the repository-wide audit remains open for remaining hard-coded or isolated locale paths.
+- UI/i18n audit slices PB-272 through PB-279 are remediated or queued in the final pre-device audit batch; the remaining locale check is automated 51-language contract coverage plus physical-device capability.
 
 ## Verification still required
 
