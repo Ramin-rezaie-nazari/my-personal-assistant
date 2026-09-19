@@ -1,13 +1,13 @@
 # File Review Index
 
-Last updated: 2026-09-11
-Review status: SOURCE-LEVEL AUDIT COMPLETE; ENVIRONMENTAL VALIDATION BLOCKED
+Last updated: 2026-09-19
+Review status: SOURCE-SCOPE INDEX / CURRENT STATUS RECONCILED ELSEWHERE
 
 ## Source scope closed
 
 The audit now records direct/reconciled coverage across: current-main baseline/Core; complete Prisma schema + all 39 migration SQL files; backend Assistant/Brain/Food/Recipe/Nutrition/Meals/Recommendation/Budget/Shopping/Inventory/Price/Life/Health/Fitness/Workout/Calisthenics/Gym/Yoga source scopes; Platform/Test/CI manifests/E2E/workflows; substantial Mobile routes/clients/components/native/library contracts; backend controller/DTO/guard and consumer reconciliation; operational recipe scripts; current-main direct revalidation of recipe intelligence entrypoints; account-erasure and ownership searches; DB raw-SQL/migration-only/index/transaction matrix; Project Brain findings/reconciliation artifacts; and historical Appendix recovery attempts.
 
-The source-level findings catalog is now canonically reconciled through PB-257 in `docs/project-brain/15_AUDIT_FINDINGS_APPENDIX.md`. No production-code remediation was performed.
+The source-level findings catalog from the original audit is preserved as evidence. Current production remediation is tracked through the canonical findings appendix; do not interpret the historical batch labels as current blockers.
 
 ## Explicit source-level closure controls
 
@@ -15,7 +15,7 @@ The source-level findings catalog is now canonically reconciled through PB-257 i
 - DB schema/migration/raw-SQL/reader/writer/relation/transaction/index reconciliation: CLOSED FOR SOURCE EVIDENCE; PB-257 and existing migration-only/atomicity findings remain open findings, not unreviewed gaps.
 - Security/ownership/auth/session/account-erasure source review: CLOSED FOR SOURCE EVIDENCE; PB-170/171/172/173/208/209/211/240/254 remain explicit findings where unresolved.
 - CI/workflow/package/operational entrypoint review: CLOSED FOR SOURCE EVIDENCE; PB-206/PB-242 and operational findings remain explicit.
-- Canonical Appendix reconciliation: CLOSED through PB-257, with withdrawals/reclassifications recorded in the Appendix.
+- Canonical Appendix reconciliation: CLOSED for the historical audit scope; current remediation continues in the canonical Appendix through PB-279.
 - Historical PB-001..PB-155 exact prose: NOT RECOVERABLE from exposed Git history; `12_OPEN_WORK.md` is retained as historical ID/index evidence. No text was fabricated.
 
 ## Batches
