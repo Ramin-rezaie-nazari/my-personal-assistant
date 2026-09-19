@@ -11,11 +11,21 @@ export class TranslationError extends Error {
   }
 }
 
-const ExpoTranslateText = requireNativeModule<ExpoTranslateTextModule>('ExpoTranslateText');
+function getNativeModule(): ExpoTranslateTextModule | null {
+  try {
+    return requireNativeModule<ExpoTranslateTextModule>('ExpoTranslateText');
+  } catch {
+    return null;
+  }
+}
 
 export const translateTask = (params: TranslationTaskRequest) => {
+  const nativeModule = getNativeModule();
+  if (!nativeModule) {
+    throw new TranslationError('Native translation module is unavailable in this build.', 'INTERNAL_ERROR');
+  }
   if (Platform.OS === 'android') {
-    return (ExpoTranslateText as any).translateTask(
+    return (nativeModule as any).translateTask(
       JSON.stringify(params.input),
       params.targetLangCode ?? '',
       params.sourceLangCode ?? null,
@@ -23,8 +33,15 @@ export const translateTask = (params: TranslationTaskRequest) => {
       params.requireCharging ?? false,
     );
   }
-  return ExpoTranslateText.translateTask(params);
+  return nativeModule.translateTask(params);
 };
 
-export const translateSheet = ExpoTranslateText.translateSheet;
-export const isTranslationSupported = ExpoTranslateText.isTranslationSupported;
+export const translateSheet = (params: Parameters<ExpoTranslateTextModule['translateSheet']>[0]) => {
+  const nativeModule = getNativeModule();
+  if (!nativeModule) {
+    throw new TranslationError('Native translation module is unavailable in this build.', 'INTERNAL_ERROR');
+  }
+  return nativeModule.translateSheet(params);
+};
+
+export const isTranslationSupported = () => Boolean(getNativeModule()?.isTranslationSupported());
