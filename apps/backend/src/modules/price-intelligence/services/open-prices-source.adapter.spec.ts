@@ -11,7 +11,7 @@ describe('OpenPricesSourceAdapter', () => {
             id: 123,
             price: 4.99,
             currency: 'EUR',
-            date: '2026-09-17',
+            date: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
             product: {
               code: '1234567890123',
               product_name: 'Test olive oil',
