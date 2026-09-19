@@ -1,6 +1,6 @@
 # Repository Audit
 
-Last updated: 2026-09-18
+Last updated: 2026-09-19
 Review status: SOURCE-LEVEL AUDIT CLOSED / ENVIRONMENTAL VALIDATION REMAINS
 
 ## Scope and evidence
@@ -25,13 +25,13 @@ The canonical findings appendix records the completed auth/session, runtime DTO,
 
 ## Current CI evidence
 
-Current main Backend CI run 35318539437 is GREEN through Prisma validation/generation, migrations and idempotence, food-intelligence self-test, backend build, unit tests and API E2E.
+Current main Backend CI run 35422582913 (run #3814) is GREEN through Prisma validation/generation, migrations and idempotence, food-intelligence self-test, backend build, 446/446 unit tests and API E2E.
 
-Current main Mobile CI run 35318539524 is GREEN through frozen-lockfile installation, typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
+Current main Mobile CI run 35422582908 (run #3075) is GREEN through frozen-lockfile installation, typecheck, source tests, committed Jest specs, Expo validation and Android JavaScript bundling.
 
-A fresh Android native APK run after the multilingual/local-first merge is still an environment/repository-evidence gate. The canonical workflow is .github/workflows/android-apk.yml.
+A fresh Android native APK run after PR #101 remains an execution-evidence gate. The canonical workflow is `.github/workflows/android-apk.yml`; absence of a fresh run is an evidence limitation, not a source-level blocker.
 
-## Remaining validation boundaries
+## Remaining validation boundaries — no source-level work remains
 
 - Local PostgreSQL startup and Prisma migration execution on the user's laptop.
 - One real local global-price collection plus observed 195-country coverage.
