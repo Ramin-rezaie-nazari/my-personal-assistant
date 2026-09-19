@@ -59,8 +59,7 @@ export class NightlyMarketIntelligenceService {
     const policy = this.config(override);
     if (!policy.enabled) return { run: false, reason: 'disabled' };
     if (!lastSuccessfulRunAt) return { run: true, reason: 'initial_run' };
-    const elapsed = now.getTime() - lastSuccessfulRunAt.getTime();
-    if (policy.catchUpAfterMissedRun && elapsed >= 36 * 60 * 60 * 1000)
+    if (policy.catchUpAfterMissedRun && this.missedScheduledWindow(now, lastSuccessfulRunAt, policy))
       return { run: true, reason: 'catch_up_after_missed_window' };
     return {
       run: this.isScheduledMinute(now, policy),
@@ -151,6 +150,31 @@ export class NightlyMarketIntelligenceService {
       startedAt,
       completedAt: new Date(),
     };
+  }
+
+  private missedScheduledWindow(
+    now: Date,
+    lastSuccessfulRunAt: Date,
+    policy: NightlyMarketConfig,
+  ) {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: policy.timezone ?? 'Asia/Tehran',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    });
+    const current = Object.fromEntries(formatter.formatToParts(now).map((part) => [part.type, part.value]));
+    const last = Object.fromEntries(formatter.formatToParts(lastSuccessfulRunAt).map((part) => [part.type, part.value]));
+    const currentKey = `${current.year}-${current.month}-${current.day}`;
+    const lastKey = `${last.year}-${last.month}-${last.day}`;
+    if (currentKey === lastKey) return false;
+    if (lastSuccessfulRunAt.getTime() > now.getTime()) return false;
+    const currentMinute = Number(current.hour) * 60 + Number(current.minute);
+    const scheduledMinute = policy.hour * 60 + policy.minute;
+    return currentMinute > scheduledMinute;
   }
 
   private isScheduledMinute(now: Date, policy: NightlyMarketConfig) {

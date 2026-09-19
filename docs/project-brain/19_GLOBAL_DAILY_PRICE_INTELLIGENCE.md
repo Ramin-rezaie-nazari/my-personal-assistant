@@ -65,7 +65,7 @@ Persistence now increments its `written` count only when an INSERT actually crea
 
 ## Local scheduling
 
-The development scheduler runs on the user's laptop. It uses standard Node.js timers and the laptop's local timezone, so no external scheduler or paid service is required.
+The development scheduler runs on the user's laptop. It uses standard Node.js timers and the laptop's local timezone, so no external scheduler or paid service is required. After a restart/sleep event, it can catch up a missed scheduled window later the same local day.
 
 The local PostgreSQL database is provided by `docker-compose.local.yml`. VPS deployment is intentionally deferred until the release phase.
 
